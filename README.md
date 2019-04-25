@@ -1,5 +1,4 @@
 # Oracle
 https://github.com/YairPR/Oracle/wiki
 
-
-Scripts, Tunning, Procedimeintos, Tips
+Enviar correo con Oracle: ACL + UTL_SMTP + Wallet + SSL/ TLS + Gmail
