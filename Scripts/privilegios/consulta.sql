@@ -18,7 +18,7 @@ GRANT EXECUTE ON UTEC.FN_GET_ELAPSED_TIME_MILLIS TO DESARROLLO;
 REVOKE rol_ddl_prymera FROM jjuarez;
 REVOKE DBA FROM AURDAY;
 
--- Privilegios otorgados sobre objetos
+-- Privilegios otorgados sobre objetos: dba_tab_privs, all_tab_privs and user_tab_privs
 SELECT * FROM DBA_TAB_PRIVS WHERE GRANTEE = 'ROL_SELECT'
 
 SELECT * FROM ROLE_TAB_PRIVS WHERE ROLE = 'ROL_SELECT';
@@ -30,3 +30,4 @@ select granted_role, admin_option, default_role
 from dba_role_privs
 where grantee = 'RNYFFENEGGER'
 order by granted_role;
+
