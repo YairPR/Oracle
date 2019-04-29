@@ -1,7 +1,7 @@
 # Oracle
 
--Scripts
- -Sentencias SQL
+-Scripts\
+ - Sentencias SQL
  - Procesos Bash para alertas, monitoreo.
 
 --> Wiki:
