@@ -31,3 +31,8 @@ from dba_role_privs
 where grantee = 'RNYFFENEGGER'
 order by granted_role;
 
+-- PERFILES
+ select *
+ from   dba_profiles
+   where  profile = 'DEFAULT'
+  order by resource_name;
