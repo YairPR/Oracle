@@ -1,5 +1,4 @@
  --Script to Extract Role granted Privileges in Oracle
-  
   select role, 'ROL' type, granted_role pv
   from role_role_privs
  where role like '%&rolecheck%'
