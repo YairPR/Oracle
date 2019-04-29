@@ -1,6 +1,6 @@
 # Oracle
 
--Scripts\
+-Scripts
  - Sentencias SQL
  - Procesos Bash para alertas, monitoreo.
 
