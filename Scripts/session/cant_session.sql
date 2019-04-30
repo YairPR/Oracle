@@ -4,7 +4,7 @@
 */
 
 -- Cantidad total de sessiones
-select count(*) from v4session;
+select count(*) from v$session;
 
 -- Cantidad de sesiones basandose en el parametro sessions
 SELECT
