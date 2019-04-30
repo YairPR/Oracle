@@ -1,4 +1,4 @@
--- Catindad de sesiones por api
+-- Catindad de sesiones de un usuario por aplicación
 SELECT 
    s.schemaname AS "USER",
    -- Dentro del case estan los nombres de los servidores o maquinas que se conectan a la bd.
@@ -25,7 +25,7 @@ FROM
    v$session s
 WHERE 
    paddr(+)=addr
-   and s.schemaname = 'SCHEMA'
+   and s.schemaname = upper('&Usuario')
 GROUP BY 
    s.schemaname, 
    s.machine
