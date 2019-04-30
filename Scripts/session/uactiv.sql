@@ -23,8 +23,7 @@ column sql_id format a13 heading 'SQLID' justify left
 column event format a34 heading 'Event Waiting' justify left
 column seq# format 99999
 column "Segs." format 999999
---
---select lpad(p.spid,6) spid, substr(s.sid||','||s.serial#,1,10) sid ,s.status stat,
+
   select lpad(p.spid,6) spid, substr(s.sid||','||s.serial#,1,10) sid ,
        decode(s.LOCKWAIT,null,' ','Si') lw,s.username su,
        rpad(s.osuser,16)  oux,
@@ -36,6 +35,6 @@ column "Segs." format 999999
 where  p.addr=s.paddr
 and s.sid=w.sid
 and s.status like 'ACTI%'
-and    s.username is not null ---       and s.sid in(1013,821)
+and    s.username is not null 
 order by 6 asc
 /
