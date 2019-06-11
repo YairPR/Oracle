@@ -8,6 +8,16 @@ where exists (select 'x'
  and d.role=p.granted_role)
  and p.grantee=r.role
  
+ 
+ -- privilegio sobre hacia un usuario y objeto especifico
+ select grantee, owner, table_name, privilege from dba_tab_privs
+where grantee in 
+  (select granted_role from dba_role_privs
+   where grantee='PRD_CLEVOL_MOBILE_BATCH')
+   and owner = 'ORBRWRC'
+   and table_name= 'DOCUMENT' 
+order by 2,3;
+ 
   -- roles y grant por usuario
 SELECT DBA_TAB_PRIVS.GRANTEE, TABLE_NAME, PRIVILEGE,DBA_ROLE_PRIVS.GRANTEE
 FROM DBA_TAB_PRIVS, DBA_ROLE_PRIVS
