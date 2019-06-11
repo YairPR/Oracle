@@ -17,6 +17,12 @@ where grantee in
    and owner = 'ORBRWRC'
    and table_name= 'DOCUMENT' 
 order by 2,3;
+
+
+select owner, grantee, grantor, privilege from dba_tab_privs a, dba_roles b 
+where a.grantee=b.role and 
+table_name='OBJECT'
+order by 1,2;
  
   -- roles y grant por usuario
 SELECT DBA_TAB_PRIVS.GRANTEE, TABLE_NAME, PRIVILEGE,DBA_ROLE_PRIVS.GRANTEE
