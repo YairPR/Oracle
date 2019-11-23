@@ -2,6 +2,8 @@
 *@Autor:                   E. Yair Purisaca Rivera
 *@Fecha Creacion:          Nov 2017
 *@Descripcion:             Genera la lista de usuarios ACTIVOS en la base de datos y muestra su actividad
+                           Muestra datos como PID, SID, SERIAL, SQLID, FECHA DE LA SESION, EVENTO DE ESPERA,TIEMPO DE
+                           EJECUCIÓN
 *@Versión                  v1.0
 *******************************************************************************************************************/
 
@@ -38,3 +40,16 @@ and s.status like 'ACTI%'
 and    s.username is not null 
 order by 6 asc
 /
+
+RESULT
+-------
+  UNIX	   Oracle
+Proces	  Session Is   Oracle		    System			 Time
+    ID	       ID Lock User ID		    User ID		      Session Machine		SQLID	      Event Waiting			   SEQ#   Segs.
+------ ---------- ---- -------------------- ---------------- ---------------- ----------------- ------------- ---------------------------------- ------ -------
+352932 1378,5	       DBSNMP		    srv_oraoem	     2019/11/06 12:50 rsdpedbadm03.rima g0bggfqrddc4w PL/SQL lock timer 		   5213      20
+352725 1155,1	       DS_DSTAGE	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17671       9
+352658 770,1	       DS_BPM_SAS	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17252       2
+352656 738,1	       DS_BPM_SAS	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17442       2
+352645 674,1	       DS_BPM_SAS	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17434       5
+
