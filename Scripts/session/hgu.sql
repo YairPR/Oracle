@@ -1,4 +1,4 @@
-
+-- 9i,10g,11g,12c
 /*****************************************************************************************************************
 *@Autor:                   E. Yair Purisaca Rivera
 *@Fecha Creacion:          Nov 2018
@@ -12,3 +12,12 @@ select username, sql_hash_value, count(1)
 from v$session where status = 'ACTIVE' and type !='BACKGROUND' 
 group by username, sql_hash_value 
 order by 1, 2;
+
+
+RESULT:
+-------
+USERNAME                       SQL_HASH_VALUE   COUNT(1)
+------------------------------ -------------- ----------
+ACSELX                               92039565          1
+ACSELX                              131469396          1
+
