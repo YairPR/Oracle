@@ -25,3 +25,10 @@ SELECT substr(ACCOUNT_STATUS,1,20) ACCOUNT_STATUS , expiry_date,
  ORDER BY 3,1, 2
 /
 
+
+RESULT:
+---------
+ACCOUNT_STATUS	     EXPIRY_DATE	 USUARIO_PROFILE			  CREACION	       TABSPCS
+-------------------- ------------------- ---------------------------------------- -------------------- -------------------------------------------------------
+OPEN					 MANTENIMIENTO.PRF_OTROS		  18/01/2015 08:10:56  USERS / TEMP
+
