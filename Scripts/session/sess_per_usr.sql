@@ -9,3 +9,12 @@ FROM
 WHERE  paddr(+)=addr
 GROUP BY  s.status, s.username
 ORDER BY 2 desc;
+
+
+RESULT
+-------
+STATUS   NRO_SESIONES USERNAME
+-------- ------------ ------------------------------
+INACTIVE          133 DBL_BDRSA_01
+INACTIVE          113 DS_PCANAL_AX
+INACTIVE           60 WKFEMI
