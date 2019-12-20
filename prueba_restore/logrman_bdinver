@@ -1,0 +1,202 @@
+
+Recovery Manager: Release 11.2.0.4.0 - Production on Fri Dec 20 12:10:33 2019
+
+Copyright (c) 1982, 2011, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: BDINVER (not mounted)
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rssibdinver01.rimac.com.pe)';
+4> set until time "to_date('2019-11-30 05:00', 'yyyy-mm-dd hh24:mi:ss')";
+5> restore controlfile;
+6> sql "ALTER DATABASE MOUNT";
+7> restore database;
+8> recover database;
+9> release channel c1;
+10> }
+11> 
+allocated channel: c1
+channel c1: SID=10 device type=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+sent command to channel: c1
+
+executing command: SET until clause
+
+Starting restore at 20-DEC-19
+
+channel c1: starting datafile backup set restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-4160510277-20191130-02
+channel c1: piece handle=c-4160510277-20191130-02 tag=TAG20191130T031823
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:01:05
+output file name=D:\ORACLE\ORADATA\BDINVER\CTLS\CONTROL01.CTL
+output file name=D:\ORACLE\ORADATA\BDINVER\CTLS\CONTROL02.CTL
+output file name=D:\ORACLE\ORADATA\BDINVER\CTLS\CONTROL03.CTL
+Finished restore at 20-DEC-19
+
+sql statement: ALTER DATABASE MOUNT
+
+Starting restore at 20-DEC-19
+
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00001 to D:\ORACLE\ORADATA\BDINVER\DATA\SYSTEM01.DBF
+channel c1: restoring datafile 00002 to D:\ORACLE\ORADATA\BDINVER\DATA\SYSAUX01.DBF
+channel c1: restoring datafile 00003 to D:\ORACLE\ORADATA\BDINVER\UNDO\UNDOTBS01.DBF
+channel c1: restoring datafile 00004 to D:\ORACLE\ORADATA\BDINVER\DATA\USERS01.DBF
+channel c1: restoring datafile 00006 to D:\ORACLE\ORADATA\BDINVER\DATA\INDX_BDINVER_SMA_001.DBF
+channel c1: reading from backup piece full_bdinver_1025654922_33198_1
+channel c1: piece handle=full_bdinver_1025654922_33198_1 tag=BDINVER NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:39:45
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00005 to D:\ORACLE\ORADATA\BDINVER\DATA\DATA_BDINVER_TOOLS_001.DBF
+channel c1: restoring datafile 00007 to D:\ORACLE\ORADATA\BDINVER\DATA\DATA_BDINVER_SMA_001.DBF
+channel c1: restoring datafile 00008 to D:\ORACLE\ORADATA\BDINVER\DATA\DATA_BDINVER_AUD_001.DBF
+channel c1: restoring datafile 00009 to D:\ORACLE\ORADATA\BDINVER\DATA\DATA_BDINVER_SMA_002.DBF
+channel c1: reading from backup piece full_bdinver_1025654922_33197_1
+channel c1: piece handle=full_bdinver_1025654922_33197_1 tag=BDINVER NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 01:20:36
+Finished restore at 20-DEC-19
+
+Starting recover at 20-DEC-19
+
+starting media recovery
+
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192052
+channel c1: reading from backup piece log_bdinver_1025656440_33200_1
+channel c1: piece handle=log_bdinver_1025656440_33200_1 tag=TAG20191130T003359
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192052_0851824965.0001 thread=1 sequence=192052
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192053
+channel c1: reading from backup piece log_bdinver_1025656440_33201_1
+channel c1: piece handle=log_bdinver_1025656440_33201_1 tag=TAG20191130T003359
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192053_0851824965.0001 thread=1 sequence=192053
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192054
+channel c1: restoring archived log
+archived log thread=1 sequence=192055
+channel c1: restoring archived log
+archived log thread=1 sequence=192056
+channel c1: restoring archived log
+archived log thread=1 sequence=192057
+channel c1: restoring archived log
+archived log thread=1 sequence=192058
+channel c1: reading from backup piece log_bdinver_1025659009_33203_1
+channel c1: piece handle=log_bdinver_1025659009_33203_1 tag=BDINVER NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192054_0851824965.0001 thread=1 sequence=192054
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192055_0851824965.0001 thread=1 sequence=192055
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192056_0851824965.0001 thread=1 sequence=192056
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192057_0851824965.0001 thread=1 sequence=192057
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192058_0851824965.0001 thread=1 sequence=192058
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192059
+channel c1: restoring archived log
+archived log thread=1 sequence=192060
+channel c1: restoring archived log
+archived log thread=1 sequence=192061
+channel c1: restoring archived log
+archived log thread=1 sequence=192062
+channel c1: restoring archived log
+archived log thread=1 sequence=192063
+channel c1: reading from backup piece log_bdinver_1025666201_33205_1
+channel c1: piece handle=log_bdinver_1025666201_33205_1 tag=BDINVER NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192059_0851824965.0001 thread=1 sequence=192059
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192060_0851824965.0001 thread=1 sequence=192060
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192061_0851824965.0001 thread=1 sequence=192061
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192062_0851824965.0001 thread=1 sequence=192062
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192063_0851824965.0001 thread=1 sequence=192063
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192064
+channel c1: restoring archived log
+archived log thread=1 sequence=192065
+channel c1: restoring archived log
+archived log thread=1 sequence=192066
+channel c1: restoring archived log
+archived log thread=1 sequence=192067
+channel c1: restoring archived log
+archived log thread=1 sequence=192068
+channel c1: restoring archived log
+archived log thread=1 sequence=192069
+channel c1: restoring archived log
+archived log thread=1 sequence=192070
+channel c1: restoring archived log
+archived log thread=1 sequence=192071
+channel c1: reading from backup piece log_bdinver_1025666276_33206_1
+channel c1: piece handle=log_bdinver_1025666276_33206_1 tag=BDINVER NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192064_0851824965.0001 thread=1 sequence=192064
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192065_0851824965.0001 thread=1 sequence=192065
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192066_0851824965.0001 thread=1 sequence=192066
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192067_0851824965.0001 thread=1 sequence=192067
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192068_0851824965.0001 thread=1 sequence=192068
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192069_0851824965.0001 thread=1 sequence=192069
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192070_0851824965.0001 thread=1 sequence=192070
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192071_0851824965.0001 thread=1 sequence=192071
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192072
+channel c1: restoring archived log
+archived log thread=1 sequence=192073
+channel c1: restoring archived log
+archived log thread=1 sequence=192074
+channel c1: restoring archived log
+archived log thread=1 sequence=192075
+channel c1: restoring archived log
+archived log thread=1 sequence=192076
+channel c1: restoring archived log
+archived log thread=1 sequence=192077
+channel c1: reading from backup piece log_bdinver_1025673401_33208_1
+channel c1: piece handle=log_bdinver_1025673401_33208_1 tag=BDINVER NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:35
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192072_0851824965.0001 thread=1 sequence=192072
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192073_0851824965.0001 thread=1 sequence=192073
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192074_0851824965.0001 thread=1 sequence=192074
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192075_0851824965.0001 thread=1 sequence=192075
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192076_0851824965.0001 thread=1 sequence=192076
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192077_0851824965.0001 thread=1 sequence=192077
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=192078
+channel c1: restoring archived log
+archived log thread=1 sequence=192079
+channel c1: restoring archived log
+archived log thread=1 sequence=192080
+channel c1: restoring archived log
+archived log thread=1 sequence=192081
+channel c1: reading from backup piece log_bdinver_1025673466_33209_1
+channel c1: piece handle=log_bdinver_1025673466_33209_1 tag=BDINVER NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:25
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192078_0851824965.0001 thread=1 sequence=192078
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192079_0851824965.0001 thread=1 sequence=192079
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192080_0851824965.0001 thread=1 sequence=192080
+archived log file name=D:\ORACLE\ARCHIVE\ARC0000192081_0851824965.0001 thread=1 sequence=192081
+media recovery complete, elapsed time: 00:00:01
+Finished recover at 20-DEC-19
+
+released channel: c1
+
+Recovery Manager complete.
