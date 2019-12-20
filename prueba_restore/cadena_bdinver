@@ -1,0 +1,13 @@
+
+BDINVER =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = rsdcapmsrestore.rimac.com.pe)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = BDINVER)
+    )
+  )
+
+U_RIMAC
+UDQ9235FMA
