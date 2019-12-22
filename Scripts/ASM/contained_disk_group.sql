@@ -33,7 +33,7 @@ SELECT
   , b.failgroup                                      disk_file_fail_group
   , b.total_mb                                       total_mb
   , (b.total_mb - b.free_mb)                         used_mb
-  , ROUND((1- (b.free_mb / b.total_mb))*100, 2)      pct_used
+  ,DECODE(b.total_mb,0,0, ROUND((1- (b.free_mb / b.total_mb))*100, 2) )     pct_used
 FROM
     v$asm_diskgroup a RIGHT OUTER JOIN v$asm_disk b USING (group_number)
 ORDER BY
