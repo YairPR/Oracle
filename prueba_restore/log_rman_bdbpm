@@ -1,0 +1,230 @@
+connected to target database: BDBPM (not mounted)
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rssbbdbpm02.rimac.com.pe)';
+4> set until time "to_date('2019-11-22 19:15:00', 'yyyy-mm-dd hh24:mi:ss')";
+5> restore controlfile;
+6> sql 'ALTER DATABASE MOUNT';
+7> restore database;
+8> switch datafile all;
+9> recover database;
+10> release channel c1;
+11> }
+12> 
+13> 
+allocated channel: c1
+channel c1: sid=706 devtype=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+sent command to channel: c1
+
+executing command: SET until clause
+
+Starting restore at 21-DEC-19
+
+channel c1: starting datafile backupset restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-3179311894-20191122-0a
+channel c1: restored backup piece 1
+piece handle=c-3179311894-20191122-0a tag=TAG20191122T191200
+channel c1: restore complete, elapsed time: 00:01:12
+output filename=+DATA/bdbpm/controlfile/current.294.1027636009
+output filename=+DATA/bdbpm/controlfile/current.256.1027636015
+Finished restore at 21-DEC-19
+
+sql statement: ALTER DATABASE MOUNT
+
+Starting restore at 21-DEC-19
+Starting implicit crosscheck backup at 21-DEC-19
+Crosschecked 1 objects
+Finished implicit crosscheck backup at 21-DEC-19
+
+Starting implicit crosscheck copy at 21-DEC-19
+Finished implicit crosscheck copy at 21-DEC-19
+
+searching for all files in the recovery area
+cataloging files...
+no files cataloged
+
+
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00003 to +DATA/bdbpm/datafile/sysaux.266.758587269
+restoring datafile 00011 to +DATA/bdbpm/datafile/data_bdbpm_aud.276.762044055
+restoring datafile 00018 to +DATA/bdbpm/datafile/bizagiidx.283.883047417
+restoring datafile 00024 to +DATA/bdbpm/datafile/bizagiidx.294.936791817
+restoring datafile 00026 to +DATA/bdbpm/datafile/bizagi.303.957284491
+restoring datafile 00029 to +DATA/bdbpm/datafile/bizagi.352.1007897731
+restoring datafile 00036 to +DATA/bdbpm/datafile/bizagi.349.1013969241
+restoring datafile 00039 to +DATA/bdbpm/datafile/bizagi.360.1022929987
+channel c1: reading from backup piece full_bdbpm_1025028154_36331_1
+channel c1: restored backup piece 1
+piece handle=full_bdbpm_1025028154_36331_1 tag=BDBPM NIVEL 0 - FULL
+channel c1: restore complete, elapsed time: 00:38:55
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00009 to +DATA/bdbpm/datafile/bizagiidx.273.758587453
+restoring datafile 00010 to +DATA/bdbpm/datafile/users.274.758587485
+restoring datafile 00012 to +DATA/bdbpm/datafile/data_bdbpm_tool.260.807447665
+restoring datafile 00013 to +DATA/bdbpm/datafile/indx_bdbpm_tool.279.807447697
+restoring datafile 00016 to +DATA/bdbpm/datafile/bizagi.290.846529707
+restoring datafile 00017 to +DATA/bdbpm/datafile/bizagiidx
+restoring datafile 00023 to +DATA/bdbpm/datafile/bizagi.286.927285157
+restoring datafile 00033 to +DATA/bdbpm/datafile/data_bdbpm_logmnr.356.1011801947
+restoring datafile 00037 to +DATA/bdbpm/datafile/bizagi.358.1015850671
+restoring datafile 00041 to +DATA/bdbpm/datafile/bizagi.363.1024508709
+channel c1: reading from backup piece full_bdbpm_1025030441_36341_1
+channel c1: restored backup piece 1
+piece handle=full_bdbpm_1025030441_36341_1 tag=BDBPM NIVEL 0 - FULL
+channel c1: restore complete, elapsed time: 00:38:36
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00002 to +DATA/bdbpm/datafile/undotbs1.265.758587237
+restoring datafile 00005 to +DATA/bdbpm/datafile/bizagi.269.758587315
+restoring datafile 00019 to +DATA/bdbpm/datafile/bizagi.267.884919229
+restoring datafile 00021 to +DATA/bdbpm/datafile/bizagi.282.916649985
+restoring datafile 00025 to +DATA/bdbpm/datafile/bizagiidx.293.936791857
+restoring datafile 00027 to +DATA/bdbpm/datafile/bizagi.305.957284499
+restoring datafile 00028 to +DATA/bdbpm/datafile/bizagiidx.337.982267211
+channel c1: reading from backup piece full_bdbpm_1025028155_36332_1
+channel c1: restored backup piece 1
+piece handle=full_bdbpm_1025028155_36332_1 tag=BDBPM NIVEL 0 - FULL
+channel c1: restore complete, elapsed time: 00:40:05
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00006 to +DATA/bdbpm/datafile/bizagi.270.758587353
+restoring datafile 00008 to +DATA/bdbpm/datafile/bizagiidx.272.758587421
+restoring datafile 00015 to +DATA/bdbpm/datafile/bizagiidx.289.843759303
+restoring datafile 00020 to +DATA/bdbpm/datafile/bizagi.281.903876057
+restoring datafile 00032 to +DATA/bdbpm/datafile/data_bdbpm_logmnr.355.1011801943
+restoring datafile 00034 to +DATA/bdbpm/datafile/bizagi.351.1013182177
+restoring datafile 00040 to +DATA/bdbpm/datafile/bizagi.362.1022929991
+channel c1: reading from backup piece full_bdbpm_1025028155_36333_1
+channel c1: restored backup piece 1
+piece handle=full_bdbpm_1025028155_36333_1 tag=BDBPM NIVEL 0 - FULL
+channel c1: restore complete, elapsed time: 00:40:36
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00001 to +DATA/bdbpm/datafile/system.264.758587231
+restoring datafile 00004 to +DATA/bdbpm/datafile/bizagi.268.758587277
+restoring datafile 00007 to +DATA/bdbpm/datafile/bizagiidx.271.758587391
+restoring datafile 00014 to +DATA/bdbpm/datafile/undotbs2.280.816408347
+restoring datafile 00022 to +DATA/bdbpm/datafile/bizagiidx.285.927285113
+restoring datafile 00030 to +DATA/bdbpm/datafile/bizagi.350.1007897771
+restoring datafile 00031 to +DATA/bdbpm/datafile/data_bdbpm_logmnr.354.1011801941
+restoring datafile 00035 to +DATA/bdbpm/datafile/bizagiidx.357.1013967827
+restoring datafile 00038 to +DATA/bdbpm/datafile/bizagi.353.1020516149
+channel c1: reading from backup piece full_bdbpm_1025028154_36330_1
+channel c1: restored backup piece 1
+piece handle=full_bdbpm_1025028154_36330_1 tag=BDBPM NIVEL 0 - FULL
+channel c1: restore complete, elapsed time: 00:40:26
+Finished restore at 22-DEC-19
+
+
+Starting recover at 22-DEC-19
+
+starting media recovery
+
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=1 sequence=266156
+channel c1: restoring archive log
+archive log thread=1 sequence=266157
+channel c1: reading from backup piece log_bdbpm_1025028192_36337_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025028192_36337_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:25
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=2 sequence=239854
+channel c1: restoring archive log
+archive log thread=2 sequence=239855
+channel c1: reading from backup piece log_bdbpm_1025028308_36339_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025028308_36339_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:35
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239854.326.1027648043 thread=2 sequence=239854
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266156.256.1027648001 thread=1 sequence=266156
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239855.327.1027648043 thread=2 sequence=239855
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266157.325.1027648001 thread=1 sequence=266157
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=1 sequence=266161
+channel c1: restoring archive log
+archive log thread=1 sequence=266162
+channel c1: restoring archive log
+archive log thread=1 sequence=266163
+channel c1: reading from backup piece log_bdbpm_1025035373_36345_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025035373_36345_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:35
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=1 sequence=266164
+channel c1: restoring archive log
+archive log thread=1 sequence=266165
+channel c1: reading from backup piece log_bdbpm_1025035373_36344_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025035373_36344_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:25
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=2 sequence=239856
+channel c1: restoring archive log
+archive log thread=2 sequence=239857
+channel c1: restoring archive log
+archive log thread=2 sequence=239858
+channel c1: reading from backup piece log_bdbpm_1025035373_36347_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025035373_36347_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:16
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239856.335.1027648115 thread=2 sequence=239856
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=1 sequence=266158
+channel c1: restoring archive log
+archive log thread=1 sequence=266159
+channel c1: restoring archive log
+archive log thread=1 sequence=266160
+channel c1: reading from backup piece log_bdbpm_1025035373_36346_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025035373_36346_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:26
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266158.338.1027648137 thread=1 sequence=266158
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266159.336.1027648137 thread=1 sequence=266159
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239857.334.1027648115 thread=2 sequence=239857
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239858.333.1027648115 thread=2 sequence=239858
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266160.337.1027648137 thread=1 sequence=266160
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266161.328.1027648071 thread=1 sequence=266161
+channel c1: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=2 sequence=239859
+channel c1: restoring archive log
+archive log thread=2 sequence=239860
+channel c1: restoring archive log
+archive log thread=2 sequence=239861
+channel c1: restoring archive log
+archive log thread=2 sequence=239862
+channel c1: restoring archive log
+archive log thread=2 sequence=239863
+channel c1: reading from backup piece log_bdbpm_1025035410_36348_1
+channel c1: restored backup piece 1
+piece handle=log_bdbpm_1025035410_36348_1 tag=BDBPM NIVEL 0 - ARCHIVE LOGS
+channel c1: restore complete, elapsed time: 00:00:15
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239859.339.1027648163 thread=2 sequence=239859
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266162.330.1027648073 thread=1 sequence=266162
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239860.341.1027648163 thread=2 sequence=239860
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266163.329.1027648071 thread=1 sequence=266163
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239861.343.1027648163 thread=2 sequence=239861
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266164.332.1027648101 thread=1 sequence=266164
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239862.340.1027648163 thread=2 sequence=239862
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_1_seq_266165.331.1027648101 thread=1 sequence=266165
+archive log filename=+ARCH/bdbpm/archivelog/2019_12_22/thread_2_seq_239863.342.1027648163 thread=2 sequence=239863
+media recovery complete, elapsed time: 00:00:07
+Finished recover at 22-DEC-19
+
+released channel: c1
+
+Recovery Manager complete.
