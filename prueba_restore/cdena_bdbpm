@@ -1,0 +1,9 @@
+BDBPM_restore =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 172.23.3.83)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = BDBPM)
+    )
+  )
