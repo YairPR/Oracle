@@ -1,9 +1,12 @@
-https://github.com/freddenis/oracle-scripts
+-- Snapper
 https://blog.tanelpoder.com/snapper/
-https://github.com/tanelpoder/tpt-oracle/blob/master/ash/ashtop.sql
-https://github.com/tanelpoder/tpt-oracle/tree/master/tools/moats_v1.05
 http://tech.e2sn.com/oracle-scripts-and-tools/session-snapper
 
+-- library scripts dba
+https://github.com/jkstill/oracle-script-lib
+https://github.com/freddenis/oracle-scripts
+https://github.com/tanelpoder/tpt-oracle/blob/master/ash/ashtop.sql
+https://github.com/tanelpoder/tpt-oracle/tree/master/tools/moats_v1.05
 https://gist.github.com/haballan/2e0f6b9fb17a3a03de2a016ca43b00c1
 https://github.com/oraclebase/dba
 
