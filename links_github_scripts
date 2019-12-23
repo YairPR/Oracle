@@ -22,3 +22,16 @@ https://dbaclass.com/article/move-datafile-from-file-system-to-asm-disk-in-11g/
 
 -- Daily / Hourly archive log generation
 https://deveshdba.wordpress.com/2016/10/26/daily-hourly-archive-log-generation/
+
+--Archived log generation volume and count report
+http://lefterhs.blogspot.com/2012/07/archived-log-generation-volume-and.html
+
+--Procedure to automate datafiles' resizing taking into account filesystems' free space
+http://lefterhs.blogspot.com/2012/10/procedure-to-automate-datafiles.html
+
+
+--Rsync over SSH with key authentication
+https://andykdocs.de/development/Linux/2013-01-17+Rsync+over+SSH+with+Key+Authentication
+
+--bdaclass
+https://dbaclass.com/monitor-your-db/
