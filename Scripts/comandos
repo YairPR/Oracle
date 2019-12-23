@@ -1,5 +1,20 @@
+***************************************************
+UNIX
+***************************************************
+-- version AIX
+oslevel -r 
+uname -a
+
+
+
+
+
+**************************************************
+ASM
+**************************************************
 -- estado de servicio
 crsctl stat res -t
+crs_stat -t
 
 -- información listener
 srvctl config listener
