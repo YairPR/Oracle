@@ -18,7 +18,12 @@ crs_stat -t
 
 -- información listener
 srvctl config listener
- srvctl config listener -l LISTENER_ASM
+srvctl config listener -l LISTENER_ASM
+
+oracle:~/bsstdba$ srvctl stop database -d LAPROD
+oracle@:~/bsstdba$ srvctl start database -d LAPROD 
+ 
+ 
 
  ALTER SYSTEM SET local_listener='(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=server1.domain.com)(PORT=1531))))' scope=both;
  
