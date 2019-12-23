@@ -19,3 +19,6 @@ https://juanmercadoit.com/2009/10/13/agregar-disco-a-un-diskgroup-existente/
 
 -- move tbs to fs to asm
 https://dbaclass.com/article/move-datafile-from-file-system-to-asm-disk-in-11g/
+
+-- Daily / Hourly archive log generation
+https://deveshdba.wordpress.com/2016/10/26/daily-hourly-archive-log-generation/
