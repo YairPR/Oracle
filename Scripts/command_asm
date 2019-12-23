@@ -1,0 +1,10 @@
+-- estado de servicio
+crsctl stat res -t
+
+-- información listener
+srvctl config listener
+ srvctl config listener -l LISTENER_ASM
+
+ ALTER SYSTEM SET local_listener='(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=server1.domain.com)(PORT=1531))))' scope=both;
+ 
+  lsnrctl status listener_asm
