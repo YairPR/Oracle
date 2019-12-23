@@ -1,0 +1,22 @@
+ORACLE_BASE=/oracle/app/oracle
+ORACLE_HOME=/oracle/app/oracle/product/11.2.0/grid
+AIXTHREAD_SCOPE=S
+ORACLE_SID=+ASM
+NLS_LANG=american_america.WE8ISO8859P1
+
+NSORDER=local,local4,bind4
+
+PATH=/usr/bin:/etc:/usr/sbin:/usr/ucb:$HOME/bin:/usr/bin/X11:/sbin:$ORACLE_HOME/bin:$ORACLE_HOME/OPatch:.
+
+export PATH ORACLE_BASE ORACLE_HOME AIXTHREAD_SCOPE ORACLE_SID NLS_LANG NSORDER ORA_CRS_HOME
+
+if [ -s "$MAIL" ]           # This is at Shell startup.  In normal
+then echo "$MAILMSG"        # operation, the Shell checks
+fi                          # periodically.
+
+HOSTNAME=`hostname`
+USERNAME=`whoami`
+
+PS1="[$USERNAME@$HOSTNAME] "'$PWD > '
+
+set -o vi
