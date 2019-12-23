@@ -1,0 +1,109 @@
+Clean Logs with RMAN
+Algunas veces nos encontramos con que backupeamos los archivelog y estos siguen permaneciendo en el storage debido a que nuestra politica de retención en mayor a 2 días.
+
+Algunas aplicaciones tiene mucho movimiento y generan una cantidad importante de archive diario.
+
+Como podemos aplicar una depuración ?
+
+Yo tendría en cuenta algunos aspectos:
+
+Que los archives que voy a deletear esten resguardados si esa es la politica.
+Que si tengo una politica mayor a dos días y hay mucho archive, dejar lo vigente al día corriente y borrar todo hacia atras.
+Si nos quedamos sin espacio de flashback y es urgente depurar, tomar un backup de archive (en caso de contar con algo de margen) y depurar acorde a  un punto en el tiempo, correspondiente al día corriente.
+Con la query que pongo a continuación podemos ver el espacio ocupado, reclamable y cual es el tamaño total de flashback.
+
+Con ello puedo saber con que espacio cuento y depurar acorde al escenario que poseo.
+
+SQL> select space_limit/1024/1024 "Limit MB", space_used/1024/1024 "Used MB",
+	space_reclaimable/1024/1024 "Reclaimable MB"
+	from v$recovery_file_dest;  2    3  
+
+  Limit MB    Used MB Reclaimable MB
+---------- ---------- --------------
+     40960	38990	       35818
+Entonces desde el rman , con las variables previamente seteadas arrancamos con la depuración.
+
+$ rman target /
+Una vez que tenemos prompt ejecutamos el comando DELETE con el periodo de un día hacia atrás.
+
+RMAN> DELETE ARCHIVELOG UNTIL TIME 'sysdate -1';
+
+using target database control file instead of recovery catalog
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: sid=632 instance=DAPRO1 devtype=DISK
+
+List of Archived Log Copies
+Key     Thrd Seq     S Low Time  Name
+------- ---- ------- - --------- ----
+79886   1    18145   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18145.1698.723212957
+79893   1    18146   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18146.1332.723214883
+79898   1    18147   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18147.386.723216965
+79904   1    18148   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18148.1818.723219357
+79912   1    18149   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18149.1263.723221699
+79916   1    18150   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18150.308.723224071
+79922   1    18151   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18151.658.723226667
+79928   1    18152   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18152.716.723229161
+79936   1    18153   A 01-JUL-10 +DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18153.1329.723231755
+[...]
+Solamente hasta este momento el RMAN nos muestra todo lo que esta por depurar, pero no hara nada hasta que nosotros no lo confirmemos.
+
+Do you really want to delete the above objects (enter YES or NO)? 
+
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18145.1698.723212957 recid=79886 stamp=723212958
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18146.1332.723214883 recid=79893 stamp=723214882
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18147.386.723216965 recid=79898 stamp=723216965
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18148.1818.723219357 recid=79904 stamp=723219357
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18149.1263.723221699 recid=79912 stamp=723221698
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18150.308.723224071 recid=79916 stamp=723224070
+deleted archive log
+archive log filename=+DAPRO_DG2/dapro/archivelog/2010_07_01/thread_1_seq_18151.658.723226667 recid=79922 stamp=723226667
+deleted archive l
+[...]
+Ahora bien, si tenemos el caso en el que tenemos que depurar desde 1 segundo hasta el punto horario que deseemos, lo podemos hacer de la siguiente manera.
+Quiero borra los archives menores a la fecha 05-JUN-2010 , en el horario de las 12.50 hs.
+
+RMAN> delete archivelog until time "to_date('2010-06-05 12:50:00','YYYY-MM-DD:HH24:MI:SS')";
+
+starting full resync of recovery catalog
+full resync complete
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: sid=288 instance=OESV1N1 devtype=DISK
+
+List of Archived Log Copies
+Key     Thrd Seq     S Low Time  Name
+------- ---- ------- - --------- ----
+1037615 1    706     A 05-JUN-10 +OESV1N_DG2/oesv1n/arch_streams/1_706_677853959.dbf
+1037616 1    707     A 05-JUN-10 +OESV1N_DG2/oesv1n/arch_streams/1_707_677853959.dbf
+Otra manera es con una la query que consulte v$flash_recovery_area_usage.
+
+En el caso que haya espacio disponible para liberar tomamos un hot backup con RMAN y despúes limpiamos los logs.
+
+SQL> select * from v$flash_recovery_area_usage;
+
+FILE_TYPE    PERCENT_SPACE_USED PERCENT_SPACE_RECLAIMABLE NUMBER_OF_FILES
+------------ ------------------ ------------------------- ---------------
+CONTROLFILE		    .16 			0		1
+ONLINELOG		   3.98 			0		8
+ARCHIVELOG		  76.36 		    51.18	      271
+BACKUPPIECE		      0 			0		0
+IMAGECOPY		      0 			0		0
+FLASHBACKLOG		   4.38 			0	      109
+
+6 rows selected.
+Achicamos el espacio de la flashback modificando el parametro db_recovery_file_dest_size, luego de finalizada la tarea que podemos ir chequendo desde el alert.log que nos mostrara las piezas que son eliminidas, volvemos a setearla con el valor orirginal.
+
+SQL> alter system set db_recovery_file_dest_size=7G scope=both sid='*';
+
+System altered.
+
+SQL> alter system set db_recovery_file_dest_size=5G scope=both sid='*';
+
+System altered.
+Espero les sea de utilidad.
+
