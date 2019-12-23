@@ -1,0 +1,127 @@
+Desde el sqlplus:
+
+SQL> archive log list
+Database log mode                 No Archive Mode
+Automatic archival                Disabled
+Archive destination               USE_DB_RECOVERY_FILE_DEST
+Oldest online log sequence        29
+Current log sequence              32
+  
+Verificar si la instancia de base de datos esta iniciada desde el pfile o spfile
+
+SQL> Show parameter spfile;
+
+NAME                     TYPE                   VALUE
+------------------------ ---------------------- ------------
+spfile                   string
+
+Como no figura nada en el valor spfile, significa que la instancia inicio desde el pfile, y necesitamos crear el spfile como sigue:
+
+SQL>  Create SPFILE From PFILE;
+File created.
+
+Es necesario reiniciar la instancia para que levante desde el spfile y podamos realizar los cambios necesarios:
+
+SQL> shutdown immediate;
+SQL> startup;
+
+Verificamos el valor de spfile:
+
+SQL> show parameter spfile
+
+NAME   TYPE   VALUE
+------ ----- ---------------------------------------------------
+Spfile string /oracle/app/oracle/product/10.2/dbs/spfileTEST.ora
+
+Para cambiar el modo de archivado de la BD debemos modificar ciertos parametros:
+
+Como podemos ver la ruta del destino del archivado está guardada en el parametro: USE_DB_RECOVERY_FILE_DEST
+
+SQL> show parameter db_recovery
+
+NAME                   TYPE         VALUE
+---------------------  -----------  ------------------------------------
+db_recovery_file_dest  string  C:\oracle\product\10.2\flash_recovery_area
+db_recovery_file_dest_size big integer   2G
+
+Si éste parámetro está informado, todos los Archived Redolog File, irán a parar a ese repositorio.
+Para determinar nosotros el destino al cual queremos guardar el archivado debemos modificar éste parámetro:
+
+El parametro que informaremos la ubicación de guardado de los archivos es: LOG_ARCHIVE_DEST
+
+SQL> show parameter log_archive_dest
+
+NAME                  TYPE          VALUE
+-----------------     -----------   ----------------
+log_archive_dest      string
+
+Como vemos el valor del parametro está en blanco, si queremos modificar éste parametro debemos primero modificar el parámetro USE_DB_RECOVERY_FILE_DEST, sino lo hacemos se produce un error.
+
+SQL> alter system set log_archive_dest = ' c:\prueba '
+*
+ORA-02097: no se puede modificar el parametro porque el valor especificado no es válido
+ORA-16018: no se puede utilizar LOG_ARCHIVE_DEST con LOG_ARCHIVE_DEST_n ni con DB_RECOVERY_FILE_DEST
+
+Entonces modificamos primero el parametro DB_RECOVERY_FILE_DEST y le asignamos una cadena vacia:
+
+SQL> alter system set db_recovery_file_dest = ' ' scope=both;
+System altered.
+
+Modificar el parametro LOG_ARCHIVE_DEST
+
+SQL> alter system set  log_archive_dest = '/TEST/archivados'  scope=both;
+System altered.
+
+Modificar el parametro LOG_ARCHIVE_FORMAT
+
+En Oracle 10g se debe utilizar las tres variables de sustitución para que sea considerado un nombre aceptado:
+
+Variables de sustitucion:
+
+%t -à Nro de thread
+%s -à Nro de secuencia del log
+%r -à Resetlogs ID
+
+SQL> show parameter log_archive_format
+
+NAME                 TYPE             VALUE
+------------------   ---------------  ----------------
+log_archive_format   string           arch%s_%R.%T
+
+Modificamos el formato como deseamos:
+
+SQL> alter system set log_archive_dest ='arc_%s_%r_%t.arc'  scope=spfile;
+System altered.
+Nota: sino especificamos scope, en Oracle 10g el valor por defecto es both, y como éste parametro no es dinamico nos daria error, para ello debemos espcificar scope=spfile.
+
+Una vez que tenemos modificados todos los parametros podemos cambiar el modo de archivado de la base de datos:
+
+SQL> shutdown immediate;
+SQL> startup mount;
+SQL> alter database archivelog;
+SQL> alter database open;
+
+Verificamos el cambio:
+
+SQL> Archive log list
+Database log mode                 Archive Mode
+Automatic archival                Enabled
+Archive destination               C:\TEST\archivados
+Oldest online log sequence        29
+Next log sequence to archive      32
+Current log sequence              32
+
+Provocamos un cambio en el Redolog:
+
+SQL> alter system switch logfile;
+Sistema modificado
+
+SQL> Archive log list
+Database log mode                 Archive Mode
+Automatic archival                Enabled
+Archive destination               C:\TEST\archivados
+Oldest online log sequence        30
+Next log sequence to archive      33
+Current log sequence              33
+
+De éste modo ya tenemos nuestra base de datos en modo de archivado automatico.
