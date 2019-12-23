@@ -1,0 +1,13 @@
+El scope de alter system en Oracle
+Al realizar algún cambio de configuración en una instancia de base de datos Oracle tenemos la opción de usar el modificador scope para indicar si queremos hacer o no los cambios permanentes.
+
+Por ejemplo, si queremos modificar cuantos cursores una determinada sesión puede abrir como máximo podemos usar el siguiente alter system:
+
+SQL> alter system set open_cursors = 1000 scope=both;
+
+System altered. 
+Mediante el scope podemos indicar las siguientes tres opciones:
+
+memory: Cambia el valor solo a la instancia que se esta ejecutando, en el caso que se reinicie los cambios no tendrán efecto.
+spfile: Cambia el valor en el spfile, por lo que hasta que no se reinicie la instancia de base de datos no tendrán efecto los cambios
+both: Realiza el cambio tanto en la instancia que esta corriendo como en el spfile, haciendo permanentes los cambios.
