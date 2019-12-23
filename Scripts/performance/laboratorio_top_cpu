@@ -1,0 +1,139 @@
+QUESTIONS
+
+How to match OS processes to Oracle processes?
+What a particular OS Oracle process (PID) is doing in an Oracle database?
+What is an easy way to match the OS PID to the Oracle session?
+How to find out SQL being executed by an OS process ID (PID)?
+-----------------------------------------------------------------------------------
+REQUEST
+
+I want to find out details about a session in a database for the specific operating system process.
+-----------------------------------------------------------------------------------------
+ 
+SOLUTION
+
+To find out details about an oracle session of the Unix process use v$session with v$process views.
+------------------------------------------------------------------------------------------
+
+SQL> set sqlprompt "_user'@'SES_1 > "
+SYS@SES_1 > SELECT DISTINCT SID FROM V$MYSTAT;
+
+       SID
+----------
+       373
+---------------------------------------------------
+-- * Victor Khalturin
+-- * Script for producing CPU load on a database
+-- * The only 1 core is utilized by the script
+---------------------------------------------------
+DECLARE
+   l_result NUMBER;
+BEGIN
+   FOR id IN 1..999999999
+   LOOP
+      l_result := (id/DBMS_RANDOM.VALUE + id*DBMS_RANDOM.VALUE)/DBMS_RANDOM.VALUE;
+   END LOOP;
+END;
+/
+While script is running issue top command and find a process with heavy cpu consumption
+
+top - 14:23:38 up 33 days,  1:37,  3 users,  load average: 0.82, 0.32, 0.23
+Tasks: 272 total,   2 running, 270 sleeping,   0 stopped,   0 zombie
+%Cpu0  :  0.0 us,  0.3 sy,  0.0 ni, 99.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu1  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu2  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu3  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu4  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu5  :100.0 us,  0.0 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu6  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu7  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem : 98963392 total, 48400364 free,   845448 used, 49717576 buff/cache
+KiB Swap: 25165820 total, 25165820 free,        0 used. 68142432 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+50845 oracle    20   0 28.746g  93632  89128 R 100.0  0.1   1:52.81 oracle_50845_db
+  493 root      20   0       0      0      0 S   0.3  0.0  12:58.63 xfsaild/dm-0
+51179 oracle    20   0  157844   4236   3424 R   0.3  0.0   0:00.16 top
+55584 oracle    -2   0 28.729g  57976  55088 S   0.3  0.1  35:06.55 ora_vktm_dbpilo
+    1 root      20   0  193640   8268   5500 S   0.0  0.0   1:14.86 systemd
+Here the process with PID 50845 consumes 100% of CPU (Cpu5).
+
+To find out details about what the process is doing in the database
+
+-- Session 2
+set sqlprompt "_user'@'SES_2 > "	
+
+SET LINES 300
+SET PAGES 999
+COL OSUSER FOR A6
+COL DBUSER FOR A5
+COL SID FOR 9999
+COL MACHINE FOR A20
+COL MODULE FOR A10
+SELECT OSUSER,USERNAME DBUSER,SID,SERIAL#,SQL_ID,STATUS,MACHINE,
+       PORT,PROGRAM,LAST_CALL_ET ACTIVE_TIME_SEC 
+FROM   V$SESSION WHERE PADDR=(SELECT ADDR FROM V$PROCESS WHERE SPID=&PID);
+
+Enter value for pid: 50845
+old   3: FROM V$SESSION WHERE paddr=(SELECT addr FROM V$PROCESS WHERE SPID=&PID)
+new   3: FROM V$SESSION WHERE paddr=(SELECT addr FROM V$PROCESS WHERE SPID=50845)
+
+OSUSER DBUSE   SID SERIAL# SQL_ID        STATUS   MACHINE      PORT   PROGRAM                         ACTIVE_TIME_SEC
+------ ----- ----- ------- ------------- -------- ------------ ------ ------------------------------- ---------------
+oracle SYS     373    5112 f1pbykq4q25ms ACTIVE   dbpilot.net  0      sqlplus@dbpilot.net (TNS V1-V3)              181
+and what SQL is being exected right now
+
+SET LONG 200000000
+SET LINES 300
+SET PAGES 999
+COL PARSING_SCHEMA_NAME FOR A20 
+COL SQL_FULLTEXT FOR A60
+SELECT PARSING_SCHEMA_NAME,SQL_FULLTEXT FROM V$SQL WHERE SQL_ID='&SQL_ID';
+
+Enter value for sql_id: f1pbykq4q25ms
+old   1: SELECT PARSING_SCHEMA_NAME,SQL_FULLTEXT FROM V$SQL WHERE SQL_ID='&SQL_ID'
+new   1: SELECT PARSING_SCHEMA_NAME,SQL_FULLTEXT FROM V$SQL WHERE SQL_ID='f1pbykq4q25ms'
+
+PARSING_SCHEMA_NAME  SQL_FULLTEXT
+-------------------- ------------------------------------------------------------
+SYS                  DECLARE
+                        l_result NUMBER;
+                     BEGIN
+                        FOR id IN 1..999999999
+                        LOOP
+                           l_result := (id/DBMS_RANDOM.VALUE + id*DBMS_RA
+                     NDOM.VALUE)/DBMS_RANDOM.VALUE;
+                        END LOOP;
+                     END;
+A complete SQL query to retrieve the same data
+
+COL PID FOR A5
+SELECT S.OSUSER,P.SPID PID,S.USERNAME DBUSER,S.SID,S.SERIAL#,
+       S.STATUS,S.LAST_CALL_ET ACTIVE_TIME_SEC, S.SQL_ID,
+       SQL.SQL_FULLTEXT FROM V$SESSION S, V$PROCESS P, V$SQL SQL 
+WHERE  S.PADDR=P.ADDR AND S.SQL_ID=SQL.SQL_ID AND 
+       S.SQL_CHILD_NUMBER=SQL.CHILD_NUMBER AND P.SPID='&PID';
+
+Enter value for pid: 50845
+old   3: WHERE S.PADDR=P.ADDR AND S.SQL_ID=SQL.SQL_ID AND S.SQL_CHILD_NUMBER=SQL.CHILD_NUMBER AND P.SPID='&PID'
+new   3: WHERE S.PADDR=P.ADDR AND S.SQL_ID=SQL.SQL_ID AND S.SQL_CHILD_NUMBER=SQL.CHILD_NUMBER AND P.SPID='50845'
+
+OSUSER PID   DBUSE   SID    SERIAL# STATUS   ACTIVE_TIME_SEC SQL_ID        SQL_FULLTEXT
+------ ----- ----- ----- ---------- -------- --------------- ------------- ------------------------------------------------------------
+oracle 50845 SYS     373       5112 ACTIVE               416 f1pbykq4q25ms DECLARE
+                                                                              l_result NUMBER;
+                                                                           BEGIN
+                                                                              FOR id IN 1..999999999
+                                                                              LOOP
+                                                                                 l_result := (id/DBMS_RANDOM.VALUE + id*DBMS_RA
+                                                                           NDOM.VALUE)/DBMS_RANDOM.VALUE;
+                                                                              END LOOP;
+                                                                           END;
+So, we’ve found that the top CPU consumed process 50845 is executing sql_id f1pbykq4q25ms.
+
+ 
+ 
+
+Version  : 14:46 23.01.2018
+Platform : Oracle Linux Server 7.3
+Database : Oracle database 12.2.0.1.0
