@@ -5,7 +5,7 @@ column type format a10
 column filename format a70
 column open for 9999999999999999
 column close for 9999999999999999
-select device_type "Device", type , filename
+select device_type "Device", type , filename, status, bytes/1048576 sizeMB
 , to_char(open_time, 'mm/dd/yyyy hh24:mi:ss') open
-,to_char(close_time,'mm/dd/yyyy hh24:mi:ss') close ,elapsed_time ET, effective_bytes_per_second EPS
+,to_char(close_time,'mm/dd/yyyy hh24:mi:ss') close ,elapsed_time/6000 ET[mts], effective_bytes_per_second EPS
  from v$backup_async_io;
