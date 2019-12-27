@@ -1,0 +1,59 @@
+*PRD* oracle@:/home/oracle/ibmrarojas> rman
+
+Recovery Manager: Release 10.2.0.5.0 - Production on Mon Aug 12 15:48:33 2019
+
+Copyright (c) 1982, 2007, Oracle.  All rights reserved.
+
+RMAN> @01_restore_BDBPM_ctl_20190726.rcv
+
+RMAN> connect target *
+connected to target database: BDBPM (not mounted)
+
+RMAN> connect catalog *
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rssbbdbpm02)';
+4> set until time "to_date('2019-07-26 18:53:00', 'yyyy-mm-dd hh24:mi:ss')";
+5> restore controlfile;
+6> sql "alter database mount";
+7> release channel c1;
+8> }
+allocated channel: c1
+channel c1: sid=706 devtype=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+sent command to channel: c1
+
+executing command: SET until clause
+
+Starting restore at 12-AUG-19
+
+channel c1: starting datafile backupset restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-3179311894-20190726-0a
+ORA-19870: error reading backup piece c-3179311894-20190726-0a
+ORA-19507: failed to retrieve sequential file, handle="c-3179311894-20190726-0a", parms=""
+ORA-27029: skgfrtrv: sbtrestore returned error
+ORA-19511: Error received from media manager layer, error text:
+   The function nsr_bind_recov_mm() failed with the error: Unknown host (1:5:0)
+failover to previous backup
+
+channel c1: starting datafile backupset restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-3179311894-20190726-09
+channel c1: restored backup piece 1
+piece handle=c-3179311894-20190726-09 tag=TAG20190726T180658
+channel c1: restore complete, elapsed time: 00:02:36
+output filename=+DATA/bdbpm/controlfile/current.256.1015845253
+output filename=+ARCH/bdbpm/controlfile/current.256.1015845271
+Finished restore at 12-AUG-19
+
+sql statement: alter database mount
+
+released channel: c1
+
+RMAN> **end-of-file**
+
+RMAN> exit
