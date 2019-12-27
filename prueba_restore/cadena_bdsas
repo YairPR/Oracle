@@ -1,0 +1,8 @@
+BDSAS_RESTORE =
+(DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = rsdcprstsas01)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = BDSAS)
+    )
+  )
