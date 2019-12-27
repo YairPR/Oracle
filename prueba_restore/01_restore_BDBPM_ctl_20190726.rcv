@@ -1,0 +1,10 @@
+connect target /
+connect catalog RCATBDBPM/catalogo@bdrman
+run {
+allocate channel c1 type 'SBT_TAPE';
+send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rssbbdbpm02)';
+set until time "to_date('2019-07-26 18:53:00', 'yyyy-mm-dd hh24:mi:ss')";
+restore controlfile;
+sql "alter database mount";
+release channel c1;
+}
