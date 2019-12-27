@@ -1,0 +1,61 @@
+- Si la instancia esta arriba bajarla (shut immediate)
+-Eliminar Datafiles, Redo, controlfiles
+-Validar espacio para el restore
+-Validar pfile de lo contrario crearlo
+-Confirmar con backup la fecha del ultimo backaup a restaurar.
+- startup nomount;
+- ejecutar scripts (/oracle/scripts/restore)
+
+
+Posibles errores
+
+alter database open resetlogs
+*
+ERROR at line 1:
+ORA-01092: ORACLE instance terminated. Disconnection forced
+ORA-30012: undo tablespace 'UNDOTBS1' does not exist or of wrong type
+Process ID: 15205
+Session ID: 622 Serial number: 37
+
+
+-- solución
+--edit pfile
+.undo_tablespace=
+-- iniciar
+startup mount pfile='<file_location>' (startup mount pfile='/oracle/app/product/11.2.0/dbs/initBDSAS.ora';)
+-- abrir
+alter database open
+*****************************************************************************
+******************************************************************************
+error de espacio en FRA:
+channel c1: ORA-19870: error while restoring backup piece 6cui4nqb_1_1
+ORA-19504: failed to create file "+FRA"
+ORA-17502: ksfdcre:4 Failed to create file +FRA
+ORA-15041: diskgroup "FRA" space exhausted
+
+- SOLUCION:
+para la solucion del espacio en FRA: 
+alter system set db_recovery_file_dest='+DATA'; 
+antes apuntaba al FRA que estaba lleno 
+
+******************************************************************************
+-- ERROR recover
+RMAN-00571: ===========================================================
+RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+RMAN-00571: ===========================================================
+RMAN-03002: failure of recover command at 12/26/2019 17:16:31
+RMAN-06094: datafile 1 must be restored
+
+-- ERRROR EN RECOVER
+RMAN-06094: datafile 1 must be restored este error
+eso era porque estaba poniendo la linea en el script rman pero lo quité:
+SET NEWNAME FOR DATABASE TO '+DATA'; 
+
+-Solucion:
+agregue esta linea 
+set until time "to_date('2019-11-26 07:05:00', 'yyyy-mm-dd hh24:mi:ss')";
+send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rsdpedbadm03.rimac.com.pe)';
+
+
+  
+
