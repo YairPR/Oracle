@@ -1,0 +1,24 @@
+*.audit_file_dest='/oracle/app/admin/BDSAS/adump'
+*.audit_sys_operations=TRUE
+*.audit_trail='db'
+*.compatible='11.2.0.4.0'
+*.control_files='+DATA/bdsas/controlfile/current.791.1027683819','+FRA/bdsas/controlfile/current.279.1027683823'
+*.db_block_size=8192
+*.db_create_file_dest='+DATA'
+*.db_domain=''
+*.db_name='BDSAS'
+*.db_recovery_file_dest='+FRA'
+*.db_recovery_file_dest_size=400G
+*.diagnostic_dest='/oracle/app'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=BDSASXDB)'
+*.open_cursors=500
+*.pga_aggregate_target=1932525568
+*.processes=800
+*.remote_login_passwordfile='EXCLUSIVE'
+*.sec_protocol_error_trace_action='LOG'
+*.sessions=335
+*.sga_target=5797576704
+*.undo_tablespace='UNDOTBS3'
+*.db_file_name_convert='+DATAC1/bdsas','+DATA/bdsas','+RECOC1/bdsas','+DATA/bdsas'
+*.log_file_name_convert='+DATAC1/bdsas','+DATA/bdsas','+RECOC1/bdsas','+DATA/bdsas'
+*.db_files=1024
