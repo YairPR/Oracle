@@ -44,3 +44,6 @@ https://dbachef.wordpress.com/2015/01/28/adding-new-disk-to-asm-diskgroup-on-aix
 
 --ORA-04021: TIMEOUT OCCURRED WHILE WAITING TO LOCK 
 https://aprakash.wordpress.com/2011/09/16/ora-04021-timeout-occurred-while-waiting-to-lock-object-library-cache-pin/
+
+--Which Tables are Being Used in Oracle?
+https://www.brentozar.com/archive/2015/03/tables-used-oracle/
