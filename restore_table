@@ -1,9 +1,10 @@
 -- SR RESTORE TABLE IN BDRESTORE (ORACLE 	  	172.25.109.197 	rsdcpbddyna01 	PRD 	BDDYNAP)
-
+******************************************************************************************
 Step 1:
 PROD: buscar el archivo dmp en /backup0001/dmp o verificar donde se generó
-
+******************************************************************************************
 Step 2: Pasar por scp al destino /backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
+******************************************************************************************
 Step 3: Preparar el archivo sh
 oracle/scripts/crons/shs > cat cron_C05090_SR3288218.sh
 INICIO SCRIPT
@@ -38,12 +39,11 @@ chmod 777 $LOGFILE
 -----
 FIN SCRIPT
 
-Step 4: ejecutar sh por nohup ( nohup sh nombre.sh &)
+***************************************************************************************
+=> Step 4: ejecutar sh por nohup ( nohup sh nombre.sh &)
 Validar log:
 
 oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > tail -f replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
-Mes importar 1219  
--rw-------    1 oracle   ibmsysp  8958619648 Jan 22 00:16 /oracle/backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
 === Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:20:49 PET 2020 ===
 
 Connected to: Oracle Database 11g Enterprise Edition Release 11.2.0.4.0 - 64bit Production
@@ -61,4 +61,64 @@ export client uses WE8ISO8859P1 character set (possible charset conversion)
 . . importing table     "RESERVA_RIESGO_CURSO_ERP"   37489991 rows imported
 Import terminated successfully without warnings.
 === Renombrando y Modificando la Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:29:00 PET 2020 ===
+
+Rename de tabla RESERVA_RIESGO_CURSO_ERP a RESERVA_RIESGO_CURSO_ERP_1219
+
+
+Table altered.
+
+
+Creacion de Indices a la tabla RESERVA_RIESGO_CURSO_ERP_1219
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Creacion de Sinonimo RESERVA_RIESGO_CURSO_ERP_1219
+
+
+Synonym created.
+
+
+Permisos a tabla RESERVA_RIESGO_CURSO_ERP_1219 a sus respectivos roles del esquema APP_RESTORE
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Ejecucion de Estadisticas a tabla RESERVA_RIESGO_CURSO_ERP_1219
+
+
+PL/SQL procedure successfully completed.
+
+
+Validacion de Cantidad de Registros de la tabla RESERVA_RIESGO_CURSO_ERP_1219
+
+
+  37489991
+
+  
+=== Tabla RESERVA_RIESGO_CURSO_ERP replicada en BDDYNA: Wed Jan 22 00:47:12 PET 2020 ===
+
 
