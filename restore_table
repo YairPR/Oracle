@@ -1,0 +1,64 @@
+-- SR RESTORE TABLE IN BDRESTORE (ORACLE 	  	172.25.109.197 	rsdcpbddyna01 	PRD 	BDDYNAP)
+
+Step 1:
+PROD: buscar el archivo dmp en /backup0001/dmp o verificar donde se generó
+
+Step 2: Pasar por scp al destino /backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
+Step 3: Preparar el archivo sh
+oracle/scripts/crons/shs > cat cron_C05090_SR3288218.sh
+INICIO SCRIPT
+-----
+cd /oracle/backup/dmp
+LOGDIR=/oracle/scripts/crons/logs
+#---FECHA_MES_ANT=`TZ=CST+2160 date +%m%y`
+FECHA_MES_ANT=`TZ=CST+1200 date +%m%y`
+FECHA=`date +'%Y%m%d-%H%M'`
+FECHA2=`date +'%Y%m%d'`
+LOGFILE=$LOGDIR/replica_RESERVA_RIESGO_CURSO_ERP_C05090_$FECHA.log
+ARCH_DMP=/oracle/backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
+LOG_DMP=app_res_reserva_riesgo_${FECHA_MES_ANT}_imp.log
+
+echo "LOG=$LOGFILE"
+echo "Mes importar $FECHA_MES_ANT  " >> $LOGFILE
+echo "`ls -l $ARCH_DMP" >> $LOGFILE
+echo "=== Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : `date` ===" >> $LOGFILE
+
+imp \'/ as sysdba\' file=$ARCH_DMP fromuser=ACSELX touser=APP_RESTORE tables=RESERVA_RIESGO_CURSO_ERP  log=app_res_reserva_riesgo_${FECHA_MES_ANT}_imp.log ignore=y INDEXES=n CONStraints=n  grants=n
+
+cat $LOG_DMP    >> $LOGFILE
+echo "=== Renombrando y Modificando la Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : `date` ===" >> $LOGFILE
+/oracle/scripts/crons/shs/DDLs_RESERVA_RIESGO_CURSO_ERP.sh $FECHA_MES_ANT
+sleep 60
+
+cat /oracle/backup/dmp/DDL_RESERVA_RIESGO_CURSO_ERP_$FECHA2.log >> $LOGFILE
+echo "  " >> $LOGFILE
+echo "=== Tabla RESERVA_RIESGO_CURSO_ERP replicada en BDDYNA: `date` ===" >> $LOGFILE
+echo "  " >> $LOGFILE
+chmod 777 $LOGFILE
+-----
+FIN SCRIPT
+
+Step 4: ejecutar sh por nohup ( nohup sh nombre.sh &)
+Validar log:
+
+oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > tail -f replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
+Mes importar 1219  
+-rw-------    1 oracle   ibmsysp  8958619648 Jan 22 00:16 /oracle/backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
+=== Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:20:49 PET 2020 ===
+
+Connected to: Oracle Database 11g Enterprise Edition Release 11.2.0.4.0 - 64bit Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+
+Export file created by EXPORT:V09.02.00 via conventional path
+
+Warning: the objects were exported by MANTENIMIENTO, not by you
+
+import done in US7ASCII character set and AL16UTF16 NCHAR character set
+import server uses WE8ISO8859P1 character set (possible charset conversion)
+export client uses WE8ISO8859P1 character set (possible charset conversion)
+. importing ACSELX's objects into APP_RESTORE
+. . importing table     "RESERVA_RIESGO_CURSO_ERP"   37489991 rows imported
+Import terminated successfully without warnings.
+=== Renombrando y Modificando la Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:29:00 PET 2020 ===
+
