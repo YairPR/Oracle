@@ -1,0 +1,81 @@
+[oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > cat replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
+Mes importar 1219  
+-rw-------    1 oracle   ibmsysp  8958619648 Jan 22 00:16 /oracle/backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
+=== Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:20:49 PET 2020 ===
+
+Connected to: Oracle Database 11g Enterprise Edition Release 11.2.0.4.0 - 64bit Production
+With the Partitioning, Automatic Storage Management, OLAP, Data Mining
+and Real Application Testing options
+
+Export file created by EXPORT:V09.02.00 via conventional path
+
+Warning: the objects were exported by MANTENIMIENTO, not by you
+
+import done in US7ASCII character set and AL16UTF16 NCHAR character set
+import server uses WE8ISO8859P1 character set (possible charset conversion)
+export client uses WE8ISO8859P1 character set (possible charset conversion)
+. importing ACSELX's objects into APP_RESTORE
+. . importing table     "RESERVA_RIESGO_CURSO_ERP"   37489991 rows imported
+Import terminated successfully without warnings.
+=== Renombrando y Modificando la Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:29:00 PET 2020 ===
+
+Rename de tabla RESERVA_RIESGO_CURSO_ERP a RESERVA_RIESGO_CURSO_ERP_1219
+
+
+Table altered.
+
+
+Creacion de Indices a la tabla RESERVA_RIESGO_CURSO_ERP_1219
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Creacion de Sinonimo RESERVA_RIESGO_CURSO_ERP_1219
+
+
+Synonym created.
+
+
+Permisos a tabla RESERVA_RIESGO_CURSO_ERP_1219 a sus respectivos roles del esquema APP_RESTORE
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Ejecucion de Estadisticas a tabla RESERVA_RIESGO_CURSO_ERP_1219
+
+
+PL/SQL procedure successfully completed.
+
+
+Validacion de Cantidad de Registros de la tabla RESERVA_RIESGO_CURSO_ERP_1219
+
+
+  37489991
+
+  
+=== Tabla RESERVA_RIESGO_CURSO_ERP replicada en BDDYNA: Wed Jan 22 00:47:12 PET 2020 ===
+  
+[oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > 
