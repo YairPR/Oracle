@@ -1,0 +1,99 @@
+ORA-01653
+The following two error messages are very similar. As a DBA, you'll probably meet them someday in the future. ORA-01653 is for table, ORA-01654 is for index. Essentially, they are the same thing:
+
+Error:  ORA-01653
+Text:   unable to extend table %s.%s by %s in tablespace %s
+-------------------------------------------------------------------------------
+Cause:  Failed to allocate an extent for table segment in tablespace.
+Action: Use ALTER TABLESPACE ADD DATAFILE statement to add one or more
+        files to the tablespace indicated.
+
+Error:  ORA-01654
+Text:   unable to extend index %s.%s by %s in tablespace %s
+-------------------------------------------------------------------------------
+Cause:  Failed to allocate extent for index segment in tablespace.
+Action: Use the ALTER TABLESPACE ADD DATAFILE statement to add one or more
+        files to the specified tablespace.
+
+When you are notified by ORA-01653, ORA-01654, don't rush to follow "Action" to add a datafile, because it might not need to add. These errors has the same fact that the database failed to allocate a consecutive space for the segment to use.
+
+Check Space Usage
+Let's check the related status before thinking alternatives beside adding a datafile.
+
+Check the tablespace space usage to see whether the space is really full or not.
+SQL> SELECT tablespace_name, SUM(BYTES)/1024/1024 "Free Space (MB)" FROM dba_free_space GROUP BY tablespace_name;
+
+Check the segment NEXT_EXTENT and PCT_INCREASE to see how much space of an extent will need by the segment:
+SQL> SELECT next_extent, pct_increase FROM dba_segments WHERE segment_name='TABLENAME' AND segment_type  ='TABLE' AND owner ='USER';
+
+When Tablespace is Not Full
+If the tablespace is sufficient enough for users to operate, the errors are originated by fragmented data, database cannot allocate a large enough extent for the segment to use. Then, you can try to collect pieces of space into a consecutive one like the following actions:
+
+1. Coalesce
+It's to coalesce adjacent free consecutive space to a bigger one. This is the fastest way to solve, but, there are not always have adjacent extents to coalesce. So the statement will succeed, but it may not help a lot.
+SQL> ALTER TABLESPACE TABLESPACE_NAME COALESCE;
+
+2. Purge the recycle bin
+There could be some dropped segments still occupy the space, so we check them first:
+
+SQL> SELECT * FROM dba_recyclebin WHERE ts_name='TABLESPACE_NAME';
+
+If any segment found and you are sure that they never come back, then purge them:
+
+SQL> PURGE TABLE BIN$zFFO8kJsJQDgQKjACwBunA==$0;
+
+Or purge with the same table name
+
+SQL> PURGE TABLE tablename;
+
+Or purge the whole tablespace
+
+SQL> PURGE TABLESPACE TABLESPACE_NAME;
+
+3. Defragmentation
+It's to reorganize the free space from pieces to a whole and very helpful when the tablespace still has enough space. The defragmentation may take a long time to reach a satisfying degree. In urgent situations, you should try the next option.
+
+4. Enlarge NEXT extent size
+Sometimes, 10MB or so of next extend size may not be large enough for big transactions to use of, you may need to raise the value to, e.g. 1024M (1G) for the size of AUTOEXTEND ON NEXT syntax on the data files in that tablespace. It's a mitigation strategy.
+
+When Tablespace is Nearly Full
+If the tablespace is nearly full, then try the following actions:
+
+1. Drop Unused Tables for Good
+Drop the garbage definitely: When time goes by, there're could be some garbage segments created by users on the tablespace, you can compare the segments with the production list on Configuration Management System to remove the unlisted tables out of the tablespace.
+
+SQL> DROP TABLE TABLE_NAME PURGE;
+
+2. Move Segments to Another Tablespace
+Move some segments to other tablspace: If time is limited, move the smaller segments first, then the larger segments. (This is also one of defragmentation techniques)
+
+SQL> ALTER TABLE tablename MOVE TABLESPACE another_tablespace;
+
+3. Resize Datafile
+Resizing is very convenient for a DBA to operate. For 8i DBA, add a datafile would involve more works to do on standby database, so resizing should be considered before adding.
+
+SQL> ALTER DATABASE DATAFILE '/path_to_datafile/datafilename.dbf' RESIZE 10G;
+
+4. Enable AUTOEXTEND
+If the server space is overall limited, you should put MAXSIZE to a proper value to secure the overall space.
+
+SQL> ALTER DATABASE DATAFILE '/path_to_datafile/datafilename.dbf' AUTOEXTEND ON MAXSIZE 10G;
+
+5. Add a Data File
+If the overall space has high capacity, you can go directly to this step. But sometimes adding a datafile becomes a troublesome and an error prone process if involving raw devices.
+
+SQL> ALTER TABLESPACE tablespacename ADD DATAFILE '/path_to_datafile/datafilename.dbf' SIZE 8G;
+
+However, as a DBA, you'll probably face other demanding environments in someday, to know all the solutions would be helpful.
+
+Further reading: How Big a Data File Can Be?
+
+Considerations about Adding Data Files
+Some considerations about adding a datafile and resizeing:
+
+If there is any standby database, make sure there is enough space at the same path on standby database before adding a datafile.
+As I mentioned above, for 8i, after adding a datafile, a DBA have extra works to do, he should create a new standby controlfile for standby database and copy the new datafile to the right path on standby server. Then, mount the standby database with the new standby controlfile.
+If the raw devices are under datafiles directly, you should make symbolic links carefully to point to available raw devices both on primary and standby server on OS-level before adding a datafile on database-level, if any symbolic link is missing or two symbolic links point to one raw device, someone will be in trouble.
+Resizing a datafile may not be an ideal solution when it links to a raw device, it depends on the room between the raw device size and the datafile definition. In real world, we usually define the size of a datafile with a little less than the size of the raw device, so there is no room to resize.
+Conclusion
+My suggestion is to distinguish the scenario first, then take the proper actions subsequently.
