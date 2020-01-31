@@ -55,3 +55,26 @@ Profile altered.
  
 Now try to connect with the user.
 
+-==============================================000
+OTHER SOLUTION
+
+The Oracle Alert Log will be reporting similar ORA-02391 errors.
+Attempting to connect to the Oracle Database as the user specified in the dbconflg.xml file, may not be permitted with the same error. 
+Connecting to the JIRA as a DBA user and running the following will show a large number of connections to the database by the JIRA USER:
+
+SELECT count(*) as connections, 
+       username 
+FROM   v$session 
+GROUP  BY username 
+ORDER  BY username; 
+Checking the Limits for the affected user shows the user is approaching the maximum connection limit (replace <JIRA_DATABASE_USER> with the username in your dbconfig.xml file:
+
+SELECT DISTINCT username, 
+                profile, 
+                resource_name, 
+                limit
+FROM   dba_profiles 
+       NATURAL JOIN dba_users 
+WHERE  resource_name = 'SESSIONS_PER_USER' 
+       AND username = '<JIRA_DATABASE_USER>'; 
+
