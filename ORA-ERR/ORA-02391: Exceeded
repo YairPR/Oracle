@@ -1,0 +1,57 @@
+https://dbaclass.com/article/ora-02391-exceeded-simultaneous-sessions_per_user-limit/
+ORA-02391: Exceeded Simultaneous SESSIONS_PER_USER Limit
+
+PROBLEM:
+While connecting to the database, getting error:
+
+SQL> connect test9/test9
+ERROR:
+ORA-02391: exceeded simultaneous SESSIONS_PER_USER limit
+
+SOLUTION:
+1. Check how many sessions were already existed for that user:
+
+SELECT count(*) as connections,username FROM v$session where username=’&USER_NAME’ GROUP BY username;
+
+ 
+SQL> SELECT count(*) as connections,username   FROM   v$session where username='&USER_NAME' GROUP  BY username;
+Enter value for user_name: TEST9
+old   1: SELECT count(*) as connections,username   FROM   v$session where username='&USER_NAME' GROUP  BY username
+new   1: SELECT count(*) as connections,username   FROM   v$session where username='TEST9' GROUP  BY username
+ 
+CONNECTIONS USERN
+----------- -----
+          2 TEST9
+ 
+TEST9 user has currently 2 sessions.
+
+2. Check the value of SESSIONS_PER_USER for this user
+
+col username for a12
+col profile for a19
+col limit for a12
+set lines 299
+select a.username,b.PROFILE,b.RESOURCE_NAME,b.limit from dba_users a , dba_profiles b where a.profile=b.profile and b.RESOURCE_NAME=’SESSIONS_PER_USER’ and a.username=’&USER_NAME’;
+ 
+Enter value for user_name: TEST9
+old   1: select a.username,b.PROFILE,b.RESOURCE_NAME,b.limit from dba_users a , dba_profiles b where a.profile=b.profile and b.RESOURCE_NAME='SESSIONS_PER_USER' and a.username='&USER_NAME'
+new   1: select a.username,b.PROFILE,b.RESOURCE_NAME,b.limit from dba_users a , dba_profiles b where a.profile=b.profile and b.RESOURCE_NAME='SESSIONS_PER_USER' and a.username='TEST9'
+ 
+USERNAME     PROFILE             RESOURCE_NAME                    LIMIT
+------------ ------------------- -------------------------------- ------------
+TEST9        TEST                SESSIONS_PER_USER                2
+ 
+We can see, the sessions_per_user allowed for this users in 2. To fix this user, increase the limit for SESSIONS_PER_USER in the profile.
+
+Here the profile for the user is TEST
+
+3. Alter the profile with higher SESSIONS_PER_USER value.
+
+ 
+ 
+SQL> ALTER PROFILE TEST LIMIT SESSIONS_PER_USER 10;
+ 
+Profile altered.
+ 
+Now try to connect with the user.
+
