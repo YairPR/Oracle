@@ -1,0 +1,3 @@
+
+#How to list the most biggest directory on AIX
+du -sk ./* | sort -rn | head -5
