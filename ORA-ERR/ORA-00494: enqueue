@@ -1,0 +1,83 @@
+ORA-00494: enqueue [CF] held for too long (more than 900 seconds)
+Leave a reply
+ORA-00494: enqueue [CF] held for too long (more than 900 seconds) by ‘inst 1, osid 4460’
+Error:
+Following error causing the Oracle instance to crash. Tried some solution on it.
+
+Errors in file E:\ORACLE\diag\rdbms\icfisc\icfisc\trace\icfisc_arc2_4388.trc (incident=482225):
+ORA-00494: enqueue [CF] held for too long (more than 900 seconds) by 'inst 1, osid 4460'
+Incident details in: E:\ORACLE\diag\rdbms\icfisc\icfisc\incident\incdir_482225\icfisc_arc2_4388_i482225.trc
+2019-02-03T20:24:43.252616-06:00
+Killing enqueue blocker (pid=4460) on resource CF-00000000-00000000-00000000-00000000 by (pid=4388) by killing session 190.32607
+KILL SESSION for sid=(190, 32607):
+Reason = RAC enqueue blocker]
+2019-02-03T20:24:43.721432-06:00
+Mode = KILL SOFT -/-/-
+Requestor = ARC2 (orapid = 38, ospid = 4388, inst = 1)
+Owner = Process: LGWR (orapid = 17, ospid = 4460)
+Result = ORA-29
+Killing enqueue blocker (pid=4460) on resource CF-00000000-00000000-00000000-00000000 by (pid=4388)
+by terminating the process
+2019-02-03T20:32:10.146244-06:00
+Errors in file E:\ORACLE\diag\rdbms\icfisc\icfisc\trace\icfisc_vkrm_4784.trc:
+ORA-27300:OS system dependent operation:WaitForSingleObject failed with status:0
+ORA-27301: OS failure message: The operation completed successfully.
+ORA-27302: failure occurred at: sssxcpttcs5
+2019-02-03T20:34:39.313336-06:00
+Errors in file E:\ORACLE\diag\rdbms\icfisc\icfisc\trace\icfisc_pman_4616.trc:
+
+Cause
+Caused for error is the process did not release the enqueue within the maximum allowed time. General cause of ORA-00494 error is during periods of high utilization of system resources that instance becomes unresponsive due to overloaded disk I/O, CPU or RAM.
+
+When any process holds the CF enqueue for long time, the other processes which need to perform the Controlfile transaction will be waiting to acquire the enqueue. Holding the enqueue for very long time can lead to database hang. Hence there is a timeout set for holding the controlfile enqueue. The timeout is 900 secs (15 min). If the process exceeds this timeout, then the holder process is killed by killing the session of holding process. The waiting process normally kills the holding process which exceeds the timeout. Then the error is logged in the alert log.
+
+Solution
+Following hidden parameters may be help in this situation:
+
+Check value of hidden parameters before changing it:
+
+COLUMN ksppinm FORMAT A35
+COLUMN ksppstvl FORMAT A10
+SELECT ksppinm,ksppstvl
+FROM x$ksppi a, x$ksppsv b
+WHERE a.indx=b.indx
+AND ksppinm in ('_kill_controlfile_enqueue_blocker','_kill_enqueue_blocker','_controlfile_enqueue_timeout') ORDER BY ksppinm;
+
+
+REPORT THIS AD
+
+REPORT THIS AD
+
+_kill_controlfile_enqueue_blocker = { TRUE | FALSE }
+Workaround: Disable the parameter
+
+alter system set "_kill_controlfile_enqueue_blocker"=false;
+
+Note:
+TRUE: Enables this mechanism and kills blocker process in CF enqueue.(Default value).
+FALSE: Disables this mechanism and no blocker process in CF enqueue will be killed.
+
+_kill_enqueue_blocker = { 0 | 1 | 2 | 3 }
+Workaround: Set 1 value for this parameter
+
+alter system set "_kill_enqueue_blocker"=1 scope=spfile;
+
+0. Disables this mechanism and no foreground or background blocker process in enqueue will be killed.
+1. Enables this mechanism and only kills foreground blocker process in enqueue while background process is not affected.
+2. Enables this mechanism and only kills background blocker process in enqueue.
+3. Enables this mechanism and kills blocker processes in enqueue.
+Note: you can set the following init.ora parameter to 1 (Default value is 3 for 10g and 2 for 11g databases)
+
+_controlfile_enqueue_timeout = { INTEGER }
+Workaround: Increase value
+
+ALTER SYSTEM SET "_controlfile_enqueue_timeout"=1800;
+
+Note:
+900. Default value.
+1800. Optimum value to prevent enqueue timeout.
+
+Rest or remove these parameter:
+
+alter system reset "_kill_controlfile_enqueue_blocker";
+alter system reset "_kill_enqueue_blocker";
