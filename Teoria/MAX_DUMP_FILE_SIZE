@@ -1,0 +1,66 @@
+Max_Dump_File_Size - Oracle Parameter
+Tkprof is one of the most useful utilities available to DBAs for diagnosing performance issues. To activate Tkprof, we need set parameter sql_trace=true that create .trc file.
+MAX_DUMP_FILE_SIZE specifies the maximum size of trace files (excluding the alert file). Change this limit if you are concerned that trace files may use too much space.
+A numerical value for MAX_DUMP_FILE_SIZE specifies the maximum size in operating system blocks.
+A number followed by a K or M suffix specifies the file size in kilobytes or megabytes.
+The special value string UNLIMITED means that there is no upper limit on trace file size. Thus, dump files can be as large as the operating system permits.
+How to determine OS block size for windows or unix
+In many times you probably have heard about set the oracle db block size as a multiple of the OS block size. But whenever you ask how I can determine or find OS block size for windows or Unix then many one get stopped. In fact this question is OS related. In this post I will show how I can get OS block.
+
+1)UNIX or Linux System.
+On my Solaris Machine,
+SQL> !perl -e '$a=(stat ".")[11]; print $a'
+8192
+On my debian Linux,
+$ perl -e '$a=(stat ".")[11]; print $a'
+4096
+
+On my Solaris Machine another way,
+SQL> !df -g /oracle
+/oracle (/dev/dsk/c1d0s3 ): 8192 block size 1024 frag size
+Where /oracle is disk partition.
+
+Another example,
+SQL> !df -g | grep 'block size'
+/ (/dev/dsk/c1d0s0 ): 8192 block size 1024 frag size
+/devices (/devices ): 512 block size 512 frag size
+/system/contract (ctfs ): 512 block size 512 frag size
+/proc (proc ): 512 block size 512 frag size
+/etc/mnttab (mnttab ): 512 block size 512 frag size
+/etc/svc/volatile (swap ): 4096 block size 4096 frag size
+/system/object (objfs ): 512 block size 512 frag size
+/lib/libc.so.1 (/usr/lib/libc/libc_hwcap1.so.1): 8192 block size 1024 frag size
+/dev/fd (fd ): 1024 block size 1024 frag size
+/tmp (swap ): 4096 block size 4096 frag size
+/var/run (swap ): 4096 block size 4096 frag size
+/oradata1 (/dev/dsk/c1d0s4 ): 8192 block size 1024 frag size
+/oracle (/dev/dsk/c1d0s3 ): 8192 block size 1024 frag size
+/oradata2 (/dev/dsk/c1d0s5 ): 8192 block size 1024 frag size
+/export/home (/dev/dsk/c1d0s7 ): 8192 block size 1024 frag size
+
+2)Windows Machine.
+If you use ntfs file system you can use
+fsutil fsinfo ntfsinfo drivename: to get information of block size.
+
+c:\>fsutil fsinfo ntfsinfo f:
+NTFS Volume Serial Number : 0x1e345b64345b3e49
+Version : 3.1
+Number Sectors : 0x0000000004a852c0
+Total Clusters : 0x0000000000950a58
+Free Clusters : 0x00000000003ae433
+Total Reserved : 0x0000000000000000
+Bytes Per Sector : 512 
+Bytes Per Cluster : 4096 -- This is OS block size.
+Bytes Per FileRecord Segment : 1024
+Clusters Per FileRecord Segment : 0
+Mft Valid Data Length : 0x000000000d72a000
+Mft Start Lcn : 0x00000000000c0000
+Mft2 Start Lcn : 0x00000000004a812c
+Mft Zone Start : 0x0000000000800720
+Mft Zone End : 0x000000000083b920
+
+To get All possible size on windows machine use,
+c:\ format /?
+In the /A:size you will get the all possible size for both FAT and NTFS file system. Whenever you format a drive you can select default allocation unit as block size.
+
+3)On HPUX issue like "vgdisplay -v /dev/vg01/lvol"
