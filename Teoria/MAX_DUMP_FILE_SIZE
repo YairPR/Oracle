@@ -1,4 +1,5 @@
 http://www.juliandyke.com/Diagnostics/Trace/EnablingTrace.php
+https://dbaclass.com/article/tracing-sessions-in-oracle/
 
 Max_Dump_File_Size - Oracle Parameter
 Tkprof is one of the most useful utilities available to DBAs for diagnosing performance issues. To activate Tkprof, we need set parameter sql_trace=true that create .trc file.
