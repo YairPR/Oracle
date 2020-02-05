@@ -1,0 +1,33 @@
+RMAN command deleting archivelog files issues a warning instead of deleting the archivelog file:
+
+RMAN-08137: WARNING: archive log not deleted as it is still needed
+archive log filename=/<path>/1_3740_580667843.dbf thread=1 sequence=3740
+
+In newer versions, the error may be:
+RMAN-08120:WARNING: archived log not deleted, not yet applied by standby
+
+The following query of v$archived_log in the primary, you show at least one archivelog with APPLIED=NO:
+
+alter session set nls_date_format='dd-mon-rr hh24:mi:ss';
+select recid, dest_id, thread#, sequence#, first_time, completion_time, creator, registrar, 
+archived, applied, deleted, status from v$archived_log where standby_dest='YES' and status='A';
+
+
+SOLUTION
+The solution to this warning is to ensure that all archivelog files are applied to the standby database.  
+
+Check that the standby database is up to date.  I.e., is not behind the primary database.  If it is not, restart managed recovery and resolve any gaps.  Then query the primary's v$archived_log view again for any log sequences which still has applied='NO'.  
+
+If you still have logs with applied='NO' and you are certain that these logs has been applied to the standby and thus there is no 'gap', you can delete these archives in one of two ways:
+
+1.  Using RMAN 'force' option with the last sequence applied to the standby.  I.e.: 
+
+RMAN> delete force archivelog until sequence <last sequence number applied to standby>;
+2.  Manually delete the physical archivelog files.  This is not recommended, but if mandatory, be sure that the archivelog files you are deleting have been backed up.  Once the delete is complete, you must run crosscheck 
+within RMAN followed by a delete expired to remove RMAN's metadata.  I.e.:  
+
+ 
+
+RMAN> crosscheck archivelog all;
+RMAN> delete noprompt expired archivelog all;
+
