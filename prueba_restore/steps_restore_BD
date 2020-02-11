@@ -1,4 +1,5 @@
-- Si la instancia esta arriba bajarla (shut immediate)
+-(Server Restore)
+-Si la instancia esta arriba bajarla (shut immediate)
 -Eliminar Datafiles, Redo, controlfiles
 -Validar espacio para el restore
 -Validar pfile de lo contrario crearlo
