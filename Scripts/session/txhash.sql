@@ -1,6 +1,5 @@
 --- sql text por hash
 
-
 accept addr prompt 'Hash do Comando => ';
 def hash=&&1
 col hv		noprint
