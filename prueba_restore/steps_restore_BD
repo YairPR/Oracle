@@ -57,6 +57,80 @@ agregue esta linea
 set until time "to_date('2019-11-26 07:05:00', 'yyyy-mm-dd hh24:mi:ss')";
 send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rsdpedbadm03.rimac.com.pe)';
 
+==========================================================================================
+Error ORA-01666: control file is for a standby database
+==============================================================0
+
+
+SQL> !date
+Wed Feb 12 16:25:21 PET 2020
+
+SQL> set time on
+16:25:30 SQL> select open_mode from v$database;
+
+OPEN_MODE
+--------------------
+MOUNTED
+
+16:25:38 SQL> alter database open resetlogs;
+alter database open resetlogs
+*
+ERROR at line 1:
+ORA-01666: control file is for a standby database
+
+
+16:25:45 SQL> select name,open_mode ,database_role from v$database;
+
+NAME      OPEN_MODE            DATABASE_ROLE
+--------- -------------------- ----------------
+BDWSS     MOUNTED              PHYSICAL STANDBY
+
+16:26:47 SQL>  ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+
+Database altered.
+
+16:27:12 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+Database altered.
+
+16:27:22 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE FINISH;
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE FINISH
+*
+ERROR at line 1:
+ORA-00283: recovery session canceled due to errors
+ORA-16436: ALTER DATABASE ... RECOVER FINISH could not start
+
+
+16:27:42 SQL> 16:27:42 SQL>  ALTER DATABASE ACTIVATE STANDBY DATABASE;
+
+Database altered.
+
+16:27:58 SQL> select name,open_mode ,database_role from v$database;
+
+NAME      OPEN_MODE            DATABASE_ROLE
+--------- -------------------- ----------------
+BDWSS     MOUNTED              PRIMARY
+
+16:28:05 SQL> alter database open resetlogs;
+alter database open resetlogs
+*
+ERROR at line 1:
+ORA-01139: RESETLOGS option only valid after an incomplete database recovery
+
+
+16:28:29 SQL> alter database open;
+
+Database altered.
+
+16:28:45 SQL>  select name,open_mode ,database_role from v$database;
+
+NAME      OPEN_MODE            DATABASE_ROLE
+--------- -------------------- ----------------
+BDWSS     READ WRITE           PRIMARY
+
+
+
 
   
 
