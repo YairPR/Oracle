@@ -7,6 +7,7 @@ FROM
    v$process p, 
    v$session s
 WHERE  paddr(+)=addr
+and s.username <> ' '
 GROUP BY  s.status, s.username
 ORDER BY 2 desc;
 
