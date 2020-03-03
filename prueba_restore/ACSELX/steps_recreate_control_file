@@ -1,0 +1,129 @@
+Caso: Richi
+How to Recreate a Controlfile (Doc ID 735106.1)
+Restore y recover de la bd al 21 de julio sin el. Tablespace donde se agregó el. Datafile(data_prod_trans_big).
+-restore de datafiles del tablespace data_prod_trans_big sin considerar el. Datafile agregado a esa hora dl. Backup (529)
+-quitar de la meta data el Datafile 529 offline drop
+-recrear el controlfile sin el Datafile 529
+-aplicar recover database al 21 de julio sin conectarse al. Catalogo
+- debido a un error conocido en el paso anterior se realizó un alter al Datafile  file 529 para recrear y renombrar el Archivo fisico
+- aplicar Nuevamente el Recover database
+
+1. alter database backup controlfile to trace;
+2.
+set lines 200 pages 20000
+col file_name for a70
+alter session set nls_date_format = 'yyyy-mm-dd hh24:mi:ss';
+select file#, name file_name, CREATION_TIME
+from v$datafile
+where CREATION_TIME > to_date('2019-08-24 22:40:00', 'yyyy-mm-dd hh24:mi:ss')
+;
+
+     FILE# FILE_NAME                                                              CREATION_TIME
+---------- ---------------------------------------------------------------------- -------------------
+       706 /oracle002/oradata/PROD/data/tbsd_normal_nor_025.dbf                   2019-08-27 19:52:50
+       707 /oracle006/oradata/PROD/indx/indx_prod_trans_big_091.dbf               2019-08-28 09:02:16
+       708 /oracle006/oradata/PROD/data/data_prod_trans_med_015.dbf               2019-08-28 16:34:47
+       709 /oracle006/oradata/PROD/data/data_prod_trans_med_053.dbf               2019-08-28 16:52:47
+       710 /oracle006/oradata/PROD/data/data_prod_trans_med_054.dbf               2019-08-28 16:53:57
+       711 /oracle006/oradata/PROD/data/data_prod_trans_med_016.dbf               2019-08-28 16:55:08
+       712 /oracle006/oradata/PROD/indx/indx_prod_trans_big_097.dbf               2019-08-28 17:01:14
+       713 /oracle001/oradata/PROD/indx/indx_prod_trans_med_042.dbf               2019-09-02 09:51:46
+       714 /oracle005/oradata/PROD/indx/indx_prod_trans_med_043.dbf               2019-09-05 17:09:37
+       715 /oracle005/oradata/PROD/indx/tbsi_prod_sma_016.dbf                     2019-09-05 17:31:07
+       716 /oracle005/oradata/PROD/data/tbsd_normal_nor_026.dbf                   2019-09-05 17:33:52
+       717 /oracle005/oradata/PROD/data/data_prod_tools_002.dbf                   2019-09-05 17:37:33
+       718 /oracle005/oradata/PROD/data/data_prod_trans_big_038.dbf               2019-09-05 17:41:02
+       719 /oracle005/oradata/PROD/data/tbsd_prod_med_013.dbf                     2019-09-05 17:43:52
+       720 /oracle005/oradata/PROD/data/tbsd_prod_sma_014.dbf                     2019-09-05 17:47:40
+       721 /oracle006/oradata/PROD/data/tbsd_eventual_nor_020.dbf                 2019-09-05 17:51:30
+       722 /oracle006/oradata/PROD/data/tbsd_eventual_tmp_007.dbf                 2019-09-05 17:57:55
+       723 /oracle006/oradata/PROD/indx/tbsi_others_sma_003.dbf                   2019-09-05 18:14:18
+       724 /oracle006/oradata/PROD/data/data_prod_notrans_med_009.dbf             2019-09-05 18:19:35
+       725 /oracle006/oradata/PROD/data/tbsd_norma_tmp_016.dbf                    2019-09-05 18:22:23
+       726 /oracle005/oradata/PROD/data/tbsd_web_med_008.dbf                      2019-09-05 18:25:23
+       727 /oracle006/oradata/PROD/data/tbsd_web_sma_007.dbf                      2019-09-05 18:27:23
+       728 /oracle006/oradata/PROD/data/tbsd_criti_big_005.dbf                    2019-09-06 11:44:56
+       729 /oracle006/oradata/PROD/data/data_prod_trans_par03_002.dbf             2019-09-06 12:14:45
+       730 /oracle005/oradata/PROD/data/data_prod_ssd_big_021.dbf                 2019-09-16 14:29:15
+
+3. Actualizar archivo trace controlfile;
+STARTUP NOMOUNT
+CREATE CONTROLFILE REUSE DATABASE "PROD" RESETLOGS FORCE LOGGING ARCHIVELOG
+
+alter database open; -- resetlogs (si es necesario).
+
+4.
+SELECT PROPERTY_VALUE
+FROM DATABASE_PROPERTIES
+WHERE PROPERTY_NAME = 'DEFAULT_TEMP_TABLESPACE';
+
+CREATE TEMPORARY TABLESPACE temp01 tempfile '/oracle001/oradata/PROD/temp/temp01_01.dbf' size 1024m;
+
+ALTER DATABASE DEFAULT TEMPORARY TABLESPACE temp01;
+drop tablespace temp;
+
+4. Usuario validacion:
+create user  u_rimac identified by acx_Rim;
+grant connect to u_rimac;
+grant select any table to u_rimac;
+
+========================================================================================================
+
+Caso: YPR:
+
+1. alter database backup controlfile to trace; (En el servidor de restore)
+2. Se eliminó los datafiles que se crearon despues de 25 de Enero 2020
+set lines 200 pages 20000
+col file_name for a70
+alter session set nls_date_format = 'yyyy-mm-dd hh24:mi:ss';
+select file#, name file_name, CREATION_TIME
+from v$datafile
+where CREATION_TIME > to_date('2020-01-25 06:00:00', 'yyyy-mm-dd hh24:mi:ss');
+
+3.- Se recrearon los grupos de redologs antiguos ya que en la ultima semana de Enero se agregaron nuevos FileSystem y se movieron los grupos de 
+redos y datafiles de UNDO a otra ubicacion: /oraredo001 y /oraundo0001.
+
+THREAD# GROUP# MEMBER TAMANO STATUS
+---------- ---------- ------------------------------------------------------------ ---------- ----------------
+1 1 /oracle003/oradata/PROD/redo/redoG01_01.log 1280 INACTIVE
+1 1 /oracle004/oradata/PROD/redo/redoG01_02.log 1280 INACTIVE
+1 2 /oracle003/oradata/PROD/redo/redoG02_01.log 1280 INACTIVE
+1 2 /oracle002/oradata/PROD/redo/redoG02_02.log 1280 INACTIVE
+1 3 /oracle003/oradata/PROD/redo/redoG03_01.log 1280 CURRENT
+1 3 /oracle004/oradata/PROD/redo/redoG03_02.log 1280 CURRENT
+1 4 /oracle003/oradata/PROD/redo/redoG04_01.log 1280 INACTIVE
+1 4 /oracle004/oradata/PROD/redo/redoG04_02.log 1280 INACTIVE
+1 5 /oracle003/oradata/PROD/redo/redoG05_01.log 1280 INACTIVE
+1 5 /oracle002/oradata/PROD/redo/redoG05_02.log 1280 INACTIVE
+1 6 /oracle004/oradata/PROD/redo/redoG06_01.log 1280 INACTIVE
+1 6 /oracle003/oradata/PROD/redo/redoG06_02.log 1280 INACTIVE
+1 7 /oracle002/oradata/PROD/redo/redoG07_01.log 1280 INACTIVE
+1 7 /oracle004/oradata/PROD/redo/redoG07_02.log 1280 INACTIVE
+1 8 /oracle002/oradata/PROD/redo/redoG08_01.log 1280 INACTIVE
+1 8 /oracle004/oradata/PROD/redo/redoG08_02.log 1280 INACTIVE
+
+Se recreo los grupos en la ubicción antigua y se boro el grupo 6 del controlfile 
+ya que estaba en estado CURRENT y no se podia realizar switch.
+
+4. Si faltan datafiles restaurarlos (resotore_df.sql)
+
+5. recrear control file (recreatecontrol.sql)
+6. realizar nuevamente el resto (6_restore_bd.sh)
+  6.1: validar espacio para los archives en /backup, en este caso se modificó el parametro
+  db_recovery_file_dest_1 en /migracion/archive ya que contba con 3TB.
+ 
+7. Validar a que fecha van restaurando los datafiles (/Oracle/sctips/RMAN/valida_df.sql)
+   513 /oracle001/oradata/PROD/undo/tbs_undo_001.dbf                                                        TBS_UNDO                  RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   514 /oracle001/oradata/PROD/indx/indx_prod_trans_par02_001.dbf                                           INDX_PROD_TRANS_PAR02     RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   515 /oracle001/oradata/PROD/data/tbsd_others_med_001.dbf                                                 TBSD_OTHERS_MED           RECOVER                      7126377709494 25-JAN-2020 22:15:36
+   516 /oracle001/oradata/PROD/data/tbsd_others_med_002.dbf                                                 TBSD_OTHERS_MED           RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   517 /oracle001/oradata/PROD/data/tbsd_others_med_003.dbf                                                 TBSD_OTHERS_MED           RECOVER                      7126379502021 25-JAN-2020 22:21:32
+   518 /oracle001/oradata/PROD/data/tbsd_others_med_004.dbf                                                 TBSD_OTHERS_MED           RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   519 /oracle001/oradata/PROD/data/tbsd_others_med_005.dbf                                                 TBSD_OTHERS_MED           RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   520 /oracle001/oradata/PROD/data/tbsd_others_big_002.dbf                                                 TBSD_OTHERS_BIG           RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   521 /oracle001/oradata/PROD/data/tbsd_others_big_003.dbf                                                 TBSD_OTHERS_BIG           RECOVER                      7126518018480 26-JAN-2020 05:17:05
+   522 /oracle001/oradata/PROD/data/tbsd_others_big_004.dbf                                                 TBSD_OTHERS_BIG           RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   523 /oracle002/oradata/PROD/indx/indx_prod_trans_par03_001.dbf                                           INDX_PROD_TRANS_PAR03     RECOVER                      7126501425661 26-JAN-2020 04:11:06
+   524 /oracle001/oradata/PROD/data/tbsd_prod_sma_002.dbf                                                   TBSD_PROD_SMA             RECOVER                      7126357990905 25-JAN-2020 21:13:00
+   525 /oracle001/oradata/PROD/data/tbsd_normal_nor_002.dbf                                                 TBSD_NORMAL_NOR           RECOVER                      7126371384909 25-JAN-2020 21:57:48
+   526 /oracle003/oradata/PROD/indx/indx_prod_trans_big_071.dbf                                             INDX_PROD_TRANS_BIG       RECOVER                      7126357990905 25-JAN-2020 21:13:00
