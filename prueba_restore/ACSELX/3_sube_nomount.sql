@@ -1,0 +1,2 @@
+startup nomount;
+exit;
