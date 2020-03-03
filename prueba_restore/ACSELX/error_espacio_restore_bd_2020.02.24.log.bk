@@ -1,0 +1,2593 @@
+Recovery Manager: Release 9.2.0.8.0 - 64bit Production
+
+Copyright (c) 1995, 2002, Oracle Corporation.  All rights reserved.
+
+connected to target database: PROD (DBID=4210056700)
+connected to recovery catalog database
+
+RMAN> run
+2> {
+3> allocate channel c1 type 'SBT_TAPE';
+4> allocate channel c2 type 'SBT_TAPE';
+5> allocate channel c3 type 'SBT_TAPE';
+6> allocate channel c4 type 'SBT_TAPE';
+7> allocate channel c5 type 'SBT_TAPE';
+8> allocate channel c6 type 'SBT_TAPE';
+9> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=minerva.rimac.com.pe)';
+10> set until time "to_date('2020-01-26 06:00:00', 'yyyy-mm-dd hh24:mi:ss')";
+11> restore database;
+12> recover database;
+13> }
+14> exit;
+allocated channel: c1
+channel c1: sid=11 devtype=SBT_TAPE
+channel c1: NMO v5.0.0.0
+
+allocated channel: c2
+channel c2: sid=16 devtype=SBT_TAPE
+channel c2: NMO v5.0.0.0
+
+allocated channel: c3
+channel c3: sid=18 devtype=SBT_TAPE
+channel c3: NMO v5.0.0.0
+
+allocated channel: c4
+channel c4: sid=20 devtype=SBT_TAPE
+channel c4: NMO v5.0.0.0
+
+allocated channel: c5
+channel c5: sid=22 devtype=SBT_TAPE
+channel c5: NMO v5.0.0.0
+
+allocated channel: c6
+channel c6: sid=24 devtype=SBT_TAPE
+channel c6: NMO v5.0.0.0
+
+sent command to channel: c1
+sent command to channel: c2
+sent command to channel: c3
+sent command to channel: c4
+sent command to channel: c5
+sent command to channel: c6
+
+executing command: SET until clause
+
+Starting restore at 24-FEB-20
+
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00010 to /oracle004/oradata/PROD/indx/indx_prod_notrans_med_006.dbf
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00514 to /oracle001/oradata/PROD/indx/indx_prod_trans_par02_001.dbf
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00168 to /oracle001/oradata/PROD/data/data_prod_notrans_big_006.dbf
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00081 to /oracle005/oradata/PROD/data/data_prod_ssd_big_001.dbf
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00295 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_045.dbf
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00192 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_015.dbf
+channel c2: restored backup piece 1
+piece handle=fjumadp0_1_1 tag=TAG20200118T020427 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00212 to /oracle004/oradata/PROD/indx/indx_prod_notrans_med_017.dbf
+channel c6: restored backup piece 1
+piece handle=frumafub_1_1 tag=TAG20200118T020427 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00226 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_019.dbf
+channel c1: restored backup piece 1
+piece handle=fmumadrq_1_1 tag=TAG20200118T020427 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00313 to /oracle004/oradata/PROD/indx/indx_prod_notrans_med_020.dbf
+restoring datafile 00597 to /oracle003/oradata/PROD/data/tbsd_criti_big_001.dbf
+channel c3: restored backup piece 1
+piece handle=fnumaeb9_1_1 tag=TAG20200118T020427 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00720 to /oracle005/oradata/PROD/data/tbsd_prod_sma_014.dbf
+channel c6: restored backup piece 1
+piece handle=ftumagh4_1_1 tag=TAG20200118T020427 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00141 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_021.dbf
+restoring datafile 00754 to /oracle004/oradata/PROD/data/tbsd_audit_049.dbf
+channel c4: restored backup piece 1
+piece handle=foumaf47_1_1 tag=TAG20200118T020427 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00707 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_091.dbf
+channel c1: restored backup piece 1
+piece handle=fuumaha0_1_1 tag=TAG20200118T020427 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00156 to /oracle002/oradata/PROD/indx/indx_prod_notrans_med_009.dbf
+restoring datafile 00175 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_29.dbf
+channel c4: restored backup piece 1
+piece handle=g7umak9u_1_1 tag=TAG20200118T020427 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00220 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_020.dbf
+restoring datafile 00647 to /oracle003/oradata/PROD/data/tbsd_audit_038.dbf
+channel c3: restored backup piece 1
+piece handle=fvumahrm_1_1 tag=TAG20200118T020427 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00205 to /oracle003/oradata/PROD/data/tbsd_mcritico_nor_009.dbf
+restoring datafile 00398 to /oracle004/oradata/PROD/data/tbsd_web_big_004.dbf
+channel c5: restored backup piece 1
+piece handle=fqumafs0_1_1 tag=TAG20200118T020427 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00242 to /oracle004/oradata/PROD/data/data_prod_trans_big_013.dbf
+restoring datafile 00672 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_081.dbf
+channel c2: restored backup piece 1
+piece handle=fsumafuq_1_1 tag=TAG20200118T020427 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00746 to /oracle006/oradata/PROD/indx/indx_prod_trans_par01_003.dbf
+channel c5: restored backup piece 1
+piece handle=ghumamh8_1_1 tag=TAG20200118T020427 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00108 to /oracle005/oradata/PROD/data/data_prod_ssd_med_001.dbf
+restoring datafile 00276 to /oracle004/oradata/PROD/data/tbsd_others_big_016.dbf
+restoring datafile 00375 to /oracle002/oradata/PROD/data/tbsd_web_big_001.dbf
+channel c1: restored backup piece 1
+piece handle=geumalg5_1_1 tag=TAG20200118T020427 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00017 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_003.dbf
+restoring datafile 00025 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_015.dbf
+restoring datafile 00259 to /oracle001/oradata/PROD/data/tbsd_web_big_006.dbf
+restoring datafile 00742 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_055.dbf
+channel c5: restored backup piece 1
+piece handle=gkumanfa_1_1 tag=TAG20200118T020427 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00007 to /oracle004/oradata/PROD/data/data_prod_trans_med_004.dbf
+restoring datafile 00061 to /oracle002/oradata/PROD/data/tbsd_normal_nor_009.dbf
+restoring datafile 00379 to /oracle002/oradata/PROD/data/tbsd_others_med_006.dbf
+restoring datafile 00788 to /oracle004/oradata/PROD/data/data_prod_trans_big_049.dbf
+channel c6: restored backup piece 1
+piece handle=g6umak5k_1_1 tag=TAG20200118T020427 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00004 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_010.dbf
+restoring datafile 00337 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_023.dbf
+restoring datafile 00608 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_005.dbf
+restoring datafile 00787 to /oracle004/oradata/PROD/data/data_prod_trans_big_050.dbf
+channel c1: restored backup piece 1
+piece handle=tgumr5ma_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00009 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_006.dbf
+restoring datafile 00018 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_011.dbf
+restoring datafile 00263 to /oracle003/oradata/PROD/indx/tbsi_web_med_002.dbf
+restoring datafile 00635 to /oracle004/oradata/PROD/undo/tbs_undo_009.dbf
+channel c5: restored backup piece 1
+piece handle=tcumr5m9_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00016 to /oracle002/oradata/PROD/data/tbsd_mvprod_big_013.dbf
+restoring datafile 00024 to /oracle001/oradata/PROD/data/data_prod_notrans_big_004.dbf
+restoring datafile 00622 to /oracle004/oradata/PROD/indx/indx_prod_trans_par01_002.dbf
+restoring datafile 00741 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_100.dbf
+channel c4: restored backup piece 1
+piece handle=ggumamcn_1_1 tag=TAG20200118T020427 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00013 to /oracle003/oradata/PROD/data/tbsd_audit_003.dbf
+restoring datafile 00019 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_029.dbf
+restoring datafile 00640 to /oracle004/oradata/PROD/indx/tbsi_web_sma_003.dbf
+restoring datafile 00733 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_099.dbf
+channel c6: restored backup piece 1
+piece handle=tbumr5m9_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00068 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_007.dbf
+restoring datafile 00109 to /oracle003/oradata/PROD/undo/tbs_undo_014.dbf
+restoring datafile 00130 to /oracle003/oradata/PROD/data/tbsd_audit_005.dbf
+restoring datafile 00756 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_056.dbf
+channel c3: restored backup piece 1
+piece handle=gjumams3_1_1 tag=TAG20200118T020427 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00058 to /oracle001/oradata/PROD/data/tbsd_norma_tmp_014.dbf
+restoring datafile 00067 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_005.dbf
+restoring datafile 00105 to /oracle002/oradata/PROD/indx/tbsi_prod_sma_005.dbf
+restoring datafile 00752 to /oracle005/oradata/PROD/data/data_prod_trans_big_041.dbf
+channel c2: restored backup piece 1
+piece handle=gfumalva_1_1 tag=TAG20200118T020427 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00065 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_019.dbf
+restoring datafile 00074 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_006.dbf
+restoring datafile 00491 to /oracle001/oradata/PROD/data/tbsd_norma_tmp_001.dbf
+restoring datafile 00750 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_101.dbf
+channel c1: restored backup piece 1
+piece handle=tdumr5ma_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00071 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_023.dbf
+restoring datafile 00139 to /oracle001/oradata/PROD/data/tbsd_audit_004.dbf
+restoring datafile 00509 to /oracle002/oradata/PROD/indx/indx_prod_trans_par01_001.dbf
+restoring datafile 00757 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_102.dbf
+channel c4: restored backup piece 1
+piece handle=teumr5ma_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00032 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_007.dbf
+restoring datafile 00046 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_012.dbf
+restoring datafile 00463 to /oracle004/oradata/PROD/data/tbsd_web_sma_002.dbf
+restoring datafile 00744 to /oracle006/oradata/PROD/data/data_prod_trans_big_041.dbf
+channel c5: restored backup piece 1
+piece handle=tfumr5ma_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00073 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_24.dbf
+restoring datafile 00140 to /oracle004/oradata/PROD/data/tbsd_web_sma_005.dbf
+restoring datafile 00147 to /oracle001/oradata/PROD/data/tbsd_audit_006.dbf
+restoring datafile 00759 to /oracle005/oradata/PROD/data/data_prod_notrans_big_048.dbf
+channel c2: restored backup piece 1
+piece handle=tiumr8mh_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00112 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_016.dbf
+restoring datafile 00177 to /oracle004/oradata/PROD/data/tbsd_audit_009.dbf
+restoring datafile 00429 to /oracle004/oradata/PROD/data/tbsd_norma_tmp_010.dbf
+restoring datafile 00773 to /oracle001/oradata/PROD/data/data_prod_notrans_med_013.dbf
+channel c1: restored backup piece 1
+piece handle=tlumr8nm_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00102 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_018.dbf
+restoring datafile 00171 to /oracle003/oradata/PROD/data/tbsd_audit_008.dbf
+restoring datafile 00586 to /oracle003/oradata/PROD/data/tbsd_norma_tmp_003.dbf
+restoring datafile 00769 to /oracle005/oradata/PROD/data/data_prod_trans_big_047.dbf
+channel c6: restored backup piece 1
+piece handle=tkumr8mj_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00076 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_016.dbf
+restoring datafile 00153 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_011.dbf
+restoring datafile 00565 to /oracle001/oradata/PROD/indx/tbsi_web_big_001.dbf
+restoring datafile 00765 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_104.dbf
+channel c3: restored backup piece 1
+piece handle=tjumr8mi_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00088 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_017.dbf
+restoring datafile 00154 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_012.dbf
+restoring datafile 00251 to /oracle003/oradata/PROD/data/tbsd_norma_tmp_015.dbf
+restoring datafile 00768 to /oracle004/oradata/PROD/data/data_prod_trans_big_046.dbf
+channel c4: restored backup piece 1
+piece handle=thumr8fg_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00075 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_015.dbf
+restoring datafile 00152 to /oracle004/oradata/PROD/data/tbsd_audit_007.dbf
+restoring datafile 00170 to /oracle003/oradata/PROD/indx/indx_prod_ssd_big_004.dbf
+restoring datafile 00764 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_103.dbf
+channel c6: restored backup piece 1
+piece handle=ttumrbh2_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00104 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_003.dbf
+restoring datafile 00172 to /oracle003/oradata/PROD/indx/tbsi_prod_sma_007.dbf
+restoring datafile 00616 to /oracle003/oradata/PROD/data/tbsd_norma_tmp_004.dbf
+restoring datafile 00772 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_057.dbf
+channel c3: restored backup piece 1
+piece handle=tuumrbhr_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00138 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_014.dbf
+restoring datafile 00199 to /oracle002/oradata/PROD/data/tbsd_audit_013.dbf
+restoring datafile 00636 to /oracle003/oradata/PROD/data/tbsd_norma_tmp_006.dbf
+restoring datafile 00778 to /oracle005/oradata/PROD/data/tbsd_audit_054.dbf
+channel c2: restored backup piece 1
+piece handle=u1umrbnb_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00129 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_013.dbf
+restoring datafile 00194 to /oracle002/oradata/PROD/data/tbsd_audit_012.dbf
+restoring datafile 00561 to /oracle001/oradata/PROD/data/tbsd_norma_tmp_002.dbf
+restoring datafile 00777 to /oracle005/oradata/PROD/data/data_prod_trans_big_048.dbf
+channel c5: restored backup piece 1
+piece handle=tmumr8r9_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00057 to /oracle001/oradata/PROD/data/tbsd_norma_tmp_013.dbf
+restoring datafile 00143 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_015.dbf
+restoring datafile 00223 to /oracle002/oradata/PROD/data/tbsd_audit_014.dbf
+restoring datafile 00779 to /oracle005/oradata/PROD/undo/tbs_undo_015.dbf
+channel c1: restored backup piece 1
+piece handle=tvumrbiu_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00146 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_022.dbf
+restoring datafile 00233 to /oracle002/oradata/PROD/indx/tbsi_prod_sma_008.dbf
+restoring datafile 00624 to /oracle003/oradata/PROD/data/tbsd_norma_tmp_005.dbf
+restoring datafile 00780 to /oracle003/oradata/PROD/undo/tbs_undo_016.dbf
+channel c3: restored backup piece 1
+piece handle=u4umree6_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00167 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_017.dbf
+restoring datafile 00237 to /oracle002/oradata/PROD/data/tbsd_mvprod_big_014.dbf
+restoring datafile 00675 to /oracle004/oradata/PROD/data/tbsd_web_sma_003.dbf
+restoring datafile 00781 to /oracle002/oradata/PROD/undo/tbs_undo_017.dbf
+channel c4: restored backup piece 1
+piece handle=tsumrbf0_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00118 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_004.dbf
+restoring datafile 00184 to /oracle004/oradata/PROD/data/tbsd_audit_010.dbf
+restoring datafile 00478 to /oracle004/oradata/PROD/data/tbsd_norma_tmp_012.dbf
+restoring datafile 00776 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_105.dbf
+channel c2: restored backup piece 1
+piece handle=u3umredc_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00174 to /oracle001/oradata/PROD/data/data_prod_trans_big_011.dbf
+restoring datafile 00247 to /oracle004/oradata/PROD/data/data_prod_trans_med_005.dbf
+restoring datafile 00697 to /oracle003/oradata/PROD/data/tbsd_norma_tmp_007.dbf
+restoring datafile 00782 to /oracle001/oradata/PROD/undo/tbs_undo_018.dbf
+channel c1: restored backup piece 1
+piece handle=u6umrefk_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00187 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_036.dbf
+restoring datafile 00307 to /oracle004/oradata/PROD/data/tbsd_prod_sma_006.dbf
+restoring datafile 00377 to /oracle002/oradata/PROD/indx/tbsi_web_big_002.dbf
+restoring datafile 00791 to /oracle005/oradata/PROD/data/data_prod_trans_med_017.dbf
+channel c5: restored backup piece 1
+piece handle=u5umrefk_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00176 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_034.dbf
+restoring datafile 00256 to /oracle001/oradata/PROD/data/tbsd_mvprod_big_015.dbf
+restoring datafile 00600 to /oracle003/oradata/PROD/indx/tbsi_web_big_003.dbf
+restoring datafile 00783 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_058.dbf
+channel c6: restored backup piece 1
+piece handle=u0umrbkc_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00182 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_035.dbf
+restoring datafile 00282 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_016.dbf
+restoring datafile 00504 to /oracle001/oradata/PROD/data/data_prod_trans_par03_001.dbf
+restoring datafile 00786 to /oracle001/oradata/PROD/undo/tbs_undo_021.dbf
+channel c1: restored backup piece 1
+piece handle=ugumrhtr_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00134 to /oracle004/oradata/PROD/indx/tbsi_web_big_008.dbf
+restoring datafile 00180 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_008.dbf
+restoring datafile 00269 to /oracle003/oradata/PROD/data/tbsd_audit_017.dbf
+restoring datafile 00784 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_106
+channel c4: restored backup piece 1
+piece handle=u2umreca_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00098 to /oracle005/oradata/PROD/indx/indx_prod_ssd_big_002.dbf
+restoring datafile 00190 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_037.dbf
+restoring datafile 00309 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_003.dbf
+restoring datafile 00684 to /oracle004/oradata/PROD/data/data_prod_trans_med_014.dbf
+channel c2: restored backup piece 1
+piece handle=u8umrh27_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00197 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_038.dbf
+restoring datafile 00318 to /oracle003/oradata/PROD/data/tbsd_prod_sma_008.dbf
+restoring datafile 00492 to /oracle004/oradata/PROD/data/tbsd_eventual_tmp_003.dbf
+restoring datafile 00654 to /oracle003/oradata/PROD/data/tbsd_audit_040.dbf
+channel c5: restored backup piece 1
+piece handle=u9umrhj1_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00195 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_018.dbf
+restoring datafile 00317 to /oracle003/oradata/PROD/data/tbsd_prod_sma_007.dbf
+restoring datafile 00595 to /oracle003/oradata/PROD/data/tbsd_prod_logmnr.dbf
+restoring datafile 00667 to /oracle005/oradata/PROD/data/data_prod_ssd_big_020.dbf
+channel c6: restored backup piece 1
+piece handle=ubumrhov_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00196 to /oracle002/oradata/PROD/data/tbsd_normal_nor_013.dbf
+restoring datafile 00201 to /oracle002/oradata/PROD/data/data_prod_notrans_big_003.dbf
+restoring datafile 00319 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_004.dbf
+restoring datafile 00599 to /oracle003/oradata/PROD/indx/tbsi_web_med_001.dbf
+channel c3: restored backup piece 1
+piece handle=u7umreg3_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00001 to /oracle002/oradata/PROD/data/system_001.dbf
+restoring datafile 00209 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_039.dbf
+restoring datafile 00322 to /oracle002/oradata/PROD/data/tbsd_audit_019.dbf
+restoring datafile 00531 to /oracle004/oradata/PROD/data/tbsd_prod_sma_011.dbf
+channel c1: restored backup piece 1
+piece handle=uaumrhlm_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00037 to /oracle003/oradata/PROD/data/tbsd_eventual_tmp_005.dbf
+restoring datafile 00204 to /oracle001/oradata/PROD/data/tbsd_normal_nor_001.dbf
+restoring datafile 00215 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_041.dbf
+restoring datafile 00329 to /oracle002/oradata/PROD/data/tbsd_audit_020.dbf
+channel c4: restored backup piece 1
+piece handle=uhumrhv8_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00121 to /oracle002/oradata/PROD/data/tbsd_eventual_tmp_001.dbf
+restoring datafile 00218 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_019.dbf
+restoring datafile 00331 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_024.dbf
+restoring datafile 00584 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_020.dbf
+channel c5: restored backup piece 1
+piece handle=ujumrk2k_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00202 to /oracle003/oradata/PROD/data/tbsd_mcriti_med_005.dbf
+restoring datafile 00219 to /oracle004/oradata/PROD/data/data_prod_trans_big_006.dbf
+restoring datafile 00334 to /oracle001/oradata/PROD/data/data_prod_trans_med_006.dbf
+restoring datafile 00713 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_042.dbf
+channel c6: restored backup piece 1
+piece handle=ulumrke7_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00164 to /oracle004/oradata/PROD/data/tbsd_normal_nor_023.dbf
+restoring datafile 00230 to /oracle001/oradata/PROD/data/data_prod_trans_big_012.dbf
+restoring datafile 00339 to /oracle001/oradata/PROD/data/tbsd_prod_med_007.dbf
+restoring datafile 00562 to /oracle001/oradata/PROD/indx/tbsi_web_sma_001.dbf
+channel c2: restored backup piece 1
+piece handle=ukumrkaa_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00039 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_007.dbf
+restoring datafile 00239 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_001.dbf
+restoring datafile 00349 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_025.dbf
+restoring datafile 00761 to /oracle004/oradata/PROD/data/data_prod_trans_big_045.dbf
+channel c3: restored backup piece 1
+piece handle=umumrkl9_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00271 to /oracle003/oradata/PROD/data/tbsd_others_big_012.dbf
+restoring datafile 00353 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_027.dbf
+restoring datafile 00490 to /oracle004/oradata/PROD/data/tbsd_prod_med_005.dbf
+restoring datafile 00598 to /oracle003/oradata/PROD/data/tbsd_eventual_tmp_002.dbf
+channel c1: restored backup piece 1
+piece handle=unumrkp6_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00285 to /oracle004/oradata/PROD/data/tbsd_others_big_022.dbf
+restoring datafile 00288 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_042.dbf
+restoring datafile 00356 to /oracle002/oradata/PROD/data/data_prod_trans_med_07.dbf
+restoring datafile 00363 to /oracle004/oradata/PROD/data/tbsd_eventual_nor_012.dbf
+channel c4: restored backup piece 1
+piece handle=uoumrl32_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00036 to /oracle003/oradata/PROD/data/tbsd_eventual_tmp_004.dbf
+restoring datafile 00289 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_043.dbf
+restoring datafile 00362 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_028.dbf
+restoring datafile 00689 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_023.dbf
+channel c6: restored backup piece 1
+piece handle=uqumrn53_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00002 to /oracle004/oradata/PROD/data/system_002.dbf
+restoring datafile 00292 to /oracle001/oradata/PROD/data/data_prod_trans_big_001.dbf
+restoring datafile 00369 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_009.dbf
+restoring datafile 00690 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_024.dbf
+channel c2: restored backup piece 1
+piece handle=urumrnf8_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00110 to /oracle001/oradata/PROD/undo/tbs_undo_002.dbf
+restoring datafile 00293 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_002.dbf
+restoring datafile 00382 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_029.dbf
+restoring datafile 00447 to /oracle004/oradata/PROD/data/tbsd_mcritico_esp_027.dbf
+channel c3: restored backup piece 1
+piece handle=usumrni7_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00294 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_044.dbf
+restoring datafile 00374 to /oracle003/oradata/PROD/data/tbsd_others_med_010.dbf
+restoring datafile 00387 to /oracle001/oradata/PROD/data/tbsd_audit_001.dbf
+restoring datafile 00717 to /oracle005/oradata/PROD/data/data_prod_tools_002.dbf
+channel c5: restored backup piece 1
+piece handle=upumrn4j_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00297 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_021.dbf
+restoring datafile 00303 to /oracle004/oradata/PROD/data/tbsd_web_med_007.dbf
+restoring datafile 00388 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_005.dbf
+restoring datafile 00497 to /oracle003/oradata/PROD/data/tbsd_normal_nor_017.dbf
+channel c1: restored backup piece 1
+piece handle=utumrnm5_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00320 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_49.dbf
+restoring datafile 00401 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_030.dbf
+restoring datafile 00423 to /oracle001/oradata/PROD/data/tbsd_web_med_002.dbf
+restoring datafile 00770 to /oracle004/oradata/PROD/data/tbsd_audit_052.dbf
+channel c4: restored backup piece 1
+piece handle=uuumrnv2_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00245 to /oracle004/oradata/PROD/data/tbsd_prod_med_012.dbf
+restoring datafile 00305 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_022.dbf
+restoring datafile 00390 to /oracle001/oradata/PROD/data/tbsd_mvprod_big_001.dbf
+restoring datafile 00700 to /oracle003/oradata/PROD/data/tbsd_others_sma_006.dbf
+channel c2: restored backup piece 1
+piece handle=v5umrpin_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00326 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_023.dbf
+restoring datafile 00403 to /oracle002/oradata/PROD/data/tbsd_mvprod_big_002.dbf
+restoring datafile 00488 to /oracle004/oradata/PROD/data/tbsd_normal_nor_018.dbf
+restoring datafile 00728 to /oracle006/oradata/PROD/data/tbsd_criti_big_005.dbf
+channel c3: restored backup piece 1
+piece handle=v6umrpp4_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00332 to /oracle001/oradata/PROD/data/data_prod_trans_big_014
+restoring datafile 00430 to /oracle003/oradata/PROD/data/data_prod_notrans_med_005.dbf
+restoring datafile 00519 to /oracle001/oradata/PROD/data/tbsd_others_med_005.dbf
+restoring datafile 00726 to /oracle005/oradata/PROD/data/tbsd_web_med_008.dbf
+channel c6: restored backup piece 1
+piece handle=v4umrpg2_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00330 to /oracle002/oradata/PROD/data/data_prod_ssd_big_013.dbf
+restoring datafile 00425 to /oracle003/oradata/PROD/data/data_prod_trans_med_008.dbf
+restoring datafile 00727 to /oracle006/oradata/PROD/data/tbsd_web_sma_007.dbf
+restoring datafile 00775 to /oracle001/oradata/PROD/data/data_prod_notrans_med_014.dbf
+channel c5: restored backup piece 1
+piece handle=v7umrpso_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00056 to /oracle004/oradata/PROD/data/tbsd_mcritico_esp_028.dbf
+restoring datafile 00333 to /oracle002/oradata/PROD/data/data_prod_trans_big015.dbf
+restoring datafile 00432 to /oracle002/oradata/PROD/data/tbsd_prod_med_002.dbf
+restoring datafile 00725 to /oracle006/oradata/PROD/data/tbsd_norma_tmp_016.dbf
+channel c1: restored backup piece 1
+piece handle=v9umrq98_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00336 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_024.dbf
+restoring datafile 00420 to /oracle004/oradata/PROD/data/tbsd_mcritico_esp_026.dbf
+restoring datafile 00435 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_010.dbf
+restoring datafile 00723 to /oracle006/oradata/PROD/indx/tbsi_others_sma_003.dbf
+channel c4: restored backup piece 1
+piece handle=v8umrq6t_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00208 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_025.dbf
+restoring datafile 00343 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_009.dbf
+restoring datafile 00439 to /oracle001/oradata/PROD/data/data_prod_trans_med_010.dbf
+restoring datafile 00503 to /oracle001/oradata/PROD/data/data_prod_trans_par02_001.dbf
+channel c3: restored backup piece 1
+piece handle=vcumrrr5_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00148 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_013.dbf
+restoring datafile 00346 to /oracle003/oradata/PROD/data/data_prod_ssd_big_014.dbf
+restoring datafile 00442 to /oracle004/oradata/PROD/data/tbsd_prod_sma_009.dbf
+restoring datafile 00792 to /oracle005/oradata/PROD/data/data_prod_notrans_big_049.dbf
+channel c2: restored backup piece 1
+piece handle=vaumrrgr_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00030 to /oracle004/oradata/PROD/data/tbsd_prod_med_006.dbf
+restoring datafile 00265 to /oracle003/oradata/PROD/data/tbsd_others_big_011.dbf
+restoring datafile 00347 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_025.dbf
+restoring datafile 00443 to /oracle004/oradata/PROD/data/tbsd_prod_sma_004.dbf
+channel c6: restored backup piece 1
+piece handle=vbumrrns_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00033 to /oracle001/oradata/PROD/data/tbsd_eventual_nor_013.dbf
+restoring datafile 00348 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_026.dbf
+restoring datafile 00453 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_011.dbf
+restoring datafile 00471 to /oracle002/oradata/PROD/data/tbsd_others_sma_005.dbf
+channel c5: restored backup piece 1
+piece handle=vdumrs5l_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00020 to /oracle003/oradata/PROD/data/tbsd_web_med_003.dbf
+restoring datafile 00358 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_028.dbf
+restoring datafile 00462 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_031.dbf
+restoring datafile 00548 to /oracle002/oradata/PROD/data/tbsd_prod_med_004.dbf
+channel c1: restored backup piece 1
+piece handle=veumrsb4_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00357 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_027.dbf
+restoring datafile 00416 to /oracle004/oradata/PROD/data/tbsd_web_med_005.dbf
+restoring datafile 00454 to /oracle003/oradata/PROD/data/data_prod_notrans_med_006.dbf
+restoring datafile 00711 to /oracle006/oradata/PROD/data/data_prod_trans_med_016.dbf
+channel c4: restored backup piece 1
+piece handle=vfumrsch_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00272 to /oracle004/oradata/PROD/data/tbsd_others_big_013.dbf
+restoring datafile 00360 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_52.dbf
+restoring datafile 00433 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_004.dbf
+restoring datafile 00464 to /oracle001/oradata/PROD/data/data_prod_trans_med_011.dbf
+channel c2: restored backup piece 1
+piece handle=vhumrts5_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00106 to /oracle004/oradata/PROD/data/tbsd_normal_nor_022.dbf
+restoring datafile 00370 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_029
+restoring datafile 00466 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_032.dbf
+restoring datafile 00699 to /oracle003/oradata/PROD/data/tbsd_mcritico_nor_008.dbf
+channel c6: restored backup piece 1
+piece handle=viumrtuq_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00045 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_013.dbf
+restoring datafile 00383 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_055.dbf
+restoring datafile 00468 to /oracle003/oradata/PROD/data/tbsd_audit_023.dbf
+restoring datafile 00578 to /oracle004/oradata/PROD/data/tbsd_normal_nor_019.dbf
+channel c5: restored backup piece 1
+piece handle=vkumruau_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00394 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_001.dbf
+restoring datafile 00396 to /oracle002/oradata/PROD/data/tbsd_mcriti_med_002.dbf
+restoring datafile 00472 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_033.dbf
+restoring datafile 00555 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_006.dbf
+channel c4: restored backup piece 1
+piece handle=vlumrucl_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00044 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_012.dbf
+restoring datafile 00163 to /oracle003/oradata/PROD/data/tbsd_prod_med_011.dbf
+restoring datafile 00414 to /oracle001/oradata/PROD/data/data_prod_trans_big_007.dbf
+restoring datafile 00480 to /oracle002/oradata/PROD/data/tbsd_audit_025.dbf
+channel c1: restored backup piece 1
+piece handle=vjumru6f_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00400 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_033.dbf
+restoring datafile 00438 to /oracle002/oradata/PROD/data/tbsd_others_sma_004.dbf
+restoring datafile 00475 to /oracle002/oradata/PROD/data/tbsd_audit_024.dbf
+restoring datafile 00641 to /oracle003/oradata/PROD/data/tbsd_normal_nor_015.dbf
+channel c3: restored backup piece 1
+piece handle=vgumrtjq_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00279 to /oracle001/oradata/PROD/data/tbsd_others_big_019.dbf
+restoring datafile 00381 to /oracle002/oradata/PROD/data/tbsd_prod_med_001.dbf
+restoring datafile 00395 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_056.dbf
+restoring datafile 00474 to /oracle002/oradata/PROD/data/tbsd_audit_024.DBF
+channel c2: restored backup piece 1
+piece handle=vqumrvsd_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00048 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_003.dbf
+restoring datafile 00428 to /oracle003/oradata/PROD/data/tbsd_mcriti_med_004.dbf
+restoring datafile 00440 to /oracle004/oradata/PROD/data/data_prod_trans_big_009.dbf
+restoring datafile 00483 to /oracle002/oradata/PROD/data/tbsd_audit_027.dbf
+channel c6: restored backup piece 1
+piece handle=vrums051_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00456 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_003.dbf
+restoring datafile 00487 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_001.dbf
+restoring datafile 00572 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_019.dbf
+restoring datafile 00680 to /oracle001/oradata/PROD/data/tbsd_prod_sma_013.dbf
+channel c5: restored backup piece 1
+piece handle=vtums072_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00260 to /oracle004/oradata/PROD/data/tbsd_web_med_006.dbf
+restoring datafile 00469 to /oracle002/oradata/PROD/data/data_prod_trans_big_002.dbf
+restoring datafile 00498 to /oracle002/oradata/PROD/data/tbsd_prod_sma_010.dbf
+restoring datafile 00653 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_017.dbf
+channel c4: restored backup piece 1
+piece handle=00ums0mu_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00203 to /oracle002/oradata/PROD/data/tbsd_mcritico_nor_006.dbf
+restoring datafile 00306 to /oracle004/oradata/PROD/data/tbsd_normal_nor_020.dbf
+restoring datafile 00485 to /oracle001/oradata/PROD/data/data_prod_trans_big_022.dbf
+restoring datafile 00510 to /oracle004/oradata/PROD/data/tbsd_mvprod_big_009.dbf
+channel c1: restored backup piece 1
+piece handle=vvums0mf_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00341 to /oracle004/oradata/PROD/data/tbsd_prod_med_009.dbf
+restoring datafile 00512 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_012.dbf
+restoring datafile 00532 to /oracle002/oradata/PROD/data/data_prod_trans_big_010.dbf
+restoring datafile 00603 to /oracle002/oradata/PROD/indx/tbsi_prod_sma_014.dbf
+channel c3: restored backup piece 1
+piece handle=vuums0m7_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00340 to /oracle004/oradata/PROD/data/tbsd_prod_med_008.dbf
+restoring datafile 00522 to /oracle001/oradata/PROD/data/tbsd_others_big_004.dbf
+restoring datafile 00524 to /oracle001/oradata/PROD/data/tbsd_prod_sma_002.dbf
+restoring datafile 00534 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_20.dbf
+channel c2: restored backup piece 1
+piece handle=01ums2f4_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00159 to /oracle003/oradata/PROD/data/tbsd_eventual_tmp_006.dbf
+restoring datafile 00236 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_015.dbf
+restoring datafile 00539 to /oracle001/oradata/PROD/data/tbsd_prod_sma_001.dbf
+restoring datafile 00546 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_038.dbf
+channel c6: restored backup piece 1
+piece handle=02ums2oc_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00298 to /oracle003/oradata/PROD/data/tbsd_mcriti_med_001.dbf
+restoring datafile 00308 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_004.dbf
+restoring datafile 00541 to /oracle001/oradata/PROD/data/data_prod_trans_med_009.dbf
+restoring datafile 00551 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_039.dbf
+channel c5: restored backup piece 1
+piece handle=03ums2qn_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00003 to /oracle001/oradata/PROD/undo/tbs_undo_011.dbf
+restoring datafile 00544 to /oracle001/oradata/PROD/data/tbsd_normal_nor_003.dbf
+restoring datafile 00549 to /oracle001/oradata/PROD/data/tbsd_eventual_nor_002.dbf
+restoring datafile 00553 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_004.dbf
+channel c1: restored backup piece 1
+piece handle=05ums35q_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00255 to /oracle004/oradata/PROD/data/tbsd_mcritico_esp_031.dbf
+restoring datafile 00278 to /oracle001/oradata/PROD/data/tbsd_others_big_018.dbf
+restoring datafile 00545 to /oracle002/oradata/PROD/data/tbsd_audit_030.dbf
+restoring datafile 00580 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_002.dbf
+channel c4: restored backup piece 1
+piece handle=04ums35q_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00367 to /oracle001/oradata/PROD/data/tbsd_normal_nor_004.dbf
+restoring datafile 00556 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_013.dbf
+restoring datafile 00594 to /oracle003/oradata/PROD/data/tbsd_web_med_004.dbf
+restoring datafile 00609 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_006.dbf
+channel c3: restored backup piece 1
+piece handle=06ums39d_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00566 to /oracle001/oradata/PROD/indx/tbsi_prod_sma_001.dbf
+restoring datafile 00630 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_014.dbf
+restoring datafile 00631 to /oracle004/oradata/PROD/data/tbsd_others_med_007.dbf
+restoring datafile 00719 to /oracle005/oradata/PROD/data/tbsd_prod_med_013.dbf
+channel c2: restored backup piece 1
+piece handle=07ums4oh_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00049 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_011.dbf
+restoring datafile 00574 to /oracle003/oradata/PROD/data/data_prod_trans_med_012.dbf
+restoring datafile 00671 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_080.dbf
+restoring datafile 00789 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_045.dbf
+channel c6: restored backup piece 1
+piece handle=08ums4u0_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00008 to /oracle001/oradata/PROD/data/tbsd_web_big_007.dbf
+restoring datafile 00274 to /oracle004/oradata/PROD/data/tbsd_others_big_014.dbf
+restoring datafile 00575 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_039.dbf
+restoring datafile 00678 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_047.dbf
+channel c5: restored backup piece 1
+piece handle=09ums4ve_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00253 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_014.dbf
+restoring datafile 00411 to /oracle002/oradata/PROD/data/tbsd_others_big_007.dbf
+restoring datafile 00590 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_041.dbf
+restoring datafile 00679 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_048.dbf
+channel c1: restored backup piece 1
+piece handle=0aums58v_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00604 to /oracle002/oradata/PROD/data/tbsd_prod_sma_003.dbf
+restoring datafile 00617 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_021.dbf
+restoring datafile 00663 to /oracle003/oradata/PROD/data/tbsd_prod_sma_012.dbf
+restoring datafile 00685 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_088.dbf
+channel c3: restored backup piece 1
+piece handle=0cums5cn_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00028 to /oracle002/oradata/PROD/indx/indx_prod_notrans_med_007.dbf
+restoring datafile 00434 to /oracle004/oradata/PROD/data/data_prod_trans_big_018.dbf
+restoring datafile 00612 to /oracle004/oradata/PROD/data/data_prod_trans_par01_002.dbf
+restoring datafile 00618 to /oracle005/oradata/PROD/data/tbsd_audit_032.dbf
+channel c4: restored backup piece 1
+piece handle=0bums59e_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00261 to /oracle004/oradata/PROD/data/tbsd_web_sma_006.dbf
+restoring datafile 00291 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_020.dbf
+restoring datafile 00484 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_067.dbf
+restoring datafile 00619 to /oracle005/oradata/PROD/indx/indx_prod_notrans_big_045.dbf
+channel c2: restored backup piece 1
+piece handle=0iums77o_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00410 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_002.dbf
+restoring datafile 00465 to /oracle004/oradata/PROD/data/tbsd_web_sma_004.dbf
+restoring datafile 00563 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_040.dbf
+restoring datafile 00625 to /oracle005/oradata/PROD/data/data_prod_notrans_big_041.dbf
+channel c6: restored backup piece 1
+piece handle=0jums78r_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00494 to /oracle002/oradata/PROD/data/data_prod_trans_par01_001.dbf
+restoring datafile 00564 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_041.dbf
+restoring datafile 00626 to /oracle003/oradata/PROD/data/tbsd_audit_033.dbf
+restoring datafile 00738 to /oracle003/oradata/PROD/data/data_prod_notrans_big_045.dbf
+channel c5: restored backup piece 1
+piece handle=0kums7as_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00225 to /oracle002/oradata/PROD/indx/indx_prod_notrans_med_018.dbf
+restoring datafile 00554 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_079.dbf
+restoring datafile 00621 to /oracle004/oradata/PROD/indx/tbsi_prod_sma_002.dbf
+restoring datafile 00633 to /oracle004/oradata/PROD/data/tbsd_web_big_005.dbf
+channel c3: restored backup piece 1
+piece handle=0mums7u9_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00206 to /oracle002/oradata/PROD/indx/indx_prod_notrans_med_016.dbf
+restoring datafile 00552 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_078.dbf
+restoring datafile 00614 to /oracle002/oradata/PROD/data/tbsd_prod_logmnr_1.dbf
+restoring datafile 00620 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_003.dbf
+channel c4: restored backup piece 1
+piece handle=0nums86j_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00437 to /oracle003/oradata/PROD/data/data_prod_ssd_big_015.dbf
+restoring datafile 00569 to /oracle005/oradata/PROD/data/data_prod_ssd_big_019.dbf
+restoring datafile 00642 to /oracle004/oradata/PROD/data/data_prod_trans_med_002.dbf
+channel c1: restored backup piece 1
+piece handle=0lums7oq_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00380 to /oracle002/oradata/PROD/data/tbsd_web_big_003.dbf
+restoring datafile 00449 to /oracle002/oradata/PROD/data/tbsd_prod_med_003.dbf
+restoring datafile 00615 to /oracle002/oradata/PROD/data/data_prod_trans_big_034.dbf
+restoring datafile 00637 to /oracle004/oradata/PROD/data/tbsd_prod_sma_005.dbf
+channel c6: restored backup piece 1
+piece handle=0rumsap5_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00451 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_062.dbf
+restoring datafile 00645 to /oracle005/oradata/PROD/data/data_prod_notrans_big_042.dbf
+restoring datafile 00652 to /oracle003/oradata/PROD/data/tbsd_audit_039.dbf
+channel c2: restored backup piece 1
+piece handle=0qumsaf0_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00467 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_057.dbf
+restoring datafile 00662 to /oracle003/oradata/PROD/data/tbsd_audit_043.dbf
+restoring datafile 00665 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_79.dbf
+channel c5: restored backup piece 1
+piece handle=0pumsaep_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00161 to /oracle003/oradata/PROD/data/tbsd_criti_big_003.dbf
+restoring datafile 00207 to /oracle003/oradata/PROD/data/data_prod_trans_big_004.dbf
+restoring datafile 00570 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_080.dbf
+restoring datafile 00669 to /oracle004/oradata/PROD/data/tbsd_mvprod_big_005.dbf
+channel c4: restored backup piece 1
+piece handle=0tumsb2i_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00054 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_005.dbf
+restoring datafile 00538 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_077.dbf
+restoring datafile 00670 to /oracle004/oradata/PROD/data/tbsd_mvprod_big_006.dbf
+channel c1: restored backup piece 1
+piece handle=0sumsavt_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00144 to /oracle003/oradata/PROD/data/data_prod_trans_big_003.dbf
+restoring datafile 00540 to /oracle001/oradata/PROD/data/data_prod_trans_big_032.dbf
+restoring datafile 00668 to /oracle004/oradata/PROD/data/tbsd_mvprod_big_004.dbf
+restoring datafile 00749 to /oracle006/oradata/PROD/data/tbsd_others_big_026.dbf
+channel c3: restored backup piece 1
+piece handle=0oumsaep_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00066 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_008.dbf
+restoring datafile 00547 to /oracle001/oradata/PROD/data/data_prod_trans_big_033.dbf
+restoring datafile 00681 to /oracle004/oradata/PROD/data/tbsd_audit_044.dbf
+channel c2: restored backup piece 1
+piece handle=0vumsde0_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00011 to /oracle004/oradata/PROD/data/data_prod_notrans_big_010.dbf
+restoring datafile 00323 to /oracle005/oradata/PROD/data/data_prod_ssd_big_012.dbf
+restoring datafile 00596 to /oracle006/oradata/PROD/data/DATA_PROD_MV01.dbf
+restoring datafile 00687 to /oracle002/oradata/PROD/data/data_prod_trans_big_035.dbf
+channel c6: restored backup piece 1
+piece handle=0uumsd4o_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00082 to /oracle005/oradata/PROD/data/data_prod_ssd_big_002.dbf
+restoring datafile 00344 to /oracle004/oradata/PROD/data/data_prod_notrans_big_008.dbf
+restoring datafile 00610 to /oracle004/oradata/PROD/data/data_bdtest_ctxsys_001.dbf
+restoring datafile 00695 to /oracle003/oradata/PROD/data/data_prod_trans_big_036.dbf
+channel c5: restored backup piece 1
+piece handle=11umsdgq_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00005 to /oracle004/oradata/PROD/data/users_005.dbf
+restoring datafile 00093 to /oracle005/oradata/PROD/data/data_prod_ssd_big_007.dbf
+restoring datafile 00352 to /oracle004/oradata/PROD/data/data_prod_notrans_big_35.dbf
+restoring datafile 00701 to /oracle004/oradata/PROD/data/tbsd_mvprod_big_007.dbf
+channel c4: restored backup piece 1
+piece handle=12umsdih_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00094 to /oracle005/oradata/PROD/data/data_prod_ssd_big_008.dbf
+restoring datafile 00136 to /oracle004/oradata/PROD/data/users_006.dbf
+restoring datafile 00441 to /oracle005/oradata/PROD/data/data_prod_ssd_big_016.dbf
+restoring datafile 00702 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_088.dbf
+channel c3: restored backup piece 1
+piece handle=13umsdov_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00086 to /oracle005/oradata/PROD/data/data_prod_ssd_big_006.dbf
+restoring datafile 00243 to /oracle002/oradata/PROD/data/users_003.dbf
+restoring datafile 00350 to /oracle001/oradata/PROD/data/data_prod_notrans_big_033.dbf
+restoring datafile 00696 to /oracle003/oradata/PROD/data/data_prod_notrans_med_008.dbf
+channel c2: restored backup piece 1
+piece handle=19umsfpj_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00095 to /oracle005/oradata/PROD/data/data_prod_ssd_big_009.dbf
+restoring datafile 00151 to /oracle002/oradata/PROD/data/users_001.dbf
+restoring datafile 00445 to /oracle004/oradata/PROD/data/data_prod_trans_big_019.dbf
+restoring datafile 00703 to /oracle004/oradata/PROD/data/tbsd_mvprod_big_008.dbf
+channel c1: restored backup piece 1
+piece handle=10umsdfd_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00126 to /oracle004/oradata/PROD/data/data_prod_notrans_big_012.dbf
+restoring datafile 00458 to /oracle001/oradata/PROD/data/data_prod_trans_big_021.dbf
+restoring datafile 00623 to /oracle003/oradata/PROD/data/users_004.dbf
+restoring datafile 00705 to /oracle003/oradata/PROD/data/data_prod_trans_big_037.dbf
+channel c6: restored backup piece 1
+piece handle=1aumsg2h_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00096 to /oracle005/oradata/PROD/data/data_prod_ssd_big_010.dbf
+restoring datafile 00240 to /oracle002/oradata/PROD/data/users_002.dbf
+restoring datafile 00446 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_58.dbf
+restoring datafile 00704 to /oracle005/oradata/PROD/data/data_prod_notrans_big_044.dbf
+channel c5: restored backup piece 1
+piece handle=1cumsg9d_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00149 to /oracle004/oradata/PROD/data/data_prod_notrans_big_018.dbf
+restoring datafile 00470 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_063.dbf
+restoring datafile 00714 to /oracle005/oradata/PROD/indx/indx_prod_trans_med_043.dbf
+channel c4: restored backup piece 1
+piece handle=1dumsgah_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00257 to /oracle005/oradata/PROD/data/data_prod_ssd_big_011.dbf
+restoring datafile 00495 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_59.dbf
+restoring datafile 00732 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_098.dbf
+channel c3: restored backup piece 1
+piece handle=1bumsg8u_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00232 to /oracle002/oradata/PROD/data/data_prod_notrans_big_023.dbf
+restoring datafile 00473 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_064.dbf
+restoring datafile 00721 to /oracle006/oradata/PROD/data/tbsd_eventual_nor_020.dbf
+channel c2: restored backup piece 1
+piece handle=1eumsgg0_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00244 to /oracle002/oradata/PROD/data/data_prod_notrans_big_024.dbf
+restoring datafile 00486 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_070.dbf
+restoring datafile 00731 to /oracle005/oradata/PROD/data/data_prod_trans_big_039.dbf
+channel c5: restored backup piece 1
+piece handle=1humsivt_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00287 to /oracle001/oradata/PROD/data/data_prod_notrans_big_027.dbf
+restoring datafile 00499 to /oracle004/oradata/PROD/data/data_prod_trans_big_023.dbf
+restoring datafile 00737 to /oracle003/oradata/PROD/data/tbsd_audit_047.dbf
+channel c6: restored backup piece 1
+piece handle=1fumsilj_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00301 to /oracle001/oradata/PROD/data/data_prod_notrans_big_030.dbf
+restoring datafile 00526 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_071.dbf
+restoring datafile 00740 to /oracle003/oradata/PROD/data/data_prod_notrans_med_011.dbf
+channel c1: restored backup piece 1
+piece handle=1gumsisa_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00316 to /oracle003/oradata/PROD/data/data_prod_notrans_big_007.dbf
+restoring datafile 00536 to /oracle001/oradata/PROD/data/data_prod_notrans_big_036.dbf
+restoring datafile 00766 to /oracle005/oradata/PROD/indx/indx_prod_trans_med_044.dbf
+channel c4: restored backup piece 1
+piece handle=1kumsj6b_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00133 to /oracle002/oradata/PROD/data/tbsd_normal_nor_012.dbf
+restoring datafile 00516 to /oracle001/oradata/PROD/data/tbsd_others_med_002.dbf
+restoring datafile 00585 to /oracle004/oradata/PROD/data/tbsd_audit_031.dbf
+restoring datafile 00691 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_090.dbf
+channel c3: restored backup piece 1
+piece handle=1iumsj37_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00022 to /oracle003/oradata/PROD/indx/indx_prod_trans_med_002.dbf
+restoring datafile 00040 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_009.dbf
+restoring datafile 00312 to /oracle004/oradata/PROD/data/data_prod_notrans_big_030.dbf
+restoring datafile 00505 to /oracle001/oradata/PROD/data/tbsd_eventual_nor_001.dbf
+channel c1: restored backup piece 1
+piece handle=1sumsleq_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00072 to /oracle003/oradata/PROD/indx/indx_prod_trans_med_012.dbf
+restoring datafile 00314 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_47.dbf
+restoring datafile 00459 to /oracle004/oradata/PROD/data/tbsd_others_sma_008.dbf
+restoring datafile 00657 to /oracle003/oradata/PROD/data/tbsd_mcritico_esp_022.dbf
+channel c6: restored backup piece 1
+piece handle=1rumsld2_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00087 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_010.dbf
+restoring datafile 00315 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_48.dbf
+restoring datafile 00431 to /oracle004/oradata/PROD/data/tbsd_eventual_nor_010.dbf
+restoring datafile 00502 to /oracle001/oradata/PROD/data/tbsd_others_sma_002.dbf
+channel c5: restored backup piece 1
+piece handle=1qumslan_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00107 to /oracle001/oradata/PROD/data/data_prod_notrans_med_001.dbf
+restoring datafile 00114 to /oracle001/oradata/PROD/data/tbsd_eventual_nor_018.dbf
+restoring datafile 00321 to /oracle001/oradata/PROD/data/data_prod_notrans_big_031.dbf
+restoring datafile 00406 to /oracle002/oradata/PROD/data/tbsd_others_sma_003.dbf
+channel c2: restored backup piece 1
+piece handle=1jumsj5i_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00038 to /oracle004/oradata/PROD/data/tbsd_prod_med_010.dbf
+restoring datafile 00116 to /oracle001/oradata/PROD/data/data_prod_notrans_med_002.dbf
+restoring datafile 00275 to /oracle003/oradata/PROD/data/tbsd_others_big_015.dbf
+restoring datafile 00327 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_050
+channel c4: restored backup piece 1
+piece handle=1tumslj1_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00120 to /oracle003/oradata/PROD/indx/indx_prod_trans_med_011.dbf
+restoring datafile 00328 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_051.dbf
+restoring datafile 00651 to /oracle003/oradata/PROD/data/tbsd_mcritico_nor_010.dbf
+restoring datafile 00658 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_002.dbf
+channel c3: restored backup piece 1
+piece handle=1uumslpf_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00059 to /oracle003/oradata/PROD/data/tbsd_normal_nor_005.dbf
+restoring datafile 00123 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_008.dbf
+restoring datafile 00135 to /oracle002/oradata/PROD/data/tbsd_mcritico_nor_005.dbf
+restoring datafile 00355 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_50.DBF
+channel c5: restored backup piece 1
+piece handle=21umsnmk_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00124 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_009.dbf
+restoring datafile 00142 to /oracle003/oradata/PROD/data/tbsd_others_big_024.dbf
+restoring datafile 00284 to /oracle003/oradata/PROD/data/tbsd_others_med_009.dbf
+restoring datafile 00359 to /oracle002/oradata/PROD/indx/indx_prod_notrans_029.dbf
+channel c6: restored backup piece 1
+piece handle=20umsnm5_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00162 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_004.dbf
+restoring datafile 00364 to /oracle002/oradata/PROD/indx/indx_prod_notrans_030.dbf
+restoring datafile 00378 to /oracle003/oradata/PROD/data/tbsd_others_big_025.dbf
+restoring datafile 00518 to /oracle001/oradata/PROD/data/tbsd_others_med_004.dbf
+channel c2: restored backup piece 1
+piece handle=22umso6l_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00042 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_029.dbf
+restoring datafile 00125 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_015.dbf
+restoring datafile 00361 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_052
+restoring datafile 00409 to /oracle002/oradata/PROD/data/tbsd_others_big_006.dbf
+channel c1: restored backup piece 1
+piece handle=1vumsm14_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00047 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_001.dbf
+restoring datafile 00169 to /oracle003/oradata/PROD/data/data_prod_notrans_med_003.dbf
+restoring datafile 00366 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_054
+restoring datafile 00716 to /oracle005/oradata/PROD/data/tbsd_normal_nor_026.dbf
+channel c4: restored backup piece 1
+piece handle=23umsond_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00060 to /oracle002/oradata/PROD/data/tbsd_normal_nor_008.dbf
+restoring datafile 00183 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_016.dbf
+restoring datafile 00368 to /oracle002/oradata/PROD/indx/indx_prod_notrans_031.dbf
+restoring datafile 00444 to /oracle001/oradata/PROD/data/tbsd_others_med_011.dbf
+channel c3: restored backup piece 1
+piece handle=24umsp0b_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00188 to /oracle004/oradata/PROD/data/tbsd_audit_011.dbf
+restoring datafile 00281 to /oracle003/oradata/PROD/data/tbsd_others_big_021.dbf
+restoring datafile 00384 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_56.dbf
+restoring datafile 00404 to /oracle002/oradata/PROD/data/tbsd_eventual_nor_006.dbf
+channel c2: restored backup piece 1
+piece handle=26umsqgi_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00029 to /oracle003/oradata/PROD/data/tbsd_mcritico_nor_012.dbf
+restoring datafile 00189 to /oracle003/oradata/PROD/indx/indx_prod_trans_med_017.dbf
+restoring datafile 00385 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_032.dbf
+restoring datafile 00507 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_005.dbf
+channel c6: restored backup piece 1
+piece handle=27umsqh1_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00101 to /oracle004/oradata/PROD/data/tbsd_normal_nor_021.dbf
+restoring datafile 00210 to /oracle003/oradata/PROD/indx/indx_prod_trans_med_019.dbf
+restoring datafile 00405 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_034.dbf
+restoring datafile 00513 to /oracle001/oradata/PROD/undo/tbs_undo_001.dbf
+channel c5: restored backup piece 1
+piece handle=25umsp30_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00179 to /oracle003/oradata/PROD/data/tbsd_others_big_010.dbf
+restoring datafile 00200 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_018.dbf
+restoring datafile 00392 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_008.dbf
+restoring datafile 00402 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_057.dbf
+channel c1: restored backup piece 1
+piece handle=28umsr3b_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00122 to /oracle005/oradata/PROD/data/data_prod_ssd_med_003.dbf
+restoring datafile 00227 to /oracle001/oradata/PROD/indx/indx_prod_trans_med_020.dbf
+restoring datafile 00421 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_036.dbf
+restoring datafile 00693 to /oracle003/oradata/PROD/data/tbsd_others_big_009.dbf
+channel c4: restored backup piece 1
+piece handle=29umsr6u_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00224 to /oracle003/oradata/PROD/data/tbsd_audit_015.dbf
+restoring datafile 00397 to /oracle002/oradata/PROD/data/tbsd_mcritico_nor_007.dbf
+restoring datafile 00399 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_018.dbf
+restoring datafile 00418 to /oracle001/oradata/PROD/indx/indx_prod_notrans_big_035.dbf
+channel c3: restored backup piece 1
+piece handle=2aumsra7_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00181 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_014.dbf
+restoring datafile 00228 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_021.dbf
+restoring datafile 00264 to /oracle003/oradata/PROD/indx/tbsi_web_sma_004.dbf
+restoring datafile 00422 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_058.dbf
+channel c5: restored backup piece 1
+piece handle=2humssgg_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00053 to /oracle002/oradata/PROD/data/tbsd_mcritico_nor_004.dbf
+restoring datafile 00222 to /oracle002/oradata/PROD/data/tbsd_eventual_nor_005.dbf
+restoring datafile 00268 to /oracle004/oradata/PROD/data/tbsd_audit_016.dbf
+restoring datafile 00424 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_059.dbf
+channel c6: restored backup piece 1
+piece handle=2iumssgh_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00034 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_015.dbf
+restoring datafile 00273 to /oracle001/oradata/PROD/data/tbsd_others_big_001.dbf
+restoring datafile 00300 to /oracle003/oradata/PROD/data/data_prod_notrans_med_004.dbf
+restoring datafile 00527 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_072.dbf
+channel c2: restored backup piece 1
+piece handle=2bumsrgm_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00283 to /oracle001/oradata/PROD/data/tbsd_audit_018.dbf
+restoring datafile 00407 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_016.dbf
+restoring datafile 00448 to /oracle001/oradata/PROD/data/data_prod_trans_big_020.dbf
+restoring datafile 00606 to /oracle002/oradata/PROD/indx/tbsi_prod_sma_015.dbf
+channel c1: restored backup piece 1
+piece handle=2kumstbf_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00252 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_019.dbf
+restoring datafile 00311 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_022.dbf
+restoring datafile 00528 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_073.dbf
+restoring datafile 00666 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_003.dbf
+channel c4: restored backup piece 1
+piece handle=2jumst8p_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00324 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_023.dbf
+restoring datafile 00413 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_010.dbf
+restoring datafile 00530 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_037.dbf
+restoring datafile 00581 to /oracle001/oradata/PROD/data/tbsd_mcritico_nor_001.dbf
+channel c3: restored backup piece 1
+piece handle=2lumstgl_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00052 to /oracle002/oradata/PROD/data/tbsd_mcritico_nor_003.dbf
+restoring datafile 00389 to /oracle001/oradata/PROD/data/data_prod_trans_med_003.dbf
+restoring datafile 00489 to /oracle004/oradata/PROD/data/tbsd_eventual_nor_011.dbf
+restoring datafile 00533 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_074.dbf
+channel c2: restored backup piece 1
+piece handle=2numsuma_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00063 to /oracle002/oradata/PROD/data/tbsd_normal_nor_011.dbf
+restoring datafile 00178 to /oracle004/oradata/PROD/data/data_prod_tools_001.dbf
+restoring datafile 00436 to /oracle003/oradata/PROD/data/tbsd_audit_021.dbf
+restoring datafile 00535 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_076.dbf
+channel c1: restored backup piece 1
+piece handle=2pumsv9l_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c6: restored backup piece 1
+piece handle=2oumsumd_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00027 to /oracle002/oradata/PROD/undo/tbs_undo_013.dbf
+restoring datafile 00452 to /oracle003/oradata/PROD/data/tbsd_audit_022.dbf
+restoring datafile 00550 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_0078.dbf
+restoring datafile 00758 to /oracle005/oradata/PROD/data/data_prod_notrans_big_047.dbf
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00249 to /oracle002/oradata/PROD/undo/tbs_undo_008.dbf
+restoring datafile 00482 to /oracle002/oradata/PROD/data/tbsd_audit_026.dbf
+restoring datafile 00558 to /oracle001/oradata/PROD/data/data_prod_notrans_big_037.dbf
+restoring datafile 00774 to /oracle002/oradata/PROD/data/tbsd_audit_053.dbf
+channel c5: restored backup piece 1
+piece handle=2mumstme_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00493 to /oracle002/oradata/PROD/data/data_prod_trans_med_001.dbf
+restoring datafile 00520 to /oracle001/oradata/PROD/data/tbsd_others_big_002.dbf
+restoring datafile 00559 to /oracle001/oradata/PROD/data/data_prod_notrans_big_038.dbf
+restoring datafile 00790 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_060.dbf
+channel c4: restored backup piece 1
+piece handle=2qumsver_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00035 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_016.dbf
+restoring datafile 00500 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_035.dbf
+restoring datafile 00568 to /oracle005/oradata/PROD/data/data_prod_ssd_big_018.dbf
+restoring datafile 00751 to /oracle004/oradata/PROD/data/tbsd_audit_048.dbf
+channel c3: restored backup piece 1
+piece handle=2rumsvmg_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00173 to /oracle001/oradata/PROD/data/tbsd_mcriti_med_006.dbf
+restoring datafile 00501 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_036.dbf
+restoring datafile 00571 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_0080.dbf
+restoring datafile 00735 to /oracle006/oradata/PROD/data/data_prod_notrans_med_010.dbf
+channel c5: restored backup piece 1
+piece handle=2vumt1oi_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00508 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_037.dbf
+restoring datafile 00573 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_0081.dbf
+restoring datafile 00588 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_008.dbf
+restoring datafile 00734 to /oracle006/oradata/PROD/data/data_prod_trans_big_040.dbf
+channel c1: restored backup piece 1
+piece handle=2tumt147_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00266 to /oracle003/oradata/PROD/data/tbsd_others_med_008.dbf
+restoring datafile 00345 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_025.dbf
+restoring datafile 00511 to /oracle002/oradata/PROD/indx/indx_prod_trans_med_038.dbf
+restoring datafile 00576 to /oracle003/oradata/PROD/indx/indx_prod_notrans_big_042.dbf
+channel c2: restored backup piece 1
+piece handle=2sumt04e_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00070 to /oracle004/oradata/PROD/undo/tbs_undo_010.dbf
+restoring datafile 00113 to /oracle003/oradata/PROD/data/tbsd_normal_nor_024.dbf
+restoring datafile 00579 to /oracle001/oradata/PROD/data/data_prod_notrans_big_039.dbf
+restoring datafile 00591 to /oracle002/oradata/PROD/data/tbsd_audit_0031.dbf
+channel c6: restored backup piece 1
+piece handle=2uumt14m_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00165 to /oracle002/oradata/PROD/data/tbsd_eventual_nor_003.dbf
+restoring datafile 00583 to /oracle001/oradata/PROD/data/data_prod_notrans_big_040.dbf
+restoring datafile 00592 to /oracle002/oradata/PROD/data/tbsd_audit_0032.dbf
+restoring datafile 00607 to /oracle003/oradata/PROD/data/tbsd_normal_nor_014.dbf
+channel c4: restored backup piece 1
+piece handle=30umt1ri_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00235 to /oracle004/oradata/PROD/data/tbsd_mcritico_nor_011.dbf
+restoring datafile 00587 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_043.dbf
+restoring datafile 00613 to /oracle002/oradata/PROD/data/data_prod_trans_med_13.dbf
+restoring datafile 00694 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_009.dbf
+channel c3: restored backup piece 1
+piece handle=31umt22j_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00026 to /oracle001/oradata/PROD/undo/tbs_undo_012.dbf
+restoring datafile 00111 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_017.dbf
+restoring datafile 00589 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_044.dbf
+restoring datafile 00627 to /oracle003/oradata/PROD/data/tbsd_audit_002.dbf
+channel c1: restored backup piece 1
+piece handle=37umt3ed_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00335 to /oracle001/oradata/PROD/indx/indx_prod_notrans_med_022.dbf
+restoring datafile 00593 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_78.dbf
+restoring datafile 00628 to /oracle001/oradata/PROD/data/data_prod_notrans_med_007.dbf
+restoring datafile 00715 to /oracle005/oradata/PROD/indx/tbsi_prod_sma_016.dbf
+channel c6: restored backup piece 1
+piece handle=39umt41h_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00250 to /oracle002/oradata/PROD/undo/tbs_undo_003.dbf
+restoring datafile 00415 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_017.dbf
+restoring datafile 00601 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_081.dbf
+restoring datafile 00638 to /oracle003/oradata/PROD/data/tbsd_audit_034.dbf
+channel c2: restored backup piece 1
+piece handle=38umt3h2_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00267 to /oracle001/oradata/PROD/data/tbsd_others_sma_009.dbf
+restoring datafile 00525 to /oracle001/oradata/PROD/data/tbsd_normal_nor_002.dbf
+restoring datafile 00611 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_82.dbf
+restoring datafile 00639 to /oracle003/oradata/PROD/data/tbsd_audit_035.dbf
+channel c4: restored backup piece 1
+piece handle=3aumt4jh_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00193 to /oracle002/oradata/PROD/data/tbsd_normal_nor_024.dbf
+restoring datafile 00412 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_009.dbf
+restoring datafile 00632 to /oracle002/oradata/PROD/indx/indx_prod_notrans_big_040.dbf
+restoring datafile 00643 to /oracle003/oradata/PROD/data/tbsd_audit_036.dbf
+channel c5: restored backup piece 1
+piece handle=32umt2hf_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00325 to /oracle004/oradata/PROD/indx/indx_prod_notrans_med_021.dbf
+restoring datafile 00567 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_007.dbf
+restoring datafile 00634 to /oracle002/oradata/PROD/data/data_prod_notrans_big_042.dbf
+restoring datafile 00708 to /oracle006/oradata/PROD/data/data_prod_trans_med_015.dbf
+channel c3: restored backup piece 1
+piece handle=3bumt4mq_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00338 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_024.dbf
+restoring datafile 00515 to /oracle001/oradata/PROD/data/tbsd_others_med_001.dbf
+restoring datafile 00648 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_083.dbf
+restoring datafile 00709 to /oracle006/oradata/PROD/data/data_prod_trans_med_053.dbf
+channel c1: restored backup piece 1
+piece handle=3cumt54e_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00238 to /oracle002/oradata/PROD/data/tbsd_normal_nor_006.dbf
+restoring datafile 00517 to /oracle001/oradata/PROD/data/tbsd_others_med_003.dbf
+restoring datafile 00664 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_046.dbf
+restoring datafile 00710 to /oracle006/oradata/PROD/data/data_prod_trans_med_054.dbf
+channel c2: restored backup piece 1
+piece handle=3eumt66s_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00577 to /oracle003/oradata/PROD/data/tbsd_eventual_nor_007.dbf
+restoring datafile 00674 to /oracle003/oradata/PROD/data/data_prod_notrans_big_043.dbf
+restoring datafile 00692 to /oracle003/oradata/PROD/data/tbsd_normal_nor_016.dbf
+restoring datafile 00712 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_097.dbf
+channel c6: restored backup piece 1
+piece handle=3dumt612_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00050 to /oracle002/oradata/PROD/data/tbsd_mcritico_esp_012.dbf
+restoring datafile 00051 to /oracle002/oradata/PROD/data/tbsd_mcritico_nor_002.dbf
+restoring datafile 00682 to /oracle004/oradata/PROD/data/data_prod_notrans_big_043.dbf
+restoring datafile 00724 to /oracle006/oradata/PROD/data/data_prod_notrans_med_009.dbf
+channel c4: restored backup piece 1
+piece handle=3fumt6gn_1_1 tag=TAG20200125T033638 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00427 to /oracle003/oradata/PROD/data/data_prod_trans_big_008.dbf
+restoring datafile 00706 to /oracle002/oradata/PROD/data/tbsd_normal_nor_025.dbf
+restoring datafile 00739 to /oracle003/oradata/PROD/data/data_prod_trans_big_038.dbf
+restoring datafile 00793 to /oracle005/oradata/PROD/indx/indx_prod_trans_big_105.dbf
+channel c5: restored backup piece 1
+piece handle=3gumt70s_1_1 tag=TAG20200125T033638 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00103 to /oracle005/oradata/PROD/indx/indx_prod_ssd_med_002.dbf
+restoring datafile 00231 to /oracle003/oradata/PROD/data/data_prod_trans_big_012.dbf
+restoring datafile 00560 to /oracle003/oradata/PROD/data/data_prod_trans_big_032.dbf
+restoring datafile 00673 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_082.dbf
+channel c3: restored backup piece 1
+piece handle=3humt788_1_1 tag=TAG20200125T033638 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00079 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_014.dbf
+restoring datafile 00186 to /oracle004/oradata/PROD/data/tbsd_criti_big_004.dbf
+restoring datafile 00354 to /oracle003/oradata/PROD/data/data_prod_trans_big_016.dbf
+restoring datafile 00718 to /oracle005/oradata/PROD/data/data_prod_trans_big_038.dbf
+channel c1: restored backup piece 1
+piece handle=3iumt7jc_1_1 tag=TAG20200125T033638 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00092 to /oracle004/oradata/PROD/indx/indx_prod_trans_med_013.dbf
+restoring datafile 00426 to /oracle003/oradata/PROD/data/data_prod_trans_big_017.dbf
+restoring datafile 00660 to /oracle002/oradata/PROD/data/tbsd_quest_001.dbf
+restoring datafile 00736 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_101.dbf
+channel c4: restored backup piece 1
+piece handle=51umtkvo_1_1 tag=TAG20200126T020959 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00529 to /oracle003/oradata/PROD/data/data_prod_trans_big_031.dbf
+restoring datafile 00677 to /oracle002/oradata/PROD/indx/tbsi_quest_001.dbf
+restoring datafile 00753 to /oracle006/oradata/PROD/indx/indx_prod_trans_big_100.dbf
+restoring datafile 00760 to /oracle005/oradata/PROD/data/data_prod_notrans_med_012.dbf
+restoring datafile 00771 to /oracle002/oradata/PROD/data/tbs_ogg01.dbf
+channel c2: restored backup piece 1
+piece handle=3jumt8dq_1_1 tag=TAG20200125T033638 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00097 to /oracle005/oradata/PROD/indx/indx_prod_ssd_big_001.dbf
+restoring datafile 00655 to /oracle003/oradata/PROD/data/tbsd_audit_041.dbf
+restoring datafile 00659 to /oracle004/oradata/PROD/data/xdb_001.dbf
+restoring datafile 00688 to /oracle006/oradata/PROD/indx/indx_prod_notrans_big_050.dbf
+restoring datafile 00755 to /oracle004/oradata/PROD/data/data_prod_trans_big_044
+channel c6: restored backup piece 1
+piece handle=3kumt8kh_1_1 tag=TAG20200125T033638 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00100 to /oracle005/oradata/PROD/indx/indx_prod_ssd_med_001.dbf
+restoring datafile 00234 to /oracle003/oradata/PROD/data/data_prod_trans_big_005.dbf
+restoring datafile 00683 to /oracle003/oradata/PROD/data/tbsd_audit_046.dbf
+restoring datafile 00686 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_089.dbf
+channel c5: restored backup piece 1
+piece handle=55umtkvo_1_1 tag=TAG20200126T020959 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00069 to /oracle001/oradata/PROD/data/data_prod_notrans_big_005.dbf
+restoring datafile 00166 to /oracle001/oradata/PROD/indx/indx_prod_notrans_med_004.dbf
+restoring datafile 00217 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_040.dbf
+restoring datafile 00676 to /oracle003/oradata/PROD/data/system_003.dbf
+channel c1: restored backup piece 1
+piece handle=53umtkvo_1_1 tag=TAG20200126T020959 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00085 to /oracle005/oradata/PROD/data/data_prod_ssd_big_005.dbf
+restoring datafile 00258 to /oracle001/oradata/PROD/data/data_prod_notrans_big_026.dbf
+restoring datafile 00299 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_004.dbf
+restoring datafile 00745 to /oracle006/oradata/PROD/data/data_prod_trans_par01_003.dbf
+channel c2: restored backup piece 1
+piece handle=54umtkvo_1_1 tag=TAG20200126T020959 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00084 to /oracle005/oradata/PROD/data/data_prod_ssd_big_004.dbf
+restoring datafile 00158 to /oracle004/oradata/PROD/indx/indx_prod_notrans_med_010.dbf
+restoring datafile 00254 to /oracle004/oradata/PROD/data/data_prod_notrans_big_025.dbf
+restoring datafile 00743 to /oracle006/oradata/PROD/data/data_prod_notrans_big_046.dbf
+channel c3: restored backup piece 1
+piece handle=52umtkvo_1_1 tag=TAG20200126T020959 params=NULL
+channel c3: restore complete
+channel c4: restored backup piece 1
+piece handle=50umtkvo_1_1 tag=TAG20200126T020959 params=NULL
+channel c4: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00083 to /oracle005/oradata/PROD/data/data_prod_ssd_big_003.dbf
+restoring datafile 00229 to /oracle004/oradata/PROD/data/data_prod_notrans_big_022.dbf
+restoring datafile 00450 to /oracle004/oradata/PROD/data/tbsd_norma_tmp_011.dbf
+restoring datafile 00537 to /oracle001/oradata/PROD/data/tbsd_eventual_ebig_001.dbf
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00014 to /oracle003/oradata/PROD/data/tbsd_criti_big_002.dbf
+restoring datafile 00127 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_001.dbf
+restoring datafile 00290 to /oracle003/oradata/PROD/data/data_prod_notrans_big_028.dbf
+restoring datafile 00457 to /oracle005/oradata/PROD/data/data_prod_ssd_big_017.dbf
+channel c6: restored backup piece 1
+piece handle=56umtn0n_1_1 tag=TAG20200126T020959 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00145 to /oracle001/oradata/PROD/indx/indx_prod_notrans_med_002.dbf
+restoring datafile 00296 to /oracle003/oradata/PROD/data/data_prod_notrans_big_029.dbf
+restoring datafile 00365 to /oracle004/oradata/PROD/data/tbsd_norma_tmp_008.dbf
+restoring datafile 00477 to /oracle001/oradata/PROD/indx/indx_prod_trans_big_065.dbf
+channel c5: restored backup piece 1
+piece handle=57umtn9v_1_1 tag=TAG20200126T020959 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00150 to /oracle001/oradata/PROD/indx/indx_prod_notrans_med_003.dbf
+restoring datafile 00310 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_46.dbf
+restoring datafile 00461 to /oracle004/oradata/PROD/indx/tbsi_web_big_005.dbf
+restoring datafile 00730 to /oracle005/oradata/PROD/data/data_prod_ssd_big_021.dbf
+channel c1: restored backup piece 1
+piece handle=5aumtnh1_1_1 tag=TAG20200126T020959 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00078 to /oracle002/oradata/PROD/indx/indx_prod_notrans_med_011.dbf
+restoring datafile 00211 to /oracle002/oradata/PROD/data/data_prod_notrans_big_020.dbf
+restoring datafile 00629 to /oracle001/oradata/PROD/data/tbsd_audit_034.dbf
+restoring datafile 00747 to /oracle006/oradata/PROD/data/tbsd_eventual_ebig_014.dbf
+channel c3: restored backup piece 1
+piece handle=58umtneq_1_1 tag=TAG20200126T020959 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00132 to /oracle003/oradata/PROD/indx/indx_prod_notrans_med_014.dbf
+restoring datafile 00214 to /oracle004/oradata/PROD/data/data_prod_notrans_big_021.dbf
+restoring datafile 00419 to /oracle004/oradata/PROD/data/tbsd_norma_tmp_009.dbf
+restoring datafile 00656 to /oracle003/oradata/PROD/data/tbsd_audit_042.dbf
+channel c6: restored backup piece 1
+piece handle=5humtpbs_1_1 tag=TAG20200126T020959 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00119 to /oracle001/oradata/PROD/indx/indx_prod_notrans_med_013.dbf
+restoring datafile 00213 to /oracle001/oradata/PROD/data/data_prod_notrans_big_022.dbf
+restoring datafile 00644 to /oracle004/oradata/PROD/data/tbsd_audit_037.dbf
+restoring datafile 00748 to /oracle006/oradata/PROD/data/tbsd_mcritico_esp_032.dbf
+channel c5: restored backup piece 1
+piece handle=5iumtpmc_1_1 tag=TAG20200126T020959 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00006 to /oracle002/oradata/PROD/undo/tbs_undo_004.dbf
+restoring datafile 00012 to /oracle004/oradata/PROD/indx/indx_prod_notrans_big_010.dbf
+restoring datafile 00099 to /oracle005/oradata/PROD/indx/indx_prod_ssd_big_003.dbf
+restoring datafile 00304 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_012.dbf
+channel c2: restored backup piece 1
+piece handle=59umtnfk_1_1 tag=TAG20200126T020959 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00021 to /oracle002/oradata/PROD/data/data_prod_notrans_big_009.dbf
+restoring datafile 00248 to /oracle002/oradata/PROD/undo/tbs_undo_007.dbf
+restoring datafile 00342 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_015.dbf
+restoring datafile 00372 to /oracle003/oradata/PROD/data/tbsd_web_big_010.dbf
+channel c4: restored backup piece 1
+piece handle=5bumtnq9_1_1 tag=TAG20200126T020959 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00031 to /oracle002/oradata/PROD/data/data_prod_notrans_big_011.dbf
+restoring datafile 00117 to /oracle005/oradata/PROD/data/data_prod_ssd_med_002.dbf
+restoring datafile 00198 to /oracle003/oradata/PROD/data/tbsd_mcriti_med_003.dbf
+restoring datafile 00391 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_013.dbf
+restoring datafile 00523 to /oracle002/oradata/PROD/indx/indx_prod_trans_par03_001.dbf
+channel c3: restored backup piece 1
+piece handle=5lumtpq9_1_1 tag=TAG20200126T020959 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00077 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_028.dbf
+restoring datafile 00131 to /oracle003/oradata/PROD/data/tbsd_web_big_008.dbf
+restoring datafile 00221 to /oracle002/oradata/PROD/data/tbsd_eventual_nor_004.dbf
+restoring datafile 00476 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_005.dbf
+restoring datafile 00542 to /oracle001/oradata/PROD/data/tbsd_web_sma_001.dbf
+channel c2: restored backup piece 1
+piece handle=5numtrv6_1_1 tag=TAG20200126T020959 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00055 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_025.dbf
+restoring datafile 00270 to /oracle003/oradata/PROD/indx/tbsi_others_sma_002.dbf
+restoring datafile 00408 to /oracle001/oradata/PROD/data/tbsd_mcritico_esp_030.dbf
+restoring datafile 00455 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_014.dbf
+restoring datafile 00460 to /oracle004/oradata/PROD/indx/tbsi_web_sma_002.dbf
+channel c1: restored backup piece 1
+piece handle=5jumtpnf_1_1 tag=TAG20200126T020959 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00080 to /oracle002/oradata/PROD/data/data_prod_notrans_big_016.dbf
+restoring datafile 00277 to /oracle001/oradata/PROD/data/tbsd_others_big_017.dbf
+restoring datafile 00286 to /oracle004/oradata/PROD/data/tbsd_others_big_023.dbf
+restoring datafile 00481 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_056.dbf
+restoring datafile 00496 to /oracle001/oradata/PROD/data/tbsd_others_sma_001.dbf
+channel c6: restored backup piece 1
+piece handle=5kumtpp6_1_1 tag=TAG20200126T020959 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00043 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_011.dbf
+restoring datafile 00089 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_026.dbf
+restoring datafile 00241 to /oracle002/oradata/PROD/undo/tbs_undo_005.dbf
+restoring datafile 00506 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_006.dbf
+restoring datafile 00602 to /oracle003/oradata/PROD/indx/tbsi_others_sma_001.dbf
+channel c5: restored backup piece 1
+piece handle=5mumtq7v_1_1 tag=TAG20200126T020959 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00090 to /oracle003/oradata/PROD/indx/indx_prod_trans_big_027.dbf
+restoring datafile 00246 to /oracle002/oradata/PROD/undo/tbs_undo_006.dbf
+restoring datafile 00417 to /oracle002/oradata/PROD/data/tbsd_others_big_005.dbf
+restoring datafile 00557 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_007.dbf
+restoring datafile 00785 to /oracle001/oradata/PROD/undo/tbs_undo_020.dbf
+channel c4: restored backup piece 1
+piece handle=5oumts2q_1_1 tag=TAG20200126T020959 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00062 to /oracle002/oradata/PROD/data/tbsd_normal_nor_010.dbf
+restoring datafile 00091 to /oracle004/oradata/PROD/indx/indx_prod_trans_big_27.dbf
+restoring datafile 00605 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_008.dbf
+restoring datafile 00698 to /oracle003/oradata/PROD/data/tbsd_others_sma_007.dbf
+restoring datafile 00767 to /oracle003/oradata/PROD/data/tbsd_mvprod_big_018.dbf
+channel c3: restored backup piece 1
+piece handle=5qumtsbj_1_1 tag=TAG20200126T020959 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00041 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_010.dbf
+restoring datafile 00128 to /oracle001/oradata/PROD/data/data_prod_notrans_big_018.dbf
+restoring datafile 00185 to /oracle002/oradata/PROD/indx/tbsi_web_med_003.dbf
+restoring datafile 00216 to /oracle002/oradata/PROD/data/tbsd_normal_nor_007.dbf
+restoring datafile 00649 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_009.dbf
+restoring datafile 00762 to /oracle004/oradata/PROD/data/tbsd_audit_050.dbf
+channel c2: restored backup piece 1
+piece handle=5pumts80_1_1 tag=TAG20200126T020959 params=NULL
+channel c2: restore complete
+channel c2: starting datafile backupset restore
+channel c2: specifying datafile(s) to restore from backup set
+restoring datafile 00015 to /oracle003/oradata/PROD/data/tbsd_eventual_ebig_008.dbf
+restoring datafile 00115 to /oracle004/oradata/PROD/data/data_prod_notrans_big_017.dbf
+restoring datafile 00479 to /oracle004/oradata/PROD/data/tbsd_eventual_ebig_006.dbf
+restoring datafile 00646 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_010.dbf
+restoring datafile 00763 to /oracle004/oradata/PROD/data/tbsd_audit_051.dbf
+channel c6: restored backup piece 1
+piece handle=5sumtt1q_1_1 tag=TAG20200126T020959 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00137 to /oracle002/oradata/PROD/data/data_prod_notrans_big_013.dbf
+restoring datafile 00302 to /oracle003/oradata/PROD/data/tbsd_web_big_009.dbf
+restoring datafile 00650 to /oracle002/oradata/PROD/indx/indx_prod_trans_big_011.dbf
+restoring datafile 00661 to /oracle003/oradata/PROD/data/tbsd_others_big_008.dbf
+restoring datafile 00722 to /oracle006/oradata/PROD/data/tbsd_eventual_tmp_007.dbf
+restoring datafile 00729 to /oracle006/oradata/PROD/data/data_prod_trans_par03_002.dbf
+channel c1: restored backup piece 1
+piece handle=5rumtsdk_1_1 tag=TAG20200126T020959 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00280 to /oracle004/oradata/PROD/data/tbsd_others_big_020.dbf
+restoring datafile 00371 to /oracle003/oradata/PROD/indx/tbsi_web_big_009.dbf
+restoring datafile 00521 to /oracle001/oradata/PROD/data/tbsd_others_big_003.dbf
+restoring datafile 00543 to /oracle001/oradata/PROD/data/tbsd_web_med_001.dbf
+channel c5: restored backup piece 1
+piece handle=5tumtuop_1_1 tag=TAG20200126T020959 params=NULL
+channel c5: restore complete
+channel c5: starting datafile backupset restore
+channel c5: specifying datafile(s) to restore from backup set
+restoring datafile 00023 to /oracle002/oradata/PROD/data/data_prod_notrans_big_002.dbf
+restoring datafile 00155 to /oracle002/oradata/PROD/data/data_prod_notrans_big_014.dbf
+restoring datafile 00386 to /oracle004/oradata/PROD/indx/tbsi_web_big_004.dbf
+channel c1: restored backup piece 1
+piece handle=67umtvuh_1_1 tag=TAG20200126T020959 params=NULL
+channel c1: restore complete
+channel c1: starting datafile backupset restore
+channel c1: specifying datafile(s) to restore from backup set
+restoring datafile 00064 to /oracle004/oradata/PROD/indx/tbsi_web_big_007.dbf
+restoring datafile 00157 to /oracle004/oradata/PROD/data/data_prod_notrans_big_015.dbf
+restoring datafile 00351 to /oracle002/oradata/PROD/data/data_prod_notrans_big_034.dbf
+channel c4: restored backup piece 1
+piece handle=5uumture_1_1 tag=TAG20200126T020959 params=NULL
+channel c4: restore complete
+channel c4: starting datafile backupset restore
+channel c4: specifying datafile(s) to restore from backup set
+restoring datafile 00373 to /oracle003/oradata/PROD/indx/tbsi_web_big_010.dbf
+restoring datafile 00582 to /oracle004/oradata/PROD/data/data_prod_notrans_big_003.dbf
+channel c3: restored backup piece 1
+piece handle=60umtv1n_1_1 tag=TAG20200126T020959 params=NULL
+channel c3: restore complete
+channel c3: starting datafile backupset restore
+channel c3: specifying datafile(s) to restore from backup set
+restoring datafile 00160 to /oracle001/oradata/PROD/data/data_prod_notrans_big_007.dbf
+restoring datafile 00262 to /oracle004/oradata/PROD/indx/tbsi_web_big_006.dbf
+restoring datafile 00393 to /oracle002/oradata/PROD/data/data_prod_notrans_big_001.dbf
+channel c6: restored backup piece 1
+piece handle=66umtvif_1_1 tag=TAG20200126T020959 params=NULL
+channel c6: restore complete
+channel c6: starting datafile backupset restore
+channel c6: specifying datafile(s) to restore from backup set
+restoring datafile 00191 to /oracle002/oradata/PROD/data/data_prod_notrans_big_019.dbf
+restoring datafile 00376 to /oracle002/oradata/PROD/data/tbsd_web_big_002.dbf
+channel c4: restored backup piece 1
+piece handle=6bumu1n8_1_1 tag=TAG20200126T020959 params=NULL
+channel c4: restore complete
+channel c2: restored backup piece 1
+piece handle=5vumtv0u_1_1 tag=TAG20200126T020959 params=NULL
+channel c2: restore complete
+channel c5: restored backup piece 1
+piece handle=68umu1b4_1_1 tag=TAG20200126T020959 params=NULL
+channel c5: restore complete
+channel c6: restored backup piece 1
+piece handle=6cumu1uj_1_1 tag=TAG20200126T020959 params=NULL
+channel c6: restore complete
+channel c3: restored backup piece 1
+piece handle=6aumu1lq_1_1 tag=TAG20200126T020959 params=NULL
+channel c3: restore complete
+channel c1: restored backup piece 1
+piece handle=69umu1bb_1_1 tag=TAG20200126T020959 params=NULL
+channel c1: restore complete
+Finished restore at 27-FEB-20
+
+Starting recover at 27-FEB-20
+
+starting media recovery
+
+channel c1: starting archive log restore to default destination
+channel c2: starting archive log restore to default destination
+channel c3: starting archive log restore to default destination
+channel c4: starting archive log restore to default destination
+channel c5: starting archive log restore to default destination
+channel c6: starting archive log restore to default destination
+channel c1: restoring archive log
+archive log thread=1 sequence=242196
+channel c2: restoring archive log
+archive log thread=1 sequence=242214
+channel c3: restoring archive log
+archive log thread=1 sequence=242277
+channel c4: restoring archive log
+archive log thread=1 sequence=242341
+channel c5: restoring archive log
+archive log thread=1 sequence=242404
+channel c6: restoring archive log
+archive log thread=1 sequence=242466
+channel c1: restoring archive log
+archive log thread=1 sequence=242197
+channel c2: restoring archive log
+archive log thread=1 sequence=242215
+channel c3: restoring archive log
+archive log thread=1 sequence=242278
+channel c4: restoring archive log
+archive log thread=1 sequence=242342
+channel c5: restoring archive log
+archive log thread=1 sequence=242405
+channel c6: restoring archive log
+archive log thread=1 sequence=242467
+channel c1: restoring archive log
+archive log thread=1 sequence=242198
+channel c2: restoring archive log
+archive log thread=1 sequence=242216
+channel c3: restoring archive log
+archive log thread=1 sequence=242279
+channel c4: restoring archive log
+archive log thread=1 sequence=242343
+channel c5: restoring archive log
+archive log thread=1 sequence=242406
+channel c6: restoring archive log
+archive log thread=1 sequence=242468
+channel c1: restoring archive log
+archive log thread=1 sequence=242199
+channel c2: restoring archive log
+archive log thread=1 sequence=242217
+channel c3: restoring archive log
+archive log thread=1 sequence=242280
+channel c4: restoring archive log
+archive log thread=1 sequence=242344
+channel c5: restoring archive log
+archive log thread=1 sequence=242407
+channel c6: restoring archive log
+archive log thread=1 sequence=242469
+channel c1: restoring archive log
+archive log thread=1 sequence=242200
+channel c2: restoring archive log
+archive log thread=1 sequence=242218
+channel c3: restoring archive log
+archive log thread=1 sequence=242281
+channel c4: restoring archive log
+archive log thread=1 sequence=242345
+channel c5: restoring archive log
+archive log thread=1 sequence=242408
+channel c6: restoring archive log
+archive log thread=1 sequence=242470
+channel c1: restoring archive log
+archive log thread=1 sequence=242201
+channel c2: restoring archive log
+archive log thread=1 sequence=242219
+channel c3: restoring archive log
+archive log thread=1 sequence=242282
+channel c4: restoring archive log
+archive log thread=1 sequence=242346
+channel c5: restoring archive log
+archive log thread=1 sequence=242409
+channel c6: restoring archive log
+archive log thread=1 sequence=242471
+channel c1: restoring archive log
+archive log thread=1 sequence=242202
+channel c2: restoring archive log
+archive log thread=1 sequence=242220
+channel c3: restoring archive log
+archive log thread=1 sequence=242283
+channel c4: restoring archive log
+archive log thread=1 sequence=242347
+channel c5: restoring archive log
+archive log thread=1 sequence=242410
+channel c6: restoring archive log
+archive log thread=1 sequence=242472
+channel c1: restoring archive log
+archive log thread=1 sequence=242203
+channel c2: restoring archive log
+archive log thread=1 sequence=242221
+channel c3: restoring archive log
+archive log thread=1 sequence=242284
+channel c4: restoring archive log
+archive log thread=1 sequence=242348
+channel c5: restoring archive log
+archive log thread=1 sequence=242411
+channel c6: restoring archive log
+archive log thread=1 sequence=242473
+channel c1: restoring archive log
+archive log thread=1 sequence=242204
+channel c2: restoring archive log
+archive log thread=1 sequence=242222
+channel c3: restoring archive log
+archive log thread=1 sequence=242285
+channel c4: restoring archive log
+archive log thread=1 sequence=242349
+channel c5: restoring archive log
+archive log thread=1 sequence=242412
+channel c6: restoring archive log
+archive log thread=1 sequence=242474
+channel c1: restoring archive log
+archive log thread=1 sequence=242205
+channel c2: restoring archive log
+archive log thread=1 sequence=242223
+channel c3: restoring archive log
+archive log thread=1 sequence=242286
+channel c4: restoring archive log
+archive log thread=1 sequence=242350
+channel c5: restoring archive log
+archive log thread=1 sequence=242413
+channel c6: restoring archive log
+archive log thread=1 sequence=242475
+channel c1: restoring archive log
+archive log thread=1 sequence=242206
+channel c2: restoring archive log
+archive log thread=1 sequence=242224
+channel c3: restoring archive log
+archive log thread=1 sequence=242287
+channel c4: restoring archive log
+archive log thread=1 sequence=242351
+channel c5: restoring archive log
+archive log thread=1 sequence=242414
+channel c6: restoring archive log
+archive log thread=1 sequence=242476
+channel c1: restoring archive log
+archive log thread=1 sequence=242207
+channel c2: restoring archive log
+archive log thread=1 sequence=242225
+channel c3: restoring archive log
+archive log thread=1 sequence=242288
+channel c4: restoring archive log
+archive log thread=1 sequence=242352
+channel c5: restoring archive log
+archive log thread=1 sequence=242415
+channel c6: restoring archive log
+archive log thread=1 sequence=242477
+channel c1: restoring archive log
+archive log thread=1 sequence=242208
+channel c2: restoring archive log
+archive log thread=1 sequence=242226
+channel c3: restoring archive log
+archive log thread=1 sequence=242289
+channel c4: restoring archive log
+archive log thread=1 sequence=242353
+channel c5: restoring archive log
+archive log thread=1 sequence=242416
+channel c6: restoring archive log
+archive log thread=1 sequence=242478
+channel c1: restoring archive log
+archive log thread=1 sequence=242209
+channel c2: restoring archive log
+archive log thread=1 sequence=242227
+channel c3: restoring archive log
+archive log thread=1 sequence=242290
+channel c4: restoring archive log
+archive log thread=1 sequence=242354
+channel c5: restoring archive log
+archive log thread=1 sequence=242417
+channel c6: restoring archive log
+archive log thread=1 sequence=242479
+channel c1: restoring archive log
+archive log thread=1 sequence=242210
+channel c2: restoring archive log
+archive log thread=1 sequence=242228
+channel c3: restoring archive log
+archive log thread=1 sequence=242291
+channel c4: restoring archive log
+archive log thread=1 sequence=242355
+channel c5: restoring archive log
+archive log thread=1 sequence=242418
+channel c6: restoring archive log
+archive log thread=1 sequence=242480
+channel c1: restoring archive log
+archive log thread=1 sequence=242211
+channel c2: restoring archive log
+archive log thread=1 sequence=242229
+channel c3: restoring archive log
+archive log thread=1 sequence=242292
+channel c4: restoring archive log
+archive log thread=1 sequence=242356
+channel c5: restoring archive log
+archive log thread=1 sequence=242419
+channel c6: restoring archive log
+archive log thread=1 sequence=242481
+channel c1: restoring archive log
+archive log thread=1 sequence=242212
+channel c2: restoring archive log
+archive log thread=1 sequence=242230
+channel c3: restoring archive log
+archive log thread=1 sequence=242293
+channel c4: restoring archive log
+archive log thread=1 sequence=242357
+channel c5: restoring archive log
+archive log thread=1 sequence=242420
+channel c6: restoring archive log
+archive log thread=1 sequence=242482
+channel c1: restoring archive log
+archive log thread=1 sequence=242213
+channel c2: restoring archive log
+archive log thread=1 sequence=242231
+channel c3: restoring archive log
+archive log thread=1 sequence=242294
+channel c4: restoring archive log
+archive log thread=1 sequence=242358
+channel c5: restoring archive log
+archive log thread=1 sequence=242421
+channel c6: restoring archive log
+archive log thread=1 sequence=242483
+channel c2: restoring archive log
+archive log thread=1 sequence=242232
+channel c3: restoring archive log
+archive log thread=1 sequence=242295
+channel c4: restoring archive log
+archive log thread=1 sequence=242359
+channel c5: restoring archive log
+archive log thread=1 sequence=242422
+channel c6: restoring archive log
+archive log thread=1 sequence=242484
+channel c2: restoring archive log
+archive log thread=1 sequence=242233
+channel c3: restoring archive log
+archive log thread=1 sequence=242296
+channel c4: restoring archive log
+archive log thread=1 sequence=242360
+channel c5: restoring archive log
+archive log thread=1 sequence=242423
+channel c6: restoring archive log
+archive log thread=1 sequence=242485
+channel c2: restoring archive log
+archive log thread=1 sequence=242234
+channel c3: restoring archive log
+archive log thread=1 sequence=242297
+channel c4: restoring archive log
+archive log thread=1 sequence=242361
+channel c5: restoring archive log
+archive log thread=1 sequence=242424
+channel c6: restoring archive log
+archive log thread=1 sequence=242486
+channel c2: restoring archive log
+archive log thread=1 sequence=242235
+channel c3: restoring archive log
+archive log thread=1 sequence=242298
+channel c4: restoring archive log
+archive log thread=1 sequence=242362
+channel c5: restoring archive log
+archive log thread=1 sequence=242425
+channel c6: restoring archive log
+archive log thread=1 sequence=242487
+channel c2: restoring archive log
+archive log thread=1 sequence=242236
+channel c3: restoring archive log
+archive log thread=1 sequence=242299
+channel c4: restoring archive log
+archive log thread=1 sequence=242363
+channel c5: restoring archive log
+archive log thread=1 sequence=242426
+channel c6: restoring archive log
+archive log thread=1 sequence=242488
+channel c2: restoring archive log
+archive log thread=1 sequence=242237
+channel c3: restoring archive log
+archive log thread=1 sequence=242300
+channel c4: restoring archive log
+archive log thread=1 sequence=242364
+channel c5: restoring archive log
+archive log thread=1 sequence=242427
+channel c6: restoring archive log
+archive log thread=1 sequence=242489
+channel c2: restoring archive log
+archive log thread=1 sequence=242238
+channel c3: restoring archive log
+archive log thread=1 sequence=242301
+channel c4: restoring archive log
+archive log thread=1 sequence=242365
+channel c5: restoring archive log
+archive log thread=1 sequence=242428
+channel c6: restoring archive log
+archive log thread=1 sequence=242490
+channel c2: restoring archive log
+archive log thread=1 sequence=242239
+channel c3: restoring archive log
+archive log thread=1 sequence=242302
+channel c4: restoring archive log
+archive log thread=1 sequence=242366
+channel c5: restoring archive log
+archive log thread=1 sequence=242429
+channel c6: restoring archive log
+archive log thread=1 sequence=242491
+channel c2: restoring archive log
+archive log thread=1 sequence=242240
+channel c3: restoring archive log
+archive log thread=1 sequence=242303
+channel c4: restoring archive log
+archive log thread=1 sequence=242367
+channel c5: restoring archive log
+archive log thread=1 sequence=242430
+channel c6: restoring archive log
+archive log thread=1 sequence=242492
+channel c2: restoring archive log
+archive log thread=1 sequence=242241
+channel c3: restoring archive log
+archive log thread=1 sequence=242304
+channel c4: restoring archive log
+archive log thread=1 sequence=242368
+channel c5: restoring archive log
+archive log thread=1 sequence=242431
+channel c6: restoring archive log
+archive log thread=1 sequence=242493
+channel c2: restoring archive log
+archive log thread=1 sequence=242242
+channel c3: restoring archive log
+archive log thread=1 sequence=242305
+channel c4: restoring archive log
+archive log thread=1 sequence=242369
+channel c5: restoring archive log
+archive log thread=1 sequence=242432
+channel c6: restoring archive log
+archive log thread=1 sequence=242494
+channel c2: restoring archive log
+archive log thread=1 sequence=242243
+channel c3: restoring archive log
+archive log thread=1 sequence=242306
+channel c4: restoring archive log
+archive log thread=1 sequence=242370
+channel c5: restoring archive log
+archive log thread=1 sequence=242433
+channel c6: restoring archive log
+archive log thread=1 sequence=242495
+channel c2: restoring archive log
+archive log thread=1 sequence=242244
+channel c3: restoring archive log
+archive log thread=1 sequence=242307
+channel c4: restoring archive log
+archive log thread=1 sequence=242371
+channel c5: restoring archive log
+archive log thread=1 sequence=242434
+channel c6: restoring archive log
+archive log thread=1 sequence=242496
+channel c2: restoring archive log
+archive log thread=1 sequence=242245
+channel c3: restoring archive log
+archive log thread=1 sequence=242308
+channel c4: restoring archive log
+archive log thread=1 sequence=242372
+channel c5: restoring archive log
+archive log thread=1 sequence=242435
+channel c6: restoring archive log
+archive log thread=1 sequence=242497
+channel c2: restoring archive log
+archive log thread=1 sequence=242246
+channel c3: restoring archive log
+archive log thread=1 sequence=242309
+channel c4: restoring archive log
+archive log thread=1 sequence=242373
+channel c5: restoring archive log
+archive log thread=1 sequence=242436
+channel c6: restoring archive log
+archive log thread=1 sequence=242498
+channel c2: restoring archive log
+archive log thread=1 sequence=242247
+channel c3: restoring archive log
+archive log thread=1 sequence=242310
+channel c4: restoring archive log
+archive log thread=1 sequence=242374
+channel c5: restoring archive log
+archive log thread=1 sequence=242437
+channel c6: restoring archive log
+archive log thread=1 sequence=242499
+channel c2: restoring archive log
+archive log thread=1 sequence=242248
+channel c3: restoring archive log
+archive log thread=1 sequence=242311
+channel c4: restoring archive log
+archive log thread=1 sequence=242375
+channel c5: restoring archive log
+archive log thread=1 sequence=242438
+channel c6: restoring archive log
+archive log thread=1 sequence=242500
+channel c2: restoring archive log
+archive log thread=1 sequence=242249
+channel c3: restoring archive log
+archive log thread=1 sequence=242312
+channel c4: restoring archive log
+archive log thread=1 sequence=242376
+channel c5: restoring archive log
+archive log thread=1 sequence=242439
+channel c6: restoring archive log
+archive log thread=1 sequence=242501
+channel c2: restoring archive log
+archive log thread=1 sequence=242250
+channel c3: restoring archive log
+archive log thread=1 sequence=242313
+channel c4: restoring archive log
+archive log thread=1 sequence=242377
+channel c5: restoring archive log
+archive log thread=1 sequence=242440
+channel c6: restoring archive log
+archive log thread=1 sequence=242502
+channel c2: restoring archive log
+archive log thread=1 sequence=242251
+channel c3: restoring archive log
+archive log thread=1 sequence=242314
+channel c4: restoring archive log
+archive log thread=1 sequence=242378
+channel c5: restoring archive log
+archive log thread=1 sequence=242441
+channel c6: restoring archive log
+archive log thread=1 sequence=242503
+channel c2: restoring archive log
+archive log thread=1 sequence=242252
+channel c3: restoring archive log
+archive log thread=1 sequence=242315
+channel c4: restoring archive log
+archive log thread=1 sequence=242379
+channel c5: restoring archive log
+archive log thread=1 sequence=242442
+channel c6: restoring archive log
+archive log thread=1 sequence=242504
+channel c2: restoring archive log
+archive log thread=1 sequence=242253
+channel c3: restoring archive log
+archive log thread=1 sequence=242316
+channel c4: restoring archive log
+archive log thread=1 sequence=242380
+channel c5: restoring archive log
+archive log thread=1 sequence=242443
+channel c6: restoring archive log
+archive log thread=1 sequence=242505
+channel c2: restoring archive log
+archive log thread=1 sequence=242254
+channel c3: restoring archive log
+archive log thread=1 sequence=242317
+channel c4: restoring archive log
+archive log thread=1 sequence=242381
+channel c5: restoring archive log
+archive log thread=1 sequence=242444
+channel c6: restoring archive log
+archive log thread=1 sequence=242506
+channel c2: restoring archive log
+archive log thread=1 sequence=242255
+channel c3: restoring archive log
+archive log thread=1 sequence=242318
+channel c4: restoring archive log
+archive log thread=1 sequence=242382
+channel c5: restoring archive log
+archive log thread=1 sequence=242445
+channel c6: restoring archive log
+archive log thread=1 sequence=242507
+channel c2: restoring archive log
+archive log thread=1 sequence=242256
+channel c3: restoring archive log
+archive log thread=1 sequence=242319
+channel c4: restoring archive log
+archive log thread=1 sequence=242383
+channel c5: restoring archive log
+archive log thread=1 sequence=242446
+channel c6: restoring archive log
+archive log thread=1 sequence=242508
+channel c2: restoring archive log
+archive log thread=1 sequence=242257
+channel c3: restoring archive log
+archive log thread=1 sequence=242320
+channel c4: restoring archive log
+archive log thread=1 sequence=242384
+channel c5: restoring archive log
+archive log thread=1 sequence=242447
+channel c6: restoring archive log
+archive log thread=1 sequence=242509
+channel c2: restoring archive log
+archive log thread=1 sequence=242258
+channel c3: restoring archive log
+archive log thread=1 sequence=242321
+channel c4: restoring archive log
+archive log thread=1 sequence=242385
+channel c5: restoring archive log
+archive log thread=1 sequence=242448
+channel c6: restoring archive log
+archive log thread=1 sequence=242510
+channel c2: restoring archive log
+archive log thread=1 sequence=242259
+channel c3: restoring archive log
+archive log thread=1 sequence=242322
+channel c4: restoring archive log
+archive log thread=1 sequence=242386
+channel c5: restoring archive log
+archive log thread=1 sequence=242449
+channel c6: restoring archive log
+archive log thread=1 sequence=242511
+channel c2: restoring archive log
+archive log thread=1 sequence=242260
+channel c3: restoring archive log
+archive log thread=1 sequence=242323
+channel c4: restoring archive log
+archive log thread=1 sequence=242387
+channel c5: restoring archive log
+archive log thread=1 sequence=242450
+channel c6: restoring archive log
+archive log thread=1 sequence=242512
+channel c2: restoring archive log
+archive log thread=1 sequence=242261
+channel c3: restoring archive log
+archive log thread=1 sequence=242324
+channel c4: restoring archive log
+archive log thread=1 sequence=242388
+channel c5: restoring archive log
+archive log thread=1 sequence=242451
+channel c6: restoring archive log
+archive log thread=1 sequence=242513
+channel c2: restoring archive log
+archive log thread=1 sequence=242262
+channel c3: restoring archive log
+archive log thread=1 sequence=242325
+channel c4: restoring archive log
+archive log thread=1 sequence=242389
+channel c5: restoring archive log
+archive log thread=1 sequence=242452
+channel c6: restoring archive log
+archive log thread=1 sequence=242514
+channel c2: restoring archive log
+archive log thread=1 sequence=242263
+channel c3: restoring archive log
+archive log thread=1 sequence=242326
+channel c4: restoring archive log
+archive log thread=1 sequence=242390
+channel c5: restoring archive log
+archive log thread=1 sequence=242453
+channel c6: restoring archive log
+archive log thread=1 sequence=242515
+channel c2: restoring archive log
+archive log thread=1 sequence=242264
+channel c3: restoring archive log
+archive log thread=1 sequence=242327
+channel c4: restoring archive log
+archive log thread=1 sequence=242391
+channel c5: restoring archive log
+archive log thread=1 sequence=242454
+channel c6: restoring archive log
+archive log thread=1 sequence=242516
+channel c2: restoring archive log
+archive log thread=1 sequence=242265
+channel c3: restoring archive log
+archive log thread=1 sequence=242328
+channel c4: restoring archive log
+archive log thread=1 sequence=242392
+channel c5: restoring archive log
+archive log thread=1 sequence=242455
+channel c6: restoring archive log
+archive log thread=1 sequence=242517
+channel c2: restoring archive log
+archive log thread=1 sequence=242266
+channel c3: restoring archive log
+archive log thread=1 sequence=242329
+channel c4: restoring archive log
+archive log thread=1 sequence=242393
+channel c5: restoring archive log
+archive log thread=1 sequence=242456
+channel c6: restoring archive log
+archive log thread=1 sequence=242518
+channel c2: restoring archive log
+archive log thread=1 sequence=242267
+channel c3: restoring archive log
+archive log thread=1 sequence=242330
+channel c4: restoring archive log
+archive log thread=1 sequence=242394
+channel c5: restoring archive log
+archive log thread=1 sequence=242457
+channel c6: restoring archive log
+archive log thread=1 sequence=242519
+channel c2: restoring archive log
+archive log thread=1 sequence=242268
+channel c3: restoring archive log
+archive log thread=1 sequence=242331
+channel c4: restoring archive log
+archive log thread=1 sequence=242395
+channel c5: restoring archive log
+archive log thread=1 sequence=242458
+channel c6: restoring archive log
+archive log thread=1 sequence=242520
+channel c2: restoring archive log
+archive log thread=1 sequence=242269
+channel c3: restoring archive log
+archive log thread=1 sequence=242332
+channel c4: restoring archive log
+archive log thread=1 sequence=242396
+channel c5: restoring archive log
+archive log thread=1 sequence=242459
+channel c6: restoring archive log
+archive log thread=1 sequence=242521
+channel c2: restoring archive log
+archive log thread=1 sequence=242270
+channel c3: restoring archive log
+archive log thread=1 sequence=242333
+channel c4: restoring archive log
+archive log thread=1 sequence=242397
+channel c5: restoring archive log
+archive log thread=1 sequence=242460
+channel c6: restoring archive log
+archive log thread=1 sequence=242522
+channel c2: restoring archive log
+archive log thread=1 sequence=242271
+channel c3: restoring archive log
+archive log thread=1 sequence=242334
+channel c4: restoring archive log
+archive log thread=1 sequence=242398
+channel c5: restoring archive log
+archive log thread=1 sequence=242461
+channel c6: restoring archive log
+archive log thread=1 sequence=242523
+channel c2: restoring archive log
+archive log thread=1 sequence=242272
+channel c3: restoring archive log
+archive log thread=1 sequence=242335
+channel c4: restoring archive log
+archive log thread=1 sequence=242399
+channel c5: restoring archive log
+archive log thread=1 sequence=242462
+channel c6: restoring archive log
+archive log thread=1 sequence=242524
+channel c2: restoring archive log
+archive log thread=1 sequence=242273
+channel c3: restoring archive log
+archive log thread=1 sequence=242336
+channel c4: restoring archive log
+archive log thread=1 sequence=242400
+channel c5: restoring archive log
+archive log thread=1 sequence=242463
+channel c6: restoring archive log
+archive log thread=1 sequence=242525
+channel c2: restoring archive log
+archive log thread=1 sequence=242274
+channel c3: restoring archive log
+archive log thread=1 sequence=242337
+channel c4: restoring archive log
+archive log thread=1 sequence=242401
+channel c5: restoring archive log
+archive log thread=1 sequence=242464
+channel c6: restoring archive log
+archive log thread=1 sequence=242526
+channel c2: restoring archive log
+archive log thread=1 sequence=242275
+channel c3: restoring archive log
+archive log thread=1 sequence=242338
+channel c4: restoring archive log
+archive log thread=1 sequence=242402
+channel c5: restoring archive log
+archive log thread=1 sequence=242465
+channel c6: restoring archive log
+archive log thread=1 sequence=242527
+channel c2: restoring archive log
+archive log thread=1 sequence=242276
+channel c3: restoring archive log
+archive log thread=1 sequence=242339
+channel c4: restoring archive log
+archive log thread=1 sequence=242403
+channel c6: restoring archive log
+archive log thread=1 sequence=242528
+channel c3: restoring archive log
+archive log thread=1 sequence=242340
+RMAN-00571: ===========================================================
+RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+RMAN-00571: ===========================================================
+RMAN-03002: failure of recover command at 02/27/2020 03:14:37
+ORA-19502: write error on file "/backup/archive/log_PROD_2422311.arc", blockno 1253377 (blocksize=512)
+ORA-27063: skgfospo: number of bytes read/written is incorrect
+IBM AIX RISC System/6000 Error: 28: No space left on device
+Additional information: -1
+Additional information: 131072
+
+Recovery Manager complete.
