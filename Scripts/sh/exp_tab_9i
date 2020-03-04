@@ -1,0 +1,17 @@
+set -x
+cd /backup001/requerimientos
+
+FECHA=`date +'%Y%m%d-%H%M'`
+FECHA2=`date +'%Y%m%d'`
+WORKDIR=/backup001/requerimientos
+LOGDIR=/backup001/requerimientos/logs
+DMP=$WORKDIR/exp_RESERVA_RIESGO_CURSO_ERP_$FECHA2.dmp
+LOGFILE=$LOGDIR/exp_RESERVA_RIESGO_CURSO_ERP_$FECHA.log
+LOG_DMP=RESERVA_RIESGO_CURSO_ERP_${FECHA}_exp.log
+echo "Iniciando EXPORT TABLA RESERVA_RIESGO_CURSO_ERP  " $FECHA2 >> $LOGFILE
+echo "=== Exportando Tabla RESERVA_RIESGO_CURSO_ERP en Minerva: `date` ===" >> $LOGFILE
+exp \'/ as sysdba\' file=$DMP log=$LOG_DMP tables=ACSELX.RESERVA_RIESGO_CURSO_ERP
+cat $LOG_DMP    >> $LOGFILE
+echo "FIN ==> Export Tabla RESERVA_RIESGO_CURSO_ERP : `date` ===" >> $LOGFILE
+echo "  " >> $LOGFILE
+chmod 777 $LOGFILE
