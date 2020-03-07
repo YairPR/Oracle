@@ -31,3 +31,37 @@ within RMAN followed by a delete expired to remove RMAN's metadata.  I.e.:
 RMAN> crosscheck archivelog all;
 RMAN> delete noprompt expired archivelog all;
 
+
+How to Delete Archivelog Using RMAN in Oracle
+Recovery Manager (RMAN) is an Oracle Database client that performs backup and recovery tasks on your databases and automates administration of your backup strategies.
+
+If you want to delete archivelog from FRA(ASM Storage -Flash Revovery Area) or filesystem to free space, you can use the following commands:
+
+ 
+
+Start the RMAN executable at the operating system command line while connecting to a target database and, possibly, to a recovery catalog, as in the following examples:
+
+% rman TARGET /       # operating system authentication
+% rman TARGET SYS@prod NOCATALOG  # RMAN prompts for SYS password
+% rman TARGET / CATALOG rco@catdb # RMAN prompts for rco password
+set NLS_DATE_FORMAT=YYYYMMDD HH24:MI:SS
+Archivelog List Commands:
+list archivelog all; 
+list copy of archivelog until time 'SYSDATE-1'; 
+list copy of archivelog from time 'SYSDATE-1'; 
+list copy of archivelog from time 'SYSDATE-1' until time 'SYSDATE-2'; 
+list copy of archivelog from sequence 1000; 
+list copy of archivelog until sequence 1500; 
+list copy of archivelog from sequence 1000 until sequence 1500; 
+Archivelog Delete Commands:
+delete archivelog all;
+delete archivelog until time 'SYSDATE-1'; 
+delete archivelog from time 'SYSDATE-1'; 
+delete archivelog from time 'SYSDATE-1' until time 'SYSDATE-2'; 
+delete archivelog from sequence 1000; 
+delete archivelog until sequence 1500; 
+delete archivelog from sequence 1000 until sequence 1500; 
+Note : Use noprompt to avoid being prompted for each file
+
+delete noprompt archivelog until time 'SYSDATE-1';
+
