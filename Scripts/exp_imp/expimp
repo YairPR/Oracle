@@ -1,0 +1,22 @@
+EXPORT:
+
+-- 9i
+nohup expdp \'/ as sysdba\' tables=DW_SUMA.BP_RTE_EMISION_ACT dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U logfile=exp_table_BP_RTE_EMISION_ACT.log directory=DIR_DATA_PUMP content=ALL EXCLUDE=INDEX,CONSTRAINT,statistics FILESIZE=32G parallel=4 &
+
+nohup expdp \'/ as sysdba\' tables=DW_SUMA.BP_RTE_EMISION dumpfile=exp_table_BP_RTE_EMISION.dmp%U logfile=exp_table_BP_RTE_EMISION.log directory=DIR_DATA_PUMP content=ALL exclude=statistics FILESIZE=32G parallel=4 &
+
+nohup impdp \'/ as sysdba\' remap_schema= DW_SUMA:DW_SUMA directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U logfile=imp_BP_RTE_EMISION0330.log content=all TABLE_EXISTS_ACTION=TRUNCATE METRICS=Y parallel=4 &
+
+nohup impdp \'/ as sysdba\' TABLES=OWNER.TABLE directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U  logfile=imp_BP_RTE_EMISION0330.log &
+
+nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESERVA_RIESGO_CURSO_ERP_enero_2020.log tables=ACSELX.RESERVA_RIESGO_CURSO_ERP buffer=1000000 &
+
+-- 10g
+expdp scott/tiger@db10g schemas=SCOTT directory=TEST_DIR dumpfile=SCOTT.dmp logfile=expdpSCOTT.log
+expdp \'/ as sysdba\' schemas=APP_BPM_SIN_VEH directory=DATAPUMP dumpfile=exp_APP_BPM_SIN_VEH_16032020.dmp logfile=exp_APP_BPM_SIN_VEH_16032020.log
+
+
+IMPORT:
+
+-- 9i
+imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX touser=ACSELX tables=PLAN_FINANCIAMIENTO_TABLE
