@@ -15,6 +15,9 @@ nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESER
 expdp scott/tiger@db10g schemas=SCOTT directory=TEST_DIR dumpfile=SCOTT.dmp logfile=expdpSCOTT.log
 expdp \'/ as sysdba\' schemas=APP_BPM_SIN_VEH directory=DATAPUMP dumpfile=exp_APP_BPM_SIN_VEH_16032020.dmp logfile=exp_APP_BPM_SIN_VEH_16032020.log
 
+--11g
+expdp mantenimiento/mn2013mn directory=DATAPUMP_DIR tables=APP_IAA_INTERFAZ.INT_RVSUNARP_AX dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp logfile=exp_INT_RVSUNARP_AX.log
+
 
 IMPORT:
 
