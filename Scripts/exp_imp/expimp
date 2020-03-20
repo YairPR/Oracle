@@ -17,6 +17,7 @@ expdp \'/ as sysdba\' schemas=APP_BPM_SIN_VEH directory=DATAPUMP dumpfile=exp_AP
 
 --11g
 expdp mantenimiento/mn2013mn directory=IMP_BDSAS tables=APP_IAA_INTERFAZ.INT_RVSUNARP_AX dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp logfile=exp_INT_RVSUNARP_AX.log
+expdp \'/ as sysdba\' FULL=Y directory=D:\bk190320_no_eliminar dumpfile=FULL_SR3605293.dmp logfile=FULL_SR3605293.log
 
 
 IMPORT:
@@ -26,3 +27,5 @@ imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX to
 
 -- 11g
 impdp  mantenimiento/mn2013mn dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp  logfile=exp_INT_RVSUNARP_AX_18032020.log  directory=IMP_BDSAS  table_exists_action=TRUNCATE
+
+
