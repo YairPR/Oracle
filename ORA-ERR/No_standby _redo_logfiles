@@ -1,0 +1,308 @@
+RFS: No standby redo logfiles of size 3072000 blocks exist
+Sat Mar 21 18:29:54 2020
+ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log_PROD_2537931.arc'
+Sat Mar 21 18:29:54 2020
+There are 1 logfiles specified.
+ALTER DATABASE REGISTER [PHYSICAL] LOGFILE
+Register archivelog /archive/PROD/log_PROD_2537931.arc already exists
+ORA-16089 signalled during: ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log...
+Sat Mar 21 18:31:18 2020
+RFS: No standby redo logfiles of size 3072000 blocks exist
+Sat Mar 21 18:39:56 2020
+ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log_PROD_2537921.arc'
+Sat Mar 21 18:39:56 2020
+There are 1 logfiles specified.
+ALTER DATABASE REGISTER [PHYSICAL] LOGFILE
+Register archivelog /archive/PROD/log_PROD_2537921.arc already exists
+ORA-16089 signalled during: ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log...
+Sat Mar 21 18:40:02 2020
+ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log_PROD_2537921.arc'
+There are 1 logfiles specified.
+ALTER DATABASE REGISTER [PHYSICAL] LOGFILE
+Register archivelog /archive/PROD/log_PROD_2537921.arc already exists
+ORA-16089 signalled during: ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log...
+Sat Mar 21 18:40:20 2020
+ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log_PROD_2537941.arc'
+Sat Mar 21 18:40:20 2020
+There are 1 logfiles specified.
+ALTER DATABASE REGISTER [PHYSICAL] LOGFILE
+Register archivelog /archive/PROD/log_PROD_2537941.arc already exists
+ORA-16089 signalled during: ALTER DATABASE REGISTER LOGFILE '/archive/PROD/log...
+Sat Mar 21 18:47:08 2020
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+RFS: No standby redo logfiles of size 3072000 blocks exist
+Mon Mar 23 10:45:03 2020
+alter database recover managed standby database disconnect from session
+Mon Mar 23 10:45:03 2020
+Attempt to start background Managed Standby Recovery process
+MRP0 started with pid=18, OS id=18792502
+MRP0: Background Managed Standby Recovery process started
+MRP0: Background Media Recovery terminated with error 1111
+Mon Mar 23 10:45:09 2020
+Errors in file /oracle/admin/PROD/bdump/prod_mrp0_18792502.trc:
+ORA-01111: name for data file 835 is unknown - rename to correct file
+ORA-01110: data file 835: '/oracle/product/9.2.0/dbhome/dbs/UNNAMED00835'
+ORA-01157: cannot identify/lock data file 835 - see DBWR trace file
+ORA-01111: name for data file 835 is unknown - rename to correct file
+ORA-01110: data file 835: '/oracle/product/9.2.0/dbhome/dbs/UNNAMED00835'
+MRP0: Background Media Recovery process shutdown
+Mon Mar 23 10:45:09 2020
+Completed: alter database recover managed standby database di
+Mon Mar 23 10:51:14 2020
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL
+ORA-16136 signalled during: ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CA...
+Mon Mar 23 10:51:32 2020
+ALTER SYSTEM SET standby_file_management='MANUAL' SCOPE=BOTH;
+Mon Mar 23 10:52:51 2020
+RFS: No standby redo logfiles of size 3072000 blocks exist
+Mon Mar 23 10:53:03 2020
+ALTER DATABASE RENAME FILE '/oracle/product/9.2.0/dbhome/dbs/UNNAMED00835' to '/oracle006/oradata/PROD/data/data_prod_notrans_big_050.dbf'
+Mon Mar 23 10:53:03 2020
+ORA-1511 signalled during: ALTER DATABASE RENAME FILE '/oracle/product/9.2.0/...
+Mon Mar 23 10:53:57 2020
+Alter database create datafile '/oracle/product/9.2.0/dbhome/dbs/UNNAMED00835' as '/oracle006/oradata/PROD/data/data_prod_notrans_big_050.dbf' 
+Mon Mar 23 10:56:50 2020
+Starting control autobackup
+Control autobackup failed with following error :
+ORA-00236: snapshot operation disallowed: mounted controlfile is a backup
+Completed: Alter database create datafile '/oracle/product/9.
+Mon Mar 23 10:57:05 2020
+ALTER SYSTEM SET standby_file_management='AUTO' SCOPE=BOTH;
+Mon Mar 23 10:57:42 2020
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT
+Attempt to start background Managed Standby Recovery process
+MRP0 started with pid=18, OS id=18444532
+MRP0: Background Managed Standby Recovery process started
+Media Recovery Log /archive/PROD/log_PROD_2537921.arc
+Mon Mar 23 10:57:48 2020
+Completed: ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DI
+Mon Mar 23 10:58:31 2020
+Media Recovery Log /archive/PROD/log_PROD_2537931.arc
+Media Recovery Log /archive/PROD/log_PROD_2537941.arc
+Media Recovery Log /archive/PROD/log_PROD_2537951.arc
+Media Recovery Log /archive/PROD/log_PROD_2537961.arc
+Media Recovery Log /archive/PROD/log_PROD_2537971.arc
+Media Recovery Log /archive/PROD/log_PROD_2537981.arc
+Mon Mar 23 11:09:03 2020
+RFS: No standby redo logfiles of size 3072000 blocks exist
+Mon Mar 23 11:09:07 2020
+Media Recovery Log /archive/PROD/log_PROD_2537991.arc
+Media Recovery Log /archive/PROD/log_PROD_2538001.arc
+Media Recovery Log /archive/PROD/log_PROD_2538011.arc
+Media Recovery Log /archive/PROD/log_PROD_2538021.arc
+Media Recovery Log /archive/PROD/log_PROD_2538031.arc
+Media Recovery Log /archive/PROD/log_PROD_2538041.arc
+Media Recovery Log /archive/PROD/log_PROD_2538051.arc
+Media Recovery Log /archive/PROD/log_PROD_2538061.arc
+Mon Mar 23 11:22:32 2020
+RFS: No standby redo logfiles of size 3072000 blocks exist
+Mon Mar 23 11:23:50 2020
+Media Recovery Log /archive/PROD/log_PROD_2538071.arc
+Media Recovery Log /archive/PROD/log_PROD_2538081.arc
+Media Recovery Log /archive/PROD/log_PROD_2538091.arc
+Media Recovery Log /archive/PROD/log_PROD_2538101.arc
+Media Recovery Log /archive/PROD/log_PROD_2538111.arc
+Media Recovery Log /archive/PROD/log_PROD_2538121.arc
+Media Recovery Log /archive/PROD/log_PROD_2538131.arc
+Media Recovery Log /archive/PROD/log_PROD_2538141.arc
