@@ -57,3 +57,6 @@ https://logic.edchen.org/how-to-resolve-ora-01653-unable-to-extend-table-in-tabl
 
 --- TFA
 https://community.oracle.com/community/support/support-blogs/database-support-blog/blog/2018/09/19/ora-600-ora-00600-internal-error-detection-diagnosis-resolution
+
+-- Solucion al realizar move datafile in oracle 12c
+https://access.redhat.com/solutions/1189
