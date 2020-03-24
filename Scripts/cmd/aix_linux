@@ -37,3 +37,6 @@ Wait process bound to CPU
 Cpu usage with priority levels
 #topas -P
 
+-- version AIX
+oslevel -r 
+uname -a
