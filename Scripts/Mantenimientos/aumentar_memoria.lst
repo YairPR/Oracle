@@ -1,0 +1,68 @@
+How to increase memory_target
+Before you can increase memory in oracle database, you must first understand four oracle memory parameters which govern the instance:
+
+SGA_TARGET and SGA_MAX_SIZE
+MEMORY_TARGET and MEMORY_MAX_TARGET
+SGA_TARGET and SGA_MAX_SIZE
+Important: If you set MEMORY_TARGET, they oracle will perform AMM (automatic memory management) and both SGA + PGA are managed within the allocated memory. No need to touch SGA_TARGET / SGA_MAX_SIZE parameters.
+
+Let us assume we have 10 GB physical RAM on a server. Which mean, at any given point we can max use 10 GB of RAM but not more than that. Also it does not mean that every-time we are using entire 10 GB of RAM. The same way SGA_TARGET defines the total size of SGA. SGA_MAX_SIZE define the total max value SGA_TARGET can take.
+
+For example, server RAM is 10 GB, SGA_MAX_SIZE is 5 GB and SGA_TARGET is 3 GB. This means that I can max increase SGA_TARGET to 5 GB and not beyond that.
+
+SGA_MAX_SIZE is not dynamic parameter but SGA_TARGET is.
+
+MEMORY_TARGET and MEMORY_MAX_TARGET
+From 11g onward, you do not need to manage SGA and PGA separately. You can allocate MEMORY_TARGET parameter and oracle will handle both SGA + PGA. You do not even need to set SGA_TARGET or SGA_MAX_SIZE.
+
+Let us assume our previous example, we have 10 GB RAM on server. And we want to allocate 5 GB to Oracle. This can be simple done by setting MEMORY_TARGET to 5 GB. MEMORY_MAX_TARGET defines the maximum value MEMORY_TARGET can go.
+
+Example, server RAM is 10 GB, MEMORY_MAX_TARGET is 7 GB and MEMORY_TARGET is 5 GB. This means I can max increase MEMORY_TARGET to 7 GB and not beyond that.
+
+MEMORY_MAX_TARGET is not dynamic parameter but MEMORY_TARGET is
+
+If MEMORY_TARGET is set to 5 GB, oracle will manage PGA + SGA withing 5 GB.
+
+IF YOU SET MEMORY_TARGET
+SGA_TARGET, SGA_MAX_SIZE and PGA_AGGREGATE_TARGET are set to 0, 60% of memory mentioned in MEMORY_TARGET is allocated to SGA and rest 40% is kept for PGA
+SGA_TARGET and PGA_AGGREGATE_TARGET are set to non-zero values, these values will be considered minimum values.
+SGA_TARGET is set to non zero value and PGA_AGGREGATE_TARGET is not set. Still these values will be autotuned and PGA_AGGREGATE_TARGET will be initialized with value of (MEMORY_TARGET-SGA_TARGET).
+PGA_AGGREGATE_TARGET is set and SGA_TARGET is not set. Still both parameters will be autotunes. SGA_TARGET will be initialized to a value of (MEMORY_TARGET-PGA_AGGREGATE_TARGET).
+HOW TO INCREASE MEMORY_TARGET
+SQL> show parameter target;
+SQL> ALTER SYSTEM SET MEMORY_MAX_TARGET=3G SCOPE=SPFILE;
+shut immediate;
+Also make sure that /dev/shm is more than 3G otherwise you will get error at instance startup
+
+df -h /dev/shm                  -> in my case, it was 2 GB. Increasing to 5 GB
+mount -t tmpfs shmfs -o size=5G /dev/shm
+df -h /dev/shm
+Make /dev/shm value permanent in /etc/fstab file
+
+vi /etc/fstab
+change
+tmpfs               /dev/shm                tmpfs   defaults        0 0
+to
+tmpfs               /dev/shm                tmpfs   size=5G        0 0
+Start the database instance and increase MEMORY_TARGET
+
+startup;
+show parameter target;
+ALTER SYSTEM SET MEMORY_TARGET=2560m;
+Query to find memory used by oracle
+select decode( grouping(nm), 1, 'total', nm ) nm, round(sum(val/1024/1024)) mb
+from
+(
+select 'sga' nm, sum(value) val
+from v$sga
+union all
+select 'pga', sum(a.value)
+from v$sesstat a, v$statname b
+where b.name = 'session pga memory'
+and a.statistic# = b.statistic#
+)
+group by rollup(nm);
+Query to find SGA components size
+A very simple query to display SGA components in Oracle database
+
+SELECT * FROM v$sgainfo;
