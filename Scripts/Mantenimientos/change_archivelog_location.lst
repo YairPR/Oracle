@@ -1,0 +1,104 @@
+**How To Change Archivelog Destination In Oracle
+--If your present archivelog mountpoint is FULL or for any other reason, you want to change the archivelog destination in the database, then follow the below steps.
+
+/*
+NOTE – > It can be done ,when the database up are running. No downtime required. 
+*/
+
+FOR STANDALONE DATABASE:
+1. Find the current archivelog location:
+SQL> archive log list
+Database log mode              Archive Mode
+Automatic archival             Enabled
+Archive destination            /dbaclass05/ORCLSIT2/Arch
+Oldest online log sequence     25626
+Next log sequence to archive   25628
+Current log sequence           25628
+ 
+ 
+SQL>  select destination,STATUS from v$archive_dest where statuS='VALID';
+ 
+DESTINATION                    			    STATUS
+----------------------------------                ---------
+/dbaclass05/ORCLSIT2/Arch                             VALID
+
+create the new archive location:
+mkdir -p /dbaclass06/arch
+
+change the destination:
+SQL> alter system set log_archive_dest_1='LOCATION=/dbaclass06/arch' scope=both;
+ 
+System altered.
+ 
+SQL> archive log list
+Database log mode              Archive Mode
+Automatic archival             Enabled
+Archive destination            /dbaclass06/arch
+Oldest online log sequence     25626
+Next log sequence to archive   25628
+Current log sequence           25628
+ 
+SQL>  select destination,STATUS from v$archive_dest where statuS='VALID';
+ 
+DESTINATION                    			    STATUS
+----------------------------------                ---------
+/dbaclass06/arch                                    VALID
+
+Check whether archives are getting generated at new location:
+
+
+SQL> alter system switch logfile;
+ 
+System altered.
+ 
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+ 
+$ cd /dbaclass06/arch
+$ ls -ltr
+total 11768
+-rw-r----- 1 oracle oinstall 12049920 Mar 22 15:17 1_25628_929882536.dbf
+
+For Real application cluster(RAC):
+In RAC, the archive destination is pointed to an ASM diskgroup.
+
+SQL> show parameter log_archive_dest_1
+ 
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+log_archive_dest_1                   string      LOCATION=+CRMARCH
+
+Change the archive destination:
+
+Before pointing the path to new ASM DG, make sure that Diskgroup exists.
+
+-- Use sid='*', so that parameter will be changed across all the instance pfiles.
+ 
+alter system set log_archive_dest_1='LOCATION=+FRA' scope=both sid='*'
+ 
+System altered.
+ 
+ 
+SQL> select destination,STATUS from v$archive_dest where statuS='VALID';
+ 
+DESTINATION        STATUS
+------------------ ---------
++CRMARCH           VALID
+ 
+ ===================================================================================
+ 
+ I got error when the DB is running with spfile hence I have used the below command.
+
+SQL> alter system set log_archive_dest_1=’XXXXXXX/report’ scope=both;
+alter system set log_archive_dest_1=’xxxxx/Archivelog/report’ scope=both
+*
+ERROR at line 1:
+ORA-32017: failure in updating SPFILE
+ORA-16179: incremental changes to “log_archive_dest_1” not allowed with SPFILE
+
+—————
+
+SQL> alter system set log_archive_dest_1=’LOCATION=xxxxxxx/reports VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=report’ scope=both;
+
+System altered.
