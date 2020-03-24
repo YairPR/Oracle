@@ -1,3 +1,5 @@
+--https://oracle-base.com/articles/misc/reclaiming-unused-space
+
 set line 200
 set verify off;
 col cmd format A120;
