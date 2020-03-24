@@ -1,0 +1,73 @@
+How to display processes using swap space
+by Milosz Galazka on December 26, 2016 and tagged with Command-line, Linux
+Identify and print processes using swap space to get a better understanding of the Linux operating system.
+
+Display processes using swap space
+
+Use the following command to simply display processes using swap space. This list will be sorted by process id by default due to a way find command return its results, which are parsed by awk utility.
+
+$ find /proc -maxdepth 2 -path "/proc/[0-9]*/status" -readable -exec awk -v FS=":" '{process[$1]=$2;sub(/^[ \t]+/,"",process[$1]);} END {if(process["VmSwap"] && process["VmSwap"] != "0 kB") printf "%10s %-30s %20s\n",process["Pid"],process["Name"],process["VmSwap"]}' '{}' \;
+[..]
+     11224 bash                                         520 kB
+     11372 chrome                                      4124 kB
+     11997 python2                                     1376 kB
+     14831 chrome                                      4296 kB
+     20457 chrome                                      4580 kB
+     20463 cat                                           92 kB
+     20464 cat                                           92 kB
+     20467 chrome                                      5204 kB
+     20468 nacl_helper                                  420 kB
+     20471 chrome                                      5100 kB
+     20587 chrome                                     12212 kB
+     20629 chrome                                      8224 kB
+[..]
+Display processes using swap space sorted by used space
+
+Use additional awk instance to add temporary column at the beginning, so data could be easily sorted by used swap space in ascending order.
+
+$ find /proc -maxdepth 2 -path "/proc/[0-9]*/status" -readable -exec awk -v FS=":" '{process[$1]=$2;sub(/^[ \t]+/,"",process[$1]);} END {if(process["VmSwap"] && process["VmSwap"] != "0 kB") printf "%10s %-30s %20s\n",process["Pid"],process["Name"],process["VmSwap"]}' '{}' \; | awk '{print $(NF-1),$0}' | sort -h | cut -d " " -f2-
+[..]
+     20587 chrome                                     12212 kB
+      2098 firefox                                    12588 kB
+      2080 applet.py                                  13072 kB
+     10801 Web Content                                15796 kB
+     21412 atom                                       17384 kB
+      1629 cinnamon                                   18584 kB
+      1300 Xorg                                       22048 kB
+     28740 atom                                       22692 kB
+     21482 atom                                       32800 kB
+     28761 atom                                       51644 kB
+     21444 atom                                       68044 kB
+     21432 atom                                       77080 kB
+Display top ten processes using swap space
+
+The following command will sort processes by used swap space in descending order, then execute head utility to limit number of records.
+
+$ find /proc -maxdepth 2 -path "/proc/[0-9]*/status" -readable -exec awk -v FS=":" '{process[$1]=$2;sub(/^[ \t]+/,"",process[$1]);} END {if(process["VmSwap"] && process["VmSwap"] != "0 kB") printf "%10s %-30s %20s\n",process["Pid"],process["Name"],process["VmSwap"]}' '{}' \; | awk '{print $(NF-1),$0}' | sort -hr | head | cut -d " " -f2- 
+     21432 atom                                       77080 kB
+     21444 atom                                       67596 kB
+     28761 atom                                       51644 kB
+     21482 atom                                       32800 kB
+     28740 atom                                       22692 kB
+      1300 Xorg                                       22048 kB
+      1629 cinnamon                                   18584 kB
+     21412 atom                                       17384 kB
+     10801 Web Content                                15796 kB
+      2080 applet.py                                  13072 kB
+Display top ten processes using swap space with percentage values
+
+Read (see 1st command) or calculate (see 2nd command) total available swap space to calculate and display per process percentage swap usage. Both of these commands are equivalent.
+
+$ find /proc -maxdepth 2 -path "/proc/[0-9]*/status" -readable -exec awk -v FS=":" -v TOTSWP="$(cat /proc/meminfo | sed  -n -e "s/^SwapTotal:[ ]*\([0-9]*\) kB/\1/p")" '{process[$1]=$2;sub(/^[ \t]+/,"",process[$1]);} END {if(process["VmSwap"] && process["VmSwap"] != "0 kB") {used_swap=process["VmSwap"];sub(/[ a-zA-Z]+/,"",used_swap);percent=(used_swap/TOTSWP*100); printf "%10s %-30s %20s %6.2f%\n",process["Pid"],process["Name"],process["VmSwap"],percent} }' '{}' \;  | awk '{print $(NF-2),$0}' | sort -hr | head | cut -d " " -f2-
+$ find /proc -maxdepth 2 -path "/proc/[0-9]*/status" -readable -exec awk -v FS=":" -v TOTSWP="$(cat /proc/swaps | sed 1d | awk 'BEGIN{sum=0} {sum=sum+$(NF-2)} END{print sum}')" '{process[$1]=$2;sub(/^[ \t]+/,"",process[$1]);} END {if(process["VmSwap"] && process["VmSwap"] != "0 kB") {used_swap=process["VmSwap"];sub(/[ a-zA-Z]+/,"",used_swap);percent=(used_swap/TOTSWP*100); printf "%10s %-30s %20s %6.2f%\n",process["Pid"],process["Name"],process["VmSwap"],percent} }' '{}' \;  | awk '{print $(NF-2),$0}' | sort -hr | head | cut -d " " -f2-
+     21432 atom                                       77080 kB   0.93%
+     21444 atom                                       67596 kB   0.82%
+     28761 atom                                       51644 kB   0.62%
+     21482 atom                                       32800 kB   0.40%
+     28740 atom                                       22692 kB   0.27%
+      1300 Xorg                                       22048 kB   0.27%
+      1629 cinnamon                                   18584 kB   0.22%
+     21412 atom                                       17384 kB   0.21%
+     10801 Web Content                                15796 kB   0.19%
+      2080 applet.py                                  13072 kB   0.16%
+You can extend this idea further by creating bar charts in terminal. awk is beautiful!
