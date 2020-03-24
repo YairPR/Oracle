@@ -12,3 +12,4 @@ from dba_data_files df
         group by file_id
     ) free on df.file_id = free.file_id
 order by df.tablespace_name, df.file_name
+/
