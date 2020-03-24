@@ -1,0 +1,36 @@
+**How To Drop And Recreate Temp Tablespace In Oracle
+--If you want to recreate your temp tablespace, then follow below steps. For changing the default tablespace also, below steps can be used.
+--Find the existing temp tablespace details
+
+SQL> ;        
+  1* select tablespace_name,file_name from dba_temp_files
+SQL> /
+ 
+TABLESPACE_NAME 	       FILE_NAME
+------------------------------ --------------------------------------------------------
+TEMP        /home/oracle/app/oracle/oradata/cdb1/orcl/orcl_temp01201
+        4-07-30_04-39-23-PM.dbf
+
+--Create another Temporary Tablespace TEMP1
+CREATE TEMPORARY TABLESPACE TEMP1 TEMPFILE  ‘/u01/app/oradata/DBACLASS/temp01′ SIZE 2G;
+
+--Move Default Database temp tablespace
+ALTER DATABASE DEFAULT TEMPORARY TABLESPACE TEMP1;
+
+--If any sessions are using temp space, then kill them.
+SELECT b.tablespace,b.segfile#,b.segblk#,b.blocks,a.sid,a.serial#,
+a.username,a.osuser, a.status
+FROM v$session a,v$sort_usage b
+WHERE a.saddr = b.session_addr;
+ 
+ALTER SYSTEM KILL 'SID,SERIAL#' IMMEDIATE;
+
+--Drop the original temp tablespace.
+--Drop temp tablespace
+DROP TABLESPACE temp INCLUDING CONTENTS AND DATAFILES;
+
+--Make TEMP as default tablespace
+ALTER DATABASE DEFAULT TEMPORARY TABLESPACE temp;
+
+--Drop temporary for tablespace temp1
+Drop temporary for tablespace temp1
