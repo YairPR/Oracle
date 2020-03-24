@@ -1,0 +1,126 @@
+For Memory Utilization Percentage without Percent Symbol:
+
+$ free -t | awk 'NR == 2 {print "Current Memory Utilization is : " $3/$2*100}'
+or
+$ free -t | awk 'FNR == 2 {print "Current Memory Utilization is : " $3/$2*100}'
+
+Current Memory Utilization is : 20.4194
+
+For Swap Utilization Percentage without Percent Symbol:
+
+$ free -t | awk 'NR == 3 {print "Current Swap Utilization is : " $3/$2*100}'
+or
+$ free -t | awk 'FNR == 3 {print "Current Swap Utilization is : " $3/$2*100}'
+
+Current Swap Utilization is : 0
+
+For Memory Utilization Percentage with Percent Symbol and two decimal places:
+
+$ free -t | awk 'NR == 2 {printf("Current Memory Utilization is : %.2f%"), $3/$2*100}'
+or
+$ free -t | awk 'FNR == 2 {printf("Current Memory Utilization is : %.2f%"), $3/$2*100}'
+
+Current Memory Utilization is : 20.42%
+
+
+For Swap Utilization Percentage with Percent Symbol and two decimal places:
+ 
+$ free -t | awk 'NR == 3 {printf("Current Swap Utilization is : %.2f%"), $3/$2*100}'
+or
+$ free -t | awk 'FNR == 3 {printf("Current Swap Utilization is : %.2f%"), $3/$2*100}'
+
+Current Swap Utilization is : 0.00%
+
+“free” command output for better clarification:
+
+$ free
+              total        used        free      shared  buff/cache   available
+Mem:          15867        3730        9868        1189        2269       10640
+Swap:         17454           0       17454
+Total:        33322        3730       27322
+
+Details are follow:
+
+free: free is a standard command to check memory utilization in Linux.
+awk: awk is a powerful command which is specialized for textual data manipulation.
+FNR == 2: It gives the total number of records for each input file. Basically it’s used to select the given line (Here, it chooses the line number 2).
+NR == 2: It gives the total number of records processed. Basically it’s used to filter the given line (Here, it chooses the line number 2)..
+$3/$2*100: It divides column 2 with column 3 and it multiply the results with 100.
+printf: It used to format and print data.
+%.2f%: By default it prints floating point numbers with 6 decimal places. Use the following format to limit  decimal places.
+
+======================================================================================================
+Method-2: How to check Memory Utilization Percentage in Linux?
+=======================================================================================================
+We can use the following combination of commands to get this done. In this method, we are using combination of free, grep and awk command to get the memory utilization percentage.
+
+For Memory Utilization Percentage without Percent Symbol:
+ 
+$ free -t | grep Mem | awk '{print "Current Memory Utilization is : " $3/$2*100}'
+Current Memory Utilization is : 20.4228
+For Swap Utilization Percentage without Percent Symbol:
+
+$ free -t | grep Swap | awk '{print "Current Swap Utilization is : " $3/$2*100}'
+Current Swap Utilization is : 0
+For Memory Utilization Percentage with Percent Symbol and two decimal places:
+
+$ free -t | grep Mem | awk '{printf("Current Memory Utilization is : %.2f%"), $3/$2*100}'
+Current Memory Utilization is : 20.43%
+For Swap Utilization Percentage with Percent Symbol and two decimal places:
+
+$ free -t | grep Swap | awk '{printf("Current Swap Utilization is : %.2f%"), $3/$2*100}'
+Current Swap Utilization is : 0.00%
+Method-1: How to check CPU utilization percentage in Linux?
+We can use the following combination of commands to get this done. In this method, we are using combination of top, print and awk command to get the CPU utilization percentage.
+
+If you are looking for other articles which is related to memory then navigate to the following link.
+
+top Command
+htop Command
+atop Command
+Glances Command
+If it shows multiple CPU in the output then you need to use the following method.
+
+$ top -b -n1 | grep ^%Cpu
+%Cpu0  :  5.3 us,  0.0 sy,  0.0 ni, 94.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu1  :  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu2  :  0.0 us,  0.0 sy,  0.0 ni, 94.7 id,  0.0 wa,  0.0 hi,  5.3 si,  0.0 st
+%Cpu3  :  5.3 us,  0.0 sy,  0.0 ni, 94.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu4  : 10.5 us, 15.8 sy,  0.0 ni, 73.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu5  :  0.0 us,  5.0 sy,  0.0 ni, 95.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu6  :  5.3 us,  0.0 sy,  0.0 ni, 94.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+%Cpu7  :  5.3 us,  0.0 sy,  0.0 ni, 94.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+For CPU Utilization Percentage without Percent Symbol:
+
+$ top -b -n1 | grep ^%Cpu | awk '{cpu+=$9}END{print "Current CPU Utilization is : " 100-cpu/NR}'
+Current CPU Utilization is : 21.05
+For CPU Utilization Percentage with Percent Symbol and two decimal places:
+
+$ top -b -n1 | grep ^%Cpu | awk '{cpu+=$9}END{printf("Current CPU Utilization is : %.2f%"), 100-cpu/NR}'
+Current CPU Utilization is : 14.81%
+Method-2: How to check CPU utilization percentage in Linux?
+We can use the following combination of commands to get this done. In this method, we are using combination of top, print/printf and awk command to get the CPU utilization percentage.
+
+If it shows all together CPU(s) in the single output then you need to use the following method.
+
+$ top -b -n1 | grep ^%Cpu
+%Cpu(s): 15.3 us,  7.2 sy,  0.8 ni, 69.0 id,  6.7 wa,  0.0 hi,  1.0 si,  0.0 st
+For CPU Utilization Percentage without Percent Symbol:
+
+$ top -b -n1 | grep ^%Cpu | awk '{print "Current CPU Utilization is : " 100-$8}' 
+Current CPU Utilization is : 5.6
+For CPU Utilization Percentage with Percent Symbol and two decimal places:
+
+$ top -b -n1 | grep ^%Cpu | awk '{printf("Current CPU Utilization is : %.2f%"), 100-$8}' 
+Current CPU Utilization is : 5.40%
+Details are follow:
+
+top: top is one of the best command to check currently running process on Linux system.
+-b: -b option, allow the top command to switch in batch mode. It is useful when you run the top command from local system to remote system.
+-n1: Number-of-iterations
+^%Cpu: Filter the lines which starts with %Cpu
+awk: awk is a powerful command which is specialized for textual data manipulation.
+cpu+=$9: For each line, add column 9 to a variable ‘cpu’.
+printf: It used to format and print data.
+%.2f%: By default it prints floating point numbers with 6 decimal places. Use the following format to limit a decimal places.
+100-cpu/NR: Finally print the ‘CPU Average’ by subtracting 100, divided by the number of records.
