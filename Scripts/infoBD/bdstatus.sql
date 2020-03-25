@@ -7,3 +7,12 @@ select HOST_NAME,INSTANCE_NAME,INSTANCE_ROLE,VERSION,ACTIVE_STATE,STATUS,ARCHIVE
 TO_CHAR(CREATED,'DD-MM-YYYY HH24:mi') CREATE_DATE,TO_CHAR(STARTUP_TIME,'DD-MM-YYYY HH24:mi') STARTUP 
 from v$instance, v$database;  
 
+
+
+
+
+select b.name, b.open_mode, a.status , a.STARTUP_TIME from v$instance a, v$database b where a.INSTANCE_NAME=b.name;
+
+NAME      OPEN_MODE            STATUS       STARTUP_T
+--------- -------------------- ------------ ---------
+P2KPROD   READ WRITE           OPEN         05-DEC-19
