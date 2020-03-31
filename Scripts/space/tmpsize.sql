@@ -1,4 +1,21 @@
 --
+-- Temporary Tablespace Usage.
+--
+SET PAUSE ON
+SET PAUSE 'Press Return to Continue'
+SET PAGESIZE 60
+SET LINESIZE 300
+ 
+COL TABLESPACE_SIZE FOR 999,999,999,999
+COL ALLOCATED_SPACE FOR 999,999,999,999
+COL FREE_SPACE FOR 999,999,999,999
+ 
+SELECT *
+FROM   dba_temp_free_space
+/
+
+
+--
 -- Temporary Tablespace Sort Usage.
 --
  
