@@ -51,6 +51,9 @@ https://www.brentozar.com/archive/2015/03/tables-used-oracle/
 
 -- add disk to ASM
 https://oracleracdba1.wordpress.com/2012/10/12/how-to-add-disk-to-asm/
+https://dbachef.wordpress.com/2015/01/28/adding-new-disk-to-asm-diskgroup-on-aix-7-1/
+http://thinkoracleapps.blogspot.com/2016/01/asm-disk-addition-in-aix-there-is-not.html
+https://dba12c.wordpress.com/2015/08/29/how-to-create-oracle-asm-disks-on-aix/
 
 --ora-01653
 https://logic.edchen.org/how-to-resolve-ora-01653-unable-to-extend-table-in-tablespace/
