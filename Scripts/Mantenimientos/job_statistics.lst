@@ -1,0 +1,78 @@
+-- https://dbaclass.com/article/get-ddl-dbms-scheduler-job/
+
+select owner, job_name, dbms_metadata.get_ddl('IBM_STATISTICS_SCHEMA', job_name, owner) as ddl_output from ALL_SCHEDULER_JOBS;
+
+
+ select dbms_metadata.get_ddl('PROCOBJ','IBM_STATISTICS_SCHEMA','SYS') from dual;
+
+ERROR:
+ORA-31603: object "IBM_STATISTICS_SCHEMA" of type PROCOBJ not found in schema "SYS"
+ORA-06512: at "SYS.DBMS_METADATA", line 5805
+ORA-06512: at "SYS.DBMS_METADATA", line 8344
+ORA-06512: at line 1
+
+no rows selected
+
+ select owner,job_name from dba_scheduler_jobs where job_name='CLEANUP_ONLINE_IND_BUILD';
+ 
+
+exec dbms_scheduler.copy_job('SYS.IBM_STATISTICS_SCHEMA','IBMYPURISACA.IBM_STATISTICS_SCHEMA_A');
+
+select owner,job_name from dba_scheduler_jobs where job_name='IBM_STATISTICS_SCHEMA_A';
+
+ select dbms_metadata.get_ddl('PROCOBJ','IBM_STATISTICS_SCHEMA_A','IBMYPURISACA') from dual;
+
+
+DBMS_METADATA.GET_DDL('PROCOBJ','IBM_STATISTICS_SCHEMA_A','IBMYPURISACA')
+----------------------------------------------------------------------------------------------------
+
+
+BEGIN
+dbms_scheduler.create_job('"IBM_STATISTICS_SCHEMA_A"',
+job_type=>'PLSQL_BLOCK', job_action=>
+'DECLARE
+   CURSOR c_esquemas
+   IS
+        SELECT owner esquema, COUNT (1)
+          FROM dba_segments
+         WHERE owner NOT IN
+                  (''SYSTEM'',
+                   ''SYS'',
+                   ''TSMSYS'',
+                   ''EXFSYS'',
+                   ''WMSYS'',
+                   ''CTXSYS'',
+                   ''OUTLN'',
+                   ''DBSNMP'',
+                   ''XDB'')
+               AND tablespace_name NOT IN (''SYSTEM'', ''SYSAUX'')
+      GROUP BY owner
+      ORDER BY 2 DESC;
+BEGIN
+   FOR x IN c_esquemas
+   LOOP
+      BEGIN
+         DBMS_STATS.gather_schema_stats (ownname       => x.esquema,
+                                         granularity   => ''ALL'',
+                                         CASCADE       => TRUE,
+                                         DEGREE        => 4,
+                                         options       => ''GATHER'');
+         COMMIT;
+      EXCEPTION
+         WHEN OTHERS
+         THEN
+            DBMS_OUTPUT.put_line (TO_CHAR (SQLCODE) || '' - '' || SUBSTR (SQLERRM, 1, 150));
+      END;
+   END LOOP;
+END;'
+, number_of_arguments=>0,
+start_date=>TO_TIMESTAMP_TZ('01-NOV-2019 09.00.00.000000000 AM -05:00','DD-MON-RRRR HH.MI.SSXFF AM TZR','NLS_DATE_LANGUAGE=english'), repeat_interval=>'FREQ=MONTHLY;BYDAY=-1SAT;BYHOUR=1'
+, end_date=>NULL,
+job_class=>'"DEFAULT_JOB_CLASS"', 
+enabled=>FALSE, auto_drop=>TRUE,
+comments=>'Gather schema statistics'
+);
+COMMIT;
+END;
+/
+
