@@ -17,16 +17,10 @@ SELECT /*+ rule */ to_char(sysdate,'hh24:mi:ss') fecha, to_char(s.Logon_Time,'dd
 --  AND  s.Status='KILLED'
    AND  p.addr=s.paddr
 --   AND s.action like '%PVILLACAMPA%'
---  and s.sid in (549,706,862,1243,353,922,253,779,546,541,158,341,740,979,327,452,680,732,267,1255,865,722,775,274,338,397,565,623,794,875,991,1062,1144,93,935,106)
---  AND  s.username like '%WK'
 --AND  s.username = 'DS_CRMACSELX'
 -- AND s.osuser <> 'djara'
 --  and module = 'ServicioPLW.exe'
 -- AND s.machine like 'j2ee04'
--- ORDER BY query --last_call -- query
--- and action like '%GLONGA%'
---and osuser='desacc'
---and s.username in ('JGABRIEL' , 'RRICALDE','RCASTROL')
 ORDER BY last_call --16 -- -- 9 
 --order by logon_time
 -- ORDER BY s.sql_address||' '||s.sql_hash_value, machine
