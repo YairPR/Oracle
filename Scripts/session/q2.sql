@@ -1,3 +1,5 @@
+-- Display session enter value hash
+
 set linesize 2000 pagesize 20000 feedback on
 set linesize 2000 pagesize 20000 feedback on
 col os_db_user for a20
