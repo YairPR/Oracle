@@ -51,3 +51,23 @@ GROUP by
    A.tablespace_name, 
    D.mb_total
 /
+
+
+Query to see Current Temp Datafiles State
+To see the current state of the temp datafiles:
+
+set pages 999
+set lines 400
+col FILE_NAME format a75
+select d.TABLESPACE_NAME, d.FILE_NAME, d.BYTES/1024/1024 SIZE_MB, d.AUTOEXTENSIBLE, d.MAXBYTES/1024/1024 MAXSIZE_MB, d.INCREMENT_BY*(v.BLOCK_SIZE/1024)/1024 INCREMENT_BY_MB
+from dba_temp_files d,
+ v$tempfile v
+where d.FILE_ID = v.FILE#
+order by d.TABLESPACE_NAME, d.FILE_NAME;
+
+ALTER TABLESPACE TEMP_DWR ADD TEMPFILE '+DATA' SIZE 10G AUTOEXTEND ON NEXT 1G MAXSIZE 32767M;
+
+/*
+See Oracle Documentation for more info and Syntax:
+https://docs.oracle.com/database/121/SQLRF/statements_3002.htm
+*/
