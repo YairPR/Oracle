@@ -56,10 +56,10 @@ RFS       IDLE                  0          0          0          0
  
 LAST SEQUENCE RECEIVED AND LAST SEQUENCE APPLIED
  
-SQL> SELECT al.thrd "Thread", almax "Last Seq Received", lhmax "Last Seq Applied" FROM
-  2  (select thread# thrd, MAX(sequence#) almax FROM v$archived_log WHERE resetlogs_change#=(SELECT resetlogs_change#
-  3   FROM v$database) GROUP BY thread#) al, (SELECT thread# thrd, MAX(sequence#) lhmax FROM v$log_history
-WHERE resetlogs_change#=(SELECT resetlogs_change# FROM v$database) GROUP BY thread#) lh WHERE al.thrd = lh.thrd;  4
+SELECT al.thrd "Thread", almax "Last Seq Received", lhmax "Last Seq Applied" FROM
+   (select thread# thrd, MAX(sequence#) almax FROM v$archived_log WHERE resetlogs_change#=(SELECT resetlogs_change#
+    FROM v$database) GROUP BY thread#) al, (SELECT thread# thrd, MAX(sequence#) lhmax FROM v$log_history
+WHERE resetlogs_change#=(SELECT resetlogs_change# FROM v$database) GROUP BY thread#) lh WHERE al.thrd = lh.thrd;  
  
     Thread Last Seq Received Last Seq Applied
 ---------- ----------------- ----------------
