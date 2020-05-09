@@ -27,3 +27,73 @@ https://oracle-base.com/articles/misc/identifying-host-names-and-addresses
 
 001 tunning
 https://sysdbasoft.com/performance-tuning-and-sql-tuning-tutorial-in-the-oracle-database/
+
+-----------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------
+
+-- Snapper
+https://blog.tanelpoder.com/snapper/
+http://tech.e2sn.com/oracle-scripts-and-tools/session-snapper
+
+-- library scripts dba
+https://github.com/jkstill/oracle-script-lib
+https://github.com/freddenis/oracle-scripts
+https://github.com/tanelpoder/tpt-oracle/blob/master/ash/ashtop.sql
+https://github.com/tanelpoder/tpt-oracle/tree/master/tools/moats_v1.05
+https://gist.github.com/haballan/2e0f6b9fb17a3a03de2a016ca43b00c1
+https://github.com/oraclebase/dba
+
+
+important blog
+https://unknowndba.blogspot.com/
+https://unknowndba.blogspot.com/2018/04/rac-statussh-overview-of-your-rac-gi.html
+
+-- agregar disk to diskgroup exists
+https://juanmercadoit.com/2009/10/13/agregar-disco-a-un-diskgroup-existente/
+
+-- move tbs to fs to asm
+https://dbaclass.com/article/move-datafile-from-file-system-to-asm-disk-in-11g/
+
+-- Daily / Hourly archive log generation
+https://deveshdba.wordpress.com/2016/10/26/daily-hourly-archive-log-generation/
+
+--Archived log generation volume and count report
+http://lefterhs.blogspot.com/2012/07/archived-log-generation-volume-and.html
+
+--Procedure to automate datafiles' resizing taking into account filesystems' free space
+http://lefterhs.blogspot.com/2012/10/procedure-to-automate-datafiles.html
+
+
+--Rsync over SSH with key authentication
+https://andykdocs.de/development/Linux/2013-01-17+Rsync+over+SSH+with+Key+Authentication
+
+--bdaclass
+https://dbaclass.com/monitor-your-db/
+
+--rman performance
+https://mithun168.wordpress.com/2018/01/29/rman-performance-tuning-basics/
+
+--add new disk to diskgroup aix
+https://dbachef.wordpress.com/2015/01/28/adding-new-disk-to-asm-diskgroup-on-aix-7-1/
+
+--ORA-04021: TIMEOUT OCCURRED WHILE WAITING TO LOCK 
+https://aprakash.wordpress.com/2011/09/16/ora-04021-timeout-occurred-while-waiting-to-lock-object-library-cache-pin/
+
+--Which Tables are Being Used in Oracle?
+https://www.brentozar.com/archive/2015/03/tables-used-oracle/
+
+-- add disk to ASM
+https://oracleracdba1.wordpress.com/2012/10/12/how-to-add-disk-to-asm/
+https://dbachef.wordpress.com/2015/01/28/adding-new-disk-to-asm-diskgroup-on-aix-7-1/
+http://thinkoracleapps.blogspot.com/2016/01/asm-disk-addition-in-aix-there-is-not.html
+https://dba12c.wordpress.com/2015/08/29/how-to-create-oracle-asm-disks-on-aix/
+
+--ora-01653
+https://logic.edchen.org/how-to-resolve-ora-01653-unable-to-extend-table-in-tablespace/
+
+
+--- TFA
+https://community.oracle.com/community/support/support-blogs/database-support-blog/blog/2018/09/19/ora-600-ora-00600-internal-error-detection-diagnosis-resolution
+
+-- Solucion al realizar move datafile in oracle 12c
+https://access.redhat.com/solutions/1189
