@@ -1,0 +1,119 @@
+--http://dbpilot.net/2018/resetting-an-oracle-account-password/
+QUESTIONS
+
+How do I reset a password for a user in Oracle?
+How do I restore a user password if the account has expired?
+How do I change the password for a user in Oracle?
+How do I recover a lost password on Oracle?
+How to connect to Oracle when you forgot your password.
+How to unlock an account and reset a password.
+
+(A) A user wants to reset his expired account password to the same value.
+(B) A user has forgotten his password and therefore he wants to set a new one.
+(C) A user wants to unlock his account by setting the same or a new password.
+
+----------------------------------------------------------------------------
+(A) A user wants to reset his expired account password to the same value.
+COL SYSTIMESTAMP FOR A35;
+SELECT SYSTIMESTAMP FROM DUAL;
+
+   SYSTIMESTAMP
+   -----------------------------------
+   19-DEC-17 10.10.42.743229 AM +03:00
+
+COL USERNAME FOR A15 
+COL ACCOUNT_STATUS FOR A15
+COL LOCK_DATE FOR A10 
+COL EXPIRE_DATE FOR A10 
+COL PROFILE  FOR A10
+SELECT USERNAME, ACCOUNT_STATUS, LOCK_DATE, EXPIRY_DATE, PROFILE
+FROM DBA_USERS WHERE ACCOUNT_STATUS LIKE '%GRACE%';
+
+   USERNAME    ACCOUNT_STATUS  LOCK_DATE  EXPIRY_DATE        PROFILE
+   ----------- --------------- ---------- ------------------ ----------
+   SMITH       EXPIRED(GRACE)             22-NOV-17          DEFAULT
+
+COL RESOURCE_NAME FOR A25 
+COL RESOURCE_TYPE FOR A10
+COL LIMIT FOR A10 
+SELECT * FROM DBA_PROFILES WHERE PROFILE='DEFAULT' AND RESOURCE_NAME IN ('PASSWORD_LIFE_TIME');
+
+   PROFILE    RESOURCE_NAME             RESOURCE_T LIMIT
+   ---------- ------------------------- ---------- ----------
+   DEFAULT    PASSWORD_LIFE_TIME        PASSWORD   180
+
+COL "PASSWORD RESET" FOR A65 
+SELECT 'ALTER USER ' || NAME || ' IDENTIFIED BY VALUES ' || q'[']' || PASSWORD || q'[';]' "PASSWORD RESET" 
+FROM USER$ WHERE NAME IN (SELECT USERNAME FROM DBA_USERS WHERE ACCOUNT_STATUS LIKE '%GRACE%');
+
+   PASSWORD RESET
+   -----------------------------------------------------------------
+   ALTER USER SMITH IDENTIFIED BY VALUES '7E7BE47C1556211D';
+
+
+COL USERNAME FOR A15 
+COL ACCOUNT_STATUS FOR A15
+COL LOCK_DATE FOR A10 
+COL EXPIRE_DATE FOR A10 
+SELECT USERNAME, ACCOUNT_STATUS, LOCK_DATE, EXPIRY_DATE  FROM DBA_USERS WHERE USERNAME IN ('SMITH');
+
+   USERNAME        ACCOUNT_STATUS  LOCK_DATE  EXPIRY_DATE
+   --------------- --------------- ---------- ------------------
+   SMITH           OPEN                       17-JUN-18
+The account’s EXPIRY_DATE extended for next 6 month.
+
+NOTE
+For 12c version you need SPARE4 column instead of PASSWORD.
+
+SET LINES 300 
+SET PAGES 999
+COL NAME FOR A10 
+COL SPARE4 FOR A70
+SELECT NAME, SPARE4 FROM USER$ WHERE NAME='SYS';
+
+NAME       SPARE4
+---------- ----------------------------------------------------------------------
+SYS        S:8164DBB935ECB37899F3374318AEAAEB4F7805BE7435E312CF2120E2C808;T:06020
+           6C4B3544A55E6DF33AB3CC0E93F03F8AC39EBAA0838A865BAA537BC4CC9A839F1D7372
+           97D9513F60FEF6B694877D7CE9DA0084377294DB7B4EAC3E4A47AFBE70EBD2B5BB4F11
+           045ABF19EADA98E
+
+SET LONG 200000000
+SELECT DBMS_METADATA.GET_DDL('USER','SYS') FROM DUAL;
+
+DBMS_METADATA.GET_DDL('USER','SYS')
+--------------------------------------------------------------------------------
+
+   ALTER USER "SYS" IDENTIFIED BY VALUES 'S:8164DBB935ECB37
+899F3374318AEAAEB4F7805BE7435E312CF2120E
+2C808;T:060206C4B3544A55E6DF33AB3CC0E93F
+03F8AC39EBAA0838A865BAA537BC4CC9A839F1D7
+37297D9513F60FEF6B694877D7CE9DA008437729
+4DB7B4EAC3E4A47AFBE70EBD2B5BB4F11045ABF1
+9EADA98E'
+      TEMPORARY TABLESPACE "TEMP"
+(B) A user has forgotten his password and therefore he wants to set a new one.
+ALTER USER SMITH IDENTIFIED BY SMITH;
+
+CONNECT SMITH/SMITH
+Connected.
+
+SHO USER
+USER is "SMITH"
+(C) A user wants to unlock his account by setting the same or a new password.
+COL USERNAME FOR A15 
+COL ACCOUNT_STATUS FOR A15
+COL LOCK_DATE FOR A10 
+COL EXPIRE_DATE FOR A10 
+SELECT USERNAME, ACCOUNT_STATUS, LOCK_DATE, EXPIRY_DATE  FROM DBA_USERS WHERE USERNAME IN ('SMITH');
+
+   USERNAME        ACCOUNT_STATUS  LOCK_DATE  EXPIRY_DATE
+   --------------- --------------- ---------- ------------------
+   SMITH           LOCKED(TIMED)   22-NOV-17  17-JUN-18
+
+
+-- Using the same password
+ALTER USER SMITH ACCOUNT UNLOCK;
+
+-- Setting a new one
+ALTER USER SMITH IDENTIFIED BY SMITHNEW ACCOUNT UNLOCK;
