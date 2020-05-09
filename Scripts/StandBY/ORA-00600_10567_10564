@@ -1,4 +1,8 @@
 --https://geodatamaster.com/2016/12/26/physical-standby-errors-ora-00600-ora-10567-ora-10564-ora-01110-ora-10561/
+--http://soidamientrung.blogspot.com/2016/02/ora-10567-redo-is-inconsistent-with.html
+--https://mustakdba.wordpress.com/2016/02/26/oracle-rac-11gr2-ocr-and-voting-disks-recovery/
+--http://allappsdba.blogspot.com/2016/12/mrp0-background-media-recovery.html
+--
 
 physical standby errors ORA-00600 ORA-10567 ORA-10564 ORA-01110 ORA-10561
 The following errors were thrown while trying to sync physical standby database with the primary database:
