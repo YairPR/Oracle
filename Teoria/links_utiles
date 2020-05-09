@@ -16,14 +16,48 @@ https://sysdbasoft.com/oracle-exadata-tutorials-for-beginners/
 -- rac install step by step
 https://sysdbasoft.com/what-is-the-oracle-rac-and-step-by-step-oracle-rac-installation/
 
---blog curso
---http://dbaparadise.com/category/database/oracle-database/
-
 - mejorando rendimiento de un rac usanto tbs temporales
 https://www.oracle.com/technetwork/es/articles/database-performance/local-temp-tablespace-5813489-esa.html
 
 -- idntificandi  SYS_CONTEXT
 https://oracle-base.com/articles/misc/identifying-host-names-and-addresses
+
+--Oracle dNFS Monitoring with MONDNFS
+https://ronekins.com/2020/03/24/oracle-dnfs-montioring-with-mondnfs/
+
+--TFA
+https://www.oracle.com/technetwork/es/articles/database-performance/trace-file-analyzer-tfa-5806507-esa.html
+https://docs.oracle.com/en/database/oracle/oracle-database/12.2/atnms/understanding-tfa.html#GUID-F6B26296-91CD-4B67-A247-DEA48428E154
+https://community.oracle.com/community/support/support-blogs/database-support-blog/blog/2018/09/19/ora-600-ora-00600-internal-error-detection-diagnosis-resolution
+ 
+--Introduction to Oracle OSWatcher and reading logs
+https://developer.rackspace.com/blog/introduction-to-oracle-oswatcher-and-reading-logs/
+
+--SQL trace, 10046, trcsess and tkprof in Oracle
+https://oracle-base.com/articles/misc/sql-trace-10046-trcsess-and-tkprof
+
+--How to resolve ORA-01111, ORA-01110, ORA-01157
+http://www.oracle-ckpt.com/unnamed-file-in-standby-after-adding-new-file-to-primary-ora-01111-ora-01110-ora-01157/
+
+--Oracle Database 12.2: Shared Undo y Local Undo
+https://www.oracle.com/technetwork/es/articles/database-performance/shared-undo-local-undo-3440058-esa.html
+
+-- undo
+https://dbatechora.wordpress.com/2015/03/19/undo-tablespace/
+https://blogjosearcosc.wordpress.com/2014/12/09/que-son-y-para-que-sirve-un-tablespace-del-tipo-undo/
+http://oracleenespanol.blogspot.com/2011/01/que-es-un-registro-tipo-undo.html
+
+-- PERFILES DE SQLNET.ORA
+http://vendara-oratun.blogspot.com/2011/07/perfiles-del-sqlnetora_3126.html
+
+--Check the actual ulimits for all the running Oracle instances -- too MANY OPEN FILES
+http://www.ludovicocaldara.net/dba/tag/too-many-open-files/
+
+-- tutopriales
+--https://sysdbasoft.com/oracle-database-tutorials-for-beginners/
+
+--blog curso
+--http://dbaparadise.com/category/database/oracle-database/
 
 001 tunning
 https://sysdbasoft.com/performance-tuning-and-sql-tuning-tutorial-in-the-oracle-database/
@@ -90,10 +124,6 @@ https://dba12c.wordpress.com/2015/08/29/how-to-create-oracle-asm-disks-on-aix/
 
 --ora-01653
 https://logic.edchen.org/how-to-resolve-ora-01653-unable-to-extend-table-in-tablespace/
-
-
---- TFA
-https://community.oracle.com/community/support/support-blogs/database-support-blog/blog/2018/09/19/ora-600-ora-00600-internal-error-detection-diagnosis-resolution
 
 -- Solucion al realizar move datafile in oracle 12c
 https://access.redhat.com/solutions/1189
