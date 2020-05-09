@@ -1,7 +1,9 @@
 --DATA GUARD SWITCHOVER UNIX SHELL SCRIPT:
 --https://gavinsoorma.com/2009/07/870/
 
-
 -- Varios scripts
 --https://valehagayev.wordpress.com/2016/07/09/dataguard-commands-and-sql-scripts/
+
+--How to Stop Data Guard Services
+https://logic.edchen.org/how-to-stop-data-guard-services/
 
