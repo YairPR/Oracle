@@ -1,5 +1,29 @@
 -- blog rac_status.sh
 https://unknowndba.blogspot.com/2018/04/rac-statussh-overview-of-your-rac-gi.html
 
+-- install oracle 19c step by step
+https://sysdbasoft.com/oracle-database-19c-on-linux-7-6-step-by-step-installation/
+
+-- sqlserver script
+https://sysdbasoft.com/sql-server-dba-scripts-all-in-one-for-sql-server-dba-useful-database-administration-scripts/
+
+--actividades diarias dba
+https://ittutorial.org/oracle-dba-daily-weekly-monthly-or-quarterly-routine-checklist-and-tasks-daily-check-scripts/
+
+-- exadata tutorial
+https://sysdbasoft.com/oracle-exadata-tutorials-for-beginners/
+
+-- rac install step by step
+https://sysdbasoft.com/what-is-the-oracle-rac-and-step-by-step-oracle-rac-installation/
+
 --blog curso
 --http://dbaparadise.com/category/database/oracle-database/
+
+- mejorando rendimiento de un rac usanto tbs temporales
+https://www.oracle.com/technetwork/es/articles/database-performance/local-temp-tablespace-5813489-esa.html
+
+-- idntificandi  SYS_CONTEXT
+https://oracle-base.com/articles/misc/identifying-host-names-and-addresses
+
+001 tunning
+https://sysdbasoft.com/performance-tuning-and-sql-tuning-tutorial-in-the-oracle-database/
