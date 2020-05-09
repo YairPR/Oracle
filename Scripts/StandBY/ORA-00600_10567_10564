@@ -1,0 +1,60 @@
+--https://geodatamaster.com/2016/12/26/physical-standby-errors-ora-00600-ora-10567-ora-10564-ora-01110-ora-10561/
+
+physical standby errors ORA-00600 ORA-10567 ORA-10564 ORA-01110 ORA-10561
+The following errors were thrown while trying to sync physical standby database with the primary database:
+
+ORA-00600: internal error code, arguments: [3020], [239], [13749],
+[1002452405], [], [], [], [], [], [], [], []
+ORA-10567: Redo is inconsistent with data block (file# 239, block# 13749, file
+offset is 112631808 bytes)
+ORA-10564: tablespace SYSAUX
+ORA-01110: data file 211: ‘/database/orcl07/SYSAUX01.ORA’
+ORA-10561: block type ‘TRANSACTION MANAGED INDEX BLOCK’, data object# 2877779
+
+To resolve this you have 2 approaches …..choose one:
+
+******************** First Approach *********************************
+
+1. on the primary database
+
+RMAN> rman target /
+
+run
+{
+ALLOCATE CHANNEL ch1 DEVICE TYPE DISK format ‘/database/orcl07/backup/inc_SYSYAUX_%U’;
+backup datafile 211;
+release channel ch1;
+}
+
+—-  after executing the above rman command a backup of set for the data file will be generated and will require copying to the physical standby database server
+
+scp inc_SYSYAUX_m7robspv_1_1 standby_server:/database/orcl07/backup/
+
+2. on the standby database:
+
+RMAN> catalog start with ‘/oradbp21/export/bkp/’;
+RMAN> shutdown immediate;
+RMAN> startup mount;
+RMAN> restore datafile 239;
+RMAN> exit;
+
+SQL> RECOVER AUTOMATIC STANDBY DATABASE;
+
+******************** Second Approach *********************************
+
+1. on the standby database:
+
+SQL> shutdown immediate;
+
+2. on the primary database:
+
+SQL> ALTER tablespace SYSAUX begin backup;
+
+scp /database/orcl07/SYSAUX01.ORA standby_server:/database/orcl07/SYSAUX01.ORA
+
+SQL> ALTER tablespace SDE end backup ;
+
+3. on the standby database:
+SQL> STARTUP NOMOUNT
+SQL> ALTER DATABASE MOUNT STANDBY DATABASE;
+SQL> RECOVER AUTOMATIC STANDBY DATABASE;
