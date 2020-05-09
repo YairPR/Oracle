@@ -1,0 +1,6 @@
+-- comandos list
+https://minimalistic-oracle.blogspot.com/2014/01/how-to-use-rmans-list-command-to-view.html
+
+-- comandos restore archive
+--http://blog.itpub.net/17252115/viewspace-1167212/
+
