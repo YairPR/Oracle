@@ -1,0 +1,3 @@
+--DATA GUARD SWITCHOVER UNIX SHELL SCRIPT:
+--https://gavinsoorma.com/2009/07/870/
+
