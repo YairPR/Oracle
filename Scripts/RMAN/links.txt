@@ -4,3 +4,9 @@ https://minimalistic-oracle.blogspot.com/2014/01/how-to-use-rmans-list-command-t
 -- comandos restore archive
 --http://blog.itpub.net/17252115/viewspace-1167212/
 
+--Monitoring RMAN Through V$ Views
+https://web.stanford.edu/dept/itss/docs/oracle/10gR2/backup.102/b14191/advmaint006.htm
+
+--4.7 Listing RMAN Backups, Archived Logs, and Database Incarnations
+https://docs.oracle.com/cd/B19306_01/backup.102/b14192/bkup007.htm
+
