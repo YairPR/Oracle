@@ -1,25 +1,30 @@
+--ref:
+--https://www.oracle-scripts.net/dataguard-management/
+
+
+-- Ultima secuencia aplicada uso: primario/secundario
 select max(sequence#) from v$archived_log where applied = 'YES';
 
-Prompt -- Display the log entries in alert log according to Physical Standby Synch
+Prompt -- Mensaje de errores en funcion a dataguard
 SELECT MESSAGE FROM V$DATAGUARD_STATUS;
 Prompt -- Press any key to continue
 Pause
 
-Prompt -- Verify background process
+Prompt -- Verifica ejecucion de procesos en background
 SELECT PROCESS, STATUS, THREAD#, SEQUENCE#, BLOCK#, BLOCKS FROM V$MANAGED_STANDBY;
-Prompt -- Press any key to continue
-Pause
 
-Prompt -- Verify the applied log 
+select distinct process, status, thread#, sequence#, block#, blocks from v$managed_standby ;
 
-SELECT ARCH.THREAD# "Thread", ARCH.SEQUENCE# "Last Sequence Received", APPL.SEQUENCE# "Last Sequence Applied", (ARCH.SEQUENCE# - APPL.SEQUENCE#) "Difference"
-FROM
-(SELECT THREAD# ,SEQUENCE# FROM V$ARCHIVED_LOG WHERE (THREAD#,FIRST_TIME ) IN (SELECT THREAD#,MAX(FIRST_TIME) FROM V$ARCHIVED_LOG GROUP BY THREAD#)) ARCH,
-(SELECT THREAD# ,SEQUENCE# FROM V$LOG_HISTORY WHERE (THREAD#,FIRST_TIME ) IN (SELECT THREAD#,MAX(FIRST_TIME) FROM V$LOG_HISTORY GROUP BY THREAD#)) APPL
-WHERE
-ARCH.THREAD# = APPL.THREAD#
-ORDER BY 1;
+- Si se usa real time apply
+select TYPE, ITEM, to_char(TIMESTAMP, 'DD-MON-YYYY HH24:MI:SS') from v$recovery_progress where ITEM='Last Applied Redo';
 
+select recovery_mode from v$archive_dest_status where dest_id=1;
+
+
+
+Prompt -- Ultima secuencia recibida y aplicada                                                                      --
+-- Muestra la diferencia entre recibido y aplicado
+                                                                             
 SELECT ARCH.THREAD# "Thread", ARCH.SEQUENCE# "Last Sequence Received", APPL.SEQUENCE# "Last Sequence Applied", (ARCH.SEQUENCE# - APPL.SEQUENCE#) "Difference"
 FROM (SELECT THREAD# ,SEQUENCE# FROM V$ARCHIVED_LOG WHERE (THREAD#,FIRST_TIME ) IN (SELECT THREAD#,MAX(FIRST_TIME) FROM V$ARCHIVED_LOG GROUP BY THREAD#)) ARCH,
 (SELECT THREAD# ,SEQUENCE# FROM V$LOG_HISTORY WHERE (THREAD#,FIRST_TIME ) IN (SELECT THREAD#,MAX(FIRST_TIME) FROM V$LOG_HISTORY GROUP BY THREAD#)) APPL
