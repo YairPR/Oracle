@@ -1,3 +1,13 @@
+--https://blog.pythian.com/oracle-standby-recovery-rate-monitoring/
+
+/*
+The script reports the time it took to apply the log, the size of the log, and the redo apply rate for that log.
+
+Diff(sec):  reports the actual time difference between redo logs applied on the standby.
+Lag(sec) :  reports the time difference between when the archive log was completed on the primary and when 
+            it was applied on the standby.
+*/
+
 rem Reports standby apply rate with lag
 rem
 select TIMESTAMP,completion_time "ArchTime",
