@@ -1,0 +1,84 @@
+--https://gavinsoorma.com/2009/07/data-guard-log-shipping-report/
+/*
+If we have a number of Data Guard physical standby database environments to manage, the following report can help us quickly 
+identify the log transported and log applied status of the Primary and Standby databases in our environment and if any standby 
+database is lagging behind the primary as well.
+
+The script can also be customised so as to email an alert notification if the standby and the primary go out of sync by say 5 
+log files. Drop me a line if you need that customisation script.
+
+This report is based on a Unix shell script (check_logship.sh) which in turn calls a SQL script (check_logship.sql).
+
+The script requires a user MONITOR to be created in each target database with the CONNECT and SELECT ANY DICTIONARY
+privileges. We also have a config file (in our case bw_dg.lst) which will contain the list of all the TNS aliases of the 
+Primary databases which we need to monitor.
+*/
+
+--------------------------------------------------------------------------------------
+check_logship.sql
+
+SET PAGESIZE 124
+SET HEAD OFF
+COL DB_NAME FORMAT A8
+COL HOSTNAME FORMAT A12
+COL LOG_ARCHIVED FORMAT 999999
+COL LOG_APPLIED FORMAT 999999
+COL LOG_GAP FORMAT 9999
+COL APPLIED_TIME FORMAT A12
+SELECT DB_NAME, HOSTNAME, LOG_ARCHIVED, LOG_APPLIED,APPLIED_TIME,
+LOG_ARCHIVED-LOG_APPLIED LOG_GAP
+FROM
+(
+SELECT NAME DB_NAME
+FROM V$DATABASE
+),
+(
+SELECT UPPER(SUBSTR(HOST_NAME,1,(DECODE(INSTR(HOST_NAME,’.’),0,LENGTH(HOST_NAME),
+(INSTR(HOST_NAME,’.’)-1))))) HOSTNAME
+FROM V$INSTANCE
+),
+(
+SELECT MAX(SEQUENCE#) LOG_ARCHIVED
+FROM V$ARCHIVED_LOG WHERE DEST_ID=1 AND ARCHIVED=’YES’
+),
+(
+SELECT MAX(SEQUENCE#) LOG_APPLIED
+FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED=’YES’
+),
+(
+SELECT TO_CHAR(MAX(COMPLETION_TIME),’DD-MON/HH24:MI’) APPLIED_TIME
+FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED=’YES’
+);
+--------------------------------------------------------------------------------------------
+
+check_logship.sh
+
+if [ -f /tmp/dataguard1.out ]
+then
+rm /tmp/dataguard1.out
+fi
+
+if [ -f /tmp/dataguard2.out ]
+then
+rm /tmp/dataguard2.out
+fi
+
+export SCRPT=/u01/app/scripts
+
+for i in `cat $SCRPT/bw_dg.lst`
+do
+sqlplus -s monitor/xxx@$i <> /tmp/dataguard2.out
+@/$SCRPT/check_logship.sql
+EOF
+echo “#######################################################################################” > /tmp/dataguard1.out
+echo ” Data Guard Log Shipping Summary Report: `date ` ” >> /tmp/dataguard1.out
+echo “#######################################################################################” >> /tmp/dataguard1.out
+echo >> /tmp/dataguard1.out
+echo “DB_NAME HOSTNAME LOG_ARCHIVED LOG_APPLIED APPLIED_TIME LOG_GAP” >> /tmp/dataguard1.out
+echo “——– ———— ———— ———– ———— ——-” >> /tmp/dataguard1.out
+cat /tmp/dataguard2.out >> /tmp/dataguard1.out
+done
+cat /tmp/dataguard1.out
+
+-------------------------------------------------------------------------------------------
+
