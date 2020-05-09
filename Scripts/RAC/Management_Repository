@@ -1,0 +1,73 @@
+--https://www.hhutzler.de/blog/using-management-repository-feature-12c/
+
+Overview
+Management Repository is a single instance database that’s managed by Oracle Clusterware in 12c.
+In 11g this was being stored in berkley database but starting Oracle database 12c it is configured as  Oracle Database Instance
+If the option is selected during GI installation, the database will be configured and managed by GI.
+As it’s a single instance database, it will be up and running on one node in the cluster;
+As it’s managed by GI, in case the hosting node is down, the database will be automatically failed over to other node.
+Management Database will be the central repository to store Cluster Health Monitor (aka CHM/OS, ora.crf) and other data in 12c
+Management database uses the same shared storage as OCR/Voting File (  voting disk size >5G : ( 3.2G+ is being used by MGMTDB – 2G for CHM )
+If Management Database is not selected to be configured during installation/upgrade OUI, all features (Cluster Health Monitor (CHM/OS) etc)  that depend on it will be disabled. Note: there’s no supported procedure to enable Management Database once the GI stack is configured
+ 
+
+How to start Management Database
+Management Database is managed by GI and should be up and running all the time automatically. In case it’s down for some reason,  the following srvctl command can be used to start it:
+Usage: srvctl start mgmtdb [-startoption <start_option>] [-node <node_name>]
+Usage: srvctl start mgmtlsnr [-node <node_name>]
+
+ 
+
+Identify processes at OS level:
+# ps -elf | grep MGMTLSNR
+0 S grid      4910     1  0  80   0 - 44697 ep_pol 03:04 ?        00:00:00 /u01/app/121/grid/bin/tnslsnr MGMTLSNR -no_crs_notify -inherit
+#  ps -elf |  grep pmon_-MGMTDB
+0 S grid     21410     1  0  80   0 - 200570 semtim 08:09 ?       00:00:00 mdb_pmon_-MGMTDB
+ 
+
+Status Info and storage  location info
+$ oclumon manage -get MASTER
+Master = grac122
+
+$ srvctl status mgmtdb 
+Database is enabled
+Instance -MGMTDB is running on node grac122
+
+$ srvctl config mgmtdb
+Database unique name: _mgmtdb
+Database name: 
+Oracle home: /u01/app/121/grid
+Oracle user: grid
+Spfile: +DATA/_mgmtdb/spfile-MGMTDB.ora
+Password file: 
+Domain: 
+Start options: open
+Stop options: immediate
+Database role: PRIMARY
+Management policy: AUTOMATIC
+Database instance: -MGMTDB
+Type: Management
+
+$ oclumon manage -get reppath
+CHM Repository Path = +DATA/_MGMTDB/DATAFILE/sysmgmtdata.260.824411105
+
+$ asmcmd  ls -ls +DATA/_MGMTDB/DATAFILE/sysmgmtdata.260.824411105
+Type      Redund  Striped  Time             Sys  Block_Size  Blocks       Bytes       Space  Name
+DATAFILE  MIRROR  COARSE   AUG 28 08:00:00  Y          8192  262145  2147491840  4300210176  sysmgmtdata.260.824411105
+ 
+
+Oclumon sample
+$  oclumon dumpnodeview -allnodes
+----------------------------------------
+Node: grac121 Clock: '13-08-28 09.37.51' SerialNo:4671 
+SYSTEM:
+#pcpus: 1 #vcpus: 1 cpuht: N chipname: Intel(R) cpu: 13.07 cpuq: 4 physmemfree: 185640 physmemtotal: 4299196 mcache: 2657348 swapfree: 6369360 swaptotal: 6373372 hugepagetotal: 0 hugepagefree: 0 hugepagesize: 2048 ior: 57 iow: 103 ios: 30 swpin: 0 swpout: 0 pgin: 57 pgout: 71 netr: 25.315 netw: 32.596 procs: 272 rtprocs: 10 #fds: 19424 #sysfdlimit: 6815744 #disks: 9 #nics: 4 nicErrors: 0
+TOP CONSUMERS:
+topcpu: 'asm_vktm_+asm1(4375) 3.17' topprivmem: 'ocssd.bin(4257) 80412' topshm: 'ora_mman_crac12(12771) 274476' topfd: 'ocssd.bin(4257) 243' topthread: 'console-kit-dae(2424) 64' 
+----------------------------------------
+Node: grac122 Clock: '13-08-28 09.37.51' SerialNo:5069 
+----------------------------------------
+SYSTEM:
+#pcpus: 1 #vcpus: 1 cpuht: N chipname: Intel(R) cpu: 15.06 cpuq: 6 physmemfree: 211480 physmemtotal: 4223420 mcache: 2107692 swapfree: 6261484 swaptotal: 6373372 hugepagetotal: 0 hugepagefree: 0 hugepagesize: 2048 ior: 137 iow: 151 ios: 39 swpin: 0 swpout: 0 pgin: 137 pgout: 127 netr: 48.480 netw: 41.172 procs: 321 rtprocs: 12 #fds: 23072 #sysfdlimit: 6815744 #disks: 8 #nics: 4 nicErrors: 0
+TOP CONSUMERS:
+topcpu: 'mdb_vktm_-mgmtd(21424) 2.80' topprivmem: 'java(4931) 152260' topshm: 'ora_mman_crac12(21488) 289048' topfd: 'crsd.bin(3674) 264' topthread: 'console-kit-dae(2338) 64'
