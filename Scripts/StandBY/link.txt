@@ -19,4 +19,7 @@ https://juanmercadoit.com/2010/01/27/ora-16801-redo-transport-related-property-i
 --How to Recover archive gaps in standby database - using 2 methods
 https://www.linkedin.com/pulse/how-recover-archive-gaps-standby-database-using-2-methods-kumar/
 
+--ORACLE DATA GUARD VS DELL SHAREPLEX
+https://beclever.solutions/es/oracle-data-guard-vs-dell-shareplex/
+
 
