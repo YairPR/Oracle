@@ -4,28 +4,28 @@ PHYSICAL STANDBY COMMANDS  ==
 =============================
 
 To start redo apply in foreground:
-
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE;
+
 To stop redo apply process on the Standby database (to stop MRP):
-
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
 To start real-time redo apply:
-
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
-To start redo apply in background:
 
+To start redo apply in background:
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
 or
 SQL> RECOVER MANAGED STANDBY DATABASE DISCONNECT;
-To check redo apply  and Media recovery service status:
 
+To check redo apply  and Media recovery service status:
 SQL> SELECT PROCESS,STATUS, THREAD#,SEQUENCE#, BLOCK#, BLOCKS FROM V$MANAGED_STANDBY ;
+
 If managed standby recovery is not running or not started with real-time apply, restart managed recovery with real-time apply enabled:
 
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
-SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT;
-To gather Data Guard configuration information(standby)
+SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT
 
+To gather Data Guard configuration information(standby)
 SQL> SELECT DATABASE_ROLE,OPEN_MODE, PROTECTION_MODE FROM V$DATABASE 
 
 DATABASE_ROLE OPEN_MODE PROTECTION_MODE
