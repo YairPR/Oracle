@@ -1,0 +1,49 @@
+connect auxiliary sys/Pr1m4P2kpr0$@P2KPROD_C
+run
+{
+allocate channel ch1 device type disk;
+allocate channel ch2 device type disk;
+allocate channel ch3 device type disk;
+allocate channel ch4 device type disk;
+allocate channel ch5 device type disk;
+allocate auxiliary channel st1 type disk;
+duplicate target database for standby from active database 
+spfile
+release channel ch1;
+release channel ch2;
+release channel ch3;
+release channel ch4;
+release channel ch5;
+}
+
+
+
+connect auxiliary sys/Pr1m4P2kpr0$@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=10.75.40.106)(PORT=1567))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=P2KPROD.500029642.pe1.internal)(UR=A)))
+
+
+SID_LIST_LISTENER =
+(SID_LIST =
+   (SID_DESC =
+    (GLOBAL_DBNAME = dbrational)
+    (ORACLE_HOME = /u01/app/oracle/product/12.2.0/dbhome_1)
+        (SID_NAME = dbrational)
+        )
+        (SID_DESC =
+    (GLOBAL_DBNAME = dbinfo)
+    (ORACLE_HOME = /u01/app/oracle/product/12.2.0/dbhome_1)
+        (SID_NAME = dbinfo)
+        )
+        (SID_DESC =
+    (GLOBAL_DBNAME = dbcro)
+    (ORACLE_HOME = /u01/app/oracle/product/12.2.0/dbhome_1)
+        (SID_NAME = dbcro)
+        )
+        (SID_DESC =
+    (GLOBAL_DBNAME = dblbtr)
+    (ORACLE_HOME = /u01/app/oracle/product/12.2.0/dbhome_1)
+        (SID_NAME = dblbtr)
+        )
+        
+orapwd file=orapwP2KPROD password=Pr1m4P2kpr0$ entries=30
+
+orapwd FILE=$ORACLE_HOME/dbs/orapwP2KPROD entries=30 password=Afp2020prim4 force=y
