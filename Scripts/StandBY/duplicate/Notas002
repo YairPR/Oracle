@@ -47,3 +47,6 @@ SID_LIST_LISTENER =
 orapwd file=orapwP2KPROD password=Pr1m4P2kpr0$ entries=30
 
 orapwd FILE=$ORACLE_HOME/dbs/orapwP2KPROD entries=30 password=Afp2020prim4 force=y
+
+orapwd file=orapwP2KPROD password=Afp2020prim4 ignorecase=y entries=25
+
