@@ -1,0 +1,13 @@
+--Known issues with RMAN DUPLICATE FROM ACTIVE DATABASE (Doc ID 1366290.1)
+--RMAN -> ORA-01017: invalid username/password; logon denied
+https://oraclefiles.com/2019/09/12/rman-ora-01017-invalid-username-password-logon-denied/
+
+--Oracle duplication on 12c. RMAN-04006: error from auxiliary database. RMAN-04006: error from auxiliary
+--database: ORA-01017: invalid username/password; logon denied
+https://oraclehack.blogspot.com/2016/09/oracle-duplication-on-12c-and-rman-rman_84.html
+
+--RMAN Active Duplicate on RAC fails with ORA-17629 and ORA-17627: ORA-12154
+http://oracle-solution.blogspot.com/2017/04/ora-17629-ora-17627-during-duplicate.html
+
+--ORA-17629: 'Cannot connect to the remote database server' with RMAN when related to SQLNET.INBOUND_CONNECT_TIMEOUT 
+--parameter (Doc ID 1056174.1)
