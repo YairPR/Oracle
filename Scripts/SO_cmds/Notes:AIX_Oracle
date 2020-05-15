@@ -1,0 +1,109 @@
+--https://ibmsystemsmag.com/Power-Systems/01/2018/tuning-aix-for-oracle
+Tuning AIX in an Oracle environment has changed significantly through the years. 
+This article examines best practices for tuning AIX for Oracle
+
+By Ken Milberg
+01/01/2018
+
+Tuning AIX in an Oracle environment has changed significantly through the years, especially with the advent of 
+Power Systems and virtualization. You simply can’t tune AIX or Oracle the same way today that you would tune 10 years ago. 
+Let’s look at best practices for tuning AIX for Oracle and also provide tips for tuning Oracle as well. Before we go into 
+technical detail, make sure any of your tuning exercises follow a certain type of methodology. You should never tune first 
+before you’ve established a baseline of data. Here are the steps you should follow.
+
+Establish a baseline
+Stress test
+Monitor
+Identify/analyze
+Tune
+Repeat starting with step 2
+It’s critical you some type of structured pattern (though you don’t necessarily have to follow these exact steps), or else 
+you will never really be able to show how your tuning efforts have showed results. Furthermore, make sure you sure you never 
+make more than one change at any given time, because if you do, how will you know what really alleviated your problem 
+(or what made your system behave even worse)! This is not always easy when you are responsible for a production environment 
+and you have the business breathing down your neck during an open ticket. Sometimes you just want to change five different 
+things at once to make the problems go away, but to be an effective administrator you will need to be structured and patient.
+
+There are so many different facets of tuning so let’s jump into the ones that most impact Oracle and AIX as we look at your 
+subsystems: memory, I/O and CPU.
+
+Memory
+Paging Space is a key factor to consider. On the Power Systems platform, you can dynmaically add paging space to your raw 
+partitions. The amount of the space depends on the paging requirements. When you don’t provide adequate paging space, this 
+can cause your system to behave very poorly. The recommendation is to set the paging space usually to a value larger than 
+the amount of RAM. However, paging space is not allocated until required and the system will only use swap space if it runs 
+out of memory. If the system had been originally been sized correctly, than the paging space can be small. As a best practice,
+your initial starter setting should be ½ the size of your RAM, plus an additional 4 GB—up to the size of a single internal 
+disk. I would continue to monitor your settings, using the lsps – a command, to make sure that there are no issues. 
+Your output show should less than 25 percent utilization. It should also be noted, that the recommended values vary on the 
+amount of RAM that you may have installed.
+
+For example, if you have a small LPAR that has between 1 and 2GB of RAM, you should make your swap 1.5 times the size of RAM.
+If you’re RAM is between 2 and 16 GB, than the initial swap should be equal to the size of your RAM. If your RAM is larger 
+than 16 GB, your starting point should equal no larger than 16 GB.
+
+Part of your role should also be checking routinely to make sure that your real memory is not over-utilized. Check your paging
+stats using vmstat and sar.
+
+You should also allocate your RAM to where it can be most beneficial to your system resources. There are always trade-offs, 
+so you should understand your workloads. Where RAM is tight, build a priority list of where it is needed most and assign
+the memory to LPARs accordingly. This includes areas like your RDBMS kernels to ensure the SGA and its components, such as 
+the buffer cache and shared pool, are well provided for.
+
+I/O
+
+The Oracle Database block size should be configured appropriately for I/O throughput. I would set the value of my 
+DB_BLOCK_SIZE initialization parameter to between 2 and 32KB, with a default of 4 KB. It’s also important to understand 
+that your parameters can change, depending on if your database was installed on a raw partition or a Journaled File System. 
+If your DB is installed on JFS, then the block size should be a multiple of the file system block size—4 KB on JFS, and 16KB 
+to 1 MB on GPFS. For raw partitions, the block size is a multiple of the OS block size, which is 512 bytes on AIX. 
+The Oracle recommendation is to use smaller Oracle Block sizes (2 or 4 KB) for online transaction processing and larger block sizes (8-32 KB) for decision support system workloads.
+
+Another parameter that’s important to set properly is the LOG_BUFFER size. You should be able to significantly increase the 
+speed of archiving your database by increasing this buffer. Monitor your log files that relate to the I/O activity and the 
+system throughput, which will help you determine the appropriate setting. The recommendation is to create separate 
+filesystems for redo logs and control files, with an agblksize of 512 bytes, instead of the default of 4 KB.
+
+What about if you have high speed data loading requirements? If you are using the SQL*Loaders direct path option, in addition
+to loading your data in parallel, it’s important to note that your CPU will spend much of its time waiting for I/O to 
+complete. If you increase the amount of your buffers, you can maximize the CPU utilization and increase your throughput. 
+The amount of buffers depends on the amount of available RAM available and how much you want to maximize this usage. 
+You can set this by utilizing the SQL*Loader BUFFERS parameter. At the end of the day, your performance gains will depend on 
+your CPU usage and the amount of a parallelism that’s being used when loading the data.
+
+Commands that will help you monitor your I/O include filemon, iostat and sar.
+
+Oracle also takes advantage of asynchronous I/O, which provides for faster database access.
+
+The kernel DB processes (aioservers) will control the requests from the time a request is taken until it’s completed. 
+In earlier versions of AIX, we used to have to play around with the numbers, but with the newer versions we no longer need 
+to adjust these AIO tunables, as the defaults have been increased appropriately.
+
+One of the more popular debates that you’ll have is whether to use filesystems or raw logical volumes. As systems administer,
+I can personally attest that it’s simpler to administrate a system that has filesystems than raw logical volumes, so I would 
+ask yourself how important optimum performance is for your particular systems. While Direct IO and Concurrent I/O may improve
+file system performance to levels comparable to raw logical volumes, it will never match it. Also know that with Oracle RAC, 
+JFS is not an option, as you will need to put your data on either an Oracle ASM disk group or use GPFS.
+
+While we’re on this subject, if you are using JFS2, make sure you use CIO, as this is a better setting to use the DIO. You 
+should also know that CIO, should only be used with Oracle data files, control files and log files. You can’t mount your 
+Oracle home directory with the CIO option and you will have errors if you try.
+
+CPU and Thread Tuning
+There is much less to tune here than the other subsystems, but you still need to look at your CPU scheduling and process 
+priorities. This is especially true where the system has multiple CPUs and you are running in an SMP environment. Oracle 
+recommends that you set the AIXTHREAD_SCOPE variable to S (1:1). User threads provide independent flow of control within 
+your processes. The default was actually changed to this value starting with AIX 6.1.
+
+Some multi-threaded processes will use the malloc subsystem heavily. You can obtain better performance here by exporting the
+MALLOCMULTIHEAP=1 variable before you start the application. The performance improvement can be high, especially for systems 
+that use multi-threaded C++ programs. which really make use of the malloc subsystem.
+
+CPU tuning, is also much more than looking at kernel parameters. Manage your cronjobs and your routine Oracle jobs 
+effectively, to minimize how much is going on during production cycles. Try not to run too many jobs concurrently and if you
+have a large nightly batch cycle, make sure that is managed correctly.
+
+Tuning is an ongoing process and is part of your job as a systems administrator. Looking back at our first section, when we
+review a tuning methodology our last step is repeat, not end. You can only improve your systems performance by monitoring 
+your systems and analyzing the data accordingly. Make sure you use the right tools in which to do so, including both 
+AIX and Oracle tools. The better your data is, the better you’ll be able to tune your system most effectively.
