@@ -9,5 +9,21 @@ https://oraclehack.blogspot.com/2016/09/oracle-duplication-on-12c-and-rman-rman_
 --RMAN Active Duplicate on RAC fails with ORA-17629 and ORA-17627: ORA-12154
 http://oracle-solution.blogspot.com/2017/04/ora-17629-ora-17627-during-duplicate.html
 
---ORA-17629: 'Cannot connect to the remote database server' with RMAN when related to SQLNET.INBOUND_CONNECT_TIMEOUT 
---parameter (Doc ID 1056174.1)
+-- Database Cloning and dealing with Blocked Listener ORA-12528
+https://www.markgruenberg.site/doku.php?id=oracle:rman_cloning
+
+--RMAN-04006 ORA-01017 when connecting to auxiliary database on Standby From Primary (Doc ID 2445873.1)
+https://support.oracle.com/epmos/faces/SearchDocDisplay?_afrLoop=291820106701218&_afrWindowMode=0&_adf.ctrl-state=16u1o7kwre_4
+
+--ORA-17629: 'Cannot connect to the remote database server' with RMAN when related to SQLNET.INBOUND_CONNECT_TIMEOUT parameter (Doc ID 1056174.1)	
+https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=291936874817921&id=1056174.1&_afrWindowMode=0&_adf.ctrl-state=16u1o7kwre_118
+
+--RMAN active duplication failed with ORA-01017 (Doc ID 944513.1)	
+https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=291938746104360&id=944513.1&_afrWindowMode=0&_adf.ctrl-state=16u1o7kwre_167
+
+--RMAN ACTIVE DUPLICATION GETS ORA-01017: invalid username/password; logon denied (Doc ID 1538346.1)	
+https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=291963977768010&id=1538346.1&_afrWindowMode=0&_adf.ctrl-state=16u1o7kwre_224
+
+--RMAN-04006: error from auxiliary database: ORA-01017: invalid username/password; logon denied
+http://oracle-help.com/ora-errors/rman-04006-error-from-auxiliary-database-ora-01017-invalid-username-password-logon-denied/
+
