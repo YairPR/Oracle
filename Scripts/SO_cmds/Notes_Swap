@@ -1,0 +1,56 @@
+https://www.cloudibee.com/aix-swap-paging-commands/
+AIX : Swap & Paging commands
+
+Here are some commands that helps to manage AIX paging and swapping.
+List the paging space available in the system, Use lsps command.
+bash-3.00# lsps -a
+Page Space      Physical Volume   Volume Group    Size %Used Active  Auto  Type
+hd3             hdisk0            myvolvg         4000MB  77   yes   yes    lv
+You can also see the paging details in “prtconf” command.
+
+bash-3.00# prtconf
+Paging Space Information
+        Total Paging Space: 3968MB
+        Percent Used: 4%
+Volume Groups Information
+==============================================================================
+myvolvg:
+PV_NAME           PV STATE          TOTAL PPs   FREE PPs    FREE DISTRIBUTION
+hdisk0            active            320         68          xx..00..00..00..30
+==============================================================================
+To add additional paging space in AIX system: Use mkps command.
+
+bash-3.00# mkps -a -n -s 32 myvolvg
+paging00
+bash-3.00#
+Verify the newly added paging space:
+
+Once added, you can see the paging space in /etc/swapspaces.
+
+bash-3.00# cat /etc/swapspaces
+* /etc/swapspaces
+*
+* This file lists all the paging spaces that are automatically put into
+* service on each system restart (the 'swapon -a' command executed from
+* /etc/rc swaps on every device listed here).
+*
+*
+* This file is modified by the chps, mkps and rmps commands and referenced
+* by the lsps and swapon commands.
+hd3:
+        dev = /dev/hd3
+paging00:
+        dev = /dev/paging00
+Check the status using lsps command.
+
+bash-3.00# lsps -a
+Page Space      Physical Volume   Volume Group    Size %Used Active  Auto  Type
+paging00        hdisk0            myvolvg        4000MB    0   yes   yes    lv
+hd3             hdisk0            myvolvg        4000MB   77   yes   yes    lv
+bash-3.00#
+Other commands :
+
+You can also use “svmon” command to capture and analyze the snapshot of your AIX virtual memory system.
+To check how much of paging space is used by a process, use : svmon -P pid
+To print summary information on total paging space, use : swap -s
+To list the status of the paging space areas in a list form, use : swap -l
