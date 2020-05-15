@@ -5,6 +5,15 @@ https://oracle-base.com/articles/9i/data-guard
 --How to Stop Data Guard Services
 https://logic.edchen.org/how-to-stop-data-guard-services/
 
+--Password File
+https://dbaclass.com/article/orapwd-tool-password-file-oracle/
+
+--Oracle DataGuard Step by Step Installation with RMAN Duplicate Method -2
+https://ittutorial.org/oracle-dataguard-installation-rman-duplicate-step-by-step-2/
+
+--Cloning a Database with RMAN (DATA GUARD)
+http://www.pafumi.net/Clone_11g_with_RMAN_Active_Command.html#Active_Database_Duplication
+
 --How To Setup Dataguard Broker Configuration (DG Broker) In 12c
 https://dbaclass.com/article/setup-dataguard-broker-configuration-dg-broker/
 
@@ -28,6 +37,3 @@ https://onlinedbalearning.blogspot.com/2019/02/step-by-step-how-to-create-physic
 
 --Data Guard Physical Standby Setup in Oracle Database 11g Release 2
 https://oracle-base.com/articles/11g/data-guard-setup-11gr2
-
---Oracle DataGuard Step by Step Installation with RMAN Duplicate Method -2
-https://ittutorial.org/oracle-dataguard-installation-rman-duplicate-step-by-step-2/
