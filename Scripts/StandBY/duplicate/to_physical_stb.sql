@@ -34,7 +34,7 @@ db_unique_name                P2KPROD
 
 
 EJEMPLOS:
-
+PDT: TOMADO DEL DOC: EXACTUS
 alter system set log_archive_dest_1 = 'LOCATION=USE_DB_RECOVERY_FILE_DEST REOPEN=60 VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=EXACTUS' scope = both;
 alter system set log_archive_dest_2 = 'SERVICE=EXACTUS_C NOAFFIRM ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=EXACTUS_C' scope = both;
 alter system set log_archive_dest_state_1 = 'enable' scope = both;
@@ -50,7 +50,7 @@ Con excepción del parámetro de inicio “ db_file_name_convert ” se podrán 
 requiere reinicio de la instancia, para poder ver el nuevo valor de dicho parámetro.
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
-TNSNAMES PRIMARIO:
+TNSNAMES PRIMARIO: P2KPROD
 
 P2KPROD =
   (DESCRIPTION =
