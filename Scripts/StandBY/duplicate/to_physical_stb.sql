@@ -1,3 +1,5 @@
+Step 1:
+=================================================
 check parameters: pfile primario
 set lines 900 pages 300
 col name for a29;
@@ -50,6 +52,8 @@ Con excepción del parámetro de inicio “ db_file_name_convert ” se podrán 
 requiere reinicio de la instancia, para poder ver el nuevo valor de dicho parámetro.
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
+Step 2:
+=========================================================================================
 TNSNAMES PRIMARIO: P2KPROD
 
 P2KPROD =
@@ -86,11 +90,14 @@ P2KPROD_C =
   )
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+Step 3:
+===================================================================
 -- RETENCION ARCHIVES PRIMARIO
 rmam:
 Configure archivelog deletion policy to shipped to all standby;
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 4:
+========================================================================
 -- CREAR PFILE DEL PRIMARIO Y COPIARLO A CONTINGENCIA
 create pfile=’/tmp/initEXACTUS_stby.ora’ from spfile;
 
@@ -98,7 +105,8 @@ create pfile=’/tmp/initEXACTUS_stby.ora’ from spfile;
 ls -ltr $ORACLE_HOME/dbs/orapw*
 orapwd file=orapwP2KPROD password=Afp2020prim4 ignorecase=y entries=25
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+Step 5:
+===========================================================================
 --- TNSNAMES CONTINGENCIA:
 
 [oracle@P2KCONT dbs]$ cat /u01/app/oracle/product/11.2.0/dbhome_1/network/admin/tnsnames.ora
@@ -140,6 +148,8 @@ P2KPROD_C =
   )
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 6:
+====================================================================0
 --LISTENER CONTINGENCIA
 
 [oracle@P2KCONT dbs]$ cat /u01/app/oracle/product/11.2.0/dbhome_1/network/admin/listener.ora
@@ -168,14 +178,14 @@ ADR_BASE_LISTENER = /u01/app/oracle
 VALID_NODE_CHECKING_REGISTRATION_LISTENER=ON
 SSL_VERSION = 1.2
 [oracle@P2KCONT dbs]$
-
----lsnrctl reload
-
+***************************************
+---> lsnrctl reload
+***************************************
 ---------------------------------------------------------------------------------------------------------------------------------------
-
-INIT CONTINGENCIA
-init actual
-
+Step 7:
+=========================================================================================
+CREAR INIT CONTINGENCIA
+init actual USADO PARA EL DUPLICATE
 
 [oracle@P2KCONT dbs]$ cat initP2KPROD.ora
 P2KPROD.__db_cache_size=40265318400
@@ -254,9 +264,8 @@ P2KPROD.__streams_pool_size=0
 
 
 --------------------------------------------------------------------------------------------------
-
-COMPARE: ANTIGUO NO FUNCIONA
-
+PARAMETROS ANTIGUOS
+COMPARACION: ANTIGUO NO FUNCIONA
 
 [oracle@P2KCONT dbs]$ cat initP2KPROD.ora_ori_12052020
 P2KPROD.__db_cache_size=40265318400
@@ -335,22 +344,27 @@ P2KPROD.__streams_pool_size=0
 *.undo_tablespace='UNDOTBS1'
 
 -----------------------------------------------------------------------------------------------------------------------------
---
+Step 8:
+====================================================================
 STARTUP NOMOUMT
-startup nomount pfile=’/tmp/initEXACTUS_stby.ora’
+startup nomount pfile=’/tmp/initP2KPROD.ora’
 
+** Validación de conexión
 Desde el servidor de CONTINGENCIA hacia el PRIMARY;
-sqlplus sys/Welcome##123@EXACTUS as sysdba
+sqlplus sys/Welcome##123@P2KPROD_P as sysdba
 Desde el servidor PRIMARIO hacia el STANDBY;
-sqlplus sys/Welcome##123@EXACTUS_C as sysdba
+sqlplus sys/Welcome##123@P2KPROD_C as sysdba
 
 -----------------------------------------------------------------------------------------------------------
-
+Step 9:
+====================================================================
 DESDE CONTINGENCIA
+ARCHIVO DUPLICATE_BD.SH
 oracle@P2KCONT scripts]$ cat duplicate_db.sh
 export FECHA=`date +%Y.%m.%d`
 rman target sys/Pr1m4P2kpr0@P2KPROD_P auxiliary sys/Pr1m4P2kpr0@P2KPROD_C cmdfile "duplicate_bd.sql" msglog "duplicate_bd_$FECHA.log"
-
+-------------------------------------------------------------
+ARCHIVO: DUPLICATE_BD.SQL
 [oracle@P2KCONT scripts]$ cat duplicate_bd.sql
 run{
   allocate channel prmy1 type disk;
@@ -368,4 +382,101 @@ run{
   duplicate target database for standby from active database NOFILENAMECHECK;
 }
 
+------------------------------------
 
+Step 10:
+==================================================================================
+CREATE SPFILE:
+create spfile from pfile='/u01/app/oracle/product/11.2.0/dbhome_1/dbs/initP2KPROD.ora';
+
+Una vez creado el spfile, procederemos a reiniciar la instancia para que inicie utilizando spfile
+shutdown immediate
+startup nomount
+---------------------------------------------------------
+
+Step 11:
+=================================================================================
+Montemos la base de datos standby, ejecutando la siguiente instrucción;
+alter database mount standby database;
+
+Ahora procedemos a reiniciar la replicación, ejecutando la siguiente instrucción;
+alter database recover managed standby database disconnect from session;
+
+Step 12:
+=============================================================================
+Una vez iniciada la replicación procedemos a verificar que esta sincronizando:
+
+select sequence#,
+first_time,
+next_time,
+archived,
+applied
+from v$archived_log
+order by sequence#;
+
+Step 13:
+========================================================================================
+Adicionalmente a la configuración del standby, se realizo la configuración del catalogo de rman
+para que solo depure los archivelogs que ya han sido aplicados en la base de datos STANDBY
+CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON ALL STANDBY;
+----
+Step 14:
+=========================================================================================
+Por ultimo se agrego un Shell script que se ejecuta a diario, a las 18:30 depurando solo los
+archivelogs aplicados en la base de datos STANDBY;
+***********************************************************************************
+[oracle@EXACONT bin]$ pwd
+/u01/app/oracle/admin/EXACTUS/scripts/bin
+delete_archivelog_stby.sh
+[oracle@EXACONT bin]$
+[oracle@EXACONT bin]$
+[oracle@EXACONT bin]$ crontab -l
+30 18 * * * /u01/app/oracle/admin/EXACTUS/scripts/bin/delete_archivelog_stby.sh > /tmp/delete_archivelog_stby.log 2>&1
+[oracle@EXACONT bin]$
+[oracle@EXACONT bin]$
+[oracle@EXACONT bin]$ cat delete_archivelog_stby.sh
+#!/bin/bash
+export ORACLE_SID=EXACTUS_C
+export ORACLE_HOME=/u01/app/oracle/product/11.2.0/dbhome_1
+export
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:$ORACLE_HOME/bin:$ORACLE_HOME/OPat
+ch:/home/oracle/bin
+CMDFILE1=/tmp/purge_standby_arc_${ORACLE_SID}.rman
+timefile=/tmp/purge_standby_arc_${ORACLE_SID}.time.txt
+lastapplied_seq_=/tmp/purge_standby_arc_${ORACLE_SID}.tmp
+$ORACLE_HOME/bin/sqlplus -s /"as sysdba" << EOF > ${lastapplied_seq_}
+set pagesize 0
+set feedback off
+select ' delete noprompt archivelog until sequence '|| max(sequence#)
+||' thread '|| thread# ||';' from v\$archived_log where applied =
+'YES' and registrar = 'RFS' group by thread#;
+exit;
+EOF
+echo " " > $CMDFILE1
+echo " run { " >> $CMDFILE1
+echo " allocate channel c1 device type disk; " >> $CMDFILE1
+cat ${lastapplied_seq_} >> $CMDFILE1
+echo " " >> $CMDFILE1
+echo "}" >> $CMDFILE1
+$ORACLE_HOME/bin/rman target / nocatalog cmdfile ${CMDFILE1}
+exit
+[oracle@EXACONT bin]$
+
+***************************************************************************************
+Como detener el Dataguard:
+Servidor PRIMARIO
+Ejecutar la siguiente instrucción a nivel del utilitario sqlplus:
+alter system checkpoint;
+alter system switch lgofile;
+alter system set log_archive_dest_state_2 = ‘defer’ scope =both;
+---------------------------------------------------------------------------------------
+Servidor STANDBY
+Ejecutar la siguiente instrucción desde el utilitario sqlplus, ejecute la siguiente instrucción
+alter database recover managed standby database cancel;
+=======================================================================================
+Como Iniciar el Dataguard
+Servidor PRIMARIO
+alter system set log_archive_dest_state_2 = ‘enable’ scope = both;
+
+Servidor STANDBY
+alter database recover managed standby database cancel;
