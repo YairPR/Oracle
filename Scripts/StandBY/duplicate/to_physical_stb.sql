@@ -149,7 +149,7 @@ P2KPROD_C =
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 Step 6:
-====================================================================0
+====================================================================
 --LISTENER CONTINGENCIA
 
 [oracle@P2KCONT dbs]$ cat /u01/app/oracle/product/11.2.0/dbhome_1/network/admin/listener.ora
@@ -479,4 +479,5 @@ Servidor PRIMARIO
 alter system set log_archive_dest_state_2 = ‘enable’ scope = both;
 
 Servidor STANDBY
-alter database recover managed standby database cancel;
+alter database recover managed standby database disconnect from session;
+
