@@ -1,0 +1,142 @@
+--https://grepora.com/2019/01/30/dg-broker-ora-16766-redo-apply-is-stopped-after-a-database-restart/
+ORA-16766: Redo Apply is stopped
+Welcome to DGMGRL, type "help" for information.
+DGMGRL> connect sys
+Password:
+Connected.
+DGMGRL> show configuration
+
+Configuration - bddcap_active_dg
+
+  Protection Mode: MaxPerformance
+  Databases:
+    bddcap  - Primary database
+    bddcaps - Physical standby database
+      Error: ORA-16766: Redo Apply is stopped
+
+Fast-Start Failover: DISABLED
+
+Configuration Status:
+ERROR
+
+DGMGRL>  show configuration verbose
+
+Configuration - bddcap_active_dg
+
+  Protection Mode: MaxPerformance
+  Databases:
+    bddcap  - Primary database
+    bddcaps - Physical standby database
+      Error: ORA-16766: Redo Apply is stopped
+
+  Properties:
+    FastStartFailoverThreshold      = '30'
+    OperationTimeout                = '30'
+    FastStartFailoverLagLimit       = '30'
+    CommunicationTimeout            = '180'
+    ObserverReconnect               = '0'
+    FastStartFailoverAutoReinstate  = 'TRUE'
+    FastStartFailoverPmyShutdown    = 'TRUE'
+    BystandersFollowRoleChange      = 'ALL'
+    ObserverOverride                = 'FALSE'
+    ExternalDestination1            = ''
+    ExternalDestination2            = ''
+    PrimaryLostWriteAction          = 'CONTINUE'
+
+Fast-Start Failover: DISABLED
+
+Configuration Status:
+ERROR
+
+DGMGRL>  edit database bddcaps  set state='apply-off';
+Succeeded.
+DGMGRL> edit database bddcaps  set state='apply-on';
+Succeeded.
+DGMGRL> show database verbose bddcaps
+
+Database - bddcaps
+
+  Role:            PHYSICAL STANDBY
+  Intended State:  APPLY-ON
+  Transport Lag:   0 seconds (computed 0 seconds ago)
+  Apply Lag:       20 hours 27 minutes 4 seconds (computed 0 seconds ago)
+  Apply Rate:      121.86 MByte/s
+  Real Time Query: OFF
+  Instance(s):
+    BDDCAPS1
+    BDDCAPS2 (apply instance)
+
+  Properties:
+    DGConnectIdentifier             = 'bddcaps'
+    ObserverConnectIdentifier       = ''
+    LogXptMode                      = 'ASYNC'
+    DelayMins                       = '0'
+    Binding                         = 'optional'
+    MaxFailure                      = '0'
+    MaxConnections                  = '1'
+    ReopenSecs                      = '300'
+    NetTimeout                      = '30'
+    RedoCompression                 = 'DISABLE'
+    LogShipping                     = 'ON'
+    PreferredApplyInstance          = ''
+    ApplyInstanceTimeout            = '0'
+    ApplyParallel                   = 'AUTO'
+    StandbyFileManagement           = 'AUTO'
+    ArchiveLagTarget                = '0'
+    LogArchiveMaxProcesses          = '4'
+    LogArchiveMinSucceedDest        = '1'
+    DbFileNameConvert               = 'BDDCAP, BDDCAPS'
+    LogFileNameConvert              = 'BDDCAP, BDDCAPS'
+    FastStartFailoverTarget         = ''
+    InconsistentProperties          = '(monitor)'
+    InconsistentLogXptProps         = '(monitor)'
+    SendQEntries                    = '(monitor)'
+    LogXptStatus                    = '(monitor)'
+    RecvQEntries                    = '(monitor)'
+    ApplyLagThreshold               = '0'
+    TransportLagThreshold           = '0'
+    TransportDisconnectedThreshold  = '120'
+    SidName(*)
+    StaticConnectIdentifier(*)
+    StandbyArchiveLocation(*)
+    AlternateLocation(*)
+    LogArchiveTrace(*)
+    LogArchiveFormat(*)
+    TopWaitEvents(*)
+    (*) - Please check specific instance for the property value
+
+Database Status:
+SUCCESS
+
+DGMGRL> show configuration
+
+Configuration - bddcap_active_dg
+
+  Protection Mode: MaxPerformance
+  Databases:
+    bddcap  - Primary database
+    bddcaps - Physical standby database
+
+Fast-Start Failover: DISABLED
+
+Configuration Status:
+SUCCESS
+
+DGMGRL> show database bddcaps
+
+Database - bddcaps
+
+  Role:            PHYSICAL STANDBY
+  Intended State:  APPLY-ON
+  Transport Lag:   0 seconds (computed 0 seconds ago)
+  Apply Lag:       0 seconds (computed 0 seconds ago)
+  Apply Rate:      51.76 MByte/s
+  Real Time Query: OFF
+  Instance(s):
+    BDDCAPS1
+    BDDCAPS2 (apply instance)
+
+Database Status:
+SUCCESS
+
+DGMGRL> 
