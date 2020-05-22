@@ -1,5 +1,7 @@
 --https://dbaclass.com/article/table_exists_action-option-impdp/
 
+expdp \"/ as sysdba\" SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
+
 EXPORT:
 
 -- 9i
