@@ -1,5 +1,8 @@
+--https://databaseinternalmechanism.com/2016/09/22/datapump-export-everything-need-to-know/
+--https://www.morganslibrary.org/reference/datapump.html
+--http://www.aeno-refs.com/qr-oracle/export.html
+
 How to Understand and Use ESTIMATE and ESTIMATE_ONLY Parameters in DataPump Export
-Posted on March 5, 2016 by james huang
 ESTIMATE Parameter
 The value for parameter ESTIMATE  is either BLOCKS (default) or STATISTICS.
 
