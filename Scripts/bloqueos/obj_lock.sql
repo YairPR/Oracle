@@ -17,5 +17,5 @@ s.serial#, s.username,
 s.program, s.logon_time
 FROM v$access a, v$session s
 WHERE a.sid = s.sid
-AND a.owner = ‘&owner’
-AND a.object = ‘&object_name’;
+AND a.owner = '&owner'
+AND a.object = '&object_name';
