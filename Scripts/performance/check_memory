@@ -1,0 +1,105 @@
+On certain occasions, I will be asked for an estimated resource requirements for a database that will be setup 
+for a development environment or as a standby database. The following are my methods to calculate the memory and 
+storage size based on the existing production database.The calculation on the storage size are meant for UNIX and LINUX.
+
+1.   Get the estimated memory footprint of an existing database.
+
+---- Get the SGA footprint of a database instance:
+
+SQL> SELECT sum(value)/1024/1024 "TOTAL SGA (MB)" FROM v$sga;
+
+---- Get the current PGA consumption of a database instance:
+
+select sum(pga_max_mem)/1024/1024 "TOTAL MAX PGA (MB)" from v$process;
+
+A more detailed breakdown of PGA memory usage:
+
+SELECT spid, program,
+            pga_max_mem      max,
+            pga_alloc_mem    alloc,
+            pga_used_mem     used,
+            pga_freeable_mem free
+FROM V$PROCESS;
+  
+
+NOTE: The resulting program name having no associated process name (ex. PMON, SMON, RECO,..) is a session process.
+
+Depending on the settings of the init parameter processes, it could be that the queries above only captures the active connections.
+---- Get the estimated memory requirement for the unconnected sessions:
+
+The query below gives the max allocated memory by a user session. We’ll use this to calculate the remaining memory requirements for the unconnected processes.
+
+select max(p.pga_max_mem)/1024/1024 "PGA MAX MEMORY OF USER SESSION (MB)"
+from v$process p, v$session s
+where P.ADDR = S.paddr and s.username is not null;
+
+Get the maximum number of processes that an Oracle instance can handle.
+
+select name, value from v$parameter
+where name = 'processes';
+
+
+Let's count the number of connected sessions:
+
+select count(1) from v$session
+where username is not null;
+
+Get the total available connections by subtracting the connected sessions count from the processes parameter value.
+
+The resulting value shall be multiplied by the resulting max allocated memory by a session done by the previous query.
+
+This would then give you the estimated amount of reserve memory needed to accommodate additional connections.
+
+
+ESTIMATED TOTAL MEMORY REQUIREMENT
+
+SGA + PGA = EST MEMORY REQUIREMENT FOR CURRENT CONNECTIONS
+
+SGA + PGA + UNCONNECTED SESSIONS = EST MEMORY REQUIREMENT AT MAXIMUM PROCESS UTILIZATION
+
+where:
+
+Unconnected Sessions (MB) = (processes - connected sessions) * pga max memory of user session
+
+2.   Get the estimated storage sizing requirements of a database.
+ 
+The procedure below in determining the storage size are meant for UNIX and LINUX environment. As for windows, j
+ust right click and select the properties on each of the drive letters given by the results of the queries.
+
+@primary server,
+
+-- Copy and paste each resulting commands onto a shell script and execute in primary server to get the mount point size
+
+select unique 'df -k '||a.MTPOINT MOUNT_POINT
+from ( select substr(FILE_NAME,0,instr(FILE_NAME,'/',1,2)-1) MTPOINT
+from dba_data_files
+union
+select substr(FILE_NAME,0,instr(FILE_NAME,'/',1,2)-1) MTPOINT
+from dba_temp_files
+union
+select substr(MEMBER,0,instr(MEMBER,'/',1,2)-1) MTPOINT
+from v$logfile
+union
+select substr(NAME,0,instr(NAME,'/',1,2)-1) MTPOINT
+from v$controlfile
+) a;
+
+
+--- Query all parameter file destination and determine if they are of different path from the datafile mount point or ORACLE_BASE dir.
+
+    get the mount point size of file destinations
+select name, value
+from v$parameter
+where (regexp_like(name, '^log_archive_(dest|dest\_([1-9]))$', 'i') or name like '%dump_dest' or name like '%file_dest' or name like 'diag%dest' or name ='utl_file_dir') and value is not null;
+
+
+--- Query the database directories for mount points
+
+select 'df -k '||substr(DIRECTORY_PATH,0,instr(DIRECTORY_PATH,'/',1,2)-1) MTPOINT from dba_directories;
+
+An alternative for a df command is to grep all the valid database related mount point in a single string to get a much more concise report.
+
+example:
+
+$ df -k | grep -E '/u01|/u02|/utldir|/opt'
+
