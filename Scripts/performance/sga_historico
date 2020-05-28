@@ -1,0 +1,31 @@
+Cómo encontrar el uso de memoria de la base de datos Oracle (SGA y PGA)
+Publicado en 2 de junio de 2019por dbtut
+La siguiente consulta se puede usar para determinar las tasas de uso de memoria en las bases de datos Oracle. 
+Si hay un aumento en los valores de la memoria de vez en cuando, será necesario examinar los procesos en el intervalo
+de tiempo relevante. Desde la vista dba_hist_snapshot, las tasas de uso de memoria se pueden determinar mediante una 
+consulta como la siguiente.
+
+set lines 1000
+set pages 1000
+  SELECT sn.INSTANCE_NUMBER,
+         sga.allo sga,
+         pga.allo pga,
+         (sga.allo + pga.allo) tot,
+         TRUNC (SN.END_INTERVAL_TIME, 'mi') time
+    FROM (  SELECT snap_id,
+                   INSTANCE_NUMBER,
+                   ROUND (SUM (bytes) / 1024 / 1024 / 1024, 3) allo
+              FROM DBA_HIST_SGASTAT
+          GROUP BY snap_id, INSTANCE_NUMBER) sga,
+         (  SELECT snap_id,
+                   INSTANCE_NUMBER,
+                   ROUND (SUM (VALUE) / 1024 / 1024 / 1024, 3) allo
+              FROM DBA_HIST_PGASTAT
+             WHERE name = 'total PGA allocated'
+          GROUP BY snap_id, INSTANCE_NUMBER) pga,
+         dba_hist_snapshot sn
+   WHERE     sn.snap_id = sga.snap_id
+         AND sn.INSTANCE_NUMBER = sga.INSTANCE_NUMBER
+         AND sn.snap_id = pga.snap_id
+         AND sn.INSTANCE_NUMBER = pga.INSTANCE_NUMBER
+ORDER BY sn.snap_id DESC, sn.INSTANCE_NUMBER;
