@@ -1,0 +1,112 @@
+Steps for how to start RAC Database ?
+In Starting Real Application Clusters Database, We will also follow a set of sequence. The order will be just opposite to Shutting down the Real Application Clusters Database.
+
+1. Start Oracle Clusterware or CRS.
+2. Start Node applications running on nodes.
+3. Start All ASM instances from all nodes.
+4. Start RAC Database Instances on all nodes.
+5. Start Oracle Home process accessing database.
+
+1. Start Oracle Clusterware or CRS: 
+CRS starts automatically when you start or restart Server, but Here DBA has manually shutdown the CRS So, he has to start it manually. This is the only command which needs to be executed by "root" user. Database Administrator should execute this command on all nodes.
+[root@node1 bin]# crsctl start crs
+CRS-4123: Oracle High Availability Services has been started 
+[root@node2 bin]# crsctl check cluster -all
+**************************************************************
+node1:
+CRS-4535: Cannot communicate with Cluster Ready Services
+CRS-4529: Cluster Synchronization Services is online
+CRS-4533: Event Manager is online
+**************************************************************
+
+node2:
+CRS-4537: Cluster Ready Services is online
+CRS-4529: Cluster Synchronization Services is online
+CRS-4533: Event Manager is online
+**************************************************************
+
+Here, DBA can see "CRS-4639: Could not contact Oracle High Availability Services" or "CRS-4535: Cannot communicate with Cluster Ready Services" messages. Wait 5 minutes and then again check with "crsctl check cluster -all" command. This time Database administrator will get "CRS-4537: Cluster Ready Services is online". If still same issue DBA can start ora.crsd process to resolve this issue. Below is the command
+[root@node1 bin]# crsctl start res ora.crsd -init
+
+[root@node1 bin]# crsctl check cluster -all
+**************************************************************
+node1:
+CRS-4537: Cluster Ready Services is online
+CRS-4529: Cluster Synchronization Services is online
+CRS-4533: Event Manager is online
+**************************************************************
+node2:
+CRS-4537: Cluster Ready Services is online
+CRS-4529: Cluster Synchronization Services is online
+CRS-4533: Event Manager is online
+**************************************************************
+
+Now, Cluster is up and running. DBA can also use "ps -ef | grepd.bin" to check cluster status.
+2. Start Node applications running on nodes: 
+To start node applications running on a node, enter the following command, where node is the name of the node where the applications are running
+[grid@node1 bin]$ srvctl start nodeapps -n node1
+
+[grid@node1 bin]$ srvctl status nodeapps -n node1
+VIP node1-vip is enabled
+VIP node1-vip is running on node: node1
+Network is enabled
+Network is running on node: node1
+GSD is disabled
+GSD is not running on node: node1
+ONS is enabled
+ONS daemon is running on node: node1
+
+DBA has to execute this command for each node to start Real Application Clusters Cluster database. 
+
+
+3. Start All ASM instances from all nodes: 
+Next DBA has to start all ASM instances which are used to access database, enter the following command, where node is the name of the node where the ASM instance has to start.
+[grid@node1 bin]$ srvctl start asm -n node1
+[grid@node1 bin]$ srvctl status asm -n node1
+ASM is running on node1
+
+DBA has to start ASM instance on all database nodes.
+
+
+
+
+4. Start RAC Database Instances on all nodes: 
+Now, We will start database instances on database nodes to access data.
+
+
+
+
+[grid@node1 bin]$ srvctl start database -d oradb
+
+[grid@node1 bin]$ srvctl status database -d oradb
+Instance oradb1 is running on node node1
+Instance oradb2 is running on node node2
+
+Now database is up and running on both DB nodes.
+
+
+
+
+5. Start Oracle Home process accessing database: 
+
+let's start listener and OEM to access database and allow users to connect to the database.
+
+
+
+
+[grid@node1 bin]$ srvctl start listener -n node1
+
+[grid@node1 bin]$ srvctl status listener -n node1
+Listener LISTENER is enabled on node(s): node1
+Listener LISTENER is running on node(s): node1
+
+[oracle@database ~]$ emctl start dbconsole
+Oracle Enterprise Manager 11g Database Control Release 11.2.0.2.0
+Copyright (c) 1996, 2010 Oracle Corporation.  All rights reserved.
+
+https://database.example.com:5500/em/console/aboutApplication
+
+Starting Oracle Enterprise Manager 11g Database Control ..........................
+. started.
+------------------------------------------------------------------
+Logs are generated in directory /etc/oracle/oracle/database.example.com_orcl/sysman/log
