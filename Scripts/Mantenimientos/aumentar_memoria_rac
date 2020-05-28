@@ -1,0 +1,41 @@
+RESIZE SGA_TARGET
+
+SGA_TARGET is dynamic
+Can be increased till SGA_MAX_SIZE
+Can be reduced till some component reaches minimum size
+Change in value of SGA_TARGET affects only automatically sized components
+
+SQL> show parameter sga_max_size
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- -----------
+sga_max_size                         big integer 600M
+SQL> show parameter sga_target
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- -----------
+sga_target                           big integer 500M
+
+SQL> alter system set sga_max_size=500 scope=spfile;
+System altered.
+or
+SQL> ALTER SYSTEM SET sga_max_size='524288000'scope=SPFILE  --sga_max_size set to 500MB
+System altered.
+SQL> startup force
+ORACLE instance started.
+Total System Global Area 1000189952 bytes
+Fixed Size                  1337492 bytes
+Variable Size             624953196 bytes
+Database Buffers          369098752 bytes
+Redo Buffers                4800512 bytes
+Database mounted.
+Database opened.
+SQL> show parameter sga_max_size
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- --------
+sga_max_size                         big integer 500M
+
+SQL> alter system set sga_target=450m; (FS)
+System altered.
+
+alter system set sga_target=8G SCOPE=both SID='BDSPSSB2'; (RAC)
+
+ORA-32018 parameter cannot be modified in memory on another instance In A RAC Environment (Doc ID 2573221.1)	
