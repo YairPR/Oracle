@@ -1,5 +1,7 @@
 --http://www.oracle-ckpt.com/script-to-monitor-primary-and-standby-databases/
 
+--PRIAMRY:
+
 column applied_time for a30
 set linesize 140
 select to_char(sysdate,'mm-dd-yyyy hh24:mi:ss') "Current Time" from dual;
