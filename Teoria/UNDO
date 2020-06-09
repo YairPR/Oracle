@@ -1,0 +1,397 @@
+-- * ACID (aka ACID test)
+ 
+--   In computer science, ACID (atomicity, consistency, isolation, durability) 
+--   is a set of properties that guarantee database transactions are processed reliably.
+ 
+-- * Atomicity
+--------------
+--   The principle of atomicity states that all parts of a transaction must complete, 
+--   or none of them. 
+--   For example, if your business analysts have said that every time you change an
+--   employee’s salary you must also change his grade, then the “atomic” transaction will
+--   consist of two updates. The database must guarantee that both go through, or neither. 
+ 
+-- * Consistency
+----------------
+--   The principle of consistency states that the results of a query must be consistent with
+--   the state of the database at the time the query started.
+-- * For uncommited data - as long as user-A changing data in Table-X without applying Commit, 
+--   all other users will see the &quot;old values&quot;
+-- * For commited data -  Imagine a simple query that averages the value of a column of a table. 
+--   If the table is large, it will take many minutes to pass through the table. 
+--   If other users are updating the column and commit while the query is in
+--   progress, should the query include the new or the old values? Should it include rows
+--   that were inserted or deleted after the query started?
+ 
+-- * Isolation
+--------------
+--   The principle of isolation states that an incomplete (that is, uncommitted) transaction
+--   must be invisible to the rest of the world.
+ 
+-- * Durability.
+---------------
+--   The principle of durability states that once a transaction completes with a COMMIT, it
+--   must be impossible for the database to lose it
+ 
+ 
+------------------------------------------------------------------------------------
+-- DML &amp; DDL - Behind the scenes
+------------------------------------------------------------------------------------
+ 
+-------------------------
+-- * Executing a Rollback
+-------------------------
+ 
+-- * if the session that initiated the transaction fails (perhaps the PC running the user process 
+--   reboots, or the network link goes down), then the PMON will detect that there is a problem,
+--   and roll back the transaction. 
+-- * If the server crashes, then on startup SMON will detect
+--   the problem and initiate a rollback. 
+-- * A manual rollback requires the user to issue the
+--   ROLLBACK command. But however the rollback is initiated, the mechanism is identical.
+-- * Oracle’s implementation of the ROLLBACK command is to use
+--   undo data to construct and execute another statement that will reverse the effect of
+--   the first statement.
+ 
+-------------------------
+-- * Executing a Commit
+-------------------------
+-- * When you say COMMIT, all that happens physically is that LGWR flushes the log buffer
+--   to disk. DBWn does absolutely nothing. This is one of the most important performance
+--   features of the Oracle database.
+ 
+--------------------------------
+-- * DDL and Transaction Control
+--------------------------------
+-- * The COMMIT and ROLLBACK statements apply only to DML. You cannot roll back a
+--   DDL statement: once executed, it is immediately durable
+ 
+--------------------------------
+-- * The So-Called “Auto-Commit”
+--------------------------------
+--   Quite simply, there is no such thing as an automatic commit. 
+-- * When you execute a DDL statement for instance, a perfectly normal COMMIT is included in 
+--   the source code that implements the DDL command. 
+-- * When you exit from your user process - If you are using SQL*Plus on a Windows terminal (never 
+--   mind what operating system the database server is running) and you issue a DML statement 
+--   followed by an “exit,” your transaction will be committed. 
+--   This is because a COMMIT statement is built into the SQL*Plus “exit” command.
+-- * When you click in the top-right corner of the SQL*Plus window? The window will
+--   close, and if you log in again, you will see that the transaction has been rolled back. 
+--   This is because the programmers who wrote SQL*Plus for Microsoft Windows included a
+--   ROLLBACK statement in the code that is executed when you close the window.
+ 
+-----------------------------
+-- * Executing SQL statements
+-----------------------------
+ 
+-- * Executing a SELECT Statement
+--   1. The server process executing the statement will first check whether 
+--      the blocks containing the data required are already in memory, in the database buffer cache. 
+--   2. If they are, then execution can proceed immediately. 
+--      If they are not, the server must locate them on disk and copy them into the 
+--      database buffer cache.
+--   3. Once the data blocks required for the query are in the database buffer cache, 
+--      any further processing (such as sorting or aggregation) is carried out in the PGA of the
+--      session. 
+--   4. When the execution is complete, the result set is returned to the user process.
+ 
+----------------------------------
+-- * Executing an Update Statement
+----------------------------------
+ 
+--   1. The first step in executing DML is the same as executing SELECT: 
+--      the required blocks must be found in memory or copied into memory from disk. 
+--      The only change is that an empty block of an undo segment is needed too
+--   2. Locks must be placed on any rows that will be affected by the operation
+--   3. Then the redo is generated: the server process writes to the log buffer the changes
+--      that are going to be applied to the data blocks.  
+--   4. Having generated the redo, the update is carried out in the database buffer cache:
+         A. The block of table data is updated with the new version of the changed column, 
+         B. Tne the old version of the changed column is written to the block of an undo segment. 
+--   5. From this point until the update is committed, 
+--      all queries from other sessions addressing the changed row will be 
+--      redirected to the undo data. 
+--      Only the session that is doing the update will see the actual current 
+--      version of the row in the table block.
+ 
+-------------------------------------------
+-- * Executing Insert and Delete Statements
+-------------------------------------------
+ 
+-- * Conceptually, INSERT and DELETE are managed in the same fashion as an UPDATE.
+--   Redo generation is exactly the same: all changes to be made to data 
+--   are first written out to the log buffer. 
+-- * The difference is in the amount of undo generated. 
+--   INSERT - When a row is inserted, the only undo generated consists of writing out the new rowid
+--            to the undo block. This is because to roll back an INSERT, the only information Oracle
+--            requires is the rowid, 
+--   DELETE - the whole row is written to the undo block, so that the deletion 
+--            can be rolled back if need be by inserting the complete row back
+--            into the table.
+ 
+  
+ 
+ 
+---------------------------------------------------------------------------------
+-- Managing UNDO Data
+---------------------------------------------------------------------------------
+ 
+-- Undo Parameters
+------------------
+SHOW PARAMETER undo
+ 
+-- UNDO_MANAGEMENT 
+------------------
+-- * Manual - meaning that Oracle will not use undo segments at all.  
+-- * This is for backward compatibility, and if you use this, you will
+--   have to do a vast amount of work creating and tuning rollback segments. Don’t do it.
+-- * Auto - to enable automatic undo management through the use of undo segments. 
+--   In this case, DBAs relinquish undo segment management to Oracle. 
+-- * This parameter is static.
+-- * The other parameters are dynamic.
+ 
+-- * UNDO RETENTION
+-------------------
+-- * UNDO_RETENTION parameter specifies the amount of time in seconds 
+--   that Oracle *attempts* to keep undo data available.
+-- * If, for example, your longest running query is thirty minutes, you would set 
+--   this parameter to 1800. Oracle will then attempt to keep all undo data for 
+--   at least 1800 seconds, and your query should therefore never fail with ORA-1555. 
+-- * If, however, you do not set this parameter, or if you set it to zero,
+--   Oracle will still keep data for as long as it can anyway. 
+-- * The algorithm controlling which expired undo data is overwritten first will always choose to 
+--   overwrite the oldest bit of data; 
+-- * Therefore, UNDO_RETENTION is always at the maximum allowed by the size of
+--   the tablespace
+ 
+-- * UNDO_TABLESPACE
+--------------------
+-- * UNDO_TABLESPACE This parameter nominates a tablespace, which must have been created
+--   as an undo tablespace, as the active undo tablespace.
+ 
+-- See Undo tablespaces:
+SELECT tablespace_name, contents, retention
+FROM dba_tablespaces;
+ 
+-- Change retention
+ALTER SYSTEM SET undo_retention = 800 ;
+ 
+-- Undo Retention Guarantee (10g) 
+---------------------------------
+-- * With the 10g release, there is an option to guarantee undo retention. 
+--   This means that undo data will never be overwritten until the time specified by the 
+--   UNDO_RETENTION parameters has passed. 
+-- * Retention guarantee is enabled at the tablespace level via the Retention Guarantee clause. 
+--   This attribute can be specified at undo tablespace creation time, or an undo tablespace 
+--   can be altered later to enable it. 
+-- * Once you activate an undo tablespace for which a retention guarantee has been specified,
+--   all queries will complete successfully, provided they finish within the undo retention
+--   time. 
+-- * you will never have “snapshot too old” errors again. The downside is that
+--   transactions may fail for lack of undo space because Oracle cannot overwrite committed
+--   undo data until the retention time has passed.
+ 
+SELECT tablespace_name, contents, retention
+FROM dba_tablespaces;
+ 
+ALTER TABLESPACE UNDOTBS1 RETENTION GUARANTEE;
+ 
+SELECT tablespace_name, contents, retention
+FROM dba_tablespaces;
+ 
+-- Via OEM:
+-- Server =&gt; (Database Configuration) =&gt; Automatic Undo Management
+-- Server =&gt; (Database Configuration) =&gt; Initialization Parameters
+ 
+ 
+-------------------------------------
+-- Sizing your undo tablespace
+-------------------------------------
+ 
+SELECT (UR * (UPS * DBS)) + (DBS * 24) AS &quot;Bytes&quot; 
+FROM (SELECT value AS UR FROM v$parameter WHERE name = 'undo_retention'), 
+(SELECT (SUM(undoblks)/SUM(((end_time - begin_time)*86400))) AS UPS FROM v$undostat), 
+(select block_size as DBS from dba_tablespaces where tablespace_name= 
+(select value from v$parameter where name = 'undo_tablespace'));
+ 
+-- or via OEM ...
+ 
+-------------------------------------
+-- Undo segment management 
+-------------------------------------
+ 
+-- active segments in the Undo tablespace 
+ 
+set lines 200 
+col program for a15
+col username for a10
+col osuser for a15
+col sid for 999
+col sr# for 999
+col segment_name for a25
+col tablespace_name for a15
+col status for a15
+ 
+SELECT segment_id, segment_name, B.status, xacts, tablespace_name
+FROM DBA_ROLLBACK_SEGS, V$ROLLSTAT B
+WHERE segment_id=usn;
+ 
+-- for every new transaction a new undo segment will be available 
+ 
+update hr.employees set salary = salary + 1 ;
+ 
+update hr.departments set department_name = department_name || 'xxx';
+ 
+update hr.regions set region_name = region_name || 'zzz' ;
+ 
+rollback
+ 
+ 
+--------------------------------------------------------------------
+-- Useful queries for UNDO usage
+--------------------------------------------------------------------
+ 
+--------------------------------------------------------------------
+-- Identify transaction and session:
+ 
+-- In one session:
+Conn hr/hr
+UPDATE employees SET salary=salary;
+ 
+-- In another session:
+conn / as sysdba
+ 
+-- See all active Undo segments:
+ 
+SET LINES 120 PAGES 120
+col program for a15
+col username for a10
+col osuser for a15
+col sid for 999
+col sr# for 999
+col segment_name for a25
+col tablespace_name for a15
+col status for a15
+ 
+SELECT segment_id, segment_name, tablespace_name, B.status, xacts &quot;Active Transactions&quot;
+FROM DBA_ROLLBACK_SEGS, V$ROLLSTAT B
+WHERE segment_id=usn
+AND xacts &gt; 0;
+ 
+-- Which sessions use a specific undo segment:
+ 
+SELECT username, program, osuser, sid, serial#
+FROM v$session S, v$transaction T
+WHERE S.taddr = T.addr ; 
+ 
+-- Which sessions use active undo segments:
+ 
+-- If needed can kill the problematic session:
+ALTER SYSTEM KILL SESSION 'sid, sr#';
+ 
+------------------------------------------------------------------------------------
+-- DEMO - Flashback query 
+------------------------------------------------------------------------------------
+ 
+SELECT last_name, salary
+FROM hr.employees;
+ 
+-- Update and commit (User forgot to put a where condition, and also commited his changes...)
+UPDATE hr.employees
+SET salary = 1;
+ 
+commit;
+ 
+-- Data is changed and cannot be rolled back...
+SELECT last_name, salary
+FROM hr.employees;
+ 
+ 
+-- Flashback Query - Select from the table as it was at a specific point in the past:
+-- In this example - go back one hour:
+ 
+SELECT last_name, salary
+FROM hr.employees AS OF TIMESTAMP sysdate - 1/24;
+ 
+-- Fix the table with a correlated Update:
+UPDATE hr.employees e
+SET salary = (SELECT salary from hr.employees AS OF TIMESTAMP sysdate - 1/24
+              WHERE employee_id = e.employee_id);
+ 
+ 
+ 
+------------------------------------------------------
+-- Oracle Isolation Levels
+------------------------------------------------------
+ 
+-- * Read committed     
+--   This is the default transaction isolation level. Each query executed by a transaction 
+--   sees only data that was committed before the query (not the transaction) began. 
+--   An Oracle query never reads dirty (uncommitted) data.
+ 
+-- * Serializable   
+--   Serializable transactions see only those changes that were committed at the time the 
+--   transaction began, 
+--   plus those changes made by the transaction itself through INSERT, UPDATE, and DELETE 
+--   statements. 
+ 
+-- * Read-only  
+--   Read-only transactions see only those changes that were committed at the time 
+--   the transaction began and do not allow INSERT, UPDATE, and DELETE statements
+ 
+ 
+-- * Serializable Example
+-------------------------
+ 
+-- User A
+----------
+ 
+ ALTER SESSION SET ISOLATION_LEVEL=SERIALIZABLE; --(Default behaviour for each new transaction)
+-- or 
+ SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;  --(specific behaviour for the next new transaction)
+ 
+ conn hr/hr
+ 
+ SELECT last_name , salary
+ FROM employees
+ WHERE rownum &lt; 11 ;
+ 
+-- User B
+----------
+ 
+ conn hr/hr
+ 
+ SELECT last_name , salary
+ FROM employees
+ WHERE rownum &lt; 11 ;
+ 
+ UPDATE employees SET salary = 1 ; 
+ 
+ COMMIT ; 
+ 
+-- USER A 
+----------
+ 
+ SELECT last_name , salary
+ FROM employees
+ WHERE rownum &lt; 11 ;
+ 
+------------------- Fix the table 
+ 
+ UPDATE hr.employees e
+ SET salary = (SELECT salary from hr.employees AS OF TIMESTAMP sysdate - 10/1440
+              WHERE employee_id = e.employee_id);
+ 
+ 
+----------------------------------
+ 
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED; 
+ 
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; 
+ 
+SET TRANSACTION READ ONLY; 
+ 
+ALTER SESSION SET ISOLATION_LEVEL=SERIALIZABLE; 
+ 
+ALTER SESSION SET ISOLATION_LEVEL=READ COMMITTED; 
