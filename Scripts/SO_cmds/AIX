@@ -9,6 +9,12 @@ uname -a
 KILL
 ps -ef | grep LOCAL=NO | awk '{print $2}' | xargs /usr/bin/kill -9
 
+ls -l *4960378* | awk '{$5=sprintf("%.9f GB", $5/1024^3)} 1'
+ls -l| awk '{$5=sprintf("%.9f GB", $5/1024^2)} 1'
+                                     , 
+
+tkprof "nombredeltrace.trc" "output.txt" sys=n waits=y sort=exeela,fchela,prsela
+
 delete AUD
 find /oracle/admin/testP/adump/*.aud -mtime +5 -exec rm {} \;
 
