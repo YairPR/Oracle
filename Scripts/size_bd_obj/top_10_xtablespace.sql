@@ -5,6 +5,6 @@ select * from (select owner as "Schema"
 , tablespace_name as "Tablespace"
 from dba_segments
 where tablespace_name ='&tbsname' 
-and segment_name='TABLE' order by 4 desc ) 
+and segment_type in ('TABLE','INDEX') order by 4 desc ) 
 where rownum < 11
 /
