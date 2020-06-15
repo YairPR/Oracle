@@ -1,0 +1,83 @@
+alter database open resetlogs;
+select open_mode from v$database;
+!echo $ORACLE_HOMEMon Jun 15 10:17:40 PET 2020
+
+SQL> 10:17:40 SQL> 
+OPEN_MODE
+--------------------
+MOUNTED
+
+10:17:40 SQL> alter database open resetlogs
+*
+ERROR at line 1:
+ORA-01666: control file is for a standby database
+
+
+10:17:40 SQL> 
+OPEN_MODE
+--------------------
+MOUNTED
+
+10:17:40 SQL> 
+/oracle/oracle/app/oracle/dbhome_1
+
+10:17:46 SQL> 
+10:17:46 SQL> 
+10:17:46 SQL> 
+10:17:47 SQL> select open_mode from v$database;
+
+OPEN_MODE
+--------------------
+MOUNTED
+
+10:18:18 SQL> alter database open resetlogs;
+alter database open resetlogs
+*
+ERROR at line 1:
+ORA-01666: control file is for a standby database
+
+
+10:18:27 SQL> 
+10:19:12 SQL> 
+10:19:12 SQL> 
+10:19:12 SQL> !hostname
+rsdcarstaix7
+
+10:19:22 SQL>  ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+
+Database altered.
+
+10:33:18 SQL>  ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+Database altered.
+
+10:34:51 SQL>  ALTER DATABASE COMMIT TO SWITCHOVER TO PRIMARY;
+ ALTER DATABASE COMMIT TO SWITCHOVER TO PRIMARY
+*
+ERROR at line 1:
+ORA-16139: media recovery required
+
+
+10:35:00 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE FINISH;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE FINISH
+*
+ERROR at line 1:
+ORA-00283: recovery session canceled due to errors
+ORA-16436: ALTER DATABASE ... RECOVER FINISH could not start
+
+
+10:35:17 SQL> 
+10:35:34 SQL> ALTER DATABASE ACTIVATE STANDBY DATABASE;
+
+Database altered.
+
+10:35:37 SQL> select name,open_mode ,database_role from v$database;
+
+NAME      OPEN_MODE            DATABASE_ROLE
+--------- -------------------- ----------------
+BDWSS     MOUNTED              PRIMARY
+
+10:35:54 SQL>  alter database open;
+
+Database altered.
+
