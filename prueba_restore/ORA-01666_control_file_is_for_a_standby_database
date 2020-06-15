@@ -1,3 +1,5 @@
+--http://allappsdba.blogspot.com/2019/09/ora-01666-control-file-is-for-standby.html
+
 alter database open resetlogs;
 select open_mode from v$database;
 !echo $ORACLE_HOMEMon Jun 15 10:17:40 PET 2020
