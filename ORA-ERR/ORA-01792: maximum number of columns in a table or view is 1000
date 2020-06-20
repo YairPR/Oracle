@@ -1,0 +1,116 @@
+El error ORA-01792: maximum number of columns in a table or view is 1000 en la version 12.1.0.2 es un error del motor
+
+Bug 19893041 : ORA-01792 HAPPEN WHEN UPDATE TO 12.1.0.2
+
+closed as dup of
+
+Bug 19509982 : DISABLE FIX FOR RAISING ORA-1792 BY DEFAULT.
+
+Solution: SQL> alter system set "_fix_control"='17376322:OFF'; 
+Or B. Apply patch 19509982 (no conflicts found with the attached opatch)
+
+That may be the same issue you're encountering.
+
+
+-- Bug 19509982 - Disable raising of ORA-1792 by default (Doc ID 19509982.8)
+===============================================================================================================================
+Definition _fix_control
+
+_FIX_CONTROL is a special hidden parameter introduced in 10.2.0.2 which can be used to enable or disable certain bug fixes.
+
+This is typically used in the optimizer area to allow specific fixes to be turned on or off as some fixes can have a significant effect on execution plans.
+
+A full list of bug numbers which are controlled by fix control can be found in the V$ views:
+
+V$SYSTEM_FIX_CONTROL
+V$SESSION_FIX_CONTROL
+
+Use example:
+-------------
+Hint:
+/*+ OPT_PARAM(‘_fix_control’ ’9195582:0′) */
+
+Alter session:
+ALTER SESSION SET "_fix_control"='8855396:OFF';
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+NOTE ORACLE;
+Select Statement Throws ORA-01792 Error in 12c (Doc ID 1951689.1)
+
+SYMPTOMS
+SQL select statement throws ORA-01792 error in Oracle 12.1.0.2.0 version.
+
+ORA 1792: maximum number of columns in a table or view is <nnnnn>
+ 
+
+CAUSE
+The problem matches Unpublished bugs:
+
+Bug 19653859 - CI BACKPORT OF BUG 19509982 FOR INCLUSION IN DATABASE BP 12.1.0.2.2
+Bug 19509982 - DISABLE FIX FOR RAISING ORA-1792 BY DEFAULT
+
+REDISCOVERY INFORMATION:
+  
+See the error "ORA-01792: MAXIMUM NUMBER OF COLUMNS IN A TABLE OR VIEW IS 1000" when the original query does not select as many columns.
+
+SOLUTION
+The workaround is to set "_fix_control"='17376322:OFF'
+
+SQL> alter session set "_fix_control"='17376322:OFF';
+or at system level :
+
+SQL> alter system set "_fix_control"='17376322:OFF';
+ 
+
+OR
+
+Apply Patch 19509982 if available for your DBVersion and Platform
+
+To download the patch, please follow the steps below:
+1) Go To MOS
+2) Click on Patches & Updates
+3) In the Patch Search Section, enter your patch number <19509982> in the Patch Name or Number field.
+4) Click Search
+5) Click the patch that meets your DbVersion and platform
+6) Read any applicable notes before downloading, then click the download button.
+==========================================================================================================================================
+
+Workarround:
+
+EN JAVA:
+datasource.initsql=ALTER session SET "_fix_control"='17376322:OFF';
+
+EN SQLPLUS OR IDE FOR SESSION
+ALTER session SET "_fix_control"='17376322:OFF';
+
+TRIGGER:
+.---------
+CREATE OR REPLACE TRIGGER YOUR_DB_USER.SET_FIX_CONTROL_ON_LOGON
+AFTER LOGON ON YOUR_DB_USER..SCHEMA
+BEGIN
+    EXECUTE IMMEDIATE 'ALTER session SET "_fix_control"=''17376322:OFF'''; 
+END;
+
+===========================================================================================================================================
+OTHERS COMMENTS.
+
+Workaround
+Choose from one of the following workarounds:
+
+Try to specify a view with fewer columns.
+For more information, see the documentation topic Specify a field to return.
+Apply the fix supplied by Oracle.
+According to My Oracle Support, ORA-01792 is caused due to an unpublished bug. Oracle suggests to alter the query and/or view definitions to avoid the error. However, in cases where the SQL cannot be adjusted, you can disable the checking as follows:
+SQL> alter system set "_fix_control"='17376322:OFF';
+Alternatively, you can apply an interim patch (patch 19509982) to disable the error by default.
+References:
+Bug 19509982 Disable raising of ORA-1792 by default (https://support.oracle.com/epmos/faces/DocumentDisplay?id=19509982.8)
+Select Statement Throws ORA-01792 Error (https://support.oracle.com/epmos/faces/DocumentDisplay?id=1951689.1)
+After this change restart the instance.
+
+This fix has been available since about June 2017 and can be applied as a one-off patch.
+
+October 2017 Patch Set Update and Bundle Patch Set updates that include this fix have been released. The Bundle Patch Set updates include optimizer fixes and are now Oracle's recommended patching method. However, they require uninstalling the Patch Set Update first before applying the Bundle Patch Set update.
+
+======================================================================================================================================================
