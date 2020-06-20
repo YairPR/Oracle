@@ -1,0 +1,56 @@
+-- For 12c and 18c 
+set lin 1000
+col action form a12
+col version  form a40
+col description form a85
+col action_date form a20
+
+select description, action, to_char(action_time,'DD/MM/RR HH24:MI:SS') action_date, ' ' version
+from dba_registry_sqlpatch;
+
+Obs.: There is no more version column, I keep that just for have compatibility with some old scripts. 
+
+
+To query: 
+
+-- 12cR1
+where upper(description) like 'DATABASE PSU%'; 
+
+-- 12cR2 onwards
+where upper(descrition) like 'DATABASE RELEASE%'; 
+
+ So, on version 11g, after apply a PSU patch on database, after run the script catbundle.sql, you can query this view with SYS account, to check information about the past PSUs applied:
+   
+-- 11g version 
+
+set lin 1000
+col action form a12
+col version  form a40
+col comments form a70
+col action_date form a20
+
+select comments, action, to_char(action_time,'DD/MM/RR HH24:MI:SS') action_date, version
+from registry$history
+order by action_date;
+
+select xmltransform(dbms_qopatch.is_patch_installed('21359755'), dbms_qopatch.get_opatch_xslt) "Patch installed?" from dual;
+
+--Using opatch lsinventory
+ $ORACLE_HOME/OPatch/opatch lsinventory|grep "Patch description"
+
+--Get detailed info Using opatch lsinventory
+ $ORACLE_HOME/OPatch/opatch lsinventory
+
+--Detailed information on the applied patch.
+$ORACLE_HOME/OPatch/opatch lsinventory -details
+
+--As a sysdba you can also execute below command from the sql prompt to get the patch detail.
+SQL> set serverout on;
+ SQL> exec dbms_qopatch.get_sqlpatch_status;
+
+-- To get information on particular patch ID.
+
+select xmltransform(dbms_qopatch.is_patch_installed('29494060'),dbms_qopatch.get_opatch_xslt) "Patch installed?" from dual;
+
+
+
