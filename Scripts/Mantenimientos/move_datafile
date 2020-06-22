@@ -1,0 +1,117 @@
+======================
+ORACLE 12C
+======================
+ALTER DATABASE MOVE DATAFILE ( 'filename' | 'ASM_filename' | file_number )
+
+[ TO ( 'filename' | 'ASM_filename' ) ]
+
+[ REUSE ] [ KEEP ]
+
+All the syntax is explained below
+
+‘filename’ | ‘ASM_filename’ | file_number	We can specify filename, ASM filename  or file number for the original file
+‘filename’ | ‘ASM_filename’	The output file can be  filesystem file or ASM file.
+Obviously we cannot specify file number here
+REUSE	If the target file is present, even then the new file is created
+KEEP	The source file copy is retained
+
+NOTES:
+Important points:
+1) The online alter command does not work with tempfile
+
+2) The operation is not compatible with
+   a)The datafile is offline
+   b)concurrent FLASHBACK DATABASE operation
+   c)concurrent media recovery
+   d) datafile resize (shrink) operation
+
+How to monitor the alter database move datafile command
+You can monitor the progress while a data file being moved by querying the v$session_longops dynamic view.
+you can also refer the alert.log of the database where Oracle writes the details about action being taken place.
+-----------------------------------------------------------------------------------
+How to rename a data file
+
+Original Location
+
+/u01/app/data/tools01.dbf
+
+New Location
+
+/u02/app/data/tools01.dbf 
+
+SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO '/u02/app/data/tools01.dbf’;
+
+The file is moved to the new location. The original file is deleted as we have not used the KEEP option
+
+==============================================================================================
+How to Migrate a data file from non-ASM to ASM
+
+Original Location
+
+/u01/app/data/tools01.dbf
+
+New Location
+
+‘+DATA/test/datafile/tools01.dbf’
+
+SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO ‘+DATA/test/datafile/tools01.dbf’;
+
+Or if we can to use OMF in ASM
+
+SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO ‘+DATA;
+
+The file is moved to the new location. The original file is deleted as we have not used the KEEP option
+
+======================================================================================
+How to Overwrite the data file with the same name, if it exists at the new location
+
+Original Location
+
+/u01/app/data/tools01.dbf
+
+New Location( file exists)
+
+/u02/app/data/tools01.dbf
+
+SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO '/u02/app/data/tools01.dbf’ REUSE ;
+
+==========================================================================================
+How Copy the file to a new location whilst retaining the old copy in the old location 
+
+Original Location
+
+/u01/app/data/tools01.dbf
+
+New Location
+
+/u02/app/data/tools01.dbf
+
+SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO '/u02/app/data/tools01.dbf’ KEEP ;
+
+The file is moved to the new location. The original file is also retained
+
+============================================================================================
+
+How to do Movement of a datafile in Pluggable database
+
+The container database (CDB) cannot move files that belong to a pluggable database.
+
+You need to login to the corresponding pluggable database to perform the movement 
+
+Pluggable database: TEST
+
+Original Location
+
+/u01/app/data/tools01.dbf
+
+New Location
+
+/u02/app/data/tools01.dbf
+
+SQL > ALTER SESSION SET container=TEST;
+
+SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO '/u02/app/data/tools01.dbf’ KEEP ;
+
+The file is moved to the new location. The original file is also retained
+
+=====================================================================================================
