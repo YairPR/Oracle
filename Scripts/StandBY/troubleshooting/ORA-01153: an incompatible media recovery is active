@@ -1,0 +1,25 @@
+When trying to start the recovery process in a Standby Database, the following error message appears:
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT
+*
+ERROR at line 1:
+ORA-01153: an incompatible media recovery is active
+
+The cause of the ORA-01153 can translate into a RMAN recovery or backup session.
+
+
+If we see that although a recovery session already exists but the Standby Base is not synchronizing, then we can stop the current session with the following command:
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+ 
+Database altered.
+
+Then we can run the recovery start command again and we can see that now no error message is shownhttps://github.com/YairPR/Oracle:
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT;
+ 
+Database altered.
+
+Now the synchronization process must continue without problems.
+
