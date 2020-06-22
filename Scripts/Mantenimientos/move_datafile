@@ -41,6 +41,11 @@ New Location
 
 SQL> ALTER DATABASE MOVE DATAFILE '/u01/app/data/tools01.dbf'  TO '/u02/app/data/tools01.dbf’;
 
+SQL> ALTER DATABASE MOVE DATAFILE '/bugmnt17/em/celclnx14/SR3.5377673271/app/oracle/oradata/T12cB3/test.dbf' 
+TO '/bugmnt17/em/celclnx14/SR3.5377673271/app/oracle/oradata/T12cB3/test_renamed.dbf';
+
+Database altered.
+
 The file is moved to the new location. The original file is deleted as we have not used the KEEP option
 
 ==============================================================================================
