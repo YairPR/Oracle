@@ -1,0 +1,4395 @@
+SYNTAXE DES COMMANDES SQLPLUS
+BNF SYNTAX
+
+
+                                BNF Syntax
+
+ {Braces} enclose required items; you MUST enter one from the list of
+ items separated by vertical bars. [Brackets] enclose optional items;
+ you MAY enter one from the list of items separated by vertical bars.
+ Three periods mean that the preceding item may be repeated.  Do not
+ enter the braces, brackets, or vertical bars.
+
+ Parentheses enclose parameter lists; commas separate items in a list.
+ UPPERCASE indicates specific words to be used; lowercase shows names
+ and expressions that vary.
+
+   COMMIT [WORK]
+
+   DELETE FROM [user.]table [alias] [WHERE condition]
+
+   INSERT INTO [user.]table [ (column [, column]...) ]
+      { VALUES (value [, value]...) | query }
+
+   LOCK TABLE [user.]table [, [user.]table ]...
+
+   ROLLBACK [WORK] [TO [SAVEPOINT] savepoint]
+
+   SAVEPOINT savepoint
+
+   SELECT [ALL|DISTINCT] { * | table.* | expr [column_alias]}
+          [, {table.* | expr [column_alias] } ]... }
+     FROM [user.]table [table_alias] [,[user.]table [table_alias]]...
+     [ WHERE condition ]
+     [ CONNECT BY condition [START WITH condition] ]
+     [ GROUP BY expr[, expr]... [HAVING condition] ]
+     [ {UNION | INTERSECT | MINUS} SELECT ... ]
+     [ ORDER BY {expr | position} [ASC | DESC]
+          [, {expr | position} [ASC | DESC]] ]...
+     [ FOR UPDATE OF column [, column]... [NOWAIT] ]
+
+   SET TRANSACTION [READ ONLY]
+
+   UPDATE [user.]table [alias]
+     SET column = expr [,column = expr]...
+     [WHERE condition]
+
+   UPDATE [user.]table [alias]
+     SET (column [,column] ... ) = (query) [,...]
+     [WHERE condition]
+
+
+ See any command listed; see also: commands.
+
+ACCEPT
+
+
+                                   ACCEPT
+
+ ACC[EPT] variable [NUM[BER]|CHAR|DATE] [FOR[MAT] format]
+    [DEF[AULT] default] [PROMPT text|NOPR[OMPT]] [HIDE]
+
+ ACCEPT reads a line of input and stores it in a given user variable.
+
+     variable
+         is the name of the variable in which you wish to store a value.
+         If variable doesn't exist, SQL*Plus creates it.
+
+     NUM[BER]
+         makes the datatype of variable the datatype NUMBER.  If the
+         reply does not match the datatype, ACCEPT gives an error message
+         and prompts again.
+
+     CHAR
+         makes the datatype of variable the datatype CHAR.  The maximum CHAR
+         length limit is 240 bytes.  If a multi-byte character set is used,
+         one CHAR may be more than one byte in size.
+
+     DATE
+         Expects the reply to be a valid DATE format.  If the reply is not
+         a valid DATE format, ACCEPT gives an error message and prompts
+         again.  The datatype is CHAR.
+
+     FOR[MAT]
+         specifies the input format for the reply.  If the reply does not
+         match the specified format, ACCEPT gives an error message and
+         prompts again for a reply.  The format element must be a text
+         constant such as A10 or 9.999.
+
+         Oracle date formats such as 'dd/mm/yy' are valid when the
+         datatype is DATE.  DATE without a specified format defaults to
+         the Oracle NLS_DATE_FORMAT of the current session.
+
+     DEF[AULT]
+         sets the default value if a reply is not given.  The reply must
+         be in the specified format if defined.
+
+     PROMPT text
+         displays text on-screen before accepting the value of variable
+         from the user.
+
+     NOPR[OMPT]
+         skips a line and waits for input; prompt not displayed.
+
+     HIDE
+         suppresses the display as you type the reply.
+
+ To define or reference variables, use the DEFINE command.
+
+
+ Examples: To display the prompt, "Password:  ", place the reply in a
+           CHAR variable named PSWD, and suppress the display, enter:
+
+               SQL> ACCEPT pswd CHAR PROMPT 'Password:  ' HIDE
+
+           To display the prompt, "Enter weekly salary:  ", place the
+           reply in a NUMBER variable named SALARY with a default of
+           000.0, enter:
+
+               SQL> ACCEPT salary NUMBER FORMAT '999.99' DEFAULT '000.0' -
+               >       PROMPT 'Enter weekly salary:  '
+
+           To display the prompt, "Enter date hired:  ", place the reply
+           in a DATE variable named HIRED with the format "dd/mm/yy" and
+           a default of "01/01/94", enter:
+
+               SQL> ACCEPT hired DATE FORMAT 'dd/mm/yy' DEFAULT '01/01/94'-
+               >       PROMPT 'Enter date hired:  '
+
+           To display the prompt, "Enter employee lastname:  ", and place
+           the reply in a CHAR variable named LASTNAME, enter:
+
+               SQL> ACCEPT lastname CHAR FORMAT 'A20' -
+               >       PROMPT 'Enter employee lastname:  '
+
+
+ See also: define, input, prompt, parameters, commands.
+
+APPEND
+
+
+                                     APPEND
+
+ A[PPEND] text
+
+ Use APPEND to add text to the end of the current line in the SQL buffer.
+
+     text
+         is the text you wish to append.  To separate text from preceding
+         characters with a space, enter two spaces between APPEND and the
+         text. To APPEND text that ends with a semicolon, end the APPEND
+         command with two semicolons (SQL*Plus interprets one semicolon as
+         an optional command terminator).
+
+
+ Examples: To append a space and the column name DEPT to the second line
+           of the buffer, make that line the current line by entering:
+
+               SQL> 2
+                 2* FROM EMP
+
+           Now enter APPEND:
+
+               SQL> APPEND , DEPT
+               SQL> 2
+                 2* FROM EMP, DEPT
+
+           The first space between APPEND and the comma separates APPEND
+           from the characters to be appended; the second space is the
+           first appended character.  To append a semicolon to the line,
+           enter:
+
+               SQL> APPEND ;;
+
+           SQL*Plus appends the first semicolon to the line.  The second
+           semicolon terminates the command.
+
+
+ See also: buffer, change, del, edit, input, list, save, spool,
+           commands.
+
+@
+
+
+                               @ ("at" sign)
+
+ @ file_name[.ext] [arg...]
+
+ Runs the specified command file.
+
+     file_name[.ext ]
+         is the command file you wish to run. If you omit ext, SQL*Plus
+         assumes the default command-file extension (usually SQL).  To
+         change the default extension, use the SUFFIX clause of the SET
+         command.  Use @file_name or @ file_name; the space is optional.
+         Case may be significant in some operating environments.
+
+     arg...
+         represent data items you wish to pass to parameters in the
+         command file.  If you enter one or more arguments, SQL*Plus
+         substitutes the values into the parameters (&1, &2, and so
+         forth) in the command file.  The first argument replaces
+         each occurrence of &1, the second replaces each occurrence
+         of &2, and so forth.
+
+         The @ command DEFINEs the parameters with the values of the
+         arguments; if you run the command file again in this session,
+         you can enter new arguments or omit the arguments to use the
+         current values.
+
+ You can include in a command file any typeable command--usually SQL or
+ SQL*Plus commands or PL/SQL blocks.  EXIT or QUIT used in a command files
+ terminates SQL*Plus.  The @ command functions similarly to START.
+
+ SQL*Plus removes the SQLTERMINATOR (a semicolon by default) before the
+ @ command is issued.  A workaround for this is to add another
+ SQLTERMINATOR.  See SET SQLTERMINATOR for more information on the
+ SQLTERMINATOR.
+
+
+ Examples:
+
+     To run a command file named PRINTRPT.SQL, enter:
+
+         SQL> @PRINTRPT
+
+
+     To run the command file WKRPT with the extension QRY, enter:
+
+         SQL> @WKRPT.QRY
+
+
+ See also: @@, set (suffix), start, /, edit, run, get, buffer, spool,
+           list, save, parameters, commands.
+
+@@
+
+
+                               @@ (double "at" sign)
+
+ @@ file_name[.ext]
+
+ Runs a nested command file.  This command is identical to the @
+ command except that it looks for the specified command file in the
+ same path as the command file from which it was called.
+
+     file_name[.ext ]
+         is the command file you wish to run. If you omit ext, SQL*Plus
+         assumes the default command-file extension (usually SQL).  To
+         change the default extension, use the SUFFIX clause of the SET
+         command.  Use @@file_name or @@ file_name; the space is optional.
+         Case may be significant in some operating environments.
+
+ You can include in a command file any typeable command--usually SQL or
+ SQL*Plus commands.  EXIT or QUIT used in a command file terminates
+ SQL*Plus.  The @@ command functions similarly to START.
+
+ SQL*Plus removes the SQLTERMINATOR (a semicolon by default) before the
+ @@ command is issued.  A workaround for this is to add another
+ SQLTERMINATOR.  See SET SQLTERMINATOR for more information on the
+ SQLTERMINATOR.
+
+ Example:
+
+     Suppose that you have the following command file named PRINTRPT:
+       SELECT * FROM EMP
+       @EMPRPT
+       @@WKRPT
+
+     When you START PRINTRPT and it reaches the @ command, it looks for
+     the command file named EMPRPT in the current working directory
+     and runs it.  When PRINTRPT reaches the @@ command, it looks for
+     the command file named WKRPT in the same path as PRINTRPT and
+     runs it.
+
+See also: @, set (suffix), start, /, edit, run, get, buffer, spool,
+           list, save, parameters, commands.
+
+BREAK
+
+
+                                  BREAK
+
+ BRE[AK] [ON report_element [action [action]]] ...
+
+ where report_element and action require the following syntax:
+         report_element: {column | expression | ROW | REPORT}
+         action: [SKI[P] n|[SKI[P]] PAGE] [NODUP[LICATES] | DUP[LICATES]]
+
+ BREAK specifies where and how to make format changes to a report.  You use
+ BREAK to:
+
+     -   suppress the display of duplicate values for a given column
+     -   skip a line each time a given column value changes
+     -   COMPUTE figures when a given column value changes, or at the end
+             of a report (see COMPUTE)
+     -   list the current BREAK definition (by issuing the BREAK command
+             without any clauses following)
+
+ BREAK also lists the current BREAK definition.  Each new BREAK command
+ replaces the preceding one.  Use CLEAR BREAKS to remove the BREAK command.
+
+ BREAK report_elements:
+
+     ON column [action [action]]
+         specifies action(s) for SQL*Plus to take when a break occurs in
+         the break column.  The column cannot have a table or view
+         appended to it.  To achieve this, use an alias in the
+         SQL statement.  A break is:
+
+         -   a change in the value of a column or expression
+         -   the output of a row
+         -   the end of a report
+
+         If you omit action(s), BREAK ON column suppresses printing of
+         duplicate values in the column, marking in the report where
+         SQL*Plus will perform the computation you specify in a matching
+         COMPUTE command.  You can specify ON column one or more times.
+
+         Example:  If you specify multiple ON clauses, as in:
+
+                   SQL> BREAK ON DEPTNO SKIP PAGE ON JOB SKIP 1 -
+                      > ON SAL SKIP 1
+
+             the first ON clause is the outermost break (ON DEPTNO), and
+             the last ON clause is the innermost break (ON SAL).  SQL*Plus
+             searches each output row for the break(s), starting with the
+             outermost break and proceeding to the innermost in the order
+             you've entered the clauses.  In the example above, SQL*Plus
+             searches for a change in the value of DEPTNO, then JOB, then
+             SAL.
+
+             Next, SQL*Plus executes the actions, beginning with the action
+             for the innermost break and proceeding in reverse order toward
+             the outermost break (from SKIP 1 for ON SAL toward SKIP PAGE
+             for ON DEPTNO). SQL*Plus executes each action, including the
+             action for the first occurring break found in the initial
+             search.
+
+             If, for example, the value of JOB in a given row changes, but
+             the values of DEPTNO and SAL stay the same, SQL*Plus skips two
+             lines before printing the row: one as a result of SKIP 1 in
+             the ON SAL clause, the other as a result of SKIP 1 in the
+             ON JOB clause.
+
+             When you use ON column, you should also use the ORDER BY clause
+
+             in the SELECT statement.  The columns usually should appear in
+             the same order in ORDER BY as they do in BREAK, so that breaks
+             do not occur at meaningless points in the report.  All the
+             columns listed in ORDER BY need not appear in the BREAK command.
+
+
+             The following SELECT produces meaningful results with the above
+
+             BREAK:
+
+                   SQL> SELECT DEPTNO, JOB, SAL,ENAME
+                     2  FROM EMP
+                     3  ORDER BY DEPTNO, JOB, SAL, ENAME;
+
+
+             All rows with the same DEPTNO print together on one page, and
+             within that page all rows with the same JOB print in groups.
+             Within each group of jobs, those with the same SAL print in
+             groups.  Breaks in ENAME cause no action, because ENAME does
+             not appear in the BREAK command.
+
+     ON expr [action [action]]
+         specifies action(s) for SQL*Plus to take when the value of the
+         expression changes.  If action(s) are omitted, BREAK ON expr
+         suppresses printing of duplicate values of expr, marking in the
+         report the place where SQL*Plus will perform the computation you
+         specify in a matching COMPUTE command.
+
+         You can use an expression involving one or more table columns, or
+         an alias assigned to a report column in a SELECT statement or a
+         COLUMN command.  If you use an expression in a BREAK command, you
+         must enter expr exactly as it appears in SELECT; if the expression
+         in the SELECT statement is a+b, for example, you cannot use b+a or
+         (a+b) in a BREAK command to refer to the expression in the SELECT
+         statement.  The information for ON column also applies to ON expr.
+
+     ON ROW [action [action]]
+         specifies action(s) for SQL*Plus to take when a SELECT statement
+         returns a row. The ROW break becomes the innermost break no matter
+         where it appears in the BREAK command.  You should always specify
+         an action when you BREAK on a row.
+
+     ON REPORT [action]
+         marks in a report the place where SQL*Plus will perform the
+         computation specified in a matching COMPUTE command.  Use BREAK
+         ON REPORT with COMPUTE to print grand totals or other "grand"
+         computed values.  The REPORT break becomes the outermost break
+         regardless of where you specify it in the BREAK command.  Note
+         that SQL*Plus will not skip a page at the end of a report, so you
+         cannot use BREAK ON REPORT SKIP PAGE.
+
+ BREAK actions:
+
+     SKI[P] n
+         skips n lines before printing the row where the break occurred.
+
+     [SKI[P]] PAGE
+         skips to a new page before printing the row where break occurred.
+
+     NODUP[LICATES]
+         prints blanks rather than the value of a break column when the
+         value is a duplicate of the column's value in the preceding row.
+
+     DUP[LICATES]
+         prints the value of a break column in every selected row.
+
+             Example:  The example report below, produces prints duplicate
+             job values, prints the average of SAL, inserts one blank line
+             when the JOB value changes, and (when the value of DEPTNO
+             changes) prints the sum of SAL and inserts another blank line:
+
+                   SQL> BREAK ON DEPTNO SKIP 1 ON JOB SKIP 1 DUPLICATES
+                   SQL> COMPUTE SUM OF SAL ON DEPTNO
+                   SQL> COMPUTE AVG OF SAL ON JOB
+                   SQL> SELECT DEPTNO, JOB, ENAME, SAL FROM EMP
+                     2  WHERE JOB IN ('CLERK', 'SALESMAN')
+                     3  AND DEPTNO IN (10, 30)
+                     4  ORDER BY DEPTNO, JOB;
+
+             Output:
+
+                  DEPTNO  JOB       ENAME       SAL
+                  ------ --------- --------- ------
+                      10  CLERK     MILLER     1300
+                          ********           ------
+                          avg                  1300
+
+                  ******                     ------
+                  sum                          1300
+
+                      30  CLERK     JAMES      1045
+                          ********           ------
+                          avg                  1045
+
+                          SALESMAN  ALLEN      1760
+                          SALESMAN  MARTIN     1375
+                          SALESMAN  TURNER     1650
+                          SALESMAN  WARD       1375
+                          ********           ------
+                          avg                  1540
+
+                  ******                     ------
+                   sum                         7205
+
+ See also: compute, order by, select, SQL in PL/SQL, commands.
+
+BTITLE
+
+
+                                   BTITLE
+
+ BTI[TLE] [printspec [text | variable] ...] | [OFF|ON]
+
+ BTITLE places and formats a title at the bottom of each report page, or
+ lists the current BTITLE definition.  See TTITLE for a description of
+ BTITLE clauses, and to learn how to print page numbers in the title. To
+ list the current BTITLE definition, enter BTITLE with no clauses.
+
+ If you do not enter a printspec clause before the first occurrence of
+ text, BTITLE left justifies the text.  SQL*Plus interprets BTITLE in
+ the "new" form if a valid printspec clause (LEFT, SKIP, COL, etc)
+ immediately follows BTITLE.  See OLD COMMANDS for a description of
+ an alternative form of BTITLE.
+
+ Examples: To set a bottom title with CORPORATE PLANNING DEPARTMENT on the
+           left and a date on the right, enter:
+
+               SQL> BTITLE LEFT 'CORPORATE PLANNING DEPARTMENT' -
+               > RIGHT '11 Jan 1990'
+
+           To set a bottom title with CONFIDENTIAL in column 50, followed
+           by six spaces and a date, enter:
+
+               SQL> BTITLE COL 50 'CONFIDENTIAL' TAB 6 '11 Jan 90'
+
+ See also: old commands, ttitle, commands.
+
+BUFFER
+
+
+                                  Buffer
+
+ SQL Commands
+     SQL commands you enter are stored in the SQL buffer.  You can continue
+     a SQL command on one or more additional lines, ending and executing
+     the command with a semicolon (;), a blank line, or a slash (/) on a
+     line by itself.  SQL*Plus displays line numbers (matching the lines in
+     the SQL buffer) for these additional lines.  Use SAVE to store the
+     buffer's contents in a file.  Use RUN or slash (/) at the command
+     prompt to execute commands in the SQL buffer.
+
+ PL/SQL Blocks
+     SQL*Plus also stores PL/SQL programs (blocks) in the SQL buffer.
+     To end a PL/SQL block, enter a . (period) by itself on a new line.
+     Execute a block in the buffer with RUN or slash (/).  You can use
+     REMARK and /*comments*/ with PL/SQL blocks as with SQL commands.
+     In PL/SQL, you can also use "--" (two dashes) to begin a comment
+     that ends with the next RETURN character.
+
+ SQL*Plus Commands
+     Continue a long SQL*Plus command on additional lines by using a -
+     (hyphen) at the end of each line; SQL*Plus prompts with a > for the
+     next line.  A line not ended by a hyphen executes the command.
+
+
+     Example: If you enter the COLUMN command:
+
+               SQL> COLUMN ENAME HEADING EMPLOYEES -
+                  > FORMAT A10
+               SQL>
+
+     You can end a SQL*Plus command with ; (semicolon).  It's not required.
+     SQL*Plus commands are not stored in the SQL buffer. Use EDIT to create
+     command files containing SQL*Plus commands. START runs a command file.
+     Use REMARK to enter comments within SQL*Plus commands.  You can also
+     use /*comment delimiters*/ on a separate line before or after a
+     SQL*Plus command, but not on the same line.
+
+
+ See also: substitution, commands.
+
+CHANGE
+
+
+                                   CHANGE
+
+ C[HANGE] sepchar old [sepchar [new[sepchar]]]
+
+ Use CHANGE to replace the first occurrence of the specified text on the
+ current line of the buffer with the new specified text.
+
+     sepchar
+         is any non-alphanumeric character such as "/" or "!".  You can
+         use any sepchar that does not appear in "old" or "new".  The
+         space between CHANGE and the first sepchar is optional.
+
+     old
+         is the text you wish to change.  CHANGE ignores case in searching
+         for old.  For example,  CHANGE /aq/aw  finds the first occurrence
+         of "aq", "AQ", "aQ", or "Aq", and change it to "aw".  SQL*Plus
+         inserts the new text exactly as you specify it.
+
+         If old is prefixed with "...", it matches everything up to and
+         including the first occurrence of old.  If it is suffixed with
+         "...", it matches the first occurrence of old and everything that
+         follows on that line.  If it contains an embedded "...", it
+         matches everything from the preceding part of old through the
+         following part of old.
+
+     new
+         is the text with which you wish to replace old.  If you omit new
+         and, optionally, the second and third sepchars, CHANGE deletes old
+         from the current line of the buffer.
+
+ CHANGE changes the first occurrence of the text you specify on the current
+ line in the buffer.  The current line is marked with an asterisk (*) in
+ the LIST output.  You can also use CHANGE to modify a line in the buffer
+ that has caused an Oracle error; SQL*Plus makes the erroneous line, the
+ current line.  To re-enter an entire line, type its number, then the new
+ contents of the line. Entering a line number larger than the number of
+ lines in the buffer causes SQL*Plus to add the text in a new line at the
+ end of the buffer. Entering 0 for the line number causes SQL*Plus insert
+ that line before the other lines (it becomes line 1).
+
+ Examples: The current line of the buffer contains the following text:
+
+               4* WHERE JOB IS IN ('CLERK','ANALYST')
+
+     Entering this...                  Changes the buffer text to this.
+     ----------------------------------------------------------------------
+     SQL> C /ANALYST/GUARD/            4* WHERE JOB IS IN ('CLERK','GUARD')
+
+     SQL> C /'CLERK',.../'CLERK')/     4* WHERE JOB IS IN ('CLERK')
+
+     SQL> C /(...)/('COOK','BUTLER')/  4* WHERE JOB IS IN ('COOK','BUTLER')
+
+
+         Use the line number to replace an entire line.  If you enter:
+
+               SQL> 2 FROM EMP e1
+
+         the second line of the buffer is replaced with:
+
+               FROM EMP e1
+
+
+         NOTE: Entering a line number and a string always replaces the line
+         with the string, no matter what the text of the string:
+
+               SQL> 2  c/old/new/
+
+         changes the second line of the buffer to:
+
+               2* c/old/new/
+
+
+ See also: append, del, edit, input, list, save, buffer, spool,
+           commands.
+
+CLEAR
+
+
+                                    CLEAR
+
+ CL[EAR] option ...
+
+ CLEAR resets or erases the current value or setting for the option, where
+ option is one of the following clauses:
+
+     BRE[AKS]
+         clears breaks set by the BREAK command.
+
+     BUFF[ER]
+         clears text from the buffer.  CLEAR BUFFER works like CLEAR SQL,
+         unless you are using multiple buffers.
+
+     COL[UMNS]
+         clears options set by the COLUMN command for all columns. To clear
+         settings for a single column, use the CLEAR clause of the COLUMN
+         command.
+
+     COMP[UTES]
+         clears options set by the COMPUTE command.
+
+     SCR[EEN]
+         clears your screen.
+
+     SQL
+         clears text from the SQL buffer.  CLEAR SQL works the same as
+         CLEAR BUFFER, unless you are using multiple buffers.
+
+     TIMI[NG]
+         deletes all timing areas created by the TIMING command.
+
+
+ Examples: To clear breaks, enter:
+
+               SQL> CLEAR BRE
+
+
+           To clear column elements, enter:
+
+               SQL> CLEAR COL
+
+
+ See also: break, buffer, column, compute, set (timing),
+           commands.
+
+COLUMN
+
+
+                                   COLUMN
+
+ COL[UMN] [{column | expr} [option...] ]
+
+ where option is one of the following:
+
+     ALI[AS] alias
+     CLE[AR] | DEF[AULT]
+     FOLD_A[FTER] n
+     FOLD_B[EFORE] n
+     FOR[MAT] format
+     HEA[DING] text
+     JUS[TIFY] {L[EFT] | C[ENTER] | C[ENTRE] | R[IGHT]}
+     LIKE {expr | alias}
+     NEWL[INE]
+     NEW_V[ALUE] variable
+     NOPRI[NT] | PRI[NT]
+     NUL[L] text
+     OLD_V[ALUE] variable
+     ON|OFF
+     WRA[PPED] | WOR[D_WRAPPED] | TRU[NCATED]
+
+ COLUMN sets display attributes for a given column, such as:
+
+     -   text for the column heading
+     -   alignment of the column heading
+     -   format for NUMBER data
+     -   wrapping of column data
+
+ Enter COLUMN with column or expr to list the current display attributes
+ for only the column or expression specified.  Enter COLUMN with no clauses
+ to list all current column display attributes.
+
+     {column | expr}
+         identifies the data item (typically, the column name) in a SELECT
+         statement to which the column command refers.  You must enter an
+         expression exactly as it appears in the SQL SELECT statement if
+         you use it in a COLUMN command.  For example, if the expression
+         in the SELECT statement is a+b, you cannot use b+a or (a+b) in a
+         COLUMN command to refer to the expression in the SELECT statement.
+
+         If you select columns with the same name from different tables, a
+         COLUMN command for that column name will apply to both columns.
+         That is, a COLUMN command for the column ENAME applies to all
+         columns named ENAME that you reference in this session.  COLUMN
+         ignores table name prefixes in SELECT statements.
+
+         To format the columns differently, assign a unique alias to each
+         column within the SELECT statement itself (do not use the ALIAS
+         clause of the COLUMN command) and enter a COLUMN command for each
+         column's alias.
+
+     ALI[AS] alias
+         assigns a specified alias to a column, which can be used to refer
+         to the column in BREAK, COMPUTE, and other COLUMN commands.
+
+     CLE[AR] | DEF[AULT]
+         resets the display attributes for the column to default values.
+         To reset the attributes for all columns, use the CLEAR COLUMNS
+         command.
+
+     FOLD_A[FTER] n
+         inserts a carriage return after the column heading and after each
+         row in the column.  You must enter n; the particular value you
+         choose for n has no effect on the format.  SQL*Plus does not
+         insert an extra carriage return after the last column in the
+         SELECT list.
+
+     FOLD_B[EFORE] n
+         inserts a carriage return before the column heading and before
+         each row of the column.  You must enter n; the particular value
+         you choose for n has no effect on the format.  FOLD_BEFORE n has
+         the same effect as NEWLINE.  SQL*Plus does not insert an extra
+         carriage return before the first column in the SELECT list.
+
+     FOR[MAT] format
+         sets the display format of the column.  The format specification
+         must be a text constant such as $9,999 or A10, not a variable.
+
+         A CHAR or VARCHAR2 (VARCHAR) column's width defaults to the
+         column's width in the database.  A LONG column's
+         width defaults to the value of SET LONGCHUNKSIZE or
+         SET LONG, whichever is smaller.  A Trusted
+         Oracle column of datatype MLSLABEL or RAW MLSLABEL defaults
+         to the column's width as defined in the database or to the
+         length of the column's heading, whichever is longer.
+         Note: A Trusted Oracle column with a name of ROWLABEL defaults
+         to a width of 15.  To change the width of a CHAR,
+         VARCHAR2 (VARCHAR), LONG, or Trusted Oracle column
+         to n, use FORMAT An.  If you specify a width shorter
+         than the column heading, SQL*Plus truncates the heading.
+
+         SQL*Plus formats CHAR, VARCHAR2 (VARCHAR), or Trusted Oracle
+         data left-justified.  If a value does not fit within the
+         column width, SQL*Plus wraps or truncates the character
+         string depending on the setting of SET WRAP.
+
+         In Oracle7, the default width and format of unformatted DATE
+         columns in SQL*Plus is derived from the NLS parameters in
+         effect.  Otherwise, the default width is A9.  In Oracle7, the
+         NLS parameters may be set in your database parameter file and
+         may be environment variables or an equivalent platform-
+         specific mechanism.  They may also be specified for each
+         session with the ALTER SESSION command.  (See the
+         documentation for the Oracle7 Server for a complete
+         description of the NLS parameters).
+
+         You can change the format of any DATE column using the SQL
+         function TO_CHAR in your SQL SELECT statement.  You can also
+         use an explicit COLUMN FORMAT command to adjust the column
+         width.
+
+         When you use SQL functions like TO_CHAR, Oracle automatically
+         allows for a very wide column.
+
+         To change the width of a DATE column to n, use the COLUMN
+         command with FORMAT An.  If you specify a width shorter than
+         the column heading, the heading is truncated.
+
+         An example:
+
+         To change the default format of DATE columns to 'YYYY-MM-DD':
+
+             SQL> alter session set NLS_DATE_FORMAT = 'YYYY-MM-DD';
+
+             Session altered.
+
+             SQL> select hiredate
+               2  from emp
+               3  where empno = 7839;
+
+             HIREDATE
+             ----------
+             1981-11-17
+
+         See ALTER SESSION for more information on the ALTER SESSION
+         command.
+
+         NOTE: In a SELECT statement some SQL calculations such as
+         TO_CHAR may cause a column to be very wide.  In such a case,
+         use the FORMAT option to alter the column width.
+
+         A NUMBER column's width equals the width of the heading, or
+         the width of the FORMAT plus one space for the sign,
+         whichever is greater.  If you do not explicitly use FORMAT, then
+         the column's width will always be at least the value of SET
+         NUMWIDTH.  To change the width, use FORMAT followed by a number
+         format element.  See the COLUMN command in the SQL*Plus
+         User's Guide and Reference for more information on number formats.
+
+         SQL*Plus formats NUMBER data right-justified.  SQL*Plus never
+         truncates a NUMBER column heading.  If a value does not fit
+         within the column width, SQL*Plus displays a pound sign (#) in
+         place of each digit the width allows to indicate overflow.
+
+         With all number formats, SQL*Plus rounds a number to the specified
+         number of significant digits.  When no format is given, a number's
+         width defaults to the value of NUMWIDTH.  See the SET command.
+
+     HEA[DING] text
+         defines a column heading.  If text contains blanks or punctuation
+         characters, you must enclose it with single or double quotes.  If
+         you omit a HEADING clause, the column's heading defaults to column
+         or expr.  Each occurrence of the HEADSEP character (default = '|')
+         begins a new line.  For example,
+
+               COLUMN ENAME HEADING 'Employee |Name'
+
+         produces a two-line column heading.  See the SET command's HEADSEP
+         variable for information on changing the HEADSEP character.
+
+     JUS[TIFY] {L[EFT]|C[ENTER]|C[ENTRE]|R[IGHT]}
+         aligns the heading.  If you do not use a JUSTIFY clause, headings
+         for NUMBER columns default to RIGHT and headings for other column
+         types default to LEFT.
+
+     LIKE {expr|alias}
+         copies the display attributes of another column or expression
+         (whose attributes you've defined with another COLUMN command).
+         LIKE copies only attributes not defined by another clause in the
+         current COLUMN command.
+
+     NEWL[INE]
+         starts a new line before displaying the column's value. NEWLINE
+         has the same effect as FOLD_BEFORE.
+
+     NEW_V[ALUE] variable
+         specifies a variable to hold a column value, so you can reference
+         the variable in TTITLE commands.  Use NEW_VALUE to display column
+         values or the date in the top title.  You must include the column
+         in a BREAK command with the SKIP PAGE action.
+
+         NEW_VALUE is useful for master/detail reports in which there is a
+         new master record for each page.  For master/detail reporting, you
+         must also include the column in the ORDER BY clause.
+
+         For information on displaying a column value in the bottom title,
+         see COLUMN OLD_VALUE below.  See TTITLE for more information on
+         referencing variables in titles.  See COLUMN FORMAT above for
+         details on formatting and valid format models.
+
+     NOPRI[NT]|PRI[NT]
+         controls the printing of the column (the column heading and all
+         the selected values).  NOPRINT turns the printing of the column
+         off; PRINT turns it on.
+
+     NUL[L] text
+         controls the text SQL*Plus displays for null values in the given
+         column.  The default is a white space.  SET NULL controls the text
+         displayed for all null values for all columns, unless overridden
+         for a specific column by the NULL clause of the COLUMN command.
+
+     OLD_V[ALUE] variable
+         specifies a variable to hold a column value, so you can reference
+         the variable in BTITLE commands.  Use OLD_VALUE to display column
+         values in the bottom title.  You must include the column in a
+         BREAK command with the SKIP PAGE action.
+
+         OLD_VALUE is useful for master/detail reports in which there is a
+         new master record for each page.  For master/detail reporting, you
+         must also include the column in the ORDER BY clause.
+
+         See COLUMN NEW_VALUE above for information on displaying a column
+         value in the top title.  See TTITLE for more on referencing
+         variables in titles.
+
+     ON|OFF
+         controls the status of display attributes for a column.  OFF
+         disables the attributes for a column without affecting the
+         attributes' definition.  ON reinstates the attributes.
+
+     WRA[PPED]|WOR[D_WRAPPED]|TRU[NCATED]
+         specifies how SQL*Plus treats a CHAR, VARCHAR2, LONG or DATE string
+         that is too wide for a column.  WRAPPED wraps the string within
+         the column bounds, beginning newlines when required.  WORD_WRAPPED
+         left justifies each new line, skipping all leading whitespace,
+         including embedded newline characters.  Embedded whitespace not
+         on a line boundary is not skipped.  TRUNCATED cuts off the string
+         at the end of the first display line.
+
+ You can enter any number of COLUMN commands for one or more columns.  All
+ column attributes set for each column remain in effect for the remainder
+ of the session, until you turn the column OFF, or until you use the CLEAR
+ COLUMN command.  Thus, the COLUMN commands you enter can control a column's
+ display attributes for multiple SQL SELECT statements.   When you enter
+ multiple COLUMN commands for the same column, SQL*Plus applies their clauses
+ collectively.  If several COLUMN commands apply the same clause to the same
+ column, the last one entered will control the output.
+
+ Examples: To make the ENAME column 20 characters wide and display EMPLOYEE
+           NAME on two lines at the top, enter:
+
+               SQL> COLUMN ENAME FORMAT A20 HEADING 'EMPLOYEE |NAME'
+
+           To format the SAL column so that it shows millions of dollars,
+           rounds to cents, uses commas to separate thousands, and displays
+           $0.00 when a value is zero:
+
+               SQL> COLUMN SAL FORMAT $9,999,990.99
+
+           To assign the alias NET to a column with a long expression,
+           display the result in a dollar format, and display  for
+           null values, enter:
+
+               SQL> COLUMN SAL+COMM+BONUS-EXPENSES-INS-TAX ALIAS NET
+               SQL> COLUMN NET FORMAT $9,999,999.99 NULL ''
+
+           This column specification is divided into two commands.  The
+           first defines the alias NET, and the second uses NET to define
+           the format.  In the first command, you must enter the expression
+           exactly as in the SELECT statement.  Otherwise, SQL*Plus cannot
+           match the COLUMN command to the appropriate column.  To wrap
+           long values in a column named REMARKS, enter:
+
+               SQL> COLUMN REMARKS FORMAT A20 WRAP
+
+           Output:
+
+               CUSTOMER  DATE       QUANTITY   REMARKS
+               --------  ---------  --------   --------------------
+               123       25-AUG-89       144   This order must be s
+                                               hipped by air freigh
+                                               t to ORD.
+
+           If you replace WRAP with WORD_WRAP:
+
+               CUSTOMER  DATE       QUANTITY   REMARKS
+               --------  ---------  --------   --------------------
+               123       25-AUG-89       144   This order must be
+                                               shipped by air
+                                               freight to ORD.
+
+           If you specify TRUNCATE instead of WORD_WRAP:
+
+               CUSTOMER  DATE       QUANTITY   REMARKS
+               --------  ---------  --------   --------------------
+               123       25-AUG-89       144   This order must be s
+
+           To print the current date and the name of each job in the top
+           title:
+
+               SQL> COLUMN JOB NOPRINT NEW_VALUE JOBVAR
+               SQL> COLUMN TODAY NOPRINT NEW_VALUE DATEVAR
+               SQL> BREAK ON JOB SKIP PAGE
+               SQL> TTITLE CENTER 'Job Report' RIGHT DATEVAR  SKIP 2 -
+                  > LEFT 'Job:     ' JOBVAR SKIP 2
+               SQL> SELECT TO_CHAR(SYSDATE, 'MM/DD/YY') TODAY,
+                 2  ENAME, JOB, MGR, HIREDATE, SAL, DEPTNO
+                 3  FROM EMP WHERE JOB IN ('CLERK', 'SALESMAN')
+                 4  ORDER BY JOB, ENAME;
+
+           Your 2-page report would look like this, with "Job Report"
+           centered in your current line size:
+
+                                          Job Report             05/01/89
+
+           Job:     CLERK
+
+           ENAME            MGR HIREDATE          SAL     DEPTNO
+           ---------- --------- --------- ----------- ----------
+           ADAMS           7788 14-JAN-87        1100         20
+           JAMES           7698 03-DEC-88         950         30
+           MILLER          7782 23-JAN-89        1300         10
+           SMITH           7902 17-DEC-88         800         20
+
+                                          Job Report             05/01/89
+
+           Job:     SALESMAN
+
+           ENAME            MGR HIREDATE          SAL     DEPTNO
+           ---------- --------- --------- ----------- ----------
+           ALLEN           7698 20-FEB-88        1600         30
+           MARTIN          7698 28-SEP-86        1250         30
+           TURNER          7698 08-SEP-83        1500         30
+           WARD            7698 22-FEB-89        1250         30
+
+
+ See also: break, compute, clear, order by, set (long, numwidth, wrap),
+           ttitle, commands.
+
+COMPUTE
+
+
+                                  COMPUTE
+
+ COMP[UTE] [function [LAB[EL] text] ...
+     OF {quoted_select_expr|column|alias} ...
+     ON {quoted_select_expr|column|alias|REPORT|ROW} ...]
+
+ COMPUTE calculates and prints summary lines, using various standard
+ computations, on subsets of selected rows.  It also lists all COMPUTE
+ definitions.
+
+         Function     Computes
+         --------------------------------------------------
+         AVG          Average of non-null values
+         COU[NT]      Count of non-null values
+         MAX[IMUM]    Maximum value
+         MIN[IMUM]    Minimum value
+         NUM[BER]     Count of rows
+         STD          Standard deviation of non-null values
+         SUM          Sum of non-null values
+         VAR[IANCE]   Variance of non-null values
+
+         If you specify more than one function, use spaces between them.
+
+     LAB[EL] text
+          defines the label to be printed for the computed value.  If no
+          LABEL clause is used, text defaults to the unabbreviated function
+          keyword.  If text contains spaces or punctuation, you must
+          enclose it with single quotes.  The label prints left justified
+          and truncates to the column width or linesize, whichever is
+          smaller.  The maximum length of a label is 500 characters.
+
+          The label for the computed value appears in the break column
+          specified.  To suppress the label use the NOPRINT option of the
+          COLUMN command on the break column.
+
+          If you repeat a function in a COMPUTE command, SQL*Plus issues
+          a warning and uses the first occurrence of the function.
+
+          With ON REPORT and ON ROW computations, the label appears in the
+          first column listed in the SELECT statement.  The label can be
+          suppressed by using a NOPRINT column first in the SELECT
+          statement.  When you compute a function of the first column in
+          the SELECT statement ON REPORT or ON ROW then the computed value
+          appears in the first column and the label is not displayed.  To
+          see the label, select a dummy column first in the select list.
+
+     OF {quoted_select_expr|column|alias} ...
+          specifies the column(s) or expression(s) to be used in the
+          computation.  You must also specify these columns in the SELECT
+          statement, or SQL*Plus will ignore the COMPUTE command.
+
+          If you use a SQL SELECT list alias, you must use the SQL alias in
+          the COMPUTE command, not the column name.  If you use the
+          column name in this case, SQL*Plus will ignore the COMPUTE
+          command.
+
+          If you don't want the computed values of a given column to appear
+          in the output of a SELECT statement, use the COLUMN command with
+          a NOPRINT clause.  Use spaces between multiple expressions,
+          columns, or aliases within the OF clause.
+
+          To reference a SELECT expression or function reference in an OF
+          clause, place the expression or function reference in "quotes".
+          Column names and aliases do not need quotes.
+
+     ON {quoted_select_expr|column|alias|REPORT|ROW} ...
+          specifies the event SQL*Plus will use as a break.  COMPUTE prints
+          the computed value and restarts the computation when the event
+          occurs (that is, when the value of the expression changes, a new
+          ROW is fetched, or the end of the report is reached).
+
+          If multiple COMPUTE commands reference the same column in the ON
+          clause, only the last COMPUTE command applies.
+
+          To reference a SQL SELECT expression or function reference in
+          an ON clause, put the expression or function reference in quotes.
+          Column names and aliases do not need quotes.  Enter COMPUTE
+          without clauses to list all COMPUTE definitions.
+
+ Enter COMPUTE without clauses to list all COMPUTE definitions.
+
+ Columns cannot have tables or views appended to them.  Use aliases
+ in the SQL statement to achieve this instead.
+
+ For SQL*Plus to perform the computations:
+
+     -  One or more of the expressions, columns, or column aliases
+        referenced in the OF clause must also be in the SELECT statement.
+
+     -  The expression, column, or column alias referenced in the ON clause
+        must be in the SELECT statement and in the most recent BREAK
+        command.
+
+     -  If you reference either ROW or REPORT in the ON clause, you must
+        also reference ROW or REPORT in the most recent BREAK command.
+
+ To remove all COMPUTE definitions, use the CLEAR COMPUTES command.
+
+
+ Examples: To subtotal the salary for the clerk, analyst, and salesman
+           jobs with a compute label of TOTAL, enter:
+
+               SQL> BREAK ON JOB SKIP 1
+               SQL> COMPUTE SUM LABEL 'TOTAL' OF SAL ON JOB
+               SQL> SELECT JOB, ENAME, SAL
+                  2  FROM EMP
+                  3  WHERE JOB IN ('CLERK', 'ANALYST', 'SALESMAN')
+                  4  ORDER BY JOB, SAL;
+
+           Output:
+
+               JOB       ENAME             SAL
+               --------- ---------- ----------
+               ANALYST   SCOTT            3000
+                         FORD             3000
+               *********            ----------
+               TOTAL                      6000
+
+               CLERK     SMITH             800
+                         JAMES             950
+                         ADAMS            1100
+                         MILLER           1300
+               *********            ----------
+               TOTAL                      4150
+
+               SALESMAN  WARD             1250
+                         MARTIN           1250
+                         TURNER           1500
+                         ALLEN            1600
+               *********            ----------
+               TOTAL                      5600
+
+
+           To compute the average and maximum salary for the accounting and
+           sales departments, enter:
+
+
+               SQL> BREAK ON DNAME SKIP 1
+               SQL> COMPUTE AVG LABEL 'Dept Average' -
+               >            MAX LABEL 'Dept Maximum' -
+               >       OF SAL ON DNAME
+               SQL> SELECT DNAME, ENAME, SAL
+                 2  FROM DEPT, EMP
+                 3  WHERE DEPT.DEPTNO=EMP.DEPTNO
+                 4  AND DNAME IN ('ACCOUNTING', 'SALES')
+                 5  ORDER BY DNAME;
+
+           Output:
+
+               DNAME          ENAME             SAL
+               -------------- ---------- ----------
+               ACCOUNTING     CLARK            2450
+                              KING             5000
+                              MILLER           1300
+               **************            ----------
+               Dept Average              2916.66667
+               Dept Maximum                    5000
+
+               SALES          ALLEN            1600
+                              WARD             1250
+                              MARTIN           1250
+                              TURNER           1500
+                              JAMES             950
+                              BLAKE            2850
+               **************            ----------
+               Dept Average              1566.66667
+               Dept Maximum                    2850
+
+
+           To calculate the total of salaries less than 1,000 on a
+           report, enter:
+
+               SQL> compute sum of sal on report
+               SQL> break on report
+               SQL> column dummy heading ''
+               SQL> select '   ' dummy, sal, empno
+                 2  from emp
+                 3  where sal < 1000
+                 4  order by sal;
+
+           Output:
+
+                          SAL       EMPNO
+               --- ---------- -----------
+                          800        7369
+                          950        7900
+                   ----------
+               sum       5350
+
+
+           To compute the sum of salaries for departments 10 and 20
+           without printing the compute labels:
+
+               SQL> COLUMN DUMMY NOPRINT
+               SQL> COMPUTE SUM OF SAL ON DUMMY
+               SQL> BREAK ON DUMMY SKIP 1
+               SQL> SELECT DEPTNO DUMMY, DEPTNO, ENAME, SAL
+                 2  FROM EMP
+                 3  WHERE DEPTNO <= 20
+                 4  ORDER BY DEPTNO;
+
+           Output:
+
+                   DEPTNO ENAME             SAL
+               ---------- ---------- ----------
+                       10 KING             5000
+                       10 CLARK            2450
+                       10 MILLER           1300
+                                     ----------
+                                           8750
+
+                       20 JONES            2975
+                       20 FORD             3000
+                       20 SMITH             800
+                       20 SCOTT            3000
+                       20 ADAMS            1100
+                                     ----------
+                                          10875
+
+
+           If, instead, you do not want to print the label, only the
+           salary total at the end of the report:
+
+               SQL> COLUMN DUMMY NOPRINT
+               SQL> COMPUTE SUM OF SAL ON DUMMY
+               SQL> BREAK ON DUMMY
+               SQL> SELECT NULL DUMMY, DEPTNO, ENAME, SAL
+                 2  FROM EMP
+                 3  WHERE DEPTNO <= 20
+                 4  ORDER BY DEPTNO;
+
+           Output:
+
+                   DEPTNO ENAME             SAL
+               ---------- ---------- ----------
+                       10 KING             5000
+                       10 CLARK            2450
+                       10 MILLER           1300
+                       20 JONES            2975
+                       20 FORD             3000
+                       20 SMITH             800
+                       20 SCOTT            3000
+                       20 ADAMS            1100
+                                     ----------
+                                          19625
+
+
+
+
+ See also: column, break, select, commands.
+
+CONNECT
+
+
+                                   CONNECT
+
+ CONN[ECT] username[/password][@database_specification]|/
+
+ CONNECT establishes a connection to an Oracle database.
+
+     username[/password]
+         are the username and password connecting to Oracle.  If you omit
+         the username or password, SQL*Plus prompts you for them.  If you
+         enter a slash (/) or enter RETURN to the prompt for username,
+         SQL*Plus logs you in with a default logon.
+
+     @database_specification
+         is a SQL*Net connection string.  The syntax depends on the SQL*Net
+         communications protocol of your Oracle installation.  SQL*Plus
+         does not prompt you for a database_specification, but uses your
+         default database if you omit a specification.
+
+     /   is a default logon using operating system authentication.  You
+         can't use a database_specification if you use a default logon.  In
+         a default logon, SQL*Plus tries to log in with OPS$ name; name is
+         the operating system username.
+
+ CONNECT commits the current transaction to the database, disconnects the
+ current username from Oracle, and reconnects with the specified username.
+
+
+ Examples: To connect across SQL*Net using username SCOTT and password TIGER
+           to the database known by the SQL*Net alias as FLEETDB, enter:
+
+               SQL> CONNECT SCOTT/TIGER@FLEETDB
+
+           To connect with username SCOTT, letting SQL*Plus prompt you for
+           the password, enter:
+
+               SQL> CONNECT SCOTT
+
+
+ See also: disconnect, exit, host, quit, commands.
+
+COPY
+
+
+                                 COPY
+
+ COPY [FROM username [/password] [@database_specification]|
+       TO username [/password] [@database_specification]]
+       {APPEND|CREATE|INSERT|REPLACE} destination_table
+       [(column, column, column, ...)] USING query
+
+       COPY copies data from a query to a table in a local or remote database.
+
+     username [/password]
+         are the Oracle username/password  you wish to COPY FROM and TO.
+         In the FROM clause, username/password identifies the data source;
+         in the TO clause, username/password identifies the destination.
+         If you do not specify password in either the FROM or TO clause,
+         SQL*Plus prompts you for it.
+
+     @database_specification
+         is a database link name or a SQL*Net connection string.  In the
+         FROM clause, database_specification is the database at the source;
+         in the TO clause, database_specification is the database at the
+         destination.  The syntax depends upon the SQL*Net communications
+         protocol of your Oracle installation.  SQL*Plus does not prompt
+         you for a database specification, but uses your default database
+         if you omit a specification.
+
+     destination_table
+         is the table to be created or to which you wish to add data.
+
+     (column, column, column, ...)
+         specifies the names of the columns in destination_table.  You must
+         enclose a name in "double quotes" if it contains lowercase letters
+         or spaces.  The number of columns you specify must equal the
+         number of columns selected by the query.  If you don't specify any
+         columns, they will have the same names in the destination table as
+         they had in the source, if COPY creates destination_table.
+
+     USING query
+          specifies a SQL query (SELECT statement) to determine which rows
+          and columns to copy.
+
+     FROM username [/password] [@database_specification]
+          specifies the username, password, and database with the data to be
+          copied.  If the FROM clause is omitted, the source defaults to the
+          database to which SQL*Plus is connected.  You must include this
+          clause to specify a source database other than the default.
+
+     TO username [/password] [@database_specification]
+          specifies the database containing the destination table.  If you
+          omit the TO clause, the destination defaults to the database
+          to which SQL*Plus is connected.  You must include this clause to
+          specify a destination database other than the default.
+
+     APPEND
+         inserts the rows from query into destination_table if the table
+         exists.  If destination_table does not exist, COPY creates it.
+
+     CREATE
+         inserts the rows from query into destination_table after creating
+         the table.  If destination_table exists, COPY returns an error.
+
+     INSERT
+         inserts the rows from query into destination_table. If
+         destination_table doesn't exist, COPY returns an error.
+
+     REPLACE
+         replaces destination_table and its contents with the rows from
+         query.  If destination_table does not exist, COPY creates it.
+         Otherwise, COPY drops the table and replaces it with a
+         table containing the copied data.
+
+
+ To enable the copying of data between Oracle and non-Oracle databases,
+ NUMBER columns are changed to DECIMAL columns in the destination table.
+ Hence, if you are copying between Oracle databases, a NUMBER column
+ with no precision will be changed to a DECIMAL(38) column.  When
+ copying between Oracle databases, you should use SQL commands
+ (CREATE TABLE AS and INSERT) or you should ensure that your columns
+ have a precision specified.
+
+ The SQL*Plus SET system_variable LONG clause limits the length of LONG
+ columns that are copied.  If any LONG columns have data longer than the
+ LONG value, COPY truncates the data.  SQL*Plus performs a commit at the
+ end of each successful COPY.  If you set the SQL*Plus SET system_variable
+ COPYCOMMIT to a positive value n, SQL*Plus performs a commit after copying
+ every n batches of records; the SET system_variable ARRAYSIZE clause
+ determines the size of a batch.
+
+
+ Examples: The command below copies the entire EMP table from database HQ
+           to a table named WESTEMP in database WEST.  If WESTEMP already
+           exists, SQL*Plus replaces its contents.  Columns in WESTEMP have
+           the same names as the columns in the source table, EMP:
+
+               SQL> COPY FROM SCOTT/TIGER@HQ TO JOHN/CHROME@WEST -
+               > REPLACE WESTEMP -
+               > USING SELECT * FROM EMP
+
+
+           The following command copies selected records from EMP in
+           database HQ to the database to which SQL*Plus is connected:
+           SQL*Plus creates SALESMEN through the copy.  SQL*Plus copies
+           only the columns EMPNO and ENAME and at the destination names
+           them EMPNO and SALESMAN.
+
+               SQL> COPY FROM SCOTT/TIGER@HQ -
+               > CREATE SALESMEN (EMPNO,SALESMAN) -
+               > USING SELECT EMPNO, ENAME FROM EMP -
+               > WHERE JOB='SALES'
+
+
+           SQL*Plus creates SALESMEN through the copy, copies columns EMPNO
+           and ENAME, and names them EMPNO and SALESMAN at the destination.
+
+
+ See also: connect, disconnect, describe, edit, set (arraysize, copycommit,
+           long), commands.
+
+DBA
+
+
+                                     DBA
+
+ DBA username SYSTEM owns and has all privileges on PRODUCT_USER_PROFILE.
+ Other users should have only SELECT access to this table.  Command file
+ PUPBLD, when run, grants SELECT access on PRODUCT_USER_PROFILE to PUBLIC.
+
+ To disable a SQL or SQL*Plus command for a given user, the DBA inserts a
+ row with the username in the USERID column, the command in the ATTRIBUTE
+ column, and DISABLED in the CHAR_VALUE column.  The SCOPE, NUMERIC_VALUE,
+ and DATE_VALUE columns should contain null.  For example:
+
+                                             NUMERIC   CHAR      DATE
+      PRODUCT    USERID   ATTRIBUTE   SCOPE  VALUE     VALUE     VALUE
+      --------   ------   ---------   -----  -------   --------  -----
+      SQL*Plus   SCOTT    HOST                         DISABLED
+      SQL*Plus   %        INSERT                       DISABLED
+      SQL*Plus   %        UPDATE                       DISABLED
+      SQL*Plus   %        DELETE                       DISABLED
+
+
+ To re-enable a command, the DBA deletes the row with the restriction.
+
+ The DBA can use the PRODUCT_USER_PROFILE table to disable the following:
+
+      SQL*Plus Commands     SQL Commands
+      -----------------     -------------------------------------------
+      CONNECT    QUIT       ALTER    DELETE    NOAUDIT  SET TRANSACTION
+      EDIT       RUN        ANALYZE  DROP      RENAME   TRUNCATE
+      EXECUTE    SAVE       AUDIT    GRANT     REVOKE   UPDATE
+      EXIT       SET        CONNECT  INSERT    SELECT   VALIDATE
+      GET        SPOOL      CREATE   LOCK      SET ROLE
+      HOST       START
+
+      PL/SQL Commands
+      ---------------
+      BEGIN
+      DECLARE
+
+ Note that ANALYZE, SET ROLE, and TRUNCATE require Oracle7.
+ Columns in the PRODUCT_USER_PROFILE table:
+
+     PRODUCT contains the product name (SQL*Plus in this case).  Wildcards
+         and nulls are not permitted.
+
+     USERID contains the username (in CAPITALS) for whom the command is
+         being disabled.  To disable the command for more than one user,
+         use the % SQL wildcard or make multiple entries.
+
+     ATTRIBUTE contains the command (in CAPITALS) being disabled or
+         the character string "ROLES".  Wildcards are not permitted.
+
+     SCOPE is ignored for SQL*Plus.  We recommend a NULL here.
+
+     NUMERIC_VALUE is ignored for SQL*Plus.  We recommend a NULL here.
+
+     CHAR_VALUE must contain "DISABLED" or the name of the role being
+         disabled.  Wildcards are not permitted.
+
+     DATE_VALUE is ignored for SQL*Plus.  We recommend a NULL here.
+
+     LONG_VALUE is ignored for SQL*Plus.  We recommend a NULL here.
+
+     See also:  commands.
+
+DEFINE
+
+
+                                   DEFINE
+
+ DEF[INE] [variable]|[variable = text]
+
+ DEFINE specifies a user variable and assigns it a CHAR value, or lists
+ the value and variable type of a single variable or all variables.
+
+     variable
+         is the user variable whose value you wish to assign or list.
+         Enter DEFINE followed by variable to list the value and type of
+         variable.  Enter DEFINE with no clauses to list the values and
+         types of all user variables.
+
+     variable = text
+         defines (names) a user variable and assigns it a CHAR value.
+
+     text
+         is the CHAR value you wish to assign to variable.  Enclose text in
+         'single quotes' if it contains punctuation or blanks.
+
+ DEFINEd variables retain their values until you:
+
+     -   enter a new DEFINE command referencing the variable, or
+     -   enter an UNDEFINE command referencing the variable, or
+     -   enter an ACCEPT command referencing the variable, or
+     -   reference the variable in the NEW_VALUE or OLD_VALUE clause of
+           the COLUMN command, and reference the column in a subsequent SQL
+           SELECT statement, or
+     -   EXIT SQL*Plus.
+
+ When you run a stored query or a command file, SQL*Plus substitutes the
+ value of variable for each substitution variable referencing &variable or
+ &&variable.  SQL*Plus will not prompt you for the value of variable in
+ the session until you UNDEFINE variable.  Note that you can use DEFINE to
+ define the _EDITOR variable, which establishes the host system editor
+ invoked by the EDIT command.
+
+ If you continue the value of a DEFINEd variable on multiple lines with the
+ SQL*Plus command continuation character, each continuation character and
+ carriage return you enter are replaced with a space in the resulting
+ variable.  For example, SQL*Plus interprets
+
+     SQL> DEFINE TEXT = 'ONE-
+     > TWO-
+     > THREE'
+
+ as:  SQL> DEFINE TEXT = 'ONE TWO THREE'
+
+ Examples: To assign the value MANAGER to the variable POS, enter:
+
+               SQL> DEFINE POS = MANAGER
+
+           If you execute a command with a reference to &POS, SQL*Plus
+           substitutes the value MANAGER for &POS, and will not prompt you
+           for a POS value.  To assign the CHAR value 20 to the variable
+           DEPTNO, enter:
+
+               SQL> DEFINE DEPTNO = 20
+
+           Even though you enter the number 20, SQL*Plus assigns a CHAR
+           value to DEPTNO consisting of two characters, 2 and 0.  To see
+           the definition of DEPTNO, enter:
+
+               SQL> DEFINE DEPTNO
+
+           Result:
+
+               DEFINE DEPTNO = "20" (CHAR)
+
+
+ See also: accept, column, edit, parameters, undefine, commands.
+
+DEL
+
+
+                                     DEL
+
+ DEL [n|n m|n *|n LAST|*|* n|* LAST|LAST]
+
+
+     Clause    Deletes
+     -----------------------------------------
+     n         line n.
+     n m       lines n through m.
+     n *       line n through the current line.
+     n LAST    line n through the last line.
+     *         the current line.
+     * n       the current line through line n.
+     * LAST    the current line through the last line.
+     LAST      the last line.
+
+ DEL deletes one or more lines of the buffer.  DEL makes the
+ following line of the buffer (if any) the current line. You can
+ enter DEL several times to delete several consecutive lines.
+
+
+ Examples: The SQL buffer contains the following query:
+
+               SQL> LIST
+                 1  SELECT ENAME, DEPTNO
+                 2  FROM EMP
+                 3  WHERE JOB = 'SALESMAN'
+                 4* ORDER BY DEPTNO
+
+           To make the line with the WHERE clause the current line, enter:
+
+               SQL> LIST 3
+                 3* WHERE JOB = 'SALESMAN'
+
+           followed by:
+
+               SQL> DEL
+
+           The SQL buffer now contains:
+
+               SQL> LIST
+                 1  SELECT ENAME, DEPTNO
+                 2  FROM EMP
+                 3* ORDER BY DEPTNO
+
+           To delete the second line of the buffer, enter:
+
+               SQL> DEL 2
+
+           The SQL buffer now contains:
+
+               SQL> LIST
+                 1  SELECT ENAME, DEPTNO
+                 2* ORDER BY DEPTNO
+
+
+ See also: append, change, edit, input, list, save, commands.
+
+DESCRIBE
+
+
+                                  DESCRIBE
+
+ DESC[RIBE] {[user.]table[@database_link_name] [column]|
+    [user.] object[.subobject]}
+
+ DESCRIBE lists the column definitions for a table, view, or synonym,
+ or the specifications for a function or procedure.
+
+     user
+         is the owner of the object.  Omit user if you own the object.
+
+     table
+         is a table, view, or synonym.
+
+     database_link_name
+         is the node name and database where object exists.  The syntax
+         depends on the SQL*Net your computer uses.  See LINKS for more
+         information on database links.
+
+     column
+         is the column in table you wish to describe.
+
+     object
+         is the function or procedure you wish to describe.  If you want
+         to describe a procedure in a package, object is the name of the
+         package.
+
+     subobject
+         is the function or procedure in a package that you wish
+         to describe.
+
+ For each column, the description lists:
+
+     -   the column's name
+     -   whether null values are allowed (NULL or NOT NULL) for the column
+     -   the column's datatype, for example, NUMBER, CHAR, VARCHAR2
+         (VARCHAR), LONG, DATE, MLSLABEL, RAW MLSLABEL, RAW, LONGRAW,
+         ROWID.
+     -   the column's precision (and scale, if any, for a numeric column)
+
+ For each function or procedure the description lists:
+
+     -   the type of PL/SQL object (function or procedure)
+     -   the name of the function or procedure
+     -   the arguments, their type, input/output, and default values
+
+ Example:  To describe the EMP table, enter:
+
+           SQL> DESCRIBE EMP
+
+       Output:  Name       Null?     Type
+                ---------- --------  -----------
+                EMPNO      NOT NULL  NUMBER(4)
+                ENAME                CHAR(10)
+                JOB                  CHAR(9)
+                MGR                  NUMBER(4)
+                HIREDATE             DATE
+                SAL                  NUMBER(7,2)
+                COMM                 NUMBER(7,2)
+                DEPTNO               NUMBER(2)
+
+ To describe a procedure called CUSTOMER_LOOKUP, enter:
+
+       SQL> DESCRIBE customer_lookup
+
+       PROCEDURE customer_lookup
+       Argument Name Type     In/Out Default?
+       ------------- -------- ------ -------------
+       CUST_ID       NUMBER   IN
+       CUST_NAME     VARCHAR2 OUT
+
+
+ To describe the procedure APROC in the package APACK, enter
+
+       SQL> DESCRIBE apack.aproc
+
+       PROCEDURE apack.aproc
+       Argument Name Type     In/Out Default?
+       ------------- -------- ------ -------------
+       P1            CHAR     IN
+       P2            NUMBER   IN
+
+ See also: links, tables, views (and indexes), commands.
+
+DISCONNECT
+
+
+                                 DISCONNECT
+
+ DISC[ONNECT]
+
+ DISCONNECT commits pending changes to the database and logs the current
+ user out of Oracle, but does not exit SQL*Plus.  Use EXIT or QUIT to log
+ out of Oracle and return control to your host computer's operating system.
+
+
+ Example:  Your command file might begin with a CONNECT command and end
+           with a DISCONNECT:
+
+               SQL> GET MYFILE
+                 1  CONNECT ...
+                    .
+                    .
+                    .
+                15* DISCONNECT
+
+
+ See also: connect, exit, host, quit, SQLPlus, commands.
+
+EDIT
+
+
+                                EDIT
+
+ ED[IT] [file_name[.ext]]
+
+ EDIT invokes a host operating system text editor on the contents of the
+ specified file or on the contents of the buffer.
+
+     file_name[.ext]
+         is the file to edit (typically a command file)
+
+ Enter EDIT with no file_name to edit the SQL buffer's contents with the
+ host operating system editor.
+
+ If you omit the file extension, the default command file extension
+ (normally SQL) is assumed.  See the SET command's SUFFIX variable for
+ information on changing the default extension.
+
+ The user variable _EDITOR contains the name of the text editor invoked by
+ EDIT; to change the text editor, change the _EDITOR name.  See DEFINE for
+ information on changing the value of a user variable.  If _EDITOR is
+ undefined, EDIT tries to use the default host operating system editor.
+
+ EDIT alone places the SQL buffer's contents in a file by default named
+ AFIEDT.BUF in your current working directory, then invokes the text
+ editor on the contents of that file.  You can change the default file
+ name by using the SET EDITFILE command.  See the SET command's EDITFILE
+ variable for information on changing the default filename.
+
+ EDIT returns an error message if you don't specify a filename and the
+ buffer is empty.
+
+ To leave the editing session and return to SQL*Plus, terminate the editing
+ session in the way customary for the text editor.  When you exit your
+ editor, SQL*Plus loads the contents of the file into the buffer.
+
+ Example:  To edit the file REPORT with the extension SQL using your host
+           operating system text editor, enter:
+
+               SQL> EDIT REPORT
+
+
+ See also: append, change, del, define, input, list, save, spool, undefine,
+           commands.
+
+EXECUTE
+
+
+                                    EXECUTE
+
+ EXEC[UTE] statement
+
+ EXECUTE executes a single PL/SQL statement.  The EXECUTE command is
+ often useful when you want to execute a PL/SQL statement that
+  references a stored procedure.
+
+     statement
+         Represents a PL/SQL statement.
+
+
+ If your EXECUTE command cannot fit on one line because of the
+ length of the PL/SQL statement, use the SQL*Plus continuation
+ character (a hyphen).
+ The length of the command and the PL/SQL statement cannot exceed
+ the length defined by LINESIZE.
+
+ Examples:  The following EXECUTE command assigns a value to a bind
+ variable:
+
+      SQL> EXECUTE :n := 1
+
+ The following EXECUTE command runs a PL/SQL statement that
+ references a stored procedure:
+
+      SQL> EXECUTE -
+      :ID := EMP_MANAGEMENT.HIRE('BLAKE','MANAGER','KING',2990,'SALES')
+
+EXIT
+
+
+                                    EXIT
+
+ {EXIT|QUIT} [SUCCESS|FAILURE|WARNING|n|variable] [COMMIT|ROLLBACK]
+
+ EXIT terminates SQL*Plus, and returns control to the operating system.
+
+     {EXIT|QUIT}
+         can be used interchangeably.
+
+     SUCCESS
+         exits normally.
+
+     FAILURE
+         exits with a return code indicating failure.
+
+     WARNING
+         exits with a return code indicating warning.  EXIT with no clauses
+         exits with a value of SUCCESS.
+
+     n
+         is an integer you can specify as the return code.
+
+     variable
+         is a user-defined or system variable (not a bind variable), like
+         SQL.SQLCODE. EXIT variable exits with the value of variable as the
+         return code.
+
+     COMMIT
+         saves pending changes to the database before exiting.
+
+     ROLLBACK
+         executes a ROLLBACK statement and abandons pending changes to the
+         database before exiting.
+
+ EXIT with no clauses commits and exits with a value of SUCCESS.
+
+ EXIT enables you to specify an operating system return code so you can run
+ SQL*Plus command files in batch mode and detect an unexpected event.  The
+ manner of detection is operating-system-specific.  SUCCESS, WARNING, and
+ FAILURE represent operating system dependent values; on some systems,
+ WARNING and FAILURE are not distinguishable.  The range of operating system
+ return codes is also restricted on some operating systems.  This limits the
+ portability of EXIT n and EXIT variable between platforms.  For example, on
+ UNIX there is no meaningful way to return an Oracle error code.  Since
+ there is only one byte of storage for return codes, the range for return
+ codes is limited to zero to 255.
+
+ To exit conditionally, use WHENEVER SQLERROR or WHENEVER OSERROR.
+
+ If you make a syntax error in the EXIT options, or use a non-numeric
+ variable, SQL*Plus performs an EXIT FAILURE COMMIT.
+
+
+ Example:  The following commits all uncommitted transactions and returns
+           the error code of the last executed SQL command or PL/SQL block:
+
+               SQL> EXIT SQL.SQLCODE
+
+           The location of the return code depends on your system.  See
+           TTITLE for more information on SQL.SQLCODE.
+
+
+ See also: connect, disconnect, host, quit, save, spool, SQLPlus,
+           whenever sqlerror, commands.
+
+FILES
+
+
+                                 Files
+
+ Files Used by SQL*Plus
+
+ Through SQL*Plus, you can store commands in a command file.  You can
+ also create output files (spool files) to save your query results.
+ Command files and spool files are operating system files and follow
+ standard naming conventions.  Edit with your system's file commands.
+
+
+ Command Entry and Execution
+
+     Enter SQL, PL/SQL, and SQL*Plus commands at the command prompt: SQL>.
+     SQL*Plus stores the SQL commands and PL/SQL blocks you enter in the
+     SQL buffer.
+
+
+ See also: buffer, commands.
+
+GET
+
+
+                                    GET
+
+ GET file_name[.ext] [LIS[T]|NOL[IST]]
+
+ GET loads a host operating system file into the SQL buffer.
+
+     file_name[.ext]
+         is the file to load (typically a command file).
+     LIS[T]
+         lists the contents of the file.  This is the default.
+
+     NOL[IST]
+         suppresses the listing of the file's contents.
+
+ If you omit .ext, SQL*Plus uses the default command-file extension
+ (normally SQL).
+
+ Example:  To load a file called YEARENDRPT with the extension SQL into
+           the buffer, type:
+
+               SQL> GET YEARENDRPT
+
+
+ See also: @, /, accept, input, list, run, save, set, spool,
+           commands.
+
+HELP
+
+
+                                    HELP
+
+ HELP [topic] | help
+
+ HELP displays information on the commands and conventions of SQL*Plus,
+ SQL, and PL/SQL.  Type "help", a space, all or part of any topic, and
+ then press Enter.
+
+ Typing only part of a topic (for example, HELP SE) will cause all help
+ topics that match the string (SE) to be displayed on your screen in
+ alphabetical order (for example, HELP SE will retrieve help on the
+ SELECT statement, the SET command, and the Set Operators--in that order).
+
+     ENTER THIS...     TO DISPLAY THIS...
+     --------------------------------------------------------------
+     help commands     a list of SQL*Plus, SQL, and PL/SQL commands
+     help comm         information on commands, comments, and commit
+     help help         this screen
+
+HOST
+
+
+                                    HOST
+
+ HO[ST] [ command ]
+
+ HOST executes a host operating system command without leaving SQL*Plus.
+
+     command
+         is a host operating system command.  Enter HOST without command to
+         display an operating system prompt.  You can then enter multiple
+         operating system commands.  To return to SQL*Plus, type LOGOFF,
+         EXIT, QUIT, or other command applicable to your operating system.
+
+ With some operating systems, you can use $ (VMS), ! (UNIX) or another
+ character instead of HOST.  You may or may not have access to the HOST
+ command, depending on your operating system, and privileges assigned by
+ your system administrator.
+
+ SQL*Plus removes the SQLTERMINATOR (a semicolon by default) before the
+ HOST command is issued.  A workaround for this is to add another
+ SQLTERMINATOR.  See SET SQLTERMINATOR for more information on the
+ SQLTERMINATOR.
+
+
+ Example:  To execute an operating system command, ls *.sql, enter:
+
+               SQL> HOST ls *.sql
+
+
+ See also: change, del, edit, exit, commands.
+
+INDEX
+
+
+                                  Index
+
+
+Enter help, a space and part or all of the help topic you want:
+
+
+%FOUND Attribute           DEFAULT DATE FORMAT      Packaged Cursors
+%ISOPEN Attribute          DEFINE                   Packaged Subprograms
+%NOTFOUND Attribute        DEL                      Packages
+%ROWCOUNT Attribute        DELETE                   Parameter Aliasing
+%ROWTYPE Attribute         Delimiters               Parameter Default Values
+%TYPE Attribute            DESCRIBE                 Parameter Modes
+/                          DISABLE                  PARAMETERS
+@                          DISCONNECT               PAUSE
+@@                         DROP                     PL/SQL
+ABS                        DROP CLUSTER             PL/SQL Blocks
+ACCEPT                     DROP DATABASE LINK       PL/SQL Tables
+Actual vs Formal           DROP FUNCTION            PL/SQL Wrapper
+  Parameters               DROP INDEX               Positional and Named
+ADD_MONTHS                 DROP PACKAGE               Notation
+ALTER CLUSTER              DROP PROCEDURE           POWER
+ALTER DATABASE             DROP PROFILE             PRECEDENCE
+ALTER FUNCTION             DROP ROLE                Predefined Exceptions
+ALTER INDEX                DROP ROLLBACK SEGMENT    PRINT
+ALTER PACKAGE              DROP SEQUENCE            Private vs Public
+ALTER PROCEDURE            DROP SNAPSHOT              Objects
+ALTER PROFILE              DROP SNAPSHOT LOG        Procedures
+ALTER RESOURCE COST        DROP SYNONYM             Product-specific
+ALTER ROLE                 DROP TABLE                 Packages
+ALTER ROLLBACK SEGMENT     DROP TABLESPACE          PROMPT
+ALTER SEQUENCE             DROP TRIGGER             PSEUDOCOLUMNS
+ALTER SESSION              DROP USER                Punctuation and Text
+ALTER SNAPSHOT             DROP VIEW                  in Date Format Models
+ALTER SNAPSHOT LOG         DUMP                     QUIT
+ALTER SYSTEM               EDIT                     RAISE Statement
+ALTER TABLE                ENABLE                   raise_application_error
+ALTER TABLESPACE           Ending Transactions        Procedure
+ALTER TRIGGER              Exception Handlers       RAW AND LONG RAW DATATYPES
+ALTER USER                 Exception Propagation    RAWTOHEX
+ALTER VIEW                 Exceptions               Records
+ANALYZE                    EXCEPTION_INIT Pragma    RECOVER
+AND OPERATOR               EXECUTE                  Recursion
+ANSI, DB2, AND SQL/DS      EXIT                     Recursion vs Iteration
+  DATATYPES                EXIT Statement           Referencing Package
+APPEND                     EXP                        Contents
+ARCHIVE LOG                EXPLAIN PLAN             REMARK
+ARITHMETIC OPERATORS       Expr                     RENAME
+ASCII                      Expressions              REPLACE
+Assignments                FETCH Statement          Reraising an Exception
+AUDIT (Schema Objects)     FILES                    RESERVED WORDS
+AUDIT (SQL Statements)     Filespec                 Reserved Words
+AVG                        FLOOR                    RESERVED WORDS (SQL)
+Block Label                FM                       RETURN Statement
+BNF SYNTAX                 FOR UPDATE Clause        REVOKE (Object Privileges)
+Boolean Expressions        Format Model Modifiers   REVOKE (System
+BREAK                      FORMAT MODELS              Privileges and Roles)
+BTITLE                     Forward Declarations     ROLLBACK
+BUFFER                     Functions                ROUND (DATE)
+Built-in Functions         FX                       ROUND (NUMBER)
+Calling Packaged           GET                      ROUND and TRUNC
+  Subprograms              GLB                      ROWID
+Calling Stored             GOTO Statement           ROWID DATATYPE
+  Functions from SQL       GRANT (Object            ROWIDTOCHAR
+Calling Stored               Privileges)            ROWNUM
+  Subprograms              GRANT (System            RPAD
+Capitalization of            Privileges and Roles)  RR Date Format Element
+  Date Format Elements     GREATEST                 RTRIM
+CEIL                       GREATEST_LB              RUN
+CHANGE                     GROUP FUNCTIONS          RUNFORM
+Changing the Return Format Handling Nulls           SAVE
+CHAR DATATYPE              HELP                     SAVEPOINT
+CHARACTER DATATYPES        HEXTORAW                 Scope and Visibility
+Character Functions        HOST                     SELECT
+Character Functions        Identifiers              SET
+  Returning Character      IF Statement             SET OPERATORS
+  Values                   Implicit Rollbacks       SET ROLE
+Character Functions        INDEX                    SET TRANSACTION
+  Returning Number         INITCAP                  SHOW
+  Values                   INPUT                    SIGN
+CHARACTER OPERATORS        INSERT                   SIN
+Character Set              INSTR                    SINGLE ROW FUNCTIONS
+CHARTOROWID                INSTRB                   SINH
+CHR                        INTEGER                  SOUNDEX
+CLEAR                      INTERSECT OPERATOR       SPOOL
+CLOSE Statement            ISO Standard Date        SQL FUNCTIONS
+COLUMN                       Format Elements        SQL Support
+COMMANDS                   LAST_DAY                 SQL92 Conformance
+COMMENT                    LEAST                    SQLCODE and SQLERRM
+Comments                   LEAST_UB                   Functions
+COMMENTS (SQL)             LENGTH                   SQLPLUS
+COMMIT                     LENGTHB                  SQRT
+COMPARISON OPERATORS       LEVEL                    START
+Comparison Operators       Lexical Units            STDDEV
+COMPUTE                    LIKE OPERATOR            STORAGE
+CONCAT                     LIMITS                   Stored Subprograms
+Concatenation Operator     LIST                     Structure Theorem
+Condition                  LIST OF EXPRESSIONS      Subprograms
+CONNECT                    LITERALS                 SUBSTITUTION
+CONSTRAINT                 Literals                 SUBSTR
+Conversion Functions       LN                       SUBSTRB
+CONVERT                    LOCK TABLE               Subtypes
+COPY                       LOG                      SUM
+COS                        LOGICAL OPERATORS        Supplying the Correct
+COSH                       Logical Operators          Format
+COUNT                      LONG DATATYPE            Syntax Notation
+CREATE CLUSTER             Loop Label               SYSDATE
+CREATE CONTROLFILE         LOOP Statement           TAN
+CREATE DATABASE            LOWER                    TANH
+CREATE DATABASE LINK       LPAD                     TEXT
+CREATE FUNCTION            LTRIM                    TIMING
+CREATE INDEX               LUB                      TOPICS
+CREATE PACKAGE             MAX                      TO_CHAR (date conversion)
+CREATE PACKAGE BODY        MENU                     TO_CHAR (label conversion)
+CREATE PROCEDURE           MIN                      TO_CHAR (number conversion)
+CREATE PROFILE             MINUS OPERATOR           TO_DATE
+CREATE ROLE                MLSLABEL DATATYPE        TO_LABEL
+CREATE ROLLBACK SEGMENT    MOD                      TO_MULTI_BYTE
+CREATE SCHEMA              MONTHS_BETWEEN           TO_NUMBER
+CREATE SEQUENCE            Mutual Recursion         TO_SINGLE_BYTE
+CREATE SNAPSHOT            Naming Conventions       Transaction Processing
+CREATE SNAPSHOT LOG        NEW_TIME                 TRANSLATE
+CREATE SYNONYM             NEXT_DAY                 TRUNC (DATE)
+CREATE TABLE               NLSSORT                  TRUNC (NUMBER)
+CREATE TABLESPACE          NLS_INITCAP              TRUNCATE
+CREATE TRIGGER             NLS_LOWER                TTITLE
+CREATE USER                NLS_UPPER                UID
+CREATE VIEW                NOAUDIT (Schema Objects) UNDEFINE
+CURRVAL AND NEXTVAL        NOAUDIT (SQL Statements) Unhandled Exceptions
+Cursor Attributes          NOT IN OPERATOR          UNION ALL OPERATOR
+Cursor FOR Loop            NOT OPERATOR             UNION OPERATOR
+Cursor Variables           NULL Statement           UPDATE
+Cursors                    NULLS                    UPPER
+DATA CONVERSION            NUMBER                   USER
+DATATYPE COMPARISON        NUMBER DATATYPE          USERENV
+  RULES                    Number Format Elements   Using COMMIT
+Datatype Conversion        Number Format Models     Using LOCK TABLE
+Datatypes                  NUMBER FUNCTIONS         Using ROLLBACK
+DATATYPES (ORACLE)         NVL                      Using SAVEPOINT
+DATE DATATYPE              OLD COMMANDS             Using SET TRANSACTION
+Date Format Element        OPEN Statement           VARCHAR DATATYPE
+  Suffixes                 Operator Precedence      VARCHAR2 DATATYPE
+Date Format Elements       OPERATORS                VARIABLE
+Date Format Elements       OR OPERATOR              VARIABLES
+  and National             Other Functions          Variables and Constants
+  Language Support         OTHER OPERATORS          VARIANCE
+Date Format Models         Overloading              VSIZE
+DATE FUNCTIONS             OVERVIEW                 WHENEVER OSERROR
+DBA                        Package Body             WHENEVER SQLERROR
+DDL and Dynamic SQL        Package Specification
+Decoded Expression         Package STANDARD
+
+INPUT
+
+
+                                  INPUT
+
+ I[NPUT] [ text ]
+
+ INPUT adds one or more lines of text after the current line in the buffer.
+
+     text
+         is the text to add.  To add one line, enter INPUT, a space, and
+         the text. (To begin the line with one or more spaces, enter two
+         or more spaces after INPUT.)  To add several lines, enter INPUT
+         without text; INPUT prompts you for each line.  To leave INPUT,
+         enter an empty line.
+
+ At the command prompt, if you enter a line number larger than the number
+ of lines in the buffer, and follow the number with text, SQL*Plus adds
+ the text in a new line at the end of the buffer.  If you specify zero (0)
+ for the line number and follow the zero with text, SQL*Plus inserts the
+ line at the beginning of the buffer; that line becomes line 1.
+
+ Examples: The SQL buffer contains the following command:
+
+               1  SELECT ENAME, DEPTNO, SAL, COMM
+               2  FROM EMP
+
+           To add an ORDER BY clause to the query, enter:
+
+               SQL> LIST 2
+                 2* FROM EMP
+
+               SQL> INPUT ORDER BY ENAME
+
+           LIST 2 ensures that line 2 is the current line.  INPUT adds a
+           line with the ORDER BY clause after the current line. The SQL
+           buffer now contains:
+
+               1  SELECT ENAME, DEPTNO, SAL, COMM
+               2  FROM EMP
+               3* ORDER BY ENAME
+
+           To add a two-line WHERE clause, enter:
+
+               SQL> LIST 2
+                 2* FROM EMP
+               SQL> INPUT
+                 3  WHERE JOB = 'SALESMAN'
+                 4  AND COMM  500
+                 5
+
+           INPUT continues to prompt you for new lines until you enter an
+           empty line.  The SQL buffer now contains the following lines:
+
+               1  SELECT ENAME, DEPTNO, SAL, COMM
+               2  FROM EMP
+               3  WHERE JOB = 'SALESMAN'
+               4  AND COMM 500
+               5  ORDER BY ENAME
+
+
+ See also: change, del, edit, list, save, spool, get, input,
+           set, prompt, commands.
+
+LIMITS
+
+
+                                Limits
+
+ Item                               SQL*Plus Limit
+ --------------------------------------------------------
+ filename length                    system dependent
+ username length                    30  characters
+ user variable name length          30  characters
+ user variable value length         240 characters
+ command-line length                2,500 characters
+ length of LONG value in SQL*Plus   LINESIZE value
+ LINESIZE                           system dependent
+ LONGCHUNKSIZE value (Oracle7)      MAXDATA value
+ MAXDATA value                      system dependent
+ output line size                   system dependent
+ characters in COMPUTE label        500 characters
+ line after variable substitution   3,000 characters (internal only)
+ number of lines per command        500 (assuming 80 characters per line)
+ maximum PAGESIZE                   50,000 lines
+ total row width                    60,000 characters in VMS; else, 32,767
+ maximum ARRAYSIZE                  5000 rows
+ maximum nested command files       20 for VMS, CMS, Unix; otherwise, 5
+ maximum page numbers               99,999 pages
+ maximum PL/SQL error message size  2K (Oracle7) 512 Bytes (Oracle Version 6)
+ maximum ACCEPT character string    240 bytes
+
+ See also:  commands.
+
+LIST
+
+
+                                    LIST
+
+ L[IST] [n|n m|n  *|n LAST|*|* n|* LAST|LAST]
+
+
+ LIST displays one or more lines of the SQL buffer. Enter LIST by
+ itself to list all lines.
+
+     Clause    Lists
+     -----------------------------------------
+     n         line n.
+     n m       lines n through m.
+     n *       line n through the current line.
+     n LAST    line n through the last line.
+     *         the current line.
+     * n       the current line through line n.
+     * LAST    the current line through the last line.
+     LAST      the last line.
+
+ The last line listed is the new current line (with an asterisk).
+
+
+ Example:  To list the contents of the buffer, enter:
+
+               SQL> LIST
+
+           You will see a listing of all lines in the buffer, like this:
+
+                 1  SELECT ENAME, DEPTNO, JOB
+                 2  FROM EMP
+                 3  WHERE JOB = 'CLERK'
+                 4* ORDER BY DEPTNO
+
+           The asterisk shows line 4 to be the current line.  To list the
+           second line only, enter:
+
+               SQL> LIST 2
+                 2* FROM EMP
+
+           To list the current line (now line 2) to the last line, enter:
+
+               SQL> LIST * LAST
+                 2  FROM EMP
+                 3  WHERE JOB = 'CLERK'
+                 4* ORDER BY DEPTNO
+
+
+ See also: change, del, edit, get, input, save, spool, set,
+           commands.
+
+MENU
+
+
+                                     Menu
+
+ Enter TOPIC or INDEX for a list of help topics.
+
+OLD COMMANDS
+
+
+                                Old Commands
+
+ These old SQL*Plus commands still work, although SQL*Plus provides newer
+ commands with better functionality.
+
+ BTI[TLE] text
+     BTITLE displays a title at the bottom of each report page.  The old
+     form of BTITLE offers more limited formatting than the new form, but
+     provides compatibility with UFI (a predecessor of SQL*Plus). The old
+     form defines the bottom title as an empty line followed by a line with
+     centered text.  See OLD TTITLE for details.
+
+ COL[UMN] {column|expr} DEF[AULT]               Replaced by: COLUMN CLEAR
+      COLUMN DEFAULT resets the display attributes for a given column to
+      default values.  It has the same effect as COLUMN CLEAR.
+
+ DOC[UMENT]                                           Replaced by: REMARK
+     DOCUMENT begins a block of documentation in a command file.
+     When you type DOCUMENT and press RETURN, SQL*Plus displays DOC> in
+     place of SQL> until you end the documentation.  Enter # (pound) on a
+     line by itself to end the documentation.  If DOCUMENT is OFF, SQL*Plus
+     reads further lines of documentation as commands.  See SET DOCUMENT.
+
+ NEWPAGE [1|n]                         Replaced by: SET command's NEWPAGE
+     NEWPAGE advances spooled output n lines beyond the beginning of the
+     next page.
+
+ SET BUF[FER] {buffer|SQL}
+     SET BUFFER makes the specified buffer the current buffer.  Initially,
+     the SQL buffer is the current buffer.  SQL*Plus doesn't use multiple
+     buffers; the SQL buffer should meet your needs.  If the buffer name
+     you enter does not already exist, SET BUFFER creates and names the
+     buffer.  The buffer is erased when you exit SQL*Plus.
+
+     Running a query automatically makes the SQL buffer the current one.
+     GET and SAVE copy text from one buffer to another.  CLEAR BUFFER
+     erases text from the current buffer.  CLEAR SQL erases text from the
+     SQL buffer when you're using another one.
+
+ SET DOC[UMENT] {OFF|ON}
+     SET DOCUMENT ON enables the DOCUMENT command, and SET DOCUMENT OFF
+     disables it.  If you disable DOCUMENT, SQL*Plus reads any lines after
+     a DOCUMENT command as commands.  See DOCUMENT for details.
+
+ SET SCAN {OFF|ON}                                Replaced by: SET DEFINE
+     controls scanning for substitution variables and parameters.
+     OFF suppresses their processing; ON allows normal processing.  ON
+     functions in the same manner as SET DEFINE ON.
+
+ SET SPA[CE] {1|n}                                Replaced by: SET COLSEP
+     sets the number of spaces between output columns (Maximum = 10).
+     This command is obsoleted by SET COLSEP, but you can still use it
+     for backward compatibility.
+
+ SET TRU[NCATE] {OFF|ON}
+     SET TRUNCATE controls whether SQL*Plus truncates or wraps a data item
+     that is too long for the current line width.  ON and SET WRAP OFF work
+     the same way.  You may prefer to use WRAP, because the SHOW command
+     recognizes WRAP and does not recognize TRUNCATE.
+
+ TTI[TLE] text
+     TTITLE displays a title at the top of each report page.  The old form
+     of TTITLE has more limited formatting than the new form, but is
+     compatible with UFI, a SQL*Plus predecessor.  The old form defines the
+     top title as a line with the date left-aligned and the page number
+     right-aligned, a line with centered text, and then a blank line.  Text
+     is the title displayed.
+
+     SQL*Plus centers text based on the SET LINESIZE setting.  A separator
+     character (|) begins a new line; two line separator characters (||)
+     insert a blank line.  Use SET HEADSEP to change the line separator
+     character.  Control the formatting of page numbers in the old forms of
+     TTITLE and BTITLE by defining the variable "_page".  The default _page
+     value is the formatting string, "page &P4".  To alter it, DEFINE _page
+     with a new string:
+
+           SQL> SET ESCAPE /SQL> DEFINE _page = 'Page /&P2'
+
+     The string prints "Page" and formats the page number to a width of 2.
+     You can substitute any text for "Page" and any number for the width.
+     You must set Escape so SQL*Plus doesn't read the ampersand (&) as a
+     substitution variable.  The SET command's ESCAPE variable sets the
+     escape character.
+
+     SQL*Plus interprets TTITLE in the old form if a valid new-form clause
+     does not immediately follow the command name.
+
+     If you want to use CENTER with TTITLE and put more than one word on
+     a line, you should use the new form of TTITLE.
+
+     Example:  To use the old TTITLE to set a top title with a left-aligned
+               date and a right-aligned page number on one line, MARKETING
+               on the next line, and PERSONNEL REPORT on the third, enter:
+
+               SQL> TTITLE 'MARKETING | PERSONNEL REPORT'
+
+
+     See also:  commands.
+
+OVERVIEW
+
+
+                             Overview (SQL*Plus)
+
+ You can use SQL*Plus with SQL and its procedural extension, PL/SQL.  SQL
+ enables you to store and retrieve data in the Oracle relational database
+ management system.  SQL*Plus enables you to manipulate SQL commands and
+ PL/SQL blocks, and to perform many other tasks.  With SQL*Plus, you can:
+
+  -  enter, edit, store, retrieve, and run SQL commands and PL/SQL blocks
+  -  format, perform calculations on, store, and print query results
+  -  list column definitions for any table
+  -  access and copy data between SQL databases
+  -  send messages to and accept responses from an end user
+
+
+ Basic SQL*Plus Concepts
+
+     Command         An instruction you give SQL*Plus or the Oracle Server.
+
+     Block           A group of SQL and PL/SQL commands related to one
+                     another through procedural logic.
+
+     Table           The basic unit of storage in the Oracle Server.
+
+     Query           A SELECT statement that retrieves information from
+                     one or more tables.
+
+     Query results   The data retrieved by a query.
+
+     Report          Query results formatted by you with SQL*Plus commands.
+
+
+ Entering and Executing Commands
+
+ Your computer's cursor (usually an underline, rectangular block, or slash)
+ appears after the command prompt.  The cursor is where the next character
+ you type appears on the screen.  You can enter commands in uppercase or
+ lowercase in SQL*Plus.  As you type SQL*Plus, SQL, and PL/SQL commands,
+ use at least one space, tab, or RETURN between words.  You can use extra
+ spaces, tabs, and RETURNs between words to make the code easier to read.
+
+ You can enter three kinds of commands at the command prompt:
+
+      -  SQL commands, for working with information in the database
+      -  PL/SQL blocks, also for working with information in the database
+      -  SQL*Plus commands for formatting query results, setting options,
+         and editing and storing SQL and PL/SQL commands
+
+ End a SQL command with a semicolon (;) at the end of a line
+                        a slash (/) on a line by itself
+                        a blank line
+
+ A semicolon (;) tells SQL*Plus to run the command.  Type ; at the end of
+ the last line and press RETURN to execute it.  If you press RETURN without
+ a semicolon, SQL*Plus displays the next line number.  Type ; and press
+ RETURN again to run the command.  A slash (/) on a line by itself also
+ tells SQL*Plus to run the command.  Press RETURN after the last command
+ line.  At the next line number, type / and press RETURN again.
+
+
+ Running PL/SQL Blocks
+
+ PL/SQL blocks begin with DECLARE, BEGIN, or a block name.  SQL*Plus treats
+ PL/SQL blocks the same as SQL commands, except that a semicolon (;) or a
+ blank line does not terminate and execute a block; terminate PL/SQL blocks
+ by entering a period (.) by itself on a new line.  To execute the block
+ currently in the SQL buffer, use the RUN or slash (/) command.
+
+ Example: You might enter and run the following PL/SQL block:
+
+     SQL> DECLARE
+        2     x   NUMBER := 100;
+        3  BEGIN
+        4     FOR i IN 1..10 LOOP
+        5        IF MOD(i, 2) = 0 THEN    --i is even
+        6          INSERT INTO temp VALUES (i, x, 'i is even');
+        7          ELSE
+        8             INSERT INTO temp VALUES (i, x, 'i is odd');
+        9          END IF;
+       10          x := x + 100;
+       11     END LOOP;
+       12  END;
+       13  .
+
+     SQL> PL/SQL procedure successfully completed.
+
+           When you run a block, SQL commands within the block may behave
+           somewhat differently than they would outside of the block.
+
+
+ Running SQL*Plus Commands
+
+ Use SQL*Plus commands to manipulate SQL commands and PL/SQL blocks, and
+ format and print query results.  To speed up command entry, you can
+ abbreviate many SQL*Plus commands to one or a few letters.
+
+
+ Running Host Operating System Commands
+
+ You can execute a host operating system command from the SQL*Plus command
+ prompt, useful when you want to perform a task like listing host operating
+ system files.  To run a host operating system command, enter HOST followed
+ by the host operating system command.  For example, this SQL*Plus command
+ runs a host command, DIRECTORY *.SQL:
+
+               SQL> HOST DIRECTORY *.SQL
+
+ See also:  commands.
+
+PARAMETERS
+
+
+                               Parameters
+
+ A parameter is a substitution variable with & (ampersand) followed by a
+ number (for example, "&1").  Parameters are used only in command files.
+ You pass values to the parameters as arguments to the START command.  If a
+ parameter represents a char or date value, enclose the parameter in
+ apostrophes as if it were a constant:
+
+               SELECT * FROM EMP
+               WHERE JOB='&1'  /* char value */
+               AND SAL=&2;  /* number value */
+
+ Then, when you run the command file, enter parameter values as arguments
+ of the START command.   The first argument after the filename represents
+ the first parameter (&1), the second represents the second parameter (&2),
+ and so on.  In the following command, SQL*Plus substitutes CLERK for &1
+ and 7900 for &2:
+
+               SQL> START MYFILE CLERK 7900
+
+ When you use arguments with the START command, SQL*Plus DEFINEs each
+ parameter in the command file with the value of the appropriate argument.
+
+ See also: substitution, commands.
+
+PAUSE
+
+
+                                   PAUSE
+
+ PAU[SE] [text]
+
+ PAUSE displays an empty line followed by a line with text, then waits for
+ the user to press RETURN.  Or it displays two empty lines, and waits for
+ the user's response.
+
+     text
+         is the text you wish to display.  Enter PAUSE with no text to
+         display two empty lines.
+
+
+ Since PAUSE waits for the user's response, it's wise to include a message
+ to press RETURN.  PAUSE reads input from the terminal (if available) even
+ when you specify a file as the source of the input.  The SET command's
+ PAUSE clause controls pausing between pages of a report.
+
+
+ Example:  To display "Adjust paper and press RETURN to continue." then
+           wait for the user to press RETURN, include the following PAUSE
+           command in a command file:
+
+                 SET PAUSE ON
+                 PAUSE Adjust paper and press RETURN to continue.
+                 SELECT ...
+
+
+ See also: /, @, get, prompt, run, set (pause), start, commands.
+
+PRINT
+
+
+                                   PRINT
+
+ PRI[NT] variable ...
+
+ PRINT displays the current values of bind variables.
+
+     variable ...
+         Represents the names of the bind variables you wish to
+         display.
+
+
+ To automatically display bind variables, use the AUTOPRINT clause
+ of the SET command.
+
+ Bind variables are created using the VARIABLE command.  You can
+ control the formatting of the PRINT output just as you would
+ query output.
+
+ Example:  The following is an example of a PRINT command:
+
+                     SQL> VARIABLE id NUMBER
+                     SQL> BEGIN
+                        1    :id := 1;
+                       2  END;
+                     SQL> PRINT id
+                                ID
+                      ------------
+                                1
+
+ See also: variable, set.
+
+PROMPT
+
+
+                                   PROMPT
+
+ PROMPT [text]
+
+ PROMPT sends the specified message or a blank line to the user's screen.
+
+     text
+         is the text of the message you wish to display. If you omit text,
+         PROMPT displays a blank line on the user's screen.
+
+ Use this command in command files to give information to the user.
+
+ Example:  Here is PROMPT used with ACCEPT in command file ASKFORDEPT:
+
+               SQL> GET ASKFORDEPT
+                 1  PROMPT
+                 2  PROMPT Please enter a department
+                 3  PROMPT For example: 10, 20, 30, 40
+                 4  ACCEPT NEWDEPT NUMBER PROMPT 'DEPT:>'
+                 5* SELECT DNAME FROM DEPT WHERE DEPTNO = &NEWDEPT
+
+           If you run the file using @ASKFORDEPT, SQL*Plus displays:
+
+               Please enter a department
+               For example: 10, 20, 30, 40
+               DEPT:>
+
+           You can enter a department number at the DEPT:> prompt.
+           By default, SQL*Plus lists the line containing &NEWDEPT before
+           and after substitution, and then displays the department name
+           matching the number entered at the DEPT:> prompt.
+
+
+ See also: /, @, accept, get, input, pause, run, start, commands.
+
+QUIT
+
+
+                                   QUIT
+
+ {QUIT|EXIT} [SUCCESS|FAILURE|WARNING|n|variable] [COMMIT|ROLLBACK]
+
+ QUIT commits all pending database changes, leaves SQL*Plus, and returns
+ control to the operating system.
+
+     {QUIT|EXIT}
+         can be used interchangeably.
+
+     SUCCESS
+         exits normally.
+
+     FAILURE
+         exits with a return code indicating failure.
+
+     WARNING
+         exits with a return code indicating warning.  QUIT with no clauses
+         exits with a value of SUCCESS.
+
+     n
+         is an integer you can specify as the return code.
+
+     variable
+         is a user-defined or system variable, like SQL.SQLCODE.
+         QUIT variable exits with the value of variable as the return code.
+
+     COMMIT
+         saves pending changes to the database before exiting.
+
+     ROLLBACK
+         executes a ROLLBACK statement and abandons pending changes to the
+         database before exiting.
+
+ QUIT enables you to specify an operating system return code so you can run
+ SQL*Plus command files in batch mode and detect an unexpected event.  The
+ manner of detection is operating-system specific.  SUCCESS, WARNING, and
+ FAILURE represent operating system dependent values; on some systems,
+ WARNING and FAILURE are not distinguishable.  The range of operating system
+ return codes is also restricted on some operating systems.  This limits the
+ portability of QUIT n and QUIT variable between platforms.  For example, on
+ UNIX there is no meaningful way to return an Oracle error code.  Since
+ there is only one byte of storage for return codes, the range for return
+ codes is limited to zero to 250.
+
+ To exit conditionally, use WHENEVER SQLERROR or WHENEVER OSERROR.
+
+ If you make a syntax error in the QUIT options, or use a non-numeric
+ variable, SQL*Plus performs a QUIT FAILURE COMMIT.
+
+
+ Example:  The following returns the error code of the last executed SQL
+           command or PL/SQL block:
+
+               SQL> QUIT SQL.SQLCODE
+
+           The location of the return code depends on your system.  See
+           TTITLE for more information on SQL.SQLCODE.
+
+
+ See also: connect, disconnect, host, exit, save, spool, SQLPlus,
+           whenever sqlerror, commands.
+
+REMARK
+
+
+                                   REMARK
+
+ REM[ARK]
+
+ REMARK at the beginning of a line signifies a comment in a command file.
+ The comment ends at the end of the line.  A line cannot contain both a
+ comment and a command.  See /* for information on entering comments in
+ statements.
+
+ Example:  Here are some typical comments in command files:
+
+               REM Uses BREAK ON REPORT to break on end of table.
+               BREAK ON REPORT
+               COMPUTE SUM OF "DEPARTMENT 10" "DEPARTMENT 20" -
+               "DEPARTMENT 30" "TOTAL BY JOB" ON REPORT
+               REM Each column displays the sums of salaries by job
+               REM for one of the departments 10, 20, 30.
+               SELECT JOB,
+                      SUM( DECODE( DEPTNO, 10, SAL, 0)) "DEPARTMENT 10",
+                      SUM( DECODE( DEPTNO, 20, SAL, 0)) "DEPARTMENT 20",
+                      SUM( DECODE( DEPTNO, 30, SAL, 0)) "DEPARTMENT 30",
+                      SUM(SAL) "TOTAL BY JOB"
+               FROM EMP
+               GROUP BY JOB
+
+
+ See also: /, @, comments, edit, get, start, run, whenever sqlerror,
+           commands.
+
+RESERVED WORDS
+
+
+                            Reserved Words
+
+ The following words have special meaning in SQL and PL/SQL, and may
+ not be used for identifier names (unless enclosed in "quotes"):
+
+ ABORT      AUDIT           CLUSTERS     DATA_BASE      DISPOSE
+ ACCEPT     AUTHORIZATION   COLAUTH      DATE           DISTINCT
+ ACCESS     AVG             COLUMN       DBA            DO
+ ADD        BEGIN           COMMENT      DEBUGOFF       DROP
+ ALL        BETWEEN         COMMIT       DEBUGON        ELSE
+ ALTER      BODY            COMPRESS     DECIMAL        ELSIF
+ AND        BOOLEAN         CONNECT      DECLARE        END
+ ANY        BY              CONSTANT     DEFAULT        ENTRY
+ ARRAY      CASE            COUNT        DEFINITION     EXCEPTION
+ AS         CHAR            CRASH        DELAY          EXCEPTION_INIT
+ ASC        CHAR_BASE       CREATE       DELETE         EXCLUSIVE
+ ASSERT     CHECK           CURRENT      DELTA          EXISTS
+ ASSIGN     CLOSE           CURSOR       DESC           EXIT
+ AT         CLUSTER         DATABASE     DIGITS         FALSE
+
+ FETCH        IF            LIKE         NOCOMPRESS     OTHERS
+ FILE         IMMEDIATE     LIMITED      NOT            OUT
+ FLOAT        IN            LOCK         NOWAIT         PACKAGE
+ FOR          INCREMENT     LONG         NULL           PARTITION
+ FORM         INDEX         LOOP         NUMBER         PCTFREE
+ FROM         INDEXES       MAX          NUMBER_BASE    PRAGMA
+ FUNCTION     INDICATOR     MAXEXTENTS   OF             PRIOR
+ GENERIC      INITIAL       MIN          OFFLINE        PRIVATE
+ GOTO         INSERT        MINUS        ON             PRIVILEGES
+ GRANT        INTEGER       MOD          ONLINE         PROCEDURE
+ GRAPHIC      INTERSECT     MODE         OPEN           PUBLIC
+ GROUP        INTO          MODIFY       OPTION         RAISE
+ HAVING       IS            NEW          OR             RANGE
+ IDENTIFIED   LEVEL         NOAUDIT      ORDER          RAW
+
+ RECORD       ROWTYPE       SQLERRM      THEN           VARGRAPH
+ RELEASE      RUN           START        TO             VARIANCE
+ REM          SAVEPOINT     STATEMENT    TRIGGER        VIEW
+ REMARK       SCHEMA        STDDEV       TRUE           VIEWS
+ RENAME       SELECT        SUBTYPE      TYPE           WHEN
+ RESOURCE     SEPARATE      SUCCESSFUL   UID            WHENEVER
+ RETURN       SESSION       SUM          UNION          WHERE
+ REVERSE      SET           SYNONYM      UNIQUE         WHILE
+ REVOKE       SHARE         SYSDATE      UPDATE         WITH
+ ROLLBACK     SIZE          TABAUTH      USE            WORK
+ ROW          SMALLINT      TABLE        USER           XOR
+ ROWID        SPACE         TABLES       VALIDATE
+ ROWNUM       SQL           TASK         VALUES
+ ROWS         SQLCODE       TERMINATE    VARCHAR
+
+
+
+ See also: commands.
+
+RUN
+
+
+                                     RUN
+
+ R[UN]
+
+ RUN lists and executes the SQL command or PL/SQL block currently in the
+ SQL buffer.  RUN makes the last line of the SQL buffer the current line.
+ The slash command (/) works like RUN, but doesn't list the command.
+
+    Example:  The SQL buffer contains the query:
+
+               SELECT DEPTNO FROM DEPT
+
+           To RUN the query, enter:
+
+               SQL> RUN
+
+           Output:  1* SELECT DEPTNO FROM DEPT
+
+                    DEPTNO
+                    ------
+                        10
+                        20
+                        30
+                        40
+
+
+ See also: /, @, edit, get, list, parameters, save, spool, start,
+           SQL in PL/SQL, commands.
+
+RUNFORM
+
+
+                                   RUNFORM
+
+ RUNFORM [options]  form_name
+
+ RUNFORM invokes a SQL*Forms application from within SQL*Plus.  Note: You
+ have access to this command only if your site chose this option while
+ installing SQL*Plus.
+
+     [options]
+         See your SQL*Forms Designer's Reference Manual for details.
+
+     form_name
+         See your SQL*Forms Designer's Reference Manual for details.
+
+ The RUNFORM syntax is the same in both SQL*Plus and SQL*Forms.  You can
+ invoke a form more quickly in SQL*Plus than you can from the system prompt
+ because you avoid a separate Oracle logon.
+
+ When you invoke a form in SQL*Plus (by using RUNFORM), do not specify a
+ username/password (you retain your current connection to Oracle).  To use
+ another username/password, use the CONNECT command to connect to the
+ username before issuing the RUNFORM command.
+
+
+ Example:  To run a form named MYFORM, enter:
+
+               SQL> RUNFORM MYFORM
+
+
+ See also:  commands.
+
+SAVE
+
+
+                                         SAVE
+
+ SAV[E] file_name[.ext] [CRE[ATE]|REP[LACE]|APP[END]]
+
+ SAVE stores the SQL buffer's contents in a host operating system command
+ file.
+
+     file_name[.ext ]
+         specifies the command file in which to save the buffer's
+         contents.
+
+     CRE[ATE]
+         creates the file if the file does not exist.
+
+     REP[LACE]
+         replaces the contents of an existing file.  If the file does not
+         exist, REPLACE creates the file.
+
+     APP[END]
+         adds the contents of the buffer to the end of the specified file.
+
+
+ When you SAVE the contents of the SQL buffer, SAVE adds a line containing
+ a slash (/) to the end of the file.  If you don't specify an extension,
+ SQL*Plus assumes the default extension (normally SQL).
+
+ To SAVE a file under a name identical to a SAVE command clause (CREATE,
+ REPLACE, or APPEND), you must specify a file extension.
+
+
+ Example:  To save the buffer's contents in file DEPTSALRPT.SQL, enter:
+
+               SQL> SAVE DEPTSALRPT
+
+
+           To save the buffer's contents in file DEPTSALRPT.OLD, enter:
+
+               SQL> SAVE DEPTSALRPT.OLD
+
+ See also:  commands.
+
+SET
+
+
+                                     SET
+
+ SET system_variable value
+
+   ARRAY[SIZE] {20|n}                       NEWP[AGE] {1|n}
+   AUTO[COMMIT] {OFF|ON|IMM[EDIATE|n]}      NULL text
+   AUTOP[RINT] {OFF|ON}                     NUMF[ORMAT] format
+   BLO[CKTERMINATOR] {.|c}                  NUM[WIDTH] {10|n}
+   CLOSECUR[SOR] {OFF|ON}                   PAGES[IZE] {24|n}
+   CMDS[EP] {;|c|OFF|ON}                    PAU[SE] {OFF|ON|text}
+   COLSEP { |text}                          RECSEP {WR[APPED]|EA[CH]|OFF}
+   COM[PATIBILITY] {V6|V7|NATIVE}           RECSEPCHAR { |c}
+   CON[CAT] {.|c|OFF|ON}                    SERVEROUT[PUT] {OFF|ON} [SIZE n]
+   COPYC[OMMIT] {0|n}                       SHOW[MODE] {OFF|ON}
+   COPYTYPECHECK {OFF|ON}                   SQLC[ASE] {MIX[ED]|LO[WER]|UP[PER]}
+   CRT crt                                  SQLCO[NTINUE] {> | text}
+   DEF[INE] {&|c|OFF|ON}                    SQLN[UMBER] {OFF|ON}
+   ECHO {OFF|ON}                            SQLPRE[FIX] {#|c}
+   EDITF[ILE] file_name[.ext]               SQLP[ROMPT] {SQL>|text}
+   EMBEDDED {OFF|ON}                        SQLT[ERMINATOR] {;|c|OFF|ON}
+   ESC[APE] {\|c|OFF|ON}                    SUF[FIX] {SQL|text}
+   FEED[BACK] {6|n|OFF|ON}                  TAB {OFF|ON}
+   FLAGGER {OFF|ENTRY|INTERMED[IATE]|FULL}  TERM[OUT] {OFF|ON}
+   FLU[SH] {OFF|ON}                         TI[ME] {OFF|ON}
+   HEA[DING] {OFF|ON}                       TIMI[NG] {OFF|ON}
+   HEADS[EP] {||c|OFF|ON}                   TRIM[OUT] {OFF|ON}
+   LIN[ESIZE] {80|n}                        TRIMS[POOL] {ON|OFF}
+   LONG {80|n}                              UND[ERLINE] {-|c|ON|OFF}
+   LONGC[HUNKSIZE] {80|n}                   VER[IFY] {OFF|ON}
+   MAXD[ATA] n                              WRA[P] {OFF|ON}
+
+
+ Use SET to control SQL*Plus environment settings for the current session;
+ for example:
+                -   the display width for NUMBER data
+                -   the display width for LONG data
+                -   enabling or disabling the printing of column headings
+                -   the number of lines per page
+
+     ARRAY[SIZE] {20|n}
+         sets the number of rows called a batch that SQL*Plus will fetch from
+         the database at one time (Range: 1 - 5000). A large value increases
+         the efficiency of queries and subqueries that fetch many rows, but
+         requires more memory; values over 100 or so provide little added
+         performance.  ARRAYSIZE only improves the efficiency of SQL*Plus
+         operations; it has no other effect.
+
+     AUTO[COMMIT] {OFF|ON|IMM[EDIATE]|n}
+         controls when Oracle commits pending changes to the database.  ON
+         commits pending changes to the database after Oracle executes each
+         SQL command or PL/SQL block.  OFF suppresses automatic committing,
+         so changes must be committed manually (with COMMIT, for example).
+         IMMEDIATE works just like ON.  n commits pending changes to the
+         database after Oracle executes n INSERT, UPDATE or DELETE commands
+         or PL/SQL blocks.  The statement counter is reset to zero after
+         successful completion of:  n INSERT, UPDATE or DELETE commands or
+         PL/SQL blocks; a commit; a rollback; or a SET AUTOCOMMIT command.
+         A PL/SQL block is regarded as one transaction, regardless of the
+         number of SQL commands in it.
+
+     AUTOP[RINT] {OFF|ON}
+         sets the automatic PRINTing of bind variables.  ON or OFF controls
+         whether SQL*Plus automatically displays bind variables (referenced
+         in a successful PL/SQL block, or used in an EXECUTE command).  See
+         the PRINT command for more information about displaying bind
+         variables.
+
+     BLO[CKTERMINATOR] {.|c}
+         sets the non-alphanumeric character that ends PL/SQL blocks to c.
+         To execute the block, issue a RUN or slash (/) command.
+
+     CLOSECUR[SOR] {OFF|ON}
+         sets the cursor usage behavior.  ON or OFF sets whether or not
+         the cursor will close and reopen after each SQL statement.
+         This feature may be useful in some environments to release
+         resources in the database server.
+
+     CMDS[EP] {;|c|ON|OFF}
+         sets the non-alphanumeric character used between multiple SQL*Plus
+         commands entered on one line to c.  ON or OFF sets whether or not
+         multiple commands can be entered on a line; ON automatically makes
+         ; (a semicolon) the command separator character.
+
+     COLSEP { |text}
+         sets the text to be printed between SELECTed columns. If the
+         COLSEP variable contains blanks or punctuation characters, you
+         must enclose it with single quotes. The default is a space.
+         In multi-line rows, the column separator does not print between
+         columns that begin on different lines.  The column separator
+         does not appear on blank lines produced by BREAK ... SKIP n and
+         does not overwrite the record separator.
+
+     COM[PATIBILITY] {V6|V7|NATIVE}
+         specifies the version of Oracle to which you are connected.
+         Set COMPATIBILITY to V6 for Version 6 or V7 for Oracle7. Set
+         COMPATABILITY to NATIVE if you wish the database to determine the
+         setting (for example, if connected to Oracle7, COMPATIBILITY would
+         default to V7).  Note that you can set COMPATIBILITY to V6 when
+         connected to Oracle7.  This enables you to run Version 6 SQL
+         against Oracle7.
+
+         Setting COMPATIBILITY to V6 causes SQL*Plus to treat CHAR
+         column values as variable length character strings.
+         Setting COMPATIBILITY to V7 causes SQL*Plus to treat CHAR
+         COLUMN VALUES as fixed length character strings and
+         VARCHAR2 (VARCHAR) column values as variable length
+         character strings.
+
+         See the Oracle7 Server documentation for a list of changes
+         from Version 6 to Oracle7.
+
+     CON[CAT] {.|c|OFF|ON}
+         sets the character you can use to end a substitution variable name
+         when you want to use a character after the variable that SQL*Plus
+         would otherwise see as a part of the variable's name.  SQL*Plus
+         resets the value of CONCAT to a period when you switch CONCAT on.
+
+     COPYC[OMMIT] {0|n}
+         controls the number of batches processed before the COPY command
+         commits database changes (Range: 0 - 5000).  Set the size of a
+         batch with the ARRAYSIZE variable.  If you set COPYCOMMIT to zero,
+         COPY commits changes only at the end of a copy operation.
+
+     COPYTYPECHECK {OFF|ON}
+         sets the suppression of the comparison of datatypes whilst
+         inserting or appending to tables with the COPY command.  This is
+         to facilitate copying to DB2 which requires that a CHAR be copied
+         to a DB2 DATE.
+
+     CRT crt
+         changes the default CRT file used in the SQL*Plus RUNFORM command.
+         To return to the original default (before CRT was set), set CRT to
+         nothing by entering two double quotes ("") for crt.
+
+         To use NEW.CRT during a form invocation on a system where the
+         default CRT is OLD.CRT, invoke the form with either:
+
+               SQL> RUNFORM -c NEW form_name
+         or    SQL> SET CRT NEWSQL> RUNFORM form_name
+
+         The second method stores the CRT option; you don't have to
+         re-specify it for additional RUNFORM commands during the same
+         SQL*Plus session.
+
+     DEF[INE] {&|c|OFF|ON}
+         sets c to be the character in front of substitution variables.
+         ON or OFF sets whether or not SQL*Plus will scan commands for
+         substitution variables and replace them with their values.
+         ON changes the value of c back to the default '&' and not
+         the most recently used character.
+
+     ECHO {OFF|ON}
+         sets whether START lists each command in a command file as the
+         command is executed.  ON lists the commands; OFF does not.
+
+     EDITF[ILE] file_name[.ext]
+         sets the default filename for the EDIT command.  You can include
+         a path and/or extension.
+
+     EMBEDDED {OFF|ON}
+         controls each report begins on a page.  OFF starts each report at
+         the top of a new page; ON allows a report to begin anywhere.  Set
+         EMBEDDED to ON to start printing a report immediately after the
+         previous one.
+
+         Note:  When you use SET EMBEDDED ON and change the pagesize with
+         SET PAGESIZE n, SQL*Plus finishes the current page using the
+         existing pagesize setting and, if required, begins a new page
+         with the new pagesize setting.
+
+         Note:  When using a BTITLE with SET EMBEDDED ON, the second and
+         subsequent SELECTs will always begin on a new page.  This is
+         because SQL*Plus has no input read ahead.  Since SQL*Plus cannot
+         tell whether you will enter another SELECT, or, for example,
+         EXIT, SQL*Plus has to complete processing all output from the
+         first SELECT before it reads the next command.  This
+         processing includes printing the BTITLE.  Hence, given two
+         SELECTs, SQL*Plus prints the final BTITLE of the first SELECT
+         before it processes the second.  The second SELECT will then
+         begin at the top of a new page.
+
+     ESC[APE] {\|c|OFF|ON}
+         defines the character you enter as the escape character.  OFF
+         undefines the escape character.  ON enables the escape character.
+         ON changes the value of c back to the default "\".
+
+         Use the escape character before the substitution character (set
+         with SET DEFINE) to have SQL*Plus treat the substitution character
+         as an ordinary character, not a request for variable substitution.
+
+     FEED[BACK] {6|n|OFF|ON}
+         shows the number of records returned by a query when at n or more
+         records are selected.  ON sets n to 1.  Zero is the same as OFF.
+
+     FLAGGER {OFF|ENTRY|INTERMED[IATE]|FULL}
+         checks to make sure that SQL statements conform to the ANSI/ISO
+         SQL92 standard.  If any non-standard constructs are found, the
+         Oracle server flags them as errors and displays the violating
+         syntax.  This is the equivalent of the SQL language ALTER SESSION
+         SET FLAGGER command.  However, you may execute SET FLAGGER even if
+         you are not connected to a database. FIPS flagging will remain in
+         effect across SQL*Plus sessions until a SET FLAGGER OFF (or ALTER
+         SESSION SET FLAGGER = OFF) command is successful or you exit
+         SQL*Plus.
+
+         When FIPS flagging is enabled, SQL*Plus will display a warning for
+         the following three commands, even if they are successful:
+
+               CONNECT
+               DISCONNECT
+               ALTER SESSION SET FLAGGER
+
+     FLU[SH] {OFF|ON}
+         controls when output goes to the display device.  OFF allows the
+         host operating system to buffer output.  ON disables buffering.
+
+         Use FLUSH OFF only when running a command file non-interactively
+         to suppress output and prompts until the run is over.  FLUSH OFF
+         may improve performance by reducing the amount of program I/O.
+
+     HEA[DING] {OFF|ON}
+         controls printing of column headings in reports.  ON prints column
+         headings in reports; OFF suppresses column headings.
+
+     HEADS[EP] {||c|OFF|ON}
+         sets the character you enter as the heading separator character.
+         The heading separator character cannot be alphanumeric or white
+         space.  You can use the heading separator character in the COLUMN
+         command and in the old forms of BTITLE and TTITLE to divide a
+         column heading or title onto more than one line.  Set HEADSEP OFF
+         to print a heading separator character like any other character.
+         ON changes the value of c back to the default "\".
+
+     LIN[ESIZE] {80|n}
+         sets the total number of characters displayed on a line before
+         starting a new line, and controls the position of centered and
+         right-aligned text in TTITLE and BTITLE.  The range is 1 to
+         a system dependent maximum.
+
+     LONG {80|n}
+         sets the maximum width for displaying and copying LONG values; the
+         maximum value of n is two gigabytes.
+
+     LONGC[HUNKSIZE] {80|n}
+         sets the size, in characters, of the increments in which SQL*Plus
+         retrieves a LONG value.  When retrieving a LONG value you may
+         want to retrieve it in increments rather than all at once
+         because of memory restrictions.  Valid values are 1 to whatever
+         has been set with MAXDATA.  Note that the value may not
+         exceed the value set with LONG.  Applies only to Oracle7.
+
+     MAXD[ATA] n
+         sets the maximum size, in bytes, of all ARRAYSIZE rows.  The
+         default and maximum values of n are system dependent.
+
+     NEWP[AGE] {1|n}
+         sets the number of blank lines printed between the beginning of
+         each page and the top title.  A value of zero sends a formfeed
+         between pages and clears the screen on most terminals.
+
+     NULL text
+         sets the text to represent a null value in the result of a SELECT
+         statement.  Use the NULL clause of the COLUMN command to override
+         the setting of the NULL variable for a given column.
+
+     NUMF[ORMAT] format
+         sets the default format for displaying numbers.  Enter a number
+         format for format.  See FORMAT NUMBERS for format descriptions.
+
+     NUM[WIDTH] {10|n}
+         sets the default width for displaying numbers.
+
+     PAGES[IZE] {24|n}
+         sets the number of lines in each page.  Set PAGESIZE to zero to
+         suppress headings, page breaks, titles, the initial blank line,
+         and other formatting information.
+
+     PAU[SE] {OFF|ON|text}
+         controls scrolling on the terminal when running reports.  ON
+         pauses at the beginning of each page of report output.  Press
+         RETURN or [Clear] after each pause.  text specifies the text
+         displayed whenever SQL*Plus pauses.  To enter multiple words,
+         enclose text in single quotes.
+
+         You can embed terminal-dependent escape sequences in PAUSE to
+         create inverse video messages and other effects, where supported.
+
+     RECSEP {WR[APPED]|EA[CH]|OFF}
+     RECSEPCHAR { |c}
+         displays or prints record separators.  A record separator is the
+         RECSEPCHAR (character) repeated LINESIZE times on a single line.
+
+         RECSEPCHAR is the record separating character.  Default = space.
+
+         RECSEP sets where the record separation occurs.  WRAPPED prints a
+         record separator only after wrapped lines.  EACH prints a record
+         separator after every row.  OFF does not print a record separator.
+
+     SERVEROUT[PUT] {OFF|ON} [SIZE n]
+         controls whether to display  the output (DBMS_OUTPUT.PUT_LINE)
+         of stored procedures or PL/SQL blocks in SQL*Plus.  OFF suppresses
+         the output of DBMS_OUTPUT.PUT_LINE; ON displays the output.
+
+         Output is always formatted in the same way as using WORD_WRAPPED
+         on a column.  See the COLUMN command for more information on
+         WORD_WRAPPED.
+
+         SIZE sets the number of bytes of the output that can be
+         buffered within the Oracle7 Server.  The default for n is 2000.
+         n cannot be less than 2000 or greater than 1,000,000.
+
+         Note:  The output is displayed synchronously after the
+         stored procedure or PL/SQL block has been executed by the Oracle7
+         Server.
+
+     SHOW[MODE] {OFF|ON}
+         controls whether or not SQL*Plus lists the old and new settings of
+         a SQL*Plus system variable when you change the setting with SET.
+         ON lists the settings; OFF does not.  SHOWMODE ON has the same
+         behavior as the obsolete SHOWMODE BOTH.
+
+     SQLC[ASE] {MIX[ED]|LO[WER]|UP[PER]}
+         changes the case of SQL commands and PL/SQL blocks just prior to
+         execution.  SQL*Plus converts all text in the command, including
+         quoted literals and identifiers, as follows:
+
+               uppercase if SQLCASE equals UPPER
+               lowercase if SQLCASE equals LOWER
+               unchanged if SQLCASE equals MIXED
+
+     SQLCASE does not change the SQL buffer itself.
+
+     SQLCO[NTINUE] {>|text}
+         sets the character sequence SQL*Plus displays as a prompt after
+         you use - (hyphen) to continue a SQL*Plus command on a new line.
+
+     SQLN[UMBER] {OFF|ON}
+         sets the prompt for the second and subsequent lines of a SQL
+         command or PL/SQL block.  ON sets the prompt to be the line
+         number.  OFF sets the prompt to the value of SQLPROMPT.
+
+     SQLPRE[FIX] {#|c}
+         sets the SQL*Plus prefix character.  While entering a SQL command
+         or PL/SQL block, you can enter a SQL*Plus command on a separate
+         line, prefixed by the SQL*Plus prefix character, to execute the
+         command immediately without affecting the SQL command or PL/SQL
+         block. The prefix character must be non-alphanumeric.
+
+     SQLP[ROMPT] {SQL>|text}
+         sets the SQL*Plus command prompt.
+
+     SQLT[ERMINATOR] {;|c|OFF|ON}
+         sets to c the character used to end and execute SQL command.  OFF
+         recognizes no command terminator; you terminate a SQL command by
+         entering an empty line. ON resets the terminator to ; (semicolon).
+
+     SUF[FIX] {SQL|text}
+         sets the default file extension that SQL*Plus uses in commands
+         that refer to command files.  SUFFIX does not control extensions
+         for spool files.
+
+     TAB {OFF|ON}
+         controls how SQL*Plus formats white space in the output.  OFF uses
+         spaces to add white space in the output.  ON uses TAB characters.
+         TAB settings are every eight characters.  The default value is
+         system dependent.
+
+     TERM[OUT] {OFF|ON}
+         controls the display of output generated by commands executed from
+         a command file.  OFF suppresses the display so you can spool output
+         from a command file without displaying the output.  ON shows the
+         output.  TERMOUT OFF doesn't affect interactively-entered command
+         output.
+
+     TI[ME] {OFF|ON}
+         controls the display of the current time.  ON displays the current
+         time before each command prompt.  OFF suppresses the time display.
+
+     TIMI[NG] {OFF|ON}
+         sets the display of timing statistics.  ON shows timing statistics
+         for each SQL command or PL/SQL block run.  OFF suppresses timing.
+         Use the TIMING command to control the timing of multiple commands.
+
+     TRIM[OUT] {OFF|ON}
+         determines whether SQL*Plus allows trailing blanks at the end of
+         each displayed line.  ON removes blanks at the end of each line,
+         improving performance especially when using a slow communications
+         device.  OFF displays trailing blanks.  TRIMOUT ON does not affect
+         spooled output.
+
+     TRIMS[POOL] {ON|OFF}
+         determines whether SQL*Plus allows trailing blanks at the end of
+         each spooled line.  ON removes blanks at the end of each line.
+         OFF allows SQL*Plus to include trailing blanks.  TRIMSPOOL ON
+         does not affect terminal output.
+
+     UND[ERLINE] {-|c|ON|OFF}
+         sets the character used to underline column headings in SQL*Plus
+         reports to c.  ON or OFF turns underlining on or off.  ON changes
+         the value of c back to the default "-".
+
+     VER[IFY] {OFF|ON}
+         controls whether SQL*Plus lists the text of a SQL statement or
+         PL/SQL command before and after SQL*Plus replaces substitution
+         variables with values.  ON lists the text; OFF suppresses the
+         listing.
+
+     WRA[P] {OFF|ON}
+         controls whether SQL*Plus truncates the display of a SELECTed row
+         if it is longer than the current line width.  OFF truncates it; ON
+         allows it to wrap to the next line.  The COLUMN command's WRAPPED
+         and TRUNCATED override the WRAP setting for specific columns.
+
+
+ SQL*Plus maintains system variables (SET command variables) so you can
+ tailor the environment for a SQL*Plus session.  You change these system
+ variables with the SET command and list them with the SHOW command.
+
+ SET ROLE and SET TRANSACTION are SQL commands.
+
+ Examples: Here are some uses of SET command variables:
+
+           CMDSEP - To specify a TTITLE and format a column on the same
+           line:
+
+               SQL> SET CMDSEP +
+               SQL> TTITLE LEFT 'SALARIES' + COLUMN SAL FORMAT $9,999
+               SQL> SELECT ENAME, SAL FROM EMP
+                 2  WHERE JOB = 'CLERK';
+
+           The following output results:
+
+               SALARIES
+               ENAME          SAL
+               ---------- -------
+               SMITH         $800
+               ADAMS       $1,100
+               JAMES         $950
+               MILLER      $1,300
+
+           COLUMN SEPARATOR - To set the column separator to "|":
+
+               SQL> SET COLSEP '|'
+               SQL> SELECT ENAME, JOB, DEPTNO
+                 2  FROM EMP
+                 3  WHERE DEPTNO = 20;
+
+           The following output results:
+
+               ENAME      |JOB      |   DEPTNO
+               -------------------------------
+               SMITH      |CLERK    |       20
+               JONES      |MANAGER  |       20
+               SCOTT      |ANALYST  |       20
+               ADAMS      |CLERK    |       20
+               FORD       |ANALYST  |       20
+
+           COMPATIBILITY - To run command file SALARY.SQL, created with
+           Version 6 of Oracle, enter:
+
+               SQL> SET COMPATIBILITY V6
+               SQL> START SALARY
+
+           After running the file, reset compatibility to V7:
+
+               SQL> SET COMPATIBILITY V7
+
+           Or you could add SET COMPATIBILITY V6 to the beginning of the
+           command file, and reset COMPATIBILITY to V7 at its end.
+
+           ESCAPE - If you define the escape character as !, then:
+
+                SQL> SET ESCAPE !
+                SQL> ACCEPT v1 PROMPT 'Enter !&1:'
+
+           displays the prompt:  Enter &1:
+
+           HEADING - The next example suppresses the display of column
+           headings in a report, then runs a SELECT statement:
+
+               SQL> SET HEADING OFF
+               SQL> SELECT ENAME, SAL FROM EMP
+                 2  WHERE JOB = 'CLERK';
+
+           Output:  ADAMS        1100
+                    JAMES         950
+                    MILLER       1300
+
+           LONG - To set the maximum width for displaying and copying LONG
+           values to 500, enter:
+
+               SQL> SET LONG 500
+
+           The LONG data will wrap on your screen; SQL*Plus truncates at
+           the 501st character.
+
+           LONGCHUNKSIZE - To set the size of the increments in which
+           SQL*Plus retrieves LONG values to 100 characters enter:
+
+               SQL> SET LONGCHUNKSIZE 100
+
+           The LONG data will be retrieved in increments of 100 characters
+           until the entire value is retrieved, or the value of SET LONG
+           is reached.
+
+           SERVEROUTPUT - To enable the display of DBMS_OUTPUT.PUT_LINE,
+           enter:
+
+               SQL> SET SERVEROUTPUT ON
+
+           The following example shows what happens when you execute an
+           anonymous procedure with SET SERVER OUTPUT ON:
+
+               SQL> BEGIN
+                 2  DBMS_OUTPUT.PUT_LINE('Task is complete');
+                 3  END;
+                 4  /
+               Task is complete.
+               PL/SQL procedure successfully completed.
+
+           The following example shows what happens when you create a
+           trigger with SET SERVEROUTPUT ON:
+
+               SQL> CREATE TRIGGER SERVER_TRIG BEFORE INSERT
+                 2  OR UPDATE OR DELETE ON SERVER_TAB
+                 3  BEGIN
+                 4  DBMS_OUTPUT.PUT_LINE('Task is complete.');
+                 5  END;
+                 6  /
+               Trigger created.
+               SQL> INSERT INTO SERVER_TAB VALUES ('TEXT');
+               Task is complete.
+               1 row created.
+
+           SQLCONTINUE - To set the SQL*Plus command continuation prompt to
+           an exclamation point followed by a space, enter:
+
+               SQL> SET SQLCONTINUE '! '
+
+           SQL*Plus prompts for continuation as follows:
+
+               SQL> TTITLE 'YEARLY INCOME' -
+               ! RIGHT SQL.PNO SKIP 2 -
+               ! CENTER 'PC DIVISION'
+               SQL>
+
+           SUFFIX - To set the default command file extension to UFI:
+
+               SQL> SET SUFFIX UFI
+
+           If you then enter:
+
+               SQL> GET EXAMPLE
+
+           SQL*Plus looks for file EXAMPLE.UFI instead of file EXAMPLE.SQL.
+
+ See also:  commands.
+
+SHOW
+
+
+                                    SHOW
+
+ SHO[W] option
+
+     where option can be:
+
+     system_variable
+     ALL
+     BTI[TLE]
+     ERR[ORS] [{FUNCTION|PROCEDURE|PACKAGE|PACKAGE BODY|TRIGGER|
+        VIEW} name]
+     LABEL
+     LNO
+     PNO
+     REL[EASE]
+     SPOO[L]
+     SQLCODE
+     TT[ITLE]
+     USER
+
+ Use SHOW to show the value of a SQL*Plus system variable, or the
+ current SQL*Plus environment.
+
+     system_variable
+         is any system variable set by the SET command.
+
+     ALL
+         lists the settings of all SHOW options, except ERRORS and
+         LABEL, in alphabetical order.
+
+     BTI[TLE]
+         shows the current BTITLE definition.
+
+     ERR[ORS] {FUNCTION|PROCEDURE|PACKAGE|PACKAGE BODY|
+        TRIGGER|VIEW} name
+         shows the compilation errors of a stored procedure
+         (includes stored functions, procedures, and packages).
+         When you use the CREATE command to create a stored
+         procedure, a message is displayed if there are any
+         compilation errors.  To see the errors, you use SHOW
+         ERRORS.  When you specify SHOW ERRORS with no
+         arguments, compilation errors for the most recently
+         created or altered stored procedure are displayed.
+         When you specify the type (function, procedure, package,
+         package body, trigger, or view) and the name of the
+         PL/SQL stored procedure, SQL*Plus shows errors for that
+         stored procedure.
+
+         SHOW ERRORS output displays the line and column
+         number of the error (LINE/COL) as well as the error
+         itself (ERROR).  LINE/COL and ERROR have default widths
+         of 8 and 65, respectively.  You can alter these widths
+         using the COLUMN command.
+
+     LABEL
+         shows the security level for the current session.
+
+     LNO shows the current line number--the position in the current page
+         of the display and/or spooled output.
+
+     PNO shows the current page number.
+
+     REL[EASE]
+         shows the release number of Oracle Server SQL*Plus is accessing.
+
+     SPOO[L]
+         shows whether or not output is being spooled.
+
+     SQLCODE
+         shows the value of SQL.SQLCODE; the SQL return code of the most
+         recent operation.
+
+     TTI[TLE]
+         shows the current TTITLE definition.
+
+     USER
+         shows the username currently accessing SQL*Plus.
+
+
+ Example:  To list the current LINESIZE, enter:
+
+               SQL> SHOW LINESIZE
+
+           If the current linesize is 80 characters, SQL*Plus responds:
+
+               linesize 80
+
+           Following is an example of how to show the compilation
+           errors of a PL/SQL procedure:
+
+               SQL> CREATE PROCEDURE ASSIGNVL AS
+                 2     BEGIN ZZZZZZZ; END;
+                 3  /
+               Warning:  Procedure created with compilation errors.
+               SQL> SHOW ERRORS PROCEDURE ASSIGNVL
+               LINE/COL   ERROR
+               --------   -----------------------------------------
+               1/30       PLS-00313: 'ZZZZZZZ' not declared in this scope
+               1/30       PL/SQL:  Statement ignored.
+
+
+ See also:  commands.
+
+/
+
+
+                                / (slash)
+
+ /
+
+ Enter a slash (/) at the command prompt or at a line number prompt to
+ execute a SQL command or PL/SQL block in the SQL buffer.  The slash
+ command works like RUN, but does not list the command on your screen
+ buffer.
+
+ Executing a SQL command or PL/SQL block with the slash does not change the
+ current line number in the SQL buffer unless the command in the buffer has
+ an error.  If so, SQL*Plus makes the line with the error the current line.
+
+ Examples: Type LIST to see the contents of the buffer:
+
+               SQL> LIST
+                 1* SELECT ENAME, JOB FROM EMP WHERE ENAME = 'JAMES'
+
+           Enter slash (/) to execute the command in the buffer:
+
+               SQL> /         Output:  ENAME   JOB
+                                       ------  -----
+                                       JAMES   CLERK
+
+ See also: @, buffer, edit, get, list, run, save, parameters,
+           spool, start, commands.
+
+SPOOL
+
+
+                                   SPOOL
+
+ SPO[OL] [file_name[.ext]|OFF|OUT]
+
+ Use SPOOL to store query results in an operating system file, or send the
+ file to a printer.
+
+     file_name[.ext]
+         is the name of the file to receive the spool.  SPOOL file_name
+         begins spooling displayed output to the named file.  If you omit
+         an extension, SPOOL uses a default extension (usually LST or LIS).
+
+     OFF stops spooling.
+
+     OUT stops spooling and sends the file to your host computer's default
+         printer.  for the current spooling status.
+
+
+ To spool output generated by commands in a command file without displaying
+ the output on the screen, use SET TERMOUT OFF.  SET TERMOUT OFF does not
+ affect output from commands run interactively.
+
+
+ Examples: To record your displayed output in a file named DIARY using the
+           default file extension, enter:
+
+               SQL> SPOOL DIARY
+
+           To stop spooling and print the file on your default printer:
+
+               SQL> SPOOL OUT
+
+ See also:  commands.
+
+SQLPLUS
+
+
+                                    SQLPLUS
+
+ SQLPLUS [[-S[ILENT]] [logon] [start]]|-?
+
+     logon:  username[/password][@database_specification]|/|/NOLOG
+     start:  @file_name[.ext ] [arg ...]
+
+
+ SQLPLUS starts SQL*Plus from the operating system prompt.  Start enables
+ you to enter a command filename and arguments.  SQL*Plus passes the
+ arguments to the command file as though you executed the file with the
+ SQL*Plus START command.
+
+ If you omit logon and specify start, SQL*Plus assumes that the first line
+ of the command file contains a valid logon.  If both start and logon are
+ omitted, SQL*Plus prompts for logon information.
+
+     username[/password]
+         are the username and password with which to start SQL*Plus and
+         connect to Oracle.  If omitted, SQL*Plus prompts for them.  If
+         you enter a slash (/) or enter RETURN to the prompt for username,
+         SQL*Plus logs you in with a default logon (see "/" below).
+
+     /   is a default logon using operating system authentication.  In
+         a default logon, SQL*Plus tries to log in with the username
+         OPS$name, where name is your operating system username.  You
+         cannot enter a database_specification with a default logon.
+
+     /NOLOG
+         establishes no initial connection to Oracle.  Before issuing any
+         SQL commands, you must issue a CONNECT command to establish a
+         valid logon.  Use /NOLOG to have a SQL*Plus command file prompt
+         for the username, password or database specification. The first
+         line of this command file is not assumed to contain a logon.
+
+     @database_specification
+         consists of a SQL*Net connection string; the syntax depends on the
+         SQL*Net communications protocol your Oracle installation uses.
+
+     -S[ILENT]
+         suppresses all SQL*Plus information and prompt messages, including
+         the command prompt and the banner usually displayed when SQL*Plus
+         is started.  Use SILENT to make the use of SQL*Plus invisible to
+         the user when invoking SQL*Plus within another program.
+
+     -?  makes SQLPLUS display its current version and level number, then
+         returns control to the operating system.  The ? (question mark)
+         must come right after the - (hyphen); a space is not permitted.
+
+
+ The SQLPLUS command may be known by a different name under some
+ operating systems, for example, plus32.
+
+ SQL*Plus supports a Site Profile, a SQL*Plus command file created by the
+ database administrator.  This file is generally named GLOGIN.SQL.  This
+ file is executed whenever a user starts SQL*Plus and SQL*Plus establishes
+ the Oracle connection.  The Site Profile enables the DBA to set up
+ SQL*Plus environment defaults for all users at a particular site.
+ Users cannot directly access the Site Profile.  The default name
+ and location of the Site Profile depend on your system.
+
+ SQL*Plus also supports a User Profile, executed after the Site Profile.
+ SQL*Plus searches for file LOGIN.SQL in your current directory.  If it's
+ not there, SQL*Plus searches a system dependent path to find the file;
+ some operating systems may not support this path-search.
+
+ If you fail to log in successfully to SQL*Plus because your username or
+ password is invalid, or some other error, SQL*Plus will return an error
+ status equivalent to an EXIT FAILURE command.  See the EXIT command for
+ further information on EXIT FAILURE.
+
+
+ Examples: To start SQL*Plus with username SCOTT and password TIGER, enter:
+
+               SQLPLUS SCOTT/TIGER
+
+           To start SQL*Plus, as above, and to make POLICY (where POLICY is
+           a valid SQL*Net database connection string) the default database,
+           enter:
+
+               SQLPLUS SCOTT/TIGER@POLICY
+
+           To start SQL*Plus with username SCOTT and password TIGER and run
+           a command file named STARTUP with the extension SQL, enter:
+
+               SQLPLUS SCOTT/TIGER @STARTUP
+
+           Note the space between TIGER and @STARTUP.
+
+ See also:  remote databases, commands, exit.
+
+START
+
+
+                                  START
+
+ STA[RT] file_name[.ext] [arg ...]
+
+ START executes the contents of a command file.  The @ ("at" sign) and @@
+ (double "at" sign) commands work similarly to the START command, but do
+ not enable the passing of values to parameters.
+
+     file_name[.ext]
+         is the command file to execute. If you omit an extension, SQL*Plus
+         assumes the default command-file extension (normally SQL).
+
+         When you enter START file_name.ext, SQL*Plus searches for a file
+         with the specified name and extension in the current default
+         directory.  If SQL*Plus doesn't find the file, it searches a
+         system dependent path for the FROM file.  Some operating systems
+         don't support this path-search.
+
+     arg ...
+         are data items to be passed to parameters in the command file.
+         If you enter one or more arguments, SQL*Plus substitutes the
+         values into the parameters (&1, &2, and so forth) in the command
+         file.  The first argument replaces each occurrence of &1, the
+         second replaces each occurrence of &2, and so forth.
+
+ The START command DEFINEs the parameters with the values of the arguments;
+ if you START the file again in this session, you can enter new arguments
+ or omit the arguments to use the old values.
+
+ The EXIT or QUIT commands in a command file terminate SQL*Plus.
+
+ Disabling the START command in the Product User Profile also disables the
+ @ and @@ commands.
+
+
+
+ Example:  File PROMOTE.SQL, used to promote employees, contains:
+
+               SELECT * FROM EMP WHERE MGR=&1 AND JOB='&2' AND SAL>&3;
+
+           To run this command file, enter:
+
+               SQL> START PROMOTE 7280 CLERK 950
+
+           SQL*Plus then executes the following command:
+
+               SELECT * FROM EMP
+               WHERE MGR = 7280 AND JOB = 'CLERK' AND SAL > 950;
+
+ See also:  @, @@, define, commands.
+
+SUBSTITUTION
+
+
+                                Substitution
+
+ A substitution variable is a user variable name preceded by one or two
+ ampersands (&).  When a substitution variable is in a command, SQL*Plus
+ executes the command as though it contained the value of the substitution
+ variable, rather than the reference to the variable.
+
+ Example:  If the variable SORTCOL is "JOB", and the variable MYTABLE is
+           "EMP", SQL*Plus executes the commands:
+
+               SQL> BREAK ON &SORTCOL SQL> SELECT &SORTCOL, SAL
+                 2  FROM &MYTABLE
+                 3  ORDER BY &SORTCOL;
+
+           as if they were:  SQL> BREAK ON JOB
+                             SQL> SELECT JOB, SAL
+                               2  FROM EMP
+                               3  ORDER BY JOB;
+
+
+ You can use substitution variables anywhere in SQL and SQL*Plus commands,
+ except as the first word entered at the prompt.  If SQL*Plus finds an
+ undefined substitution variable in a command, you are asked for its value.
+
+ Example:  If the variable GIVENNAME is undefined and you enter:
+
+               SQL> SELECT * FROM EMP WHERE ENAME = '&GIVENNAME';
+
+           SQL*Plus displays the prompt:
+
+               Enter value for givenname:
+
+
+ You can enter any string at the prompt, even with blanks and punctuation.
+ Quote marks are not needed if they surround the substitution variable in
+ the command.  SQL*Plus reads your response from the keyboard, even if you
+ have redirected terminal input or output to a file.  If a terminal is not
+ available (running the file in batch mode, for example), SQL*Plus uses the
+ redirected file.  To append characters immediately after a substitution
+ variable, use a period to separate the variable from the characters:
+
+               SQL> SELECT * FROM EMP WHERE EMPNO='&E.01';
+               Enter value for E:  123
+
+     is interpreted as:   SQL> SELECT * FROM EMP WHERE EMPNO='12301';
+
+
+ & and &&
+
+ If you use a substitution variable with one ampersand, SQL*Plus does not
+ implicitly DEFINE the variable when you input a value.  Thus, if SQL*Plus
+ later executes the same command (or another one with the same substitution
+ variable), SQL*Plus will prompt you again for the value of the variable.
+ If you use a substitution variable with two ampersands, the variable is
+ automatically defined when you input a value.  Thus, if the same command
+ is executed later in that session, SQL*Plus will not prompt you again for
+ the value of the variable.
+
+ Example:  A command file named STATS (for calculating subgroup statistics
+           on a numeric column) contains:
+
+               SELECT &&GROUP_COL, MAX(&&NUMBER_COL)  MAXIMUM,
+                   MIN(&&NUMBER_COL) MINIMUM,
+                   SUM(&&NUMBER_COL) TOTAL,
+                   AVG(&&NUMBER_COL) AVERAGE
+               FROM &TABLE
+               GROUP BY &&GROUP_COL;
+
+           When you run this file, SQL*Plus prompts you for the values, by
+           name, before running the file:
+
+               Enter value for group_col: PROJNO
+               Enter value for number_col: SAL
+               Enter value for table: EMP
+
+           SQL*Plus runs the following query:
+
+               SELECT PROJNO, MAX(SAL)  MAXIMUM,
+                   MIN(SAL) MINIMUM,
+                   SUM(SAL) TOTAL,
+                   AVG(SAL) AVERAGE
+               FROM EMP
+               GROUP BY PROJNO;
+
+           If you run the query again during the same session, you will be
+           prompted for TABLE (its name has a single ampersand) but not for
+           GROUP_COL or NUMBER_COL (their names have double ampersands).
+
+
+ Restrictions on Substitution
+
+ You can't use substitution variables or parameters in the editing commands
+ APPEND, CHANGE, DEL, and INPUT, nor in other commands where substitution
+ would be meaningless, like HELP, REMARK, and TIMING.  APPEND, CHANGE, and
+ INPUT treat text beginning with & or && like any other text string.
+
+ These SET variables affect substitution variables and parameters:
+
+ SET DEFINE    turns substitution on and off and defines the substitution
+               character.  & is the default.
+
+ SET ESCAPE    defines an escape character to use before the substitution
+               character.  The escape character instructs SQL*Plus to treat
+               the substitution character as an ordinary character, not a
+               variable substitution request.  \ is the default character.
+
+ SET VERIFY ON shows each line of the file before and after substitution.
+
+ SET CONCAT    defines the character between the name of a substitution
+               variable or parameter and characters immediately after the
+               variable or parameter (. is the default).  See SET.
+
+ See also: commands.
+
+TIMING
+
+
+                                    TIMING
+
+ TIMI[NG] [START text|SHOW|STOP]
+
+ TIMING records timing data for an elapsed time period, lists the current
+ timer's name and timing data, or lists the number of active timers.
+
+     START text
+         sets up a timer and makes text its name.  To have more than
+         one active timer, START additional timers before STOPping the
+         first; SQL*Plus nests each new timer within the preceding one.  The
+         timer most recently STARTed is the current timer.
+
+     SHOW
+         shows the current timer's name and timing data.
+
+     STOP
+         shows the current timer's title and timing data, then erases
+         the timer.  If other timers are active, the next most
+         recently STARTed timer becomes the current timer.  Use the
+         CLEAR command's TIMING clause to delete all timers.  Enter
+         TIMING with no clauses to list the number of active timers.
+
+
+ You can use this data to do a performance analysis on commands or blocks
+ run during the period.  SET TIMING ON automatically displays timing data
+ after each SQL command or PL/SQL block you run.
+
+ To delete all timers, use the CLEAR TIMING command.
+
+ Examples: To create a timer named SQL_TIMER, enter:
+
+               SQL> TIMING START SQL_TIMER
+
+           To list the current timer's title and accumulated time:
+
+               SQL> TIMING SHOW
+
+           To list the current timer's title and accumulated time,
+           and remove the timer, enter:
+
+               SQL> TIMING STOP
+
+ See also:  clear, show, set, start, commands.
+
+TTITLE
+
+
+                                   TTITLE
+
+ TTI[TLE] [printspec [text|variable] ...] | [OFF|ON]
+
+ where printspec is one or more of the clauses:
+
+         COL n          LE[FT]        BOLD
+         S[KIP] [n]     CE[NTER]      FORMAT text
+         TAB n          R[IGHT]
+
+ TTITLE places and formats a title at the top of each report page.  Enter
+ TTITLE with no clause to list its current definition.  The old form of
+ TTITLE is used if only a single word or string in quotes follows the
+ TTITLE command.
+
+ See OLD COMMANDS for a description of the old form of TTITLE.
+
+     text
+         is the title text.  Enter text in single quotes if you wish to
+         place more than one word on a single line.
+
+     variable
+         is a user variable or any of these system maintained values:
+
+              SQL.LNO       current line number
+              SQL.PNO       current page number
+              SQL.RELEASE   current Oracle release number
+              SQL.SQLCODE   current error code
+              SQL.USER      current username
+
+         To print one of these values, reference the appropriate variable
+         in the title.  You can format variable with the FORMAT clause.
+
+     OFF turns the title off (suppresses its display) without affecting
+         its definition.
+
+     ON  turns the title on (restores its display).  When you define a
+         top title, SQL*Plus automatically sets TTITLE to ON.
+
+     COL n
+         indents to column n of the current line (backward if column n has
+         been passed).  "Column" here is print position, not table column.
+
+     S[KIP] [n]
+         skips to the start of a new line n times; if n omitted, one time.
+         If n = 0, skips backward to the start of the current line.
+
+     TAB n
+         skips forward n columns (backward if you enter a negative value
+         for n).  "Column" here is print position, not table column.
+
+     LE[FT], CE[NTER], and R[IGHT]
+         aligns data left, center, or right on the current line.  SQL*Plus
+         aligns the following data items as a group, up to the end of the
+         printspec or the next LEFT, CENTER, RIGHT, or COL command.  CENTER
+         and RIGHT use the SET LINESIZE value to calculate the position of
+         the data item that follows.
+
+     BOLD
+         prints data in bold print.  SQL*Plus represents bold print on your
+         terminal by repeating the data on three consecutive lines.  On
+         some operating systems, SQL*Plus may instruct your printer to
+         print bolded text on three consecutive lines, instead of bold.
+
+     FORMAT text
+         specifies a format model that determines the format data items to
+         the next FORMAT clause or the end of the command.  The format
+         model must be a text constant like A10 or $999.  See COLUMN
+         FORMAT for more information on formatting.
+
+         If the datatype of the format model does not match the datatype of
+         a given data item, the FORMAT clause has no effect on that item.
+
+         If no FORMAT model precedes a given data item, SQL*Plus prints
+         NUMBER values in the format specified by SET NUMFORMAT or, if you
+         have not used SET NUMFORMAT, the default format.  SQL*Plus prints
+         DATE values in the default format.
+
+
+ If you don't enter a printspec clause before the first occurrence of text,
+ TTITLE left justifies the text.  SQL*Plus interprets TTITLE in the new
+ form if a valid printspec clause (LEFT, SKIP, COL, and so on) immediately
+ follows the command name.  TTITLE's terms and clauses also apply to
+ the BTITLE command.
+
+ See COLUMN NEW_VALUE for information on printing column and DATE values
+ in the top title.  You can use any number of constants and variables in
+ a printspec.  SQL*Plus displays the constants and variables in the order
+ specified, positioning and formatting each constant or variable by the
+ printspec clause that precedes it.
+
+ Examples: To define "Monthly Analysis" as the top title and left-align it,
+           to center the date, to right-align the page number with a three
+           digit format, and to display "Date in Thousands" in the
+           center of the next line, enter:
+
+               SQL> TTITLE LEFT 'Monthly Analysis' CENTER '11 Mar 88' -
+                  > RIGHT 'Page:' FORMAT 999 SQL.PNO SKIP CENTER -
+                  > 'Data in Thousands'
+
+           The following title results:
+
+               Monthly Analysis            11 Mar 88             Page: 1
+                                       Data in Thousands
+
+           To suppress the top title display without changing its
+           definition, enter:
+
+               SQL> TTITLE OFF
+
+ See also:  old commands, btitle, set, commands.
+
+UNDEFINE
+
+
+                               UNDEFINE
+
+ UNDEF[INE] variable ...
+
+ UNDEFINE deletes one or more user variables that you defined either
+ explicitly (with the DEFINE command), or implicitly (with a START
+ command argument).
+
+     variable
+         is the name of the user variable you wish to delete. One or more
+         user variables may be deleted in the same command.
+
+
+ Example:  To undefine a user variable named POS, enter:
+
+               SQL> UNDEFINE POS
+
+           To undefine two user variables named MYVAR1 and MYVAR2, enter:
+
+               SQL: UNDEFINE MYVAR1 MYVAR2
+
+ See also:  define, start, @, commands.
+
+VARIABLE
+
+
+                             VARIABLE
+
+ VAR[IABLE] [variable [NUMBER|CHAR|CHAR (n)|VARCHAR2 (n)|REFCURSOR]]
+
+ VARIABLE declares a bind variable that can then be referenced in
+ PL/SQL.  VARIABLE with no arguments displays a list of all the
+ variables declared in the session.  VARIABLE followed by a name
+ lists that variable.
+
+     variable
+         represents the name of the bind variable you wish to create.
+
+     NUMBER
+         creates a variable of type NUMBER with a fixed length.
+
+     CHAR
+         creates a variable of type CHAR with a length of one.
+
+     CHAR (n)
+         creates a variable of type CHAR with a maximum length
+         of n, up to 255.
+
+     VARCHAR2 (n)
+         creates a variable of type VARCHAR2 with a maximum length
+         of n, up to 2000.
+
+     REFCURSOR
+         creates a variable of type REFCURSOR.
+
+ Bind variables may be used as parameters to stored procedures,
+ or may be directly referenced in anonymous PL/SQL blocks.
+
+ To display the value of a bind variable created with VARIABLE,
+ use the PRINT command.
+
+ To automatically display the value of a bind variable created
+ with VARIABLE, use the SET AUTOPRINT command.
+
+ Bind variables cannot be used in the COPY command or SQL
+ statements, except in PL/SQL blocks.  Instead, use substitution
+ variables.
+
+ SQL*Plus REFCURSOR bind variables may be used to reference
+ PL/SQL 2.2 Cursor Variables, allowing PL/SQL output to be
+ formatted by SQL*Plus.
+
+ When you execute a VARIABLE command, SQL*Plus opens a cursor
+ for each REFCURSOR bind variable.  SQL*Plus closes the cursor
+ after completing a PRINT statement for that bind variable, or
+ on exit.  Subsequent PL/SQL blocks referencing the REFCURSOR
+ bind variable in an OPEN ... FOR statement will automatically
+ open the cursor.
+
+ SQL*Plus formatting commands such as BREAK, COLUMN, COMPUTE and
+ SET may be used to format the output from PRINTing a REFCURSOR.
+
+ A REFCURSOR bind variable may not be PRINTed more than once
+ without re-executing the PL/SQL OPEN ... FOR statement.
+
+
+ Example:  The following example illustrates creating a bind variable
+ and then setting it to a value returned by a function:
+
+              SQL> VARIABLE id NUMBER
+              SQL> BEGIN
+                2    :id := emp_management.hire
+                3      ('BLAKE','MANAGER','KING',2990,'SALES');
+                4  END;
+
+ The following example automatically displays a bind variable:
+
+              SQL> SET AUTOPRINT ON
+              SQL> VARIABLE a REFCURSOR
+              SQL> BEGIN
+                2  OPEN :a FOR SELECT * FROM DEPT ORDER BY DEPTNO;
+                3  END;
+                4  /
+
+              PL/SQL procedure successfully completed.
+
+              DEPTNO   DNAME         LOC
+              -------- ------------- -------------
+                    10 ACCOUNTING    NEW YORK
+                    20 RESEARCH      DALLAS
+                    30 SALES         CHICAGO
+                    40 OPERATIONS    BOSTON
+
+ The following example creates some variables and lists them:
+
+              SQL> VARIABLE id NUMBER
+              SQL> VARIABLE txt CHAR (20)
+              SQL> VARIABLE myvar REFCURSOR
+              SQL> VARIABLE
+              variable id
+              datatype number
+
+              variable txt
+              datatype CHAR(20)
+
+              variable myvar
+              datatype REFCURSOR
+
+ The following example lists a single variable:
+
+              SQL> VARIABLE txt
+              variable txt
+              datatype CHAR(20)
+
+ The following example illustrates producing a report listing
+ individual salaries and computing the departmental and total
+ salary cost:
+
+              SQL> VARIABLE RC REFCURSOR
+              SQL> DECLARE
+                2  TYPE EMPSALTYPE IS RECORD (DNAME VARCHAR2(14),
+                3        ENAME VARCHAR2(10),
+                4        SAL NUMBER(7));
+                5        TYPE RCT IS REF CURSOR RETURN EMPSALTYPE;
+                6  LOC_RC RCT;
+                7  BEGIN
+                8  LOC_RC := :RC;
+                9  OPEN LOC_RC FOR SELECT DNAME, ENAME, SAL
+               10        FROM EMP, DEPT
+               11        WHERE EMP.DEPTNO = DEPT.DEPTNO
+               12        ORDER BY EMP.DEPTNO, ENAME;
+               13  END;
+               14  /
+
+              PL/SQL procedure successfully completed.
+
+              SQL> SET PAGESIZE 100 FEEDBACK OFF
+              SQL> TTITLE LEFT '*** Departmental Salary Bill *** ' SKIP 2
+              SQL> COLUMN SAL FORMAT $999,990.99 HEADING 'Salary'
+              SQL> COLUMN DNAME HEADING 'Department'
+              SQL> COLUMN ENAME HEADING 'Employee'
+              SQL> COMPUTE SUM LABEL 'Subtotal:' OF SAL ON DNAME
+              SQL> COMPUTE SUM LABEL 'Total:' OF SAL ON REPORT
+              SQL> BREAK ON DNAME SKIP 1 ON REPORT SKIP 1
+              SQL> PRINT RC
+
+              *** Departmental Salary Bill ***
+
+
+              Department     Employee         Salary
+              -------------- ---------- ------------
+              ACCOUNTING     CLARK         $2,450.00
+                             KING          $5,000.00
+                             MILLER        $1,300.00
+              **************            ------------
+              Subtotal:                    $8,750.00
+
+              RESEARCH       ADAMS         $1,100.00
+                             FORD          $3,000.00
+                             JONES         $2,975.00
+                             SCOTT         $3,000.00
+                             SMITH           $800.00
+              **************            ------------
+              Subtotal:                   $10,875.00
+
+              SALES          ALLEN         $1,600.00
+                             BLAKE         $2,850.00
+                             JAMES           $950.00
+                             MARTIN        $1,250.00
+                             TURNER        $1,500.00
+                             WARD          $1,250.00
+              **************            ------------
+              Subtotal:                    $9,400.00
+
+                                        ------------
+              Total:                      $29,025.00
+
+ See also:  print, set autoprint, set serveroutput.
+
+VARIABLES
+
+
+                              Variables
+
+ Use variables to store the results of a query, or to calculate
+ values to insert into tables. You can declare a variable to be
+ of any SQL or PL/SQL datatype: NUMBER, CHAR, VARCHAR2, DATE, or BOOLEAN.
+ Examples: balance NUMBER(5,2);  wkphone CHAR(12);  sex BOOLEAN
+
+ You can also create bind variables in SQL*Plus with the VARIABLE
+ command.  Bind variables can be referenced in PL/SQL and displayed
+ in SQL*Plus (using the PRINT command).  Bind variables can be of type
+ NUMBER, CHAR, CHAR (n), or VARCHAR2 (n).  Bind variables are
+ useful for storing return codes and debugging your PL/SQL because you
+ can display their values in SQL*Plus.
+
+ There are two ways you can assign values to a variable:
+   1 - use := (assignment operator)    discount := price * 0.15
+
+   2 - SELECT or FETCH table values INTO a variable:
+               SELECT price * 0.15 INTO discount FROM pricelist
+               WHERE stockdate <= SYSDATE - 60
+
+ To declare a constant, put CONSTANT  after the name and assign
+ its value immediately: discount  CONSTANT NUMBER(2,2) := 0.15;
+
+ See also: declare, number, char, varchar2, date, boolean, select into,
+           fetch, variable, print
+
+WHENEVER OSERROR
+
+
+                             WHENEVER OSERROR
+
+ WHENEVER OSERROR {EXIT [SUCCESS|FAILURE|n|variable]
+    [COMMIT|ROLLBACK]|CONTINUE [COMMIT|ROLLBACK|NONE]}
+
+ WHENEVER OSERROR exits SQL*Plus if an operating system error occurs,
+ (such as a file I/O error).
+
+     EXIT [SUCCESS|FAILURE|n|variable]
+         directs SQL*Plus to exit as soon as an operating system error
+         is detected.  You can also specify whether SQL*Plus should
+         return a success or failure code, the operating system failure
+         code, or a number or variable of your choice.
+
+     CONTINUE
+         turns off the EXIT option.
+
+     COMMIT
+         directs SQL*Plus to execute a COMMIT before exiting or
+         continuing and save pending changes to the database.
+
+     ROLLBACK
+         directs SQL*Plus to execute a ROLLBACK before exiting or
+         continuing and abandon pending changes to the database.
+
+     NONE
+         directs SQL*Plus to take no action before continuing.
+         NONE is only valid with CONTINUE.
+
+ If you do not enter the WHENEVER OSERROR command, the default
+ behavior of SQL*Plus is to continue and take no action when an
+ operating system error occurs.
+
+ Examples:  The commands in the following command file cause
+            SQL*Plus to exit and COMMIT any pending changes if an
+            error occurs when writing to the output file:
+
+                 WHENEVER OSERROR EXIT SQL.OSCODE COMMIT
+                 SPOOL MYLOG
+                 UPDATE EMP SET SAL = SAL*1.1
+                 COPY TO SCOTT/TIGER@HQDB -
+                 REPLACE EMP -
+                 USING SELECT * FROM EMP
+                 SPOOL OUT
+                 SELECT SAL FROM EMP
+
+ See also:  whenever sqlerror, exit.
+
+WHENEVER SQLERROR
+
+
+                             WHENEVER SQLERROR
+
+ WHENEVER SQLERROR {EXIT [SUCCESS|FAILURE|WARNING|n|variable]
+    [COMMIT|ROLLBACK]|CONTINUE [COMMIT|ROLLBACK|NONE]}
+
+ Exits SQL*Plus if a SQL command or PL/SQL block generates an error.
+
+     EXIT [SUCCESS|FAILURE|WARNING|n|variable]
+         directs SQL*Plus to exit as soon as it detects any SQL
+         command or PL/SQL block error (but after printing the
+         error message).
+
+     CONTINUE
+         turns off the EXIT option.
+
+     COMMIT
+         directs SQL*Plus to execute a COMMIT before exiting or
+         continuing and save pending changes to the database.
+
+     ROLLBACK
+         directs SQL*Plus to execute a ROLLBACK before exiting or
+         continuing and abandon pending changes to the database.
+
+     NONE
+         directs SQL*Plus to take no action before continuing.
+
+ The WHENEVER SQLERROR command is triggered by SQL command or PL/SQL
+ block errors, and not by SQL*Plus command errors.
+
+ If you do not enter the WHENEVER SQLERROR command, the default
+ behavior of SQL*Plus is to continue and take no action when a
+ SQL error occurs.
+
+ Examples:  The commands in the following command file cause
+            SQL*Plus to exit before the COPY command and return
+            the SQL error code if the SQL UPDATE command fails:
+
+                 WHENEVER SQLERROR EXIT SQL.SQLCODE
+                 UPDATE EMP SET SAL = SAL*1.1
+                 COPY TO SCOTT/TIGER@D:BETHESDA -
+                 REPLACE EMP -
+                 USING SELECT * FROM EMP
+                 WHENEVER SQLERROR CONTINUE
+
+ See also:  whenever oserror, exit.
+
