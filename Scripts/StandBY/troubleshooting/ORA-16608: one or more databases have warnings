@@ -1,0 +1,59 @@
+DGMGRL> show configuration
+
+Configuration
+  Name:                bdbpm_active_dg
+  Enabled:             YES
+  Protection Mode:     MaxPerformance
+  Fast-Start Failover: DISABLED
+  Databases:
+    bdbpmc - Physical standby database
+    bdbpm  - Primary database
+
+Current status for "bdbpm_active_dg":
+Warning: ORA-16608: one or more databases have warnings
+
+SOLUTION: DISABLE/ENBLE CONFIGURATION
+[oracle@rssbbdbpm01] /home/oracle > 
+[oracle@rssbbdbpm01] /home/oracle > dgmgrl
+DGMGRL for IBM/AIX RISC System/6000: Version 10.2.0.5.0 - 64bit Production
+
+Copyright (c) 2000, 2005, Oracle. All rights reserved.
+
+Welcome to DGMGRL, type "help" for information.
+DGMGRL> 
+DGMGRL> connect sys
+Password:
+Connected.
+DGMGRL> 
+DGMGRL> disable configuration
+Disabled.
+DGMGRL> show configuration
+
+Configuration
+  Name:                bdbpm_active_dg
+  Enabled:             NO
+  Protection Mode:     MaxPerformance
+  Fast-Start Failover: DISABLED
+  Databases:
+    bdbpmc - Physical standby database
+    bdbpm  - Primary database
+
+Current status for "bdbpm_active_dg":
+DISABLED
+
+DGMGRL> enable configuration
+Enabled.
+DGMGRL> show configuration
+
+Configuration
+  Name:                bdbpm_active_dg
+  Enabled:             YES
+  Protection Mode:     MaxPerformance
+  Fast-Start Failover: DISABLED
+  Databases:
+    bdbpmc - Physical standby database
+    bdbpm  - Primary database
+
+Current status for "bdbpm_active_dg":
+SUCCESS
+
