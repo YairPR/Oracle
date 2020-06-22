@@ -16,5 +16,5 @@ select  substr(name,instr(name,'/',-1)+1) namedf, a.BYTES/1024/1024/1024 as size
 from v$datafile a
 where a.name like '&location_fs%'
 order by 2 desc )
-WHERE rownum < 21
+WHERE rownum < 16
 /
