@@ -1,3 +1,4 @@
+-- ingresar parametro: nombre filesystem ejemplo /u05
 ACCEPT location_fs CHAR PROMPT 'Ingresar ruta para evaluar datafiles >'
 set line 300
 column name format a100
@@ -11,6 +12,6 @@ select a.name namefulldf, substr(name,instr(name,'/',-1)+1) namedf, a.BYTES/1024
 from v$datafile a
 where a.name like '&location_fs%'
 order by 2 desc )
-where rownum < 21
+where rownum < 16
 /
 spool off
