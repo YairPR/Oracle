@@ -1,0 +1,135 @@
+-----------------------------
+Pasos:
+
+- Bajar la BD: shutdown immeidte;
+
+- Borrar archivos del filessytem con el archivo: /oracle/scripts/restore/borrar_archivos.sh
+ Verificar los archivos en cada filesystem esten homologados con producción de lo contrario solicitar homologar filesystem y tambien
+ los espacios en cada fs.
+ 
+ - Subir bd en nomount: startup nomount;
+ 
+ - Ejecutar: /oracle/scripts/restore/sh sube_mount.sh
+ 
+ SQL*Plus: Release 9.2.0.8.0 - Production on Tue Jun 23 14:31:50 2020
+
+Copyright (c) 1982, 2002, Oracle Corporation.  All rights reserved.
+
+
+Connected to:
+Oracle9i Enterprise Edition Release 9.2.0.8.0 - 64bit Production
+With the Partitioning option
+JServer Release 9.2.0.8.0 - Production
+
+ORA-01081: cannot start already-running ORACLE - shut it down first
+Disconnected from Oracle9i Enterprise Edition Release 9.2.0.8.0 - 64bit Production
+With the Partitioning option
+JServer Release 9.2.0.8.0 - Production
+
+Recovery Manager: Release 9.2.0.8.0 - 64bit Production
+
+Copyright (c) 1995, 2002, Oracle Corporation.  All rights reserved.
+
+connected to target database: PROD (not mounted)
+connected to recovery catalog database
+
+RMAN> run
+2> {
+3> allocate channel c1 type 'SBT_TAPE';
+4> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=minerva.rimac.com.pe)';
+5> restore controlfile;
+6> alter database mount;
+7> }
+8> exit;
+allocated channel: c1
+channel c1: sid=13 devtype=SBT_TAPE
+channel c1: NMO v5.0.0.0
+
+sent command to channel: c1
+
+Starting restore at 23-JUN-20
+
+channel c1: starting datafile backupset restore
+channel c1: restoring controlfile
+output filename=/oracle001/oradata/PROD/ctls/control01.ctl
+channel c1: restored backup piece 1
+piece handle=c-4210056700-20200618-02 tag=null params=NULL
+channel c1: restore complete
+replicating controlfile
+input filename=/oracle001/oradata/PROD/ctls/control01.ctl
+output filename=/oracle002/oradata/PROD/ctls/control02.ctl
+output filename=/oracle003/oradata/PROD/ctls/control03.ctl
+Finished restore at 23-JUN-20
+
+database mounted
+released channel: c1
+
+Recovery Manager complete.
+---------------------------------------------------------------------
+
+- Recreate controlfile para eliminar los datafiles que hayan sido creado despues d ela ejecucion segun la fecha a utilizar:
+Ejemplo: en este caso usaremos la fecha 30-05-2020 01:58
+
+----
+RECREAR CONTROLFILE:
+
+Validar dtfile que se han creado despues d el fecha  restaurar
+
+set lines 200 pages 20000
+col file_name for a70
+alter session set nls_date_format = 'yyyy-mm-dd hh24:mi:ss';
+select file#, name file_name, CREATION_TIME
+from v$datafile
+where CREATION_TIME > to_date('2020-05-30 01:50:00', 'yyyy-mm-dd hh24:mi:ss')
+;
+
+
+     FILE# FILE_NAME                                                              CREATION_TIME
+---------- ---------------------------------------------------------------------- -------------------
+       865 /oracle004/oradata/PROD/indx/indx_prod_trans_big_110.dbf               2020-05-30 21:42:01
+       866 /oracle004/oradata/PROD/indx/indx_prod_trans_big_111.dbf               2020-05-30 21:43:33
+       867 /oracle004/oradata/PROD/indx/indx_prod_trans_big_112.dbf               2020-05-30 21:44:49
+       868 /oracle003/oradata/PROD/data/tbsd_eventual_nor_030.dbf                 2020-06-01 07:36:24
+       869 /oracle003/oradata/PROD/data/tbsd_eventual_nor_031.dbf                 2020-06-01 07:37:01
+       870 /oracle003/oradata/PROD/data/tbsd_eventual_nor_032.dbf                 2020-06-01 07:37:11
+       871 /oracle003/oradata/PROD/data/tbsd_eventual_nor_033.dbf                 2020-06-01 07:37:19
+       872 /oracle003/oradata/PROD/data/tbsd_eventual_nor_034.dbf                 2020-06-01 07:37:28
+       873 /oracle003/oradata/PROD/data/tbsd_eventual_nor_035.dbf                 2020-06-01 07:37:37
+       874 /oracle003/oradata/PROD/data/tbsd_eventual_nor_036.dbf                 2020-06-01 07:37:47
+       875 /oracle003/oradata/PROD/data/tbsd_eventual_nor_037.dbf                 2020-06-01 07:37:57
+       876 /oracle005/oradata/PROD/data/tbsd_audit_055.dbf                        2020-06-07 02:33:55
+       877 /oracle005/oradata/PROD/data/data_prod_trans_big_058.dbf               2020-06-09 07:08:34
+       878 /oracle004/oradata/PROD/data/data_prod_trans_big_059.dbf               2020-06-17 21:41:51
+       879 /oracle004/oradata/PROD/data/data_prod_trans_big_060.dbf               2020-06-17 21:43:51
+       880 /oracle004/oradata/PROD/data/data_prod_trans_big_061.dbf               2020-06-17 21:45:28
+       881 /oracle004/oradata/PROD/data/data_prod_trans_big_062.dbf               2020-06-17 21:46:27
+
+SQL> alter database backup controlfile to trace;
+
+Database altered.
+
+SQL> show parameter user_dump_dest
+cd /oracle/admin/PROD/udump
+ls -lrt
+prod_ora_20292092.trc
+edit vi and save *.sql
+-----
+CREATE CONTROLFILE REUSE DATABASE "V11" NORESETLOGS ARCHIVELOG  
+MAXLOGFILES 16  
+MAXLOGMEMBERS 3  
+MAXDATAFILES 100  
+MAXINSTANCES 8  
+MAXLOGHISTORY 292  
+LOGFILE  
+GROUP 1 '/oradata/V11/redo01.log' SIZE 50M,  
+GROUP 2 '/oradata/V11/redo02.log' SIZE 50M,  
+GROUP 3 '/oradata/V11/redo03.log' SIZE 50M  
+DATAFILE  
+'/oradata/V11/system01.dbf',  
+'/oradata/V11/sysaux01.dbf',  
+'/oradata/V11/undotbs01.dbf', 
+'/oradata/V11/user01.dbf'  
+CHARACTER SET WE8MSWIN1252  
+;
+
+
