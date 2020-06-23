@@ -1,0 +1,10 @@
+SELECT SID, SERIAL#, opname, SOFAR, TOTALWORK,
+ROUND(SOFAR/TOTALWORK*100,2) COMPLETE
+FROM   V$SESSION_LONGOPS
+WHERE
+TOTALWORK != 0
+AND    SOFAR != TOTALWORK
+order by 1;
+
+---------------------------------------------
+
