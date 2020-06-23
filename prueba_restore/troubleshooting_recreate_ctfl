@@ -1,0 +1,23 @@
+ERROR:
+
+Starting restore at 17-JUN-20
+
+released channel: c1
+released channel: c2
+released channel: c3
+released channel: c4
+released channel: c5
+released channel: c6
+released channel: c7
+released channel: c8
+RMAN-00571: ===========================================================
+RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+RMAN-00571: ===========================================================
+RMAN-03002: failure of restore command at 06/17/2020 14:51:11
+RMAN-06026: some targets not found - aborting restore
+RMAN-06023: no backup or copy of datafile 867 found to restore
+RMAN-06023: no backup or copy of datafile 866 found to restore
+RMAN-06023: no backup or copy of datafile 865 found to restore
+
+----------------------------------------------------------------------------------------------------
+RECREANDO CONTROLFILE:
