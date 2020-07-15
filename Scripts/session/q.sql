@@ -1,3 +1,10 @@
+-- Muestra sesiones activas, 
+/*
+OS_DB_USER           SID_SERIAL     LAST_EXE MODULE                           QUERY                          MACHINE              LOGON_TIME        PROGRAM                                 LAST_CALL KILL_PID
+-------------------- -------------- -------- -------------------------------- ------------------------------ -------------------- ----------------- ------------------------------------- ----------- ----------------
+ORACLE SYS           2221,1         06:41:10                                  @s 00 0                        rsdcpdbprod01        20-07-05 06:41:11 oracle@rsdcpdbprod01 (O0-                  146,12 kill -9 66257660
+*/
+
 set linesize 2000 pagesize 20000 feedback on
 set linesize 2000 pagesize 20000 feedback on
 col os_db_user for a20
