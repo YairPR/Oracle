@@ -7,7 +7,8 @@ owner as "Schema"
 , round(bytes/1024/1024,2) as "Object Size (Mb)"
 , tablespace_name as "Tablespace"
 from dba_segments
-where segment_name=’<table_name>’;
+where segment_name='&table_name';
+
 For oracle table size in GB
 
 select
