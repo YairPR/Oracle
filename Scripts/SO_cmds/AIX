@@ -18,6 +18,11 @@ tkprof "nombredeltrace.trc" "output.txt" sys=n waits=y sort=exeela,fchela,prsela
 delete AUD
 find /oracle/admin/testP/adump/*.aud -mtime +5 -exec rm {} \;
 
+for i in /dir_in_question/20051008/*
+do
+  rm $i
+done
+
 How to list the most biggest directory on AIX
 du -sk ./* | sort -rn | head -5
 
