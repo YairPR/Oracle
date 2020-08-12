@@ -2,6 +2,21 @@
 
 expdp \"/ as sysdba\" SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
 
+
+SQL> create directory DMPEXP as '/gold_fs/backup/data';
+
+Directory created.
+
+SQL> grant read, write on directory DMPEXP to SYS;
+
+Grant succeeded.
+
+SQL> exit
+Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bit Production
+With the Automatic Storage Management option
+oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
+
+
 EXPORT:
 
 -- 9i
