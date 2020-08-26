@@ -1,0 +1,938 @@
+Recovery Manager: Release 11.2.0.4.0 - Production on Wed Aug 26 11:42:16 2020
+
+Copyright (c) 1982, 2011, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: BDCONTA (not mounted)
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> allocate channel c2 type 'SBT_TAPE';
+4> allocate channel c3 type 'SBT_TAPE';
+5> allocate channel c4 type 'SBT_TAPE';
+6> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rsdcpdbconta01.rimac.com.pe)';
+7> set until time "to_date('2020-07-26 21:31:00', 'yyyy-mm-dd hh24:mi:ss')";
+8> restore controlfile;
+9> sql 'ALTER DATABASE MOUNT';
+10> restore database;
+11> recover database;
+12> release channel c1;
+13> release channel c2;
+14> release channel c3;
+15> release channel c4;
+16> }
+17> 
+allocated channel: c1
+channel c1: SID=259 instance=BDCONTA1 device type=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+allocated channel: c2
+channel c2: SID=433 instance=BDCONTA1 device type=SBT_TAPE
+channel c2: NMDA Oracle v8.2.4
+
+allocated channel: c3
+channel c3: SID=519 instance=BDCONTA1 device type=SBT_TAPE
+channel c3: NMDA Oracle v8.2.4
+
+allocated channel: c4
+channel c4: SID=605 instance=BDCONTA1 device type=SBT_TAPE
+channel c4: NMDA Oracle v8.2.4
+
+sent command to channel: c1
+sent command to channel: c2
+sent command to channel: c3
+sent command to channel: c4
+
+executing command: SET until clause
+
+Starting restore at 26-AUG-20
+
+channel c1: starting datafile backup set restore
+channel c1: restoring control file
+channel c1: reading from backup piece 16v69qic_1_1
+channel c1: piece handle=16v69qic_1_1 tag=TAG20200726T180252
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+output file name=+DG_DATA/bdconta/controlfile/current.741.1049456321
+output file name=+DG_FRA/bdconta/controlfile/current.889.1049456323
+Finished restore at 26-AUG-20
+
+sql statement: ALTER DATABASE MOUNT
+
+Starting restore at 26-AUG-20
+Starting implicit crosscheck backup at 26-AUG-20
+Finished implicit crosscheck backup at 26-AUG-20
+
+Starting implicit crosscheck copy at 26-AUG-20
+Finished implicit crosscheck copy at 26-AUG-20
+
+searching for all files in the recovery area
+cataloging files...
+no files cataloged
+
+
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00005 to +DG_DATA/bdconta/datafile/users.264.1033559303
+channel c1: restoring datafile 00023 to +DG_DATA/bdconta/datafile/indx_bdconta_med.285.1033570343
+channel c1: restoring datafile 00044 to +DG_DATA/bdconta/datafile/data_bdconta_big.306.1033570539
+channel c1: restoring datafile 00051 to +DG_DATA/bdconta/datafile/data_bdconta_big.313.1033570651
+channel c1: restoring datafile 00212 to +DG_DATA/bdconta/datafile/indx_bdconta_big.581.1033577115
+channel c1: reading from backup piece full_bdcontap9_1046801698_2098_1
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00118 to +DG_DATA/bdconta/datafile/data_bdconta_big.380.1033571711
+channel c2: restoring datafile 00176 to +DG_DATA/bdconta/datafile/data_bdconta_big.438.1033572675
+channel c2: restoring datafile 00192 to +DG_DATA/bdconta/datafile/indx_bdconta_sma.454.1033575295
+channel c2: restoring datafile 00217 to +DG_DATA/bdconta/datafile/indx_bdconta_big.576.1033577195
+channel c2: restoring datafile 00326 to +DG_DATA/bdconta/datafile/indx_bdconta_big.467.1033579003
+channel c2: reading from backup piece full_bdcontap9_1046801697_2094_1
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00096 to +DG_DATA/bdconta/datafile/data_bdconta_big.358.1033571403
+channel c3: restoring datafile 00101 to +DG_DATA/bdconta/datafile/data_bdconta_big.363.1033571443
+channel c3: restoring datafile 00275 to +DG_DATA/bdconta/datafile/indx_bdconta_big.518.1033578155
+channel c3: restoring datafile 00282 to +DG_DATA/bdconta/datafile/indx_bdconta_big.511.1033578271
+channel c3: restoring datafile 00299 to +DG_DATA/bdconta/datafile/indx_bdconta_big.494.1033578555
+channel c3: restoring datafile 00341 to +DG_DATA/bdconta/datafile/tbs_ogg.257.1040764521
+channel c3: reading from backup piece full_bdcontap9_1046801698_2097_1
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00146 to +DG_DATA/bdconta/datafile/data_bdconta_big.408.1033572173
+channel c4: restoring datafile 00160 to +DG_DATA/bdconta/datafile/data_bdconta_big.422.1033572405
+channel c4: restoring datafile 00191 to +DG_DATA/bdconta/datafile/indx_bdconta_sma.453.1033575279
+channel c4: restoring datafile 00209 to +DG_DATA/bdconta/datafile/indx_bdconta_big.584.1033577067
+channel c4: restoring datafile 00329 to +DG_DATA/bdconta/datafile/indx_bdconta_big.464.1033579053
+channel c4: reading from backup piece full_bdcontap9_1046801698_2095_1
+channel c3: piece handle=full_bdcontap9_1046801698_2097_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:26
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00002 to +DG_DATA/bdconta/datafile/sysaux.260.1033559295
+channel c3: restoring datafile 00030 to +DG_DATA/bdconta/datafile/data_bdconta_sma.292.1033570415
+channel c3: restoring datafile 00063 to +DG_DATA/bdconta/datafile/data_bdconta_big.325.1033570853
+channel c3: restoring datafile 00199 to +DG_DATA/bdconta/datafile/indx_bdconta_big.461.1033576903
+channel c3: restoring datafile 00307 to +DG_DATA/bdconta/datafile/indx_bdconta_big.486.1033578687
+channel c3: reading from backup piece full_bdcontap9_1046801698_2099_1
+channel c1: piece handle=full_bdcontap9_1046801698_2098_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:11:52
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00003 to +DG_DATA/bdconta/datafile/undotbs1.261.1033559297
+channel c1: restoring datafile 00040 to +DG_DATA/bdconta/datafile/data_bdconta_aud.302.1033570509
+channel c1: restoring datafile 00113 to +DG_DATA/bdconta/datafile/data_bdconta_big.375.1033571627
+channel c1: restoring datafile 00153 to +DG_DATA/bdconta/datafile/data_bdconta_big.415.1033572287
+channel c1: restoring datafile 00240 to +DG_DATA/bdconta/datafile/indx_bdconta_big.553.1033577573
+channel c1: reading from backup piece full_bdcontap9_1046801698_2096_1
+channel c4: piece handle=full_bdcontap9_1046801698_2095_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:12:38
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00037 to +DG_DATA/bdconta/datafile/data_bdconta_sma.299.1033570459
+channel c4: restoring datafile 00142 to +DG_DATA/bdconta/datafile/data_bdconta_big.404.1033572109
+channel c4: restoring datafile 00203 to +DG_DATA/bdconta/datafile/indx_bdconta_big.590.1033576969
+channel c4: restoring datafile 00248 to +DG_DATA/bdconta/datafile/indx_bdconta_big.545.1033577701
+channel c4: restoring datafile 00340 to +DG_DATA/bdconta/datafile/undotbs.602.1034014441
+channel c4: reading from backup piece full_bdcontap9_1046802929_2102_1
+channel c2: piece handle=full_bdcontap9_1046801697_2094_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:13:14
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00001 to +DG_DATA/bdconta/datafile/system.259.1033559293
+channel c2: restoring datafile 00036 to +DG_DATA/bdconta/datafile/data_bdconta_sma.298.1033570425
+channel c2: restoring datafile 00132 to +DG_DATA/bdconta/datafile/data_bdconta_big.394.1033571943
+channel c2: restoring datafile 00202 to +DG_DATA/bdconta/datafile/indx_bdconta_big.591.1033576953
+channel c2: restoring datafile 00241 to +DG_DATA/bdconta/datafile/indx_bdconta_big.552.1033577589
+channel c2: reading from backup piece full_bdcontap9_1046802913_2101_1
+channel c3: piece handle=full_bdcontap9_1046801698_2099_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:13:33
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00220 to +DG_DATA/bdconta/datafile/indx_bdconta_big.573.1033577243
+channel c3: restoring datafile 00269 to +DG_DATA/bdconta/datafile/indx_bdconta_big.524.1033578055
+channel c3: restoring datafile 00289 to +DG_DATA/bdconta/datafile/indx_bdconta_big.504.1033578389
+channel c3: restoring datafile 00294 to +DG_DATA/bdconta/datafile/indx_bdconta_big.499.1033578471
+channel c3: restoring datafile 00296 to +DG_DATA/bdconta/datafile/indx_bdconta_big.497.1033578505
+channel c3: restoring datafile 00298 to +DG_DATA/bdconta/datafile/indx_bdconta_big.495.1033578539
+channel c3: reading from backup piece full_bdcontap9_1046803204_2105_1
+channel c4: piece handle=full_bdcontap9_1046802929_2102_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:12:22
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00244 to +DG_DATA/bdconta/datafile/indx_bdconta_big.549.1033577637
+channel c4: restoring datafile 00245 to +DG_DATA/bdconta/datafile/indx_bdconta_big.548.1033577653
+channel c4: restoring datafile 00249 to +DG_DATA/bdconta/datafile/indx_bdconta_big.544.1033577719
+channel c4: restoring datafile 00252 to +DG_DATA/bdconta/datafile/indx_bdconta_big.541.1033577769
+channel c4: restoring datafile 00253 to +DG_DATA/bdconta/datafile/indx_bdconta_big.540.1033577787
+channel c4: restoring datafile 00254 to +DG_DATA/bdconta/datafile/indx_bdconta_big.539.1033577803
+channel c4: reading from backup piece full_bdcontap9_1046802969_2104_1
+channel c1: piece handle=full_bdcontap9_1046801698_2096_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:14:34
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00200 to +DG_DATA/bdconta/datafile/indx_bdconta_big.462.1033576921
+channel c1: restoring datafile 00272 to +DG_DATA/bdconta/datafile/indx_bdconta_big.521.1033578105
+channel c1: restoring datafile 00273 to +DG_DATA/bdconta/datafile/indx_bdconta_big.520.1033578123
+channel c1: restoring datafile 00274 to +DG_DATA/bdconta/datafile/indx_bdconta_big.519.1033578139
+channel c1: restoring datafile 00276 to +DG_DATA/bdconta/datafile/indx_bdconta_big.517.1033578171
+channel c1: restoring datafile 00281 to +DG_DATA/bdconta/datafile/indx_bdconta_big.512.1033578255
+channel c1: reading from backup piece full_bdcontap9_1046802913_2100_1
+channel c2: piece handle=full_bdcontap9_1046802913_2101_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:13:49
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00205 to +DG_DATA/bdconta/datafile/indx_bdconta_big.588.1033577003
+channel c2: restoring datafile 00211 to +DG_DATA/bdconta/datafile/indx_bdconta_big.582.1033577099
+channel c2: restoring datafile 00215 to +DG_DATA/bdconta/datafile/indx_bdconta_big.578.1033577163
+channel c2: restoring datafile 00219 to +DG_DATA/bdconta/datafile/indx_bdconta_big.574.1033577227
+channel c2: restoring datafile 00225 to +DG_DATA/bdconta/datafile/indx_bdconta_big.568.1033577325
+channel c2: restoring datafile 00226 to +DG_DATA/bdconta/datafile/indx_bdconta_big.567.1033577343
+channel c2: reading from backup piece full_bdcontap9_1046802954_2103_1
+channel c4: piece handle=full_bdcontap9_1046802969_2104_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:10:57
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00083 to +DG_DATA/bdconta/datafile/data_bdconta_big.345.1033571187
+channel c4: restoring datafile 00180 to +DG_DATA/bdconta/datafile/data_bdconta_big.442.1033572739
+channel c4: restoring datafile 00297 to +DG_DATA/bdconta/datafile/indx_bdconta_big.496.1033578523
+channel c4: restoring datafile 00321 to +DG_DATA/bdconta/datafile/indx_bdconta_big.472.1033578917
+channel c4: reading from backup piece full_bdcontap9_1046804049_2106_1
+channel c1: piece handle=full_bdcontap9_1046802913_2100_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:10:57
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00091 to +DG_DATA/bdconta/datafile/data_bdconta_big.353.1033571321
+channel c1: restoring datafile 00181 to +DG_DATA/bdconta/datafile/data_bdconta_big.443.1033572757
+channel c1: restoring datafile 00258 to +DG_DATA/bdconta/datafile/indx_bdconta_big.535.1033577871
+channel c1: restoring datafile 00311 to +DG_DATA/bdconta/datafile/indx_bdconta_big.482.1033578753
+channel c1: reading from backup piece full_bdcontap9_1046804185_2109_1
+channel c3: piece handle=full_bdcontap9_1046803204_2105_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:12:25
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00105 to +DG_DATA/bdconta/datafile/data_bdconta_big.367.1033571495
+channel c3: restoring datafile 00182 to +DG_DATA/bdconta/datafile/data_bdconta_big.444.1033572773
+channel c3: restoring datafile 00259 to +DG_DATA/bdconta/datafile/indx_bdconta_big.534.1033577887
+channel c3: restoring datafile 00320 to +DG_DATA/bdconta/datafile/indx_bdconta_big.473.1033578901
+channel c3: reading from backup piece full_bdcontap9_1046804250_2110_1
+channel c2: piece handle=full_bdcontap9_1046802954_2103_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:58
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00122 to +DG_DATA/bdconta/datafile/data_bdconta_big.384.1033571779
+channel c2: restoring datafile 00183 to +DG_DATA/bdconta/datafile/data_bdconta_big.445.1033572791
+channel c2: restoring datafile 00261 to +DG_DATA/bdconta/datafile/indx_bdconta_big.532.1033577921
+channel c2: restoring datafile 00322 to +DG_DATA/bdconta/datafile/indx_bdconta_big.471.1033578933
+channel c2: reading from backup piece full_bdcontap9_1046804375_2111_1
+channel c4: piece handle=full_bdcontap9_1046804049_2106_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:12:38
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00038 to +DG_DATA/bdconta/datafile/data_bdconta_sma.300.1033570475
+channel c4: restoring datafile 00041 to +DG_DATA/bdconta/datafile/data_bdconta_aud.303.1033570517
+channel c4: restoring datafile 00170 to +DG_DATA/bdconta/datafile/data_bdconta_big.432.1033572573
+channel c4: restoring datafile 00206 to +DG_DATA/bdconta/datafile/indx_bdconta_big.587.1033577017
+channel c4: restoring datafile 00260 to +DG_DATA/bdconta/datafile/indx_bdconta_big.533.1033577905
+channel c4: reading from backup piece full_bdcontap9_1046804105_2107_1
+channel c3: piece handle=full_bdcontap9_1046804250_2110_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:37
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00124 to +DG_DATA/bdconta/datafile/data_bdconta_big.386.1033571811
+channel c3: restoring datafile 00184 to +DG_DATA/bdconta/datafile/data_bdconta_big.446.1033572807
+channel c3: restoring datafile 00278 to +DG_DATA/bdconta/datafile/indx_bdconta_big.515.1033578203
+channel c3: restoring datafile 00327 to +DG_DATA/bdconta/datafile/indx_bdconta_big.466.1033579019
+channel c3: reading from backup piece full_bdcontap9_1046804731_2112_1
+channel c1: piece handle=full_bdcontap9_1046804185_2109_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:11:54
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00042 to +DG_DATA/bdconta/datafile/data_bdconta_aud.304.1033570519
+channel c1: restoring datafile 00093 to +DG_DATA/bdconta/datafile/data_bdconta_big.355.1033571355
+channel c1: restoring datafile 00129 to +DG_DATA/bdconta/datafile/data_bdconta_big.391.1033571893
+channel c1: restoring datafile 00173 to +DG_DATA/bdconta/datafile/data_bdconta_big.435.1033572623
+channel c1: restoring datafile 00283 to +DG_DATA/bdconta/datafile/indx_bdconta_big.510.1033578289
+channel c1: reading from backup piece full_bdcontap9_1046804150_2108_1
+channel c2: piece handle=full_bdcontap9_1046804375_2111_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:11:34
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00140 to +DG_DATA/bdconta/datafile/data_bdconta_big.402.1033572077
+channel c2: restoring datafile 00187 to +DG_DATA/bdconta/datafile/data_bdconta_big.449.1033572857
+channel c2: restoring datafile 00295 to +DG_DATA/bdconta/datafile/indx_bdconta_big.498.1033578489
+channel c2: restoring datafile 00330 to +DG_DATA/bdconta/datafile/indx_bdconta_big.463.1033579069
+channel c2: reading from backup piece full_bdcontap9_1046805031_2114_1
+channel c4: piece handle=full_bdcontap9_1046804105_2107_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:11:43
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00139 to +DG_DATA/bdconta/datafile/data_bdconta_big.401.1033572061
+channel c4: restoring datafile 00185 to +DG_DATA/bdconta/datafile/data_bdconta_big.447.1033572823
+channel c4: restoring datafile 00293 to +DG_DATA/bdconta/datafile/indx_bdconta_big.500.1033578455
+channel c4: restoring datafile 00328 to +DG_DATA/bdconta/datafile/indx_bdconta_big.465.1033579035
+channel c4: reading from backup piece full_bdcontap9_1046804986_2113_1
+channel c3: piece handle=full_bdcontap9_1046804731_2112_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:53
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00148 to +DG_DATA/bdconta/datafile/data_bdconta_big.410.1033572205
+channel c3: restoring datafile 00246 to +DG_DATA/bdconta/datafile/indx_bdconta_big.547.1033577669
+channel c3: restoring datafile 00323 to +DG_DATA/bdconta/datafile/indx_bdconta_big.470.1033578951
+channel c3: restoring datafile 00332 to +DG_DATA/bdconta/datafile/indx_bdconta_big.594.1033579103
+channel c3: reading from backup piece full_bdcontap9_1046805312_2118_1
+channel c1: piece handle=full_bdcontap9_1046804150_2108_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:12:13
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00068 to +DG_DATA/bdconta/datafile/data_bdconta_big.330.1033570937
+channel c1: restoring datafile 00070 to +DG_DATA/bdconta/datafile/data_bdconta_big.332.1033570971
+channel c1: restoring datafile 00076 to +DG_DATA/bdconta/datafile/data_bdconta_big.338.1033571073
+channel c1: restoring datafile 00257 to +DG_DATA/bdconta/datafile/indx_bdconta_big.536.1033577853
+channel c1: reading from backup piece full_bdcontap9_1046805612_2120_1
+channel c2: piece handle=full_bdcontap9_1046805031_2114_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:12:14
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00024 to +DG_DATA/bdconta/datafile/indx_bdconta_med.286.1033570359
+channel c2: restoring datafile 00158 to +DG_DATA/bdconta/datafile/data_bdconta_big.420.1033572371
+channel c2: restoring datafile 00179 to +DG_DATA/bdconta/datafile/data_bdconta_big.441.1033572723
+channel c2: restoring datafile 00198 to +DG_DATA/bdconta/datafile/data_bdconta_tools.460.1033575363
+channel c2: restoring datafile 00221 to +DG_DATA/bdconta/datafile/indx_bdconta_big.572.1033577259
+channel c2: reading from backup piece full_bdcontap9_1046805146_2115_1
+channel c4: piece handle=full_bdcontap9_1046804986_2113_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:12:23
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00145 to +DG_DATA/bdconta/datafile/data_bdconta_big.407.1033572155
+channel c4: restoring datafile 00188 to +DG_DATA/bdconta/datafile/data_bdconta_big.450.1033572873
+channel c4: restoring datafile 00237 to +DG_DATA/bdconta/datafile/indx_bdconta_big.556.1033577525
+channel c4: restoring datafile 00310 to +DG_DATA/bdconta/datafile/indx_bdconta_big.483.1033578737
+channel c4: reading from backup piece full_bdcontap9_1046805257_2117_1
+channel c3: piece handle=full_bdcontap9_1046805312_2118_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:51
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00035 to +DG_DATA/bdconta/datafile/data_bdconta_sma.297.1033570425
+channel c3: restoring datafile 00099 to +DG_DATA/bdconta/datafile/data_bdconta_big.361.1033571437
+channel c3: restoring datafile 00128 to +DG_DATA/bdconta/datafile/data_bdconta_big.390.1033571877
+channel c3: restoring datafile 00196 to +DG_DATA/bdconta/datafile/indx_bdconta_tools.458.1033575361
+channel c3: restoring datafile 00263 to +DG_DATA/bdconta/datafile/indx_bdconta_big.530.1033577953
+channel c3: reading from backup piece full_bdcontap9_1046805221_2116_1
+channel c2: piece handle=full_bdcontap9_1046805146_2115_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:11:46
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00163 to +DG_DATA/bdconta/datafile/data_bdconta_big.425.1033572457
+channel c2: restoring datafile 00251 to +DG_DATA/bdconta/datafile/indx_bdconta_big.542.1033577753
+channel c2: restoring datafile 00324 to +DG_DATA/bdconta/datafile/indx_bdconta_big.469.1033578969
+channel c2: restoring datafile 00334 to +DG_DATA/bdconta/datafile/indx_bdconta_big.596.1033579135
+channel c2: reading from backup piece full_bdcontap9_1046805587_2119_1
+channel c1: piece handle=full_bdcontap9_1046805612_2120_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:12:26
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00069 to +DG_DATA/bdconta/datafile/data_bdconta_big.331.1033570955
+channel c1: restoring datafile 00078 to +DG_DATA/bdconta/datafile/data_bdconta_big.340.1033571105
+channel c1: restoring datafile 00154 to +DG_DATA/bdconta/datafile/data_bdconta_big.416.1033572303
+channel c1: restoring datafile 00262 to +DG_DATA/bdconta/datafile/indx_bdconta_big.531.1033577937
+channel c1: reading from backup piece full_bdcontap9_1046805898_2121_1
+channel c3: piece handle=full_bdcontap9_1046805221_2116_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:16
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00079 to +DG_DATA/bdconta/datafile/data_bdconta_big.341.1033571123
+channel c3: restoring datafile 00135 to +DG_DATA/bdconta/datafile/data_bdconta_big.397.1033571993
+channel c3: restoring datafile 00155 to +DG_DATA/bdconta/datafile/data_bdconta_big.417.1033572319
+channel c3: restoring datafile 00266 to +DG_DATA/bdconta/datafile/indx_bdconta_big.527.1033578003
+channel c3: reading from backup piece full_bdcontap9_1046806163_2122_1
+channel c4: piece handle=full_bdcontap9_1046805257_2117_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:11:21
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00075 to +DG_DATA/bdconta/datafile/data_bdconta_big.337.1033571055
+channel c4: restoring datafile 00108 to +DG_DATA/bdconta/datafile/data_bdconta_big.370.1033571545
+channel c4: restoring datafile 00136 to +DG_DATA/bdconta/datafile/data_bdconta_big.398.1033572009
+channel c4: restoring datafile 00277 to +DG_DATA/bdconta/datafile/indx_bdconta_big.516.1033578187
+channel c4: reading from backup piece full_bdcontap9_1046806178_2123_1
+channel c2: piece handle=full_bdcontap9_1046805587_2119_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:58
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00053 to +DG_DATA/bdconta/datafile/data_bdconta_big.315.1033570683
+channel c2: restoring datafile 00060 to +DG_DATA/bdconta/datafile/data_bdconta_big.322.1033570803
+channel c2: restoring datafile 00175 to +DG_DATA/bdconta/datafile/data_bdconta_big.437.1033572657
+channel c2: restoring datafile 00292 to +DG_DATA/bdconta/datafile/indx_bdconta_big.501.1033578437
+channel c2: reading from backup piece full_bdcontap9_1046806328_2125_1
+channel c1: piece handle=full_bdcontap9_1046805898_2121_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:12:07
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00077 to +DG_DATA/bdconta/datafile/data_bdconta_big.339.1033571089
+channel c1: restoring datafile 00088 to +DG_DATA/bdconta/datafile/data_bdconta_big.350.1033571269
+channel c1: restoring datafile 00094 to +DG_DATA/bdconta/datafile/data_bdconta_big.356.1033571371
+channel c1: restoring datafile 00302 to +DG_DATA/bdconta/datafile/indx_bdconta_big.491.1033578605
+channel c1: reading from backup piece full_bdcontap9_1046806384_2126_1
+channel c3: piece handle=full_bdcontap9_1046806163_2122_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:18
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00050 to +DG_DATA/bdconta/datafile/data_bdconta_big.312.1033570635
+channel c3: restoring datafile 00059 to +DG_DATA/bdconta/datafile/data_bdconta_big.321.1033570787
+channel c3: restoring datafile 00167 to +DG_DATA/bdconta/datafile/data_bdconta_big.429.1033572525
+channel c3: restoring datafile 00290 to +DG_DATA/bdconta/datafile/indx_bdconta_big.503.1033578405
+channel c3: reading from backup piece full_bdcontap9_1046806203_2124_1
+channel c2: piece handle=full_bdcontap9_1046806328_2125_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:11:00
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00092 to +DG_DATA/bdconta/datafile/data_bdconta_big.354.1033571337
+channel c2: restoring datafile 00095 to +DG_DATA/bdconta/datafile/data_bdconta_big.357.1033571387
+channel c2: restoring datafile 00130 to +DG_DATA/bdconta/datafile/data_bdconta_big.392.1033571909
+channel c2: restoring datafile 00304 to +DG_DATA/bdconta/datafile/indx_bdconta_big.489.1033578635
+channel c2: reading from backup piece full_bdcontap9_1046806529_2127_1
+channel c4: piece handle=full_bdcontap9_1046806178_2123_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:11:26
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00066 to +DG_DATA/bdconta/datafile/data_bdconta_big.328.1033570903
+channel c4: restoring datafile 00098 to +DG_DATA/bdconta/datafile/data_bdconta_big.360.1033571421
+channel c4: restoring datafile 00152 to +DG_DATA/bdconta/datafile/data_bdconta_big.414.1033572271
+channel c4: restoring datafile 00238 to +DG_DATA/bdconta/datafile/indx_bdconta_big.555.1033577543
+channel c4: reading from backup piece full_bdcontap9_1046806859_2129_1
+channel c1: piece handle=full_bdcontap9_1046806384_2126_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:11:00
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00058 to +DG_DATA/bdconta/datafile/data_bdconta_big.320.1033570771
+channel c1: restoring datafile 00080 to +DG_DATA/bdconta/datafile/data_bdconta_big.342.1033571139
+channel c1: restoring datafile 00103 to +DG_DATA/bdconta/datafile/data_bdconta_big.365.1033571461
+channel c1: restoring datafile 00233 to +DG_DATA/bdconta/datafile/indx_bdconta_big.560.1033577457
+channel c1: reading from backup piece full_bdcontap9_1046806734_2128_1
+channel c3: piece handle=full_bdcontap9_1046806203_2124_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:10:30
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00115 to +DG_DATA/bdconta/datafile/data_bdconta_big.377.1033571661
+channel c3: restoring datafile 00131 to +DG_DATA/bdconta/datafile/data_bdconta_big.393.1033571925
+channel c3: restoring datafile 00150 to +DG_DATA/bdconta/datafile/data_bdconta_big.412.1033572237
+channel c3: restoring datafile 00243 to +DG_DATA/bdconta/datafile/indx_bdconta_big.550.1033577621
+channel c3: reading from backup piece full_bdcontap9_1046806997_2132_1
+channel c2: piece handle=full_bdcontap9_1046806529_2127_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:58
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00067 to +DG_DATA/bdconta/datafile/data_bdconta_big.329.1033570921
+channel c2: restoring datafile 00102 to +DG_DATA/bdconta/datafile/data_bdconta_big.364.1033571445
+channel c2: restoring datafile 00161 to +DG_DATA/bdconta/datafile/data_bdconta_big.423.1033572423
+channel c2: restoring datafile 00239 to +DG_DATA/bdconta/datafile/indx_bdconta_big.554.1033577559
+channel c2: reading from backup piece full_bdcontap9_1046806974_2130_1
+channel c4: piece handle=full_bdcontap9_1046806859_2129_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:11:05
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00064 to +DG_DATA/bdconta/datafile/data_bdconta_big.326.1033570871
+channel c4: restoring datafile 00081 to +DG_DATA/bdconta/datafile/data_bdconta_big.343.1033571155
+channel c4: restoring datafile 00112 to +DG_DATA/bdconta/datafile/data_bdconta_big.374.1033571609
+channel c4: restoring datafile 00242 to +DG_DATA/bdconta/datafile/indx_bdconta_big.551.1033577605
+channel c4: reading from backup piece full_bdcontap9_1046806982_2131_1
+channel c1: piece handle=full_bdcontap9_1046806734_2128_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:09:55
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00149 to +DG_DATA/bdconta/datafile/data_bdconta_big.411.1033572221
+channel c1: restoring datafile 00157 to +DG_DATA/bdconta/datafile/data_bdconta_big.419.1033572355
+channel c1: restoring datafile 00166 to +DG_DATA/bdconta/datafile/data_bdconta_big.428.1033572507
+channel c1: restoring datafile 00247 to +DG_DATA/bdconta/datafile/indx_bdconta_big.546.1033577685
+channel c1: reading from backup piece full_bdcontap9_1046806998_2133_1
+channel c1: piece handle=full_bdcontap9_1046806998_2133_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:10:06
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00054 to +DG_DATA/bdconta/datafile/data_bdconta_big.316.1033570701
+channel c1: restoring datafile 00106 to +DG_DATA/bdconta/datafile/data_bdconta_big.368.1033571511
+channel c1: restoring datafile 00116 to +DG_DATA/bdconta/datafile/data_bdconta_big.378.1033571677
+channel c1: restoring datafile 00250 to +DG_DATA/bdconta/datafile/indx_bdconta_big.543.1033577735
+channel c1: reading from backup piece full_bdcontap9_1046807343_2134_1
+channel c3: piece handle=full_bdcontap9_1046806997_2132_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:11:15
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00006 to +DG_DATA/bdconta/datafile/indx_bdconta_med.268.1033570057
+channel c3: restoring datafile 00097 to +DG_DATA/bdconta/datafile/data_bdconta_big.359.1033571405
+channel c3: restoring datafile 00104 to +DG_DATA/bdconta/datafile/data_bdconta_big.366.1033571477
+channel c3: restoring datafile 00134 to +DG_DATA/bdconta/datafile/data_bdconta_big.396.1033571977
+channel c3: reading from backup piece full_bdcontap9_1046807444_2136_1
+channel c4: piece handle=full_bdcontap9_1046806982_2131_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:10:33
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00061 to +DG_DATA/bdconta/datafile/data_bdconta_big.323.1033570821
+channel c4: restoring datafile 00107 to +DG_DATA/bdconta/datafile/data_bdconta_big.369.1033571529
+channel c4: restoring datafile 00174 to +DG_DATA/bdconta/datafile/data_bdconta_big.436.1033572641
+channel c4: restoring datafile 00256 to +DG_DATA/bdconta/datafile/indx_bdconta_big.537.1033577837
+channel c4: reading from backup piece full_bdcontap9_1046807379_2135_1
+channel c2: piece handle=full_bdcontap9_1046806974_2130_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:56
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00056 to +DG_DATA/bdconta/datafile/data_bdconta_big.318.1033570735
+channel c2: restoring datafile 00074 to +DG_DATA/bdconta/datafile/data_bdconta_big.336.1033571039
+channel c2: restoring datafile 00100 to +DG_DATA/bdconta/datafile/data_bdconta_big.362.1033571441
+channel c2: restoring datafile 00121 to +DG_DATA/bdconta/datafile/data_bdconta_big.383.1033571761
+channel c2: reading from backup piece full_bdcontap9_1046807447_2137_1
+channel c1: piece handle=full_bdcontap9_1046807343_2134_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:09:53
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00057 to +DG_DATA/bdconta/datafile/data_bdconta_big.319.1033570753
+channel c1: restoring datafile 00162 to +DG_DATA/bdconta/datafile/data_bdconta_big.424.1033572439
+channel c1: restoring datafile 00169 to +DG_DATA/bdconta/datafile/data_bdconta_big.431.1033572557
+channel c1: restoring datafile 00232 to +DG_DATA/bdconta/datafile/indx_bdconta_big.561.1033577441
+channel c1: reading from backup piece full_bdcontap9_1046807908_2141_1
+channel c2: piece handle=full_bdcontap9_1046807447_2137_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:09:37
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00021 to +DG_DATA/bdconta/datafile/indx_bdconta_med.283.1033570309
+channel c2: restoring datafile 00143 to +DG_DATA/bdconta/datafile/data_bdconta_big.405.1033572125
+channel c2: restoring datafile 00230 to +DG_DATA/bdconta/datafile/indx_bdconta_big.563.1033577407
+channel c2: restoring datafile 00333 to +DG_DATA/bdconta/datafile/indx_bdconta_big.595.1033579119
+channel c2: reading from backup piece full_bdcontap9_1046808053_2142_1
+channel c3: piece handle=full_bdcontap9_1046807444_2136_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:09:54
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00004 to +DG_DATA/bdconta/datafile/undotbs2.263.1033559303
+channel c3: restoring datafile 00172 to +DG_DATA/bdconta/datafile/data_bdconta_big.434.1033572607
+channel c3: restoring datafile 00303 to +DG_DATA/bdconta/datafile/indx_bdconta_big.490.1033578621
+channel c3: restoring datafile 00312 to +DG_DATA/bdconta/datafile/indx_bdconta_big.481.1033578769
+channel c3: reading from backup piece full_bdcontap9_1046807793_2140_1
+channel c4: piece handle=full_bdcontap9_1046807379_2135_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:09:58
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00110 to +DG_DATA/bdconta/datafile/data_bdconta_big.372.1033571575
+channel c4: restoring datafile 00189 to +DG_DATA/bdconta/datafile/data_bdconta_big.451.1033572889
+channel c4: restoring datafile 00300 to +DG_DATA/bdconta/datafile/indx_bdconta_big.493.1033578571
+channel c4: restoring datafile 00306 to +DG_DATA/bdconta/datafile/indx_bdconta_big.487.1033578671
+channel c4: reading from backup piece full_bdcontap9_1046807742_2138_1
+channel c3: piece handle=full_bdcontap9_1046807793_2140_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:09:39
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00043 to +DG_DATA/bdconta/datafile/data_bdconta_big.305.1033570521
+channel c3: restoring datafile 00168 to +DG_DATA/bdconta/datafile/data_bdconta_big.430.1033572541
+channel c3: restoring datafile 00301 to +DG_DATA/bdconta/datafile/indx_bdconta_big.492.1033578589
+channel c3: restoring datafile 00308 to +DG_DATA/bdconta/datafile/indx_bdconta_big.485.1033578703
+channel c3: reading from backup piece full_bdcontap9_1046807757_2139_1
+channel c4: piece handle=full_bdcontap9_1046807742_2138_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:09:37
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00009 to +DG_DATA/bdconta/datafile/indx_bdconta_med.271.1033570109
+channel c4: restoring datafile 00016 to +DG_DATA/bdconta/datafile/indx_bdconta_med.278.1033570225
+channel c4: restoring datafile 00032 to +DG_DATA/bdconta/datafile/data_bdconta_sma.294.1033570419
+channel c4: restoring datafile 00089 to +DG_DATA/bdconta/datafile/data_bdconta_big.351.1033571287
+channel c4: reading from backup piece full_bdcontap9_1046808328_2143_1
+channel c1: piece handle=full_bdcontap9_1046807908_2141_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:09:58
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00137 to +DG_DATA/bdconta/datafile/data_bdconta_big.399.1033572027
+channel c1: restoring datafile 00177 to +DG_DATA/bdconta/datafile/data_bdconta_big.439.1033572691
+channel c1: restoring datafile 00255 to +DG_DATA/bdconta/datafile/indx_bdconta_big.538.1033577819
+channel c1: restoring datafile 00291 to +DG_DATA/bdconta/datafile/indx_bdconta_big.502.1033578421
+channel c1: reading from backup piece full_bdcontap9_1046808773_2144_1
+channel c2: piece handle=full_bdcontap9_1046808053_2142_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:13
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00008 to +DG_DATA/bdconta/datafile/indx_bdconta_med.270.1033570093
+channel c2: restoring datafile 00022 to +DG_DATA/bdconta/datafile/indx_bdconta_med.284.1033570325
+channel c2: restoring datafile 00123 to +DG_DATA/bdconta/datafile/data_bdconta_big.385.1033571793
+channel c2: restoring datafile 00338 to +DG_DATA/bdconta/datafile/indx_bdconta_big.600.1033579199
+channel c2: reading from backup piece full_bdcontap9_1046808914_2146_1
+channel c3: piece handle=full_bdcontap9_1046807757_2139_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:10:37
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00084 to +DG_DATA/bdconta/datafile/data_bdconta_big.346.1033571205
+channel c3: restoring datafile 00090 to +DG_DATA/bdconta/datafile/data_bdconta_big.352.1033571303
+channel c3: restoring datafile 00147 to +DG_DATA/bdconta/datafile/data_bdconta_big.409.1033572189
+channel c3: restoring datafile 00270 to +DG_DATA/bdconta/datafile/indx_bdconta_big.523.1033578071
+channel c3: reading from backup piece full_bdcontap9_1046808915_2147_1
+channel c4: piece handle=full_bdcontap9_1046808328_2143_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:10:53
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00015 to +DG_DATA/bdconta/datafile/indx_bdconta_med.277.1033570209
+channel c4: restoring datafile 00126 to +DG_DATA/bdconta/datafile/data_bdconta_big.388.1033571843
+channel c4: restoring datafile 00210 to +DG_DATA/bdconta/datafile/indx_bdconta_big.583.1033577081
+channel c4: restoring datafile 00339 to +DG_DATA/bdconta/datafile/tbs_ogg.601.1034004783
+channel c4: reading from backup piece full_bdcontap9_1046808799_2145_1
+channel c1: piece handle=full_bdcontap9_1046808773_2144_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:11:02
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00085 to +DG_DATA/bdconta/datafile/data_bdconta_big.347.1033571221
+channel c1: restoring datafile 00120 to +DG_DATA/bdconta/datafile/data_bdconta_big.382.1033571745
+channel c1: restoring datafile 00156 to +DG_DATA/bdconta/datafile/data_bdconta_big.418.1033572337
+channel c1: restoring datafile 00271 to +DG_DATA/bdconta/datafile/indx_bdconta_big.522.1033578089
+channel c1: reading from backup piece full_bdcontap9_1046809030_2148_1
+channel c2: piece handle=full_bdcontap9_1046808914_2146_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:48
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00017 to +DG_DATA/bdconta/datafile/indx_bdconta_med.279.1033570243
+channel c2: restoring datafile 00033 to +DG_DATA/bdconta/datafile/data_bdconta_sma.295.1033570421
+channel c2: restoring datafile 00119 to +DG_DATA/bdconta/datafile/data_bdconta_big.381.1033571729
+channel c2: restoring datafile 00288 to +DG_DATA/bdconta/datafile/indx_bdconta_big.505.1033578373
+channel c2: reading from backup piece full_bdcontap9_1046809205_2149_1
+channel c3: piece handle=full_bdcontap9_1046808915_2147_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:09:57
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00012 to +DG_DATA/bdconta/datafile/indx_bdconta_med.274.1033570159
+channel c3: restoring datafile 00114 to +DG_DATA/bdconta/datafile/data_bdconta_big.376.1033571645
+channel c3: restoring datafile 00313 to +DG_DATA/bdconta/datafile/indx_bdconta_big.480.1033578785
+channel c3: restoring datafile 00331 to +DG_DATA/bdconta/datafile/indx_bdconta_big.593.1033579087
+channel c3: reading from backup piece full_bdcontap9_1046809490_2150_1
+channel c4: piece handle=full_bdcontap9_1046808799_2145_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:09:46
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00045 to +DG_DATA/bdconta/datafile/data_bdconta_big.307.1033570557
+channel c4: restoring datafile 00087 to +DG_DATA/bdconta/datafile/data_bdconta_big.349.1033571253
+channel c4: restoring datafile 00213 to +DG_DATA/bdconta/datafile/indx_bdconta_big.580.1033577131
+channel c4: restoring datafile 00285 to +DG_DATA/bdconta/datafile/indx_bdconta_big.508.1033578321
+channel c4: reading from backup piece full_bdcontap9_1046809566_2151_1
+channel c2: piece handle=full_bdcontap9_1046809205_2149_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:09:46
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00109 to +DG_DATA/bdconta/datafile/data_bdconta_big.371.1033571561
+channel c2: restoring datafile 00190 to +DG_DATA/bdconta/datafile/data_bdconta_big.452.1033572907
+channel c2: restoring datafile 00216 to +DG_DATA/bdconta/datafile/indx_bdconta_big.577.1033577181
+channel c2: restoring datafile 00314 to +DG_DATA/bdconta/datafile/indx_bdconta_big.479.1033578801
+channel c2: reading from backup piece full_bdcontap9_1046809751_2152_1
+channel c1: piece handle=full_bdcontap9_1046809030_2148_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:09:53
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00046 to +DG_DATA/bdconta/datafile/data_bdconta_big.308.1033570571
+channel c1: restoring datafile 00048 to +DG_DATA/bdconta/datafile/data_bdconta_big.310.1033570603
+channel c1: restoring datafile 00218 to +DG_DATA/bdconta/datafile/indx_bdconta_big.575.1033577211
+channel c1: restoring datafile 00317 to +DG_DATA/bdconta/datafile/indx_bdconta_big.476.1033578851
+channel c1: reading from backup piece full_bdcontap9_1046809906_2153_1
+channel c3: piece handle=full_bdcontap9_1046809490_2150_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:10:22
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00049 to +DG_DATA/bdconta/datafile/data_bdconta_big.311.1033570619
+channel c3: restoring datafile 00065 to +DG_DATA/bdconta/datafile/data_bdconta_big.327.1033570887
+channel c3: restoring datafile 00223 to +DG_DATA/bdconta/datafile/indx_bdconta_big.570.1033577293
+channel c3: restoring datafile 00318 to +DG_DATA/bdconta/datafile/indx_bdconta_big.475.1033578867
+channel c3: reading from backup piece full_bdcontap9_1046809951_2154_1
+channel c4: piece handle=full_bdcontap9_1046809566_2151_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:10:20
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00111 to +DG_DATA/bdconta/datafile/data_bdconta_big.373.1033571593
+channel c4: restoring datafile 00186 to +DG_DATA/bdconta/datafile/data_bdconta_big.448.1033572841
+channel c4: restoring datafile 00228 to +DG_DATA/bdconta/datafile/indx_bdconta_big.565.1033577375
+channel c4: restoring datafile 00325 to +DG_DATA/bdconta/datafile/indx_bdconta_big.468.1033578985
+channel c4: reading from backup piece full_bdcontap9_1046810106_2155_1
+channel c1: piece handle=full_bdcontap9_1046809906_2153_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:10:02
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00151 to +DG_DATA/bdconta/datafile/data_bdconta_big.413.1033572255
+channel c1: restoring datafile 00178 to +DG_DATA/bdconta/datafile/data_bdconta_big.440.1033572707
+channel c1: restoring datafile 00236 to +DG_DATA/bdconta/datafile/indx_bdconta_big.557.1033577507
+channel c1: restoring datafile 00319 to +DG_DATA/bdconta/datafile/indx_bdconta_big.474.1033578883
+channel c1: reading from backup piece full_bdcontap9_1046810357_2157_1
+channel c2: piece handle=full_bdcontap9_1046809751_2152_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:10
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00013 to +DG_DATA/bdconta/datafile/indx_bdconta_med.275.1033570175
+channel c2: restoring datafile 00018 to +DG_DATA/bdconta/datafile/indx_bdconta_med.280.1033570259
+channel c2: restoring datafile 00031 to +DG_DATA/bdconta/datafile/data_bdconta_sma.293.1033570417
+channel c2: restoring datafile 00073 to +DG_DATA/bdconta/datafile/data_bdconta_big.335.1033571021
+channel c2: reading from backup piece full_bdcontap9_1046810292_2156_1
+channel c3: piece handle=full_bdcontap9_1046809951_2154_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:10:12
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00020 to +DG_DATA/bdconta/datafile/indx_bdconta_med.282.1033570293
+channel c3: restoring datafile 00025 to +DG_DATA/bdconta/datafile/indx_bdconta_med.287.1033570375
+channel c3: restoring datafile 00141 to +DG_DATA/bdconta/datafile/data_bdconta_big.403.1033572093
+channel c3: restoring datafile 00208 to +DG_DATA/bdconta/datafile/indx_bdconta_big.585.1033577051
+channel c3: reading from backup piece full_bdcontap9_1046810552_2158_1
+channel c1: piece handle=full_bdcontap9_1046810357_2157_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:10:04
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00011 to +DG_DATA/bdconta/datafile/indx_bdconta_med.273.1033570141
+channel c1: restoring datafile 00027 to +DG_DATA/bdconta/datafile/data_bdconta_sma.289.1033570411
+channel c1: restoring datafile 00052 to +DG_DATA/bdconta/datafile/data_bdconta_big.314.1033570667
+channel c1: restoring datafile 00214 to +DG_DATA/bdconta/datafile/indx_bdconta_big.579.1033577147
+channel c1: reading from backup piece full_bdcontap9_1046810607_2159_1
+channel c4: piece handle=full_bdcontap9_1046810106_2155_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:10:23
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00014 to +DG_DATA/bdconta/datafile/indx_bdconta_med.276.1033570191
+channel c4: restoring datafile 00028 to +DG_DATA/bdconta/datafile/data_bdconta_sma.290.1033570413
+channel c4: restoring datafile 00055 to +DG_DATA/bdconta/datafile/data_bdconta_big.317.1033570719
+channel c4: restoring datafile 00265 to +DG_DATA/bdconta/datafile/indx_bdconta_big.528.1033577987
+channel c4: reading from backup piece full_bdcontap9_1046810622_2160_1
+channel c2: piece handle=full_bdcontap9_1046810292_2156_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:52
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00086 to +DG_DATA/bdconta/datafile/data_bdconta_big.348.1033571239
+channel c2: restoring datafile 00127 to +DG_DATA/bdconta/datafile/data_bdconta_big.389.1033571861
+channel c2: restoring datafile 00159 to +DG_DATA/bdconta/datafile/data_bdconta_big.421.1033572389
+channel c2: restoring datafile 00284 to +DG_DATA/bdconta/datafile/indx_bdconta_big.509.1033578305
+channel c2: reading from backup piece full_bdcontap9_1046811033_2162_1
+channel c4: piece handle=full_bdcontap9_1046810622_2160_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:09:22
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00007 to +DG_DATA/bdconta/datafile/indx_bdconta_med.269.1033570075
+channel c4: restoring datafile 00029 to +DG_DATA/bdconta/datafile/data_bdconta_sma.291.1033570415
+channel c4: restoring datafile 00062 to +DG_DATA/bdconta/datafile/data_bdconta_big.324.1033570837
+channel c4: restoring datafile 00197 to +DG_DATA/bdconta/datafile/indx_bdconta_tools.459.1033575363
+channel c4: restoring datafile 00305 to +DG_DATA/bdconta/datafile/indx_bdconta_big.488.1033578653
+channel c4: reading from backup piece full_bdcontap9_1046810808_2161_1
+channel c1: piece handle=full_bdcontap9_1046810607_2159_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:09:51
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00010 to +DG_DATA/bdconta/datafile/indx_bdconta_med.272.1033570125
+channel c1: restoring datafile 00034 to +DG_DATA/bdconta/datafile/data_bdconta_sma.296.1033570423
+channel c1: restoring datafile 00125 to +DG_DATA/bdconta/datafile/data_bdconta_big.387.1033571827
+channel c1: restoring datafile 00287 to +DG_DATA/bdconta/datafile/indx_bdconta_big.506.1033578355
+channel c1: reading from backup piece full_bdcontap9_1046811098_2163_1
+channel c3: piece handle=full_bdcontap9_1046810552_2158_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:10:15
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00138 to +DG_DATA/bdconta/datafile/data_bdconta_big.400.1033572045
+channel c3: restoring datafile 00201 to +DG_DATA/bdconta/datafile/indx_bdconta_big.592.1033576937
+channel c3: restoring datafile 00315 to +DG_DATA/bdconta/datafile/indx_bdconta_big.478.1033578817
+channel c3: restoring datafile 00337 to +DG_DATA/bdconta/datafile/indx_bdconta_big.599.1033579183
+channel c3: reading from backup piece full_bdcontap9_1046811458_2165_1
+channel c2: piece handle=full_bdcontap9_1046811033_2162_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:10:33
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00019 to +DG_DATA/bdconta/datafile/indx_bdconta_med.281.1033570277
+channel c2: restoring datafile 00039 to +DG_DATA/bdconta/datafile/data_bdconta_sma.301.1033570491
+channel c2: restoring datafile 00047 to +DG_DATA/bdconta/datafile/data_bdconta_big.309.1033570587
+channel c2: restoring datafile 00204 to +DG_DATA/bdconta/datafile/indx_bdconta_big.589.1033576987
+channel c2: reading from backup piece full_bdcontap9_1046811383_2164_1
+channel c4: piece handle=full_bdcontap9_1046810808_2161_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:09:42
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00071 to +DG_DATA/bdconta/datafile/data_bdconta_big.333.1033570989
+channel c4: restoring datafile 00082 to +DG_DATA/bdconta/datafile/data_bdconta_big.344.1033571173
+channel c4: restoring datafile 00133 to +DG_DATA/bdconta/datafile/data_bdconta_big.395.1033571959
+channel c4: restoring datafile 00234 to +DG_DATA/bdconta/datafile/indx_bdconta_big.559.1033577473
+channel c4: reading from backup piece full_bdcontap9_1046811909_2167_1
+channel c1: piece handle=full_bdcontap9_1046811098_2163_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:09:53
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00072 to +DG_DATA/bdconta/datafile/data_bdconta_big.334.1033571005
+channel c1: restoring datafile 00117 to +DG_DATA/bdconta/datafile/data_bdconta_big.379.1033571693
+channel c1: restoring datafile 00164 to +DG_DATA/bdconta/datafile/data_bdconta_big.426.1033572475
+channel c1: restoring datafile 00235 to +DG_DATA/bdconta/datafile/indx_bdconta_big.558.1033577491
+channel c1: reading from backup piece full_bdcontap9_1046812104_2168_1
+channel c3: piece handle=full_bdcontap9_1046811458_2165_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:10:33
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00026 to +DG_DATA/bdconta/datafile/indx_bdconta_med.288.1033570391
+channel c3: restoring datafile 00144 to +DG_DATA/bdconta/datafile/data_bdconta_big.406.1033572141
+channel c3: restoring datafile 00207 to +DG_DATA/bdconta/datafile/indx_bdconta_big.586.1033577033
+channel c3: restoring datafile 00286 to +DG_DATA/bdconta/datafile/indx_bdconta_big.507.1033578337
+channel c3: reading from backup piece full_bdcontap9_1046811773_2166_1
+channel c2: piece handle=full_bdcontap9_1046811383_2164_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:09:25
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00222 to +DG_DATA/bdconta/datafile/indx_bdconta_big.571.1033577277
+channel c2: restoring datafile 00224 to +DG_DATA/bdconta/datafile/indx_bdconta_big.569.1033577309
+channel c2: restoring datafile 00227 to +DG_DATA/bdconta/datafile/indx_bdconta_big.566.1033577359
+channel c2: restoring datafile 00264 to +DG_DATA/bdconta/datafile/indx_bdconta_big.529.1033577971
+channel c2: restoring datafile 00268 to +DG_DATA/bdconta/datafile/indx_bdconta_big.525.1033578037
+channel c2: restoring datafile 00280 to +DG_DATA/bdconta/datafile/indx_bdconta_big.513.1033578239
+channel c2: reading from backup piece full_bdcontap9_1046812659_2171_1
+channel c4: piece handle=full_bdcontap9_1046811909_2167_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:10:35
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00171 to +DG_DATA/bdconta/datafile/data_bdconta_big.433.1033572589
+channel c4: restoring datafile 00231 to +DG_DATA/bdconta/datafile/indx_bdconta_big.562.1033577423
+channel c4: restoring datafile 00316 to +DG_DATA/bdconta/datafile/indx_bdconta_big.477.1033578835
+channel c4: restoring datafile 00336 to +DG_DATA/bdconta/datafile/indx_bdconta_big.598.1033579167
+channel c4: reading from backup piece full_bdcontap9_1046812524_2170_1
+channel c1: piece handle=full_bdcontap9_1046812104_2168_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:10:25
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00165 to +DG_DATA/bdconta/datafile/data_bdconta_big.427.1033572491
+channel c1: restoring datafile 00229 to +DG_DATA/bdconta/datafile/indx_bdconta_big.564.1033577391
+channel c1: restoring datafile 00309 to +DG_DATA/bdconta/datafile/indx_bdconta_big.484.1033578719
+channel c1: restoring datafile 00335 to +DG_DATA/bdconta/datafile/indx_bdconta_big.597.1033579151
+channel c1: reading from backup piece full_bdcontap9_1046812259_2169_1
+channel c2: piece handle=full_bdcontap9_1046812659_2171_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:09:22
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00193 to +DG_DATA/bdconta/datafile/indx_bdconta_sma.455.1033575311
+channel c2: restoring datafile 00194 to +DG_DATA/bdconta/datafile/indx_bdconta_sma.456.1033575327
+channel c2: restoring datafile 00195 to +DG_DATA/bdconta/datafile/indx_bdconta_sma.457.1033575345
+channel c2: restoring datafile 00267 to +DG_DATA/bdconta/datafile/indx_bdconta_big.526.1033578019
+channel c2: restoring datafile 00279 to +DG_DATA/bdconta/datafile/indx_bdconta_big.514.1033578221
+channel c2: reading from backup piece full_bdcontap9_1046812865_2172_1
+channel c3: piece handle=full_bdcontap9_1046811773_2166_1 tag=BDCONTAP9 N0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:09:56
+channel c2: piece handle=full_bdcontap9_1046812865_2172_1 tag=BDCONTAP9 N0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:05:15
+channel c4: piece handle=full_bdcontap9_1046812524_2170_1 tag=BDCONTAP9 N0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:08:52
+channel c1: piece handle=full_bdcontap9_1046812259_2169_1 tag=BDCONTAP9 N0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:08:46
+Finished restore at 26-AUG-20
+
+Starting recover at 26-AUG-20
+
+starting media recovery
+
+new media label is 6R1001L6 for piece 41v6snat_1_1
+new media label is 6R1001L6 for piece 42v6snat_1_1
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=2 sequence=1591
+channel c1: reading from backup piece 41v6snat_1_1
+channel c2: starting archived log restore to default destination
+channel c2: restoring archived log
+archived log thread=1 sequence=41027
+channel c2: restoring archived log
+archived log thread=1 sequence=41028
+channel c2: restoring archived log
+archived log thread=2 sequence=1592
+channel c2: reading from backup piece 42v6snat_1_1
+channel c2: piece handle=42v6snat_1_1 tag=TAG20200802T220411
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:05:35
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_1_seq_41027.963.1049469977 thread=1 sequence=41027
+channel c1: piece handle=41v6snat_1_1 tag=TAG20200802T220411
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:11:38
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_2_seq_1591.967.1049470289 thread=2 sequence=1591
+channel default: deleting archived log(s)
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_1_seq_41027.963.1049469977 RECID=2195 STAMP=1049469999
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_1_seq_41028.964.1049469977 thread=1 sequence=41028
+channel default: deleting archived log(s)
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_2_seq_1591.967.1049470289 RECID=2196 STAMP=1049470357
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_2_seq_1592.965.1049469979 thread=2 sequence=1592
+channel default: deleting archived log(s)
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_1_seq_41028.964.1049469977 RECID=2193 STAMP=1049469980
+channel default: deleting archived log(s)
+archived log file name=+DG_FRA/bdconta/archivelog/2020_08_26/thread_2_seq_1592.965.1049469979 RECID=2194 STAMP=1049469980
+media recovery complete, elapsed time: 00:00:07
+Finished recover at 26-AUG-20
+
+released channel: c1
+
+released channel: c2
+
+released channel: c3
+
+released channel: c4
+
+Recovery Manager complete.
