@@ -1,0 +1,9 @@
+bdcontar =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 172.23.14.82)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = BDCONTA)
+    )
+  )
