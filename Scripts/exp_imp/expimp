@@ -16,6 +16,8 @@ Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bi
 With the Automatic Storage Management option
 oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
 
+nohup expdp \'/ as sysdba\'  directory=IMP SCHEMAS=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_27082020.dmp log=exp_ESPERU_PRODUC_27082020.log &
+
 
 EXPORT:
 
@@ -38,6 +40,8 @@ expdp   schemas=APP_EPS directory=DMP_APP_EPS dumpfile=exp_APP_EPS.dmp%U logfile
 expdp mantenimiento/mn2013mn directory=IMP_BDSAS tables=APP_IAA_INTERFAZ.INT_RVSUNARP_AX dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp logfile=exp_INT_RVSUNARP_AX.log
 expdp \'/ as sysdba\' FULL=Y directory=D:\bk190320_no_eliminar dumpfile=FULL_SR3605293.dmp logfile=FULL_SR3605293.log
 
+12c
+nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_%T_%U.dmp logfile=exp_ESPERU_PRODUC.log directory=IMP parallel=4 &
 
 IMPORT:
 
