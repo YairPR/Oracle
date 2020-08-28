@@ -18,6 +18,9 @@ oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKE
 
 nohup expdp \'/ as sysdba\'  directory=IMP SCHEMAS=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_27082020.dmp log=exp_ESPERU_PRODUC_27082020.log &
 
+nohup expdp \'/ as sysdba\'  directory=IMP TABLES=ACSELX.ITFCTRLACRE dumpfile=exp_ITFCTRLACRE_%U.dmp log=exp_ITFCTRLACRE_29082020.log parallel=4 &
+
+
 
 EXPORT:
 
