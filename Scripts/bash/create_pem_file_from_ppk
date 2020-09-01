@@ -1,0 +1,24 @@
+
+puttygen p2kpro.ppk -O private-openssh -o p2kpro.pem
+chmod 400 p2kpro.pem
+ssh -i p2kpro.pem oracle@10.75.40.106
+scp -i p2kpro.pem -r orapwP2KPROD oracle@10.75.40.106:/home/oracle
+
+--
+How to Convert PPK to PEM File using Command
+
+One of my clients provided me .ppk file to connect to his server using ssh. As I am a Ubuntu user, I need a key that supports the terminal command. 
+So I decided it convert to .pem file. I am sharing the steps to convert PPK to Pem format on the Linux terminal using a putty gen tool.
+-------------------
+#Step 1 – First of all, install the putty tools on your Linux system using below command.
+sudo apt-get install putty-tools
+--------------------
+#Step 2 – Now, convert the ppk file to pem file using puttygen command line tool.
+puttygen server1.ppk -O private-openssh -o server1.pem
+--------------------
+#Step 3 – Change the .pem file permissions. Set the read-only permissions to the owner of the file, remove any permission to group and other. 
+Otherwise ssh will refuse this key for use.
+chmod 400 server1.pem
+--------------------
+#Step 4 – Finally, connect to your remote Linux server with ssh using this pem key.
+ssh -i server1.pem ubuntu@11.22.33.44
