@@ -20,7 +20,7 @@ nohup expdp \'/ as sysdba\'  directory=IMP SCHEMAS=ESPERU_PRODUC dumpfile=exp_ES
 
 nohup expdp \'/ as sysdba\'  directory=DIR_TAB_PUMP TABLES=ACSELX.ITFCTRLACRE dumpfile=exp_ITFCTRLACRE_%U.dmp log=exp_ITFCTRLACRE_29082020.log parallel=4 &
 
-
+nohup expdp \'/ as sysdba\' directory=DIR_TAB_PUMP tables=ACSELX.RESERVA_RIESGO_CURSO_ERP dumpfile=RESERVA_RIESGO_CURSO_ERP_20200902.dmp log=RESERVA_RIESGO_CURSO_ERP_20200902.log &
 
 EXPORT:
 
