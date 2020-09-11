@@ -1,0 +1,102 @@
+PRIMARY
+ALertlog:
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+Error 1031 received logging on to the standby
+FAL[server, ARC0]: FAL archive failed, see trace file.
+ARCH: FAL archive failed. Archiver continuing
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+Error 1031 received logging on to the standby
+FAL[server, ARC1]: FAL archive failed, see trace file.
+ARCH: FAL archive failed. Archiver continuing
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+Error 1031 received logging on to the standby
+FAL[server, ARC3]: FAL archive failed, see trace file.
+ARCH: FAL archive failed. Archiver continuing
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+Fri Sep 11 12:34:38 2020
+Error 1031 received logging on to the standby
+FAL[server, ARC1]: FAL archive failed, see trace file.
+ARCH: FAL archive failed. Archiver continuing
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+Error 1031 received logging on to the standby
+Error 1031 received logging on to the standby
+FAL[server, ARC3]: FAL archive failed, see trace file.
+ARCH: FAL archive failed. Archiver continuing
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+FAL[server, ARC0]: FAL archive failed, see trace file.
+ARCH: FAL archive failed. Archiver continuing
+ORACLE Instance BDWSS - Archival Error. Archiver continuing.
+oracle@:/oracle/dbbase/diag/rdbms/bdwssp/BDWSS/trace>
+
+
+======================================================================================================================================
+PRIMARY:
+select message,  timestamp
+from v$dataguard_status
+where severity in ('Error','Fatal')
+order by timestamp;
+
+---------------------------------------------------------------------------------------------------- ---------
+Error 1031 received logging on to the standby                                                        11-SEP-20
+FAL[server, ARC3]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+Error 1031 received logging on to the standby                                                        11-SEP-20
+FAL[server, ARC0]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+Error 1031 received logging on to the standby                                                        11-SEP-20
+FAL[server, ARC1]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+Error 1031 received logging on to the standby                                                        11-SEP-20
+FAL[server, ARC3]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+Error 1031 received logging on to the standby                                                        11-SEP-20
+FAL[server, ARC1]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+FAL[server, ARC0]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+
+MESSAGE                                                                                              TIMESTAMP
+---------------------------------------------------------------------------------------------------- ---------
+Error 1031 received logging on to the standby                                                        11-SEP-20
+Error 1031 received logging on to the standby                                                        11-SEP-20
+FAL[server, ARC3]: Error 1031 creating remote archivelog file 'BDWSSC'                               11-SEP-20
+ 
+=====================================================================================================================================================
+ STANDBY:
+ select sequence#, substr(name,1,96),creator, to_char(first_time,'DD-MON HH24:MI'), to_char(completion_time,'DD-MON HH24:MI')
+  from v$archived_log
+  where first_time > sysdate-1
+  order by 1
+/  
+    511130                                                                                                  ARCH    11-SEP 01:25 11-SEP 10:34
+    511131                                                                                                  ARCH    11-SEP 01:35 11-SEP 10:34
+    511132 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511132.1952.1050834883                           ARCH    11-SEP 01:39 11-SEP 10:34
+    511133 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511133.1954.1050834885                           ARCH    11-SEP 01:40 11-SEP 10:35
+    511134 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511134.1953.1050834895                           ARCH    11-SEP 01:41 11-SEP 10:35
+    511135 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511135.1956.1050834899                           ARCH    11-SEP 01:42 11-SEP 10:35
+    511136 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511136.2022.1050834901                           ARCH    11-SEP 01:44 11-SEP 10:35
+    511201 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511201.1855.1050834649                           ARCH    11-SEP 10:25 11-SEP 10:30
+    511202 +ARCH/bdwssc/archivelog/2020_09_11/thread_1_seq_511202.1955.1050834903                           ARCH    11-SEP 10:28 11-SEP 10:35
+
+
+=====================================================================================================================================================
+ STANDBY:
+oracle@:/home/oracle>dgmgrl
+DGMGRL for IBM/AIX RISC System/6000: Version 11.2.0.2.0 - 64bit Production
+
+Copyright (c) 2000, 2009, Oracle. All rights reserved.
+
+Welcome to DGMGRL, type "help" for information.
+DGMGRL> connect sys
+Password:
+Connected.
+DGMGRL> show configuration
+
+Configuration - bdwssa_active_dg
+
+  Protection Mode: MaxPerformance
+  Databases:
+    BDWSSP - Primary database
+    bdwssc - Physical standby database
+
+Fast-Start Failover: DISABLED
+
+Configuration Status:
+ORA-16664: unable to receive the result from a database
+DGM-17017: unable to determine configuration status
+
+DGMGRL>    
