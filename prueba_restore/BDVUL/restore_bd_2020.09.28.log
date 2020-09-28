@@ -1,0 +1,307 @@
+oracle@:/oracle/scripts/restore/BDAPP>cat restore_bd_2020.09.28.log
+
+Recovery Manager: Release 11.2.0.3.0 - Production on Mon Sep 28 10:07:55 2020
+
+Copyright (c) 1982, 2011, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: BDAPP (not mounted)
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> allocate channel c2 type 'SBT_TAPE';
+4> allocate channel c3 type 'SBT_TAPE';
+5> allocate channel c4 type 'SBT_TAPE';
+6> set DBID=3288643307
+7> SET NEWNAME FOR DATABASE TO '+DG_DATA001';
+8> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rssbbdvul01.rimac.com.pe)';
+9> set until time "to_date('2020-08-29 06:15:00', 'yyyy-mm-dd hh24:mi:ss')";
+10> restore controlfile;
+11> sql 'ALTER DATABASE MOUNT';
+12> restore database;
+13> switch datafile all;
+14> recover database;
+15> release channel c1;
+16> release channel c2;
+17> release channel c3;
+18> release channel c4;
+19> }
+20> 
+allocated channel: c1
+channel c1: SID=388 device type=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+RMAN-06908: WARNING: operation will not run in parallel on the allocated channels
+RMAN-06909: WARNING: parallelism require Enterprise Edition
+allocated channel: c2
+channel c2: SID=770 device type=SBT_TAPE
+channel c2: NMDA Oracle v8.2.4
+
+allocated channel: c3
+channel c3: SID=1149 device type=SBT_TAPE
+channel c3: NMDA Oracle v8.2.4
+
+allocated channel: c4
+channel c4: SID=6 device type=SBT_TAPE
+channel c4: NMDA Oracle v8.2.4
+
+executing command: SET DBID
+database name is "BDAPP" and DBID is 3288643307
+
+executing command: SET NEWNAME
+
+sent command to channel: c1
+sent command to channel: c2
+sent command to channel: c3
+sent command to channel: c4
+
+executing command: SET until clause
+
+Starting restore at 28-SEP-20
+
+channel c1: starting datafile backup set restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-3288643307-20200829-03
+channel c1: piece handle=c-3288643307-20200829-03 tag=TAG20200829T060914
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:26
+output file name=+DG_DATA001/bdapp/controlfile/current.260.1052302097
+Finished restore at 28-SEP-20
+
+sql statement: ALTER DATABASE MOUNT
+
+Starting restore at 28-SEP-20
+Starting implicit crosscheck backup at 28-SEP-20
+Finished implicit crosscheck backup at 28-SEP-20
+
+Starting implicit crosscheck copy at 28-SEP-20
+Finished implicit crosscheck copy at 28-SEP-20
+
+searching for all files in the recovery area
+cataloging files...
+no files cataloged
+
+
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00003 to +DG_DATA001
+channel c1: restoring datafile 00011 to +DG_DATA001
+channel c1: restoring datafile 00014 to +DG_DATA001
+channel c1: restoring datafile 00015 to +DG_DATA001
+channel c1: restoring datafile 00016 to +DG_DATA001
+channel c1: restoring datafile 00023 to +DG_DATA001
+channel c1: restoring datafile 00024 to +DG_DATA001
+channel c1: restoring datafile 00035 to +DG_DATA001
+channel c1: reading from backup piece full_bdapp_1049684724_40688_1
+channel c1: piece handle=full_bdapp_1049684724_40688_1 tag=BDAPP NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:14:55
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00001 to +DG_DATA001
+channel c1: restoring datafile 00005 to +DG_DATA001
+channel c1: restoring datafile 00007 to +DG_DATA001
+channel c1: restoring datafile 00012 to +DG_DATA001
+channel c1: restoring datafile 00018 to +DG_DATA001
+channel c1: restoring datafile 00020 to +DG_DATA001
+channel c1: restoring datafile 00021 to +DG_DATA001
+channel c1: restoring datafile 00031 to +DG_DATA001
+channel c1: restoring datafile 00033 to +DG_DATA001
+channel c1: reading from backup piece full_bdapp_1049687930_40689_1
+channel c1: piece handle=full_bdapp_1049687930_40689_1 tag=BDAPP NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:12:35
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00002 to +DG_DATA001
+channel c1: restoring datafile 00004 to +DG_DATA001
+channel c1: restoring datafile 00008 to +DG_DATA001
+channel c1: restoring datafile 00009 to +DG_DATA001
+channel c1: restoring datafile 00019 to +DG_DATA001
+channel c1: restoring datafile 00027 to +DG_DATA001
+channel c1: restoring datafile 00028 to +DG_DATA001
+channel c1: restoring datafile 00030 to +DG_DATA001
+channel c1: restoring datafile 00032 to +DG_DATA001
+channel c1: reading from backup piece full_bdapp_1049690386_40690_1
+channel c1: piece handle=full_bdapp_1049690386_40690_1 tag=BDAPP NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:14:05
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00006 to +DG_DATA001
+channel c1: restoring datafile 00010 to +DG_DATA001
+channel c1: restoring datafile 00013 to +DG_DATA001
+channel c1: restoring datafile 00017 to +DG_DATA001
+channel c1: restoring datafile 00022 to +DG_DATA001
+channel c1: restoring datafile 00025 to +DG_DATA001
+channel c1: restoring datafile 00026 to +DG_DATA001
+channel c1: restoring datafile 00029 to +DG_DATA001
+channel c1: restoring datafile 00034 to +DG_DATA001
+channel c1: reading from backup piece full_bdapp_1049692581_40694_1
+channel c1: piece handle=full_bdapp_1049692581_40694_1 tag=BDAPP NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:12:55
+Finished restore at 28-SEP-20
+
+datafile 1 switched to datafile copy
+input datafile copy RECID=36 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/system.271.1052303039
+datafile 2 switched to datafile copy
+input datafile copy RECID=37 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/sysaux.285.1052303789
+datafile 3 switched to datafile copy
+input datafile copy RECID=38 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/undotbs1.279.1052302145
+datafile 4 switched to datafile copy
+input datafile copy RECID=39 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/users.288.1052303831
+datafile 5 switched to datafile copy
+input datafile copy RECID=40 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdapp_xdb.266.1052303055
+datafile 6 switched to datafile copy
+input datafile copy RECID=41 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdvul_big.293.1052304639
+datafile 7 switched to datafile copy
+input datafile copy RECID=42 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdvul_big.270.1052303039
+datafile 8 switched to datafile copy
+input datafile copy RECID=43 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdvul_med.284.1052303789
+datafile 9 switched to datafile copy
+input datafile copy RECID=44 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdvul_sma.283.1052303789
+datafile 10 switched to datafile copy
+input datafile copy RECID=45 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_big.294.1052304641
+datafile 11 switched to datafile copy
+input datafile copy RECID=46 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_med.276.1052302145
+datafile 12 switched to datafile copy
+input datafile copy RECID=47 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_med.272.1052303039
+datafile 13 switched to datafile copy
+input datafile copy RECID=48 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_sma.292.1052304639
+datafile 14 switched to datafile copy
+input datafile copy RECID=49 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.257.1052302143
+datafile 15 switched to datafile copy
+input datafile copy RECID=50 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.259.1052302143
+datafile 16 switched to datafile copy
+input datafile copy RECID=51 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdvul_sma.263.1052302145
+datafile 17 switched to datafile copy
+input datafile copy RECID=52 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdvul_tools.297.1052304687
+datafile 18 switched to datafile copy
+input datafile copy RECID=53 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_tools.274.1052303041
+datafile 19 switched to datafile copy
+input datafile copy RECID=54 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.281.1052303787
+datafile 20 switched to datafile copy
+input datafile copy RECID=55 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/undotbs1.273.1052303041
+datafile 21 switched to datafile copy
+input datafile copy RECID=56 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.268.1052303037
+datafile 22 switched to datafile copy
+input datafile copy RECID=57 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.290.1052304637
+datafile 23 switched to datafile copy
+input datafile copy RECID=58 STAMP=1052305402 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_sma.264.1052302145
+datafile 24 switched to datafile copy
+input datafile copy RECID=59 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.258.1052302143
+datafile 25 switched to datafile copy
+input datafile copy RECID=60 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdvul_med.295.1052304641
+datafile 26 switched to datafile copy
+input datafile copy RECID=61 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_big.296.1052304643
+datafile 27 switched to datafile copy
+input datafile copy RECID=62 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/indx_bdvul_big.287.1052303791
+datafile 28 switched to datafile copy
+input datafile copy RECID=63 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdvul_big.286.1052303789
+datafile 29 switched to datafile copy
+input datafile copy RECID=64 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.289.1052304637
+datafile 30 switched to datafile copy
+input datafile copy RECID=65 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.280.1052303787
+datafile 31 switched to datafile copy
+input datafile copy RECID=66 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.262.1052303037
+datafile 32 switched to datafile copy
+input datafile copy RECID=67 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.282.1052303789
+datafile 33 switched to datafile copy
+input datafile copy RECID=68 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.269.1052303039
+datafile 34 switched to datafile copy
+input datafile copy RECID=69 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.291.1052304639
+datafile 35 switched to datafile copy
+input datafile copy RECID=70 STAMP=1052305403 file name=+DG_DATA001/bdapp/datafile/data_bdapp_aud.277.1052302145
+
+Starting recover at 28-SEP-20
+renamed tempfile 1 to +DG_DATA001 in control file
+renamed tempfile 2 to +DG_DATA001 in control file
+renamed tempfile 3 to +DG_DATA001 in control file
+renamed tempfile 4 to +DG_DATA001 in control file
+renamed tempfile 5 to +DG_DATA001 in control file
+
+starting media recovery
+
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=136866
+channel c1: reading from backup piece log_bdapp_1049695670_40696_1
+channel c1: piece handle=log_bdapp_1049695670_40696_1 tag=TAG20200829T060749
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:25
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136866.273.1052305433 thread=1 sequence=136866
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136866.273.1052305433 RECID=64291 STAMP=1052305434
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=136867
+channel c1: restoring archived log
+archived log thread=1 sequence=136868
+channel c1: reading from backup piece log_bdapp_1049695686_40697_1
+channel c1: piece handle=log_bdapp_1049695686_40697_1 tag=TAG20200829T060749
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:25
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136867.274.1052305457 thread=1 sequence=136867
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136867.274.1052305457 RECID=64293 STAMP=1052305461
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136868.273.1052305457 thread=1 sequence=136868
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136868.273.1052305457 RECID=64292 STAMP=1052305461
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=136869
+channel c1: restoring archived log
+archived log thread=1 sequence=136870
+channel c1: restoring archived log
+archived log thread=1 sequence=136871
+channel c1: reading from backup piece log_bdapp_1049695711_40698_1
+channel c1: piece handle=log_bdapp_1049695711_40698_1 tag=TAG20200829T060749
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136869.274.1052305485 thread=1 sequence=136869
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136869.274.1052305485 RECID=64295 STAMP=1052305486
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136870.303.1052305485 thread=1 sequence=136870
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136870.303.1052305485 RECID=64294 STAMP=1052305485
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136871.273.1052305485 thread=1 sequence=136871
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136871.273.1052305485 RECID=64296 STAMP=1052305487
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=136872
+channel c1: restoring archived log
+archived log thread=1 sequence=136873
+channel c1: reading from backup piece log_bdapp_1049695736_40699_1
+channel c1: piece handle=log_bdapp_1049695736_40699_1 tag=TAG20200829T060749
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136872.273.1052305503 thread=1 sequence=136872
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136872.273.1052305503 RECID=64298 STAMP=1052305505
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136873.303.1052305503 thread=1 sequence=136873
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136873.303.1052305503 RECID=64297 STAMP=1052305504
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=136874
+channel c1: reading from backup piece log_bdapp_1049698520_40701_1
+channel c1: piece handle=log_bdapp_1049698520_40701_1 tag=BDAPP NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:15
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136874.303.1052305521 thread=1 sequence=136874
+channel default: deleting archived log(s)
+archived log file name=+ARCH/bdapp/archivelog/2020_09_28/thread_1_seq_136874.303.1052305521 RECID=64299 STAMP=1052305523
+media recovery complete, elapsed time: 00:00:00
+Finished recover at 28-SEP-20
+
+released channel: c1
+
+released channel: c2
+
+released channel: c3
+
+released channel: c4
+
+Recovery Manager complete.
