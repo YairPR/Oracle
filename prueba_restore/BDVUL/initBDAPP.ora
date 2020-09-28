@@ -1,0 +1,36 @@
+oracle@:/oracle/scripts/restore/BDAPP>cat $ORACLE_HOME/dbs/INITbdapp.ORA
+cat: 0652-050 Cannot open /oracle/oracle/app/oracle/db_vul/dbs/INITbdapp.ORA.
+oracle@:/oracle/scripts/restore/BDAPP>cat $ORACLE_HOME/dbs/initBDAPP.ora
+BDAPP.__db_cache_size=1677721600
+BDAPP.__java_pool_size=33554432
+BDAPP.__large_pool_size=16777216
+BDAPP.__oracle_base='/oracle/oracle'#ORACLE_BASE set from environment
+BDAPP.__pga_aggregate_target=1577058304
+BDAPP.__sga_target=3573547008
+BDAPP.__shared_io_pool_size=0
+BDAPP.__shared_pool_size=1795162112
+BDAPP.__streams_pool_size=16777216
+*.audit_file_dest='/oracle/oracle/admin/BDAPP/adump'
+*.audit_trail='db'
+*.compatible='11.2.0.0.0'
+*.control_files='+DG_DATA001/bdapp/controlfile/current.256.817504239'
+*.control_management_pack_access='DIAGNOSTIC+TUNING'
+*.db_block_size=8192
+*.db_create_file_dest='+DG_DATA001'
+*.db_domain=''
+*.db_name='BDAPP'
+*.db_recovery_file_dest_size=21474836480
+*.db_recovery_file_dest='+ARCH'
+*.diagnostic_dest='/oracle/dbbase'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=BDAPPXDB)'
+*.open_cursors=1200
+*.pga_aggregate_target=1572864000
+*.processes=1000
+*.remote_login_passwordfile='EXCLUSIVE'
+*.sec_case_sensitive_logon=FALSE
+*.sessions=776
+*.sga_max_size=3565158400
+*.sga_target=3565158400
+*.undo_tablespace='UNDOTBS1'
+*.db_file_name_convert='+DATA/bdapp','+DG_DATA001/bdapp','+FRA/bdapp','+ARCH/bdapp'
+*.log_file_name_convert='+DATA/bdapp','+DG_DATA001/bdapp','+FRA/bdapp','+ARCH/bdapp'
