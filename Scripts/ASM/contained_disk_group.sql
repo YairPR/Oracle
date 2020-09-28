@@ -16,6 +16,7 @@ CLEAR COMPUTES
 COLUMN disk_group_name        FORMAT a25           HEAD 'Disk Group Name'
 COLUMN disk_file_path         FORMAT a20           HEAD 'Path'
 COLUMN disk_file_name         FORMAT a20           HEAD 'File Name'
+COLUMN disk_state             FORMAT a20           HEAD 'State_File'
 COLUMN disk_file_fail_group   FORMAT a20           HEAD 'Fail Group'
 COLUMN total_mb               FORMAT 999,999,999   HEAD 'File Size (MB)'
 COLUMN used_mb                FORMAT 999,999,999   HEAD 'Used Size (MB)'
@@ -30,6 +31,7 @@ SELECT
     NVL(a.name, '[CANDIDATE]')                       disk_group_name
   , b.path                                           disk_file_path
   , b.name                                           disk_file_name
+  , b.state                                          disk_state
   , b.failgroup                                      disk_file_fail_group
   , b.total_mb                                       total_mb
   , (b.total_mb - b.free_mb)                         used_mb
