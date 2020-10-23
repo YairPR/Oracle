@@ -1,0 +1,39 @@
+ORA-00704: bootstrap process failure
+ORA-39700: database must be opened with UPGRADE option
+Errors in file /apps/oracle/diag/rdbms/xxxx/xxxx/trace/xxxx_ora_24546.trc:
+ORA-00704: bootstrap process failure
+ORA-39700: database must be opened with UPGRADE option
+
+SOLUCION:
+STEP 1:
+
+SQL> startup upgrade
+ORACLE instance started.
+
+Total System Global Area 104857600 bytes
+Fixed Size 2046864 bytes
+Variable Size 75498608 bytes
+Database Buffers 20971520 bytes
+Redo Buffers 6340608 bytes
+Database mounted.
+Database opened.
+SQL> @catalog.sql;
+…..
+SQL> @catproc.sql;
+-----
+SQL> @catupgrd.sql
+
+
+Setp 2:
+
+check the Database status and  it’s in “OPEN MIGRATE” mode
+
+Step 3:
+
+shutdown and startup
+
+Step 4:
+
+check the Database status and it’s in “OPEN” mode
+
+Note: This error usually occurs when  catproc and catalogs doesn’t run properly.
