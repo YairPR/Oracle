@@ -1,0 +1,391 @@
+oracle@:/oracle/scripts/restore/BDERP>tail -f restore_bd_2020.10.22.log
+
+released channel: c1
+
+released channel: c2
+
+released channel: c3
+
+released channel: c4
+
+Recovery Manager complete.
+^Coracle@:/oracle/scripts/restore/BDERP>cat restore_bd_2020.10.22.log
+
+Recovery Manager: Release 11.2.0.2.0 - Production on Thu Oct 22 23:26:08 2020
+
+Copyright (c) 1982, 2009, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: BDERP (not mounted)
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> allocate channel c2 type 'SBT_TAPE';
+4> allocate channel c3 type 'SBT_TAPE';
+5> allocate channel c4 type 'SBT_TAPE';
+6> set DBID=3668667346
+7> SET NEWNAME FOR DATABASE TO '+DG_DATA001';
+8> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rssbbd09.rimac.com.pe)';
+9> set until time "to_date('2020-09-05 04:42:54', 'yyyy-mm-dd hh24:mi:ss')";
+10> restore controlfile;
+11> sql 'ALTER DATABASE MOUNT';
+12> restore database;
+13> switch datafile all;
+14> recover database;
+15> release channel c1;
+16> release channel c2;
+17> release channel c3;
+18> release channel c4;
+19> }
+20> 
+allocated channel: c1
+channel c1: SID=388 device type=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+allocated channel: c2
+channel c2: SID=770 device type=SBT_TAPE
+channel c2: NMDA Oracle v8.2.4
+
+allocated channel: c3
+channel c3: SID=1149 device type=SBT_TAPE
+channel c3: NMDA Oracle v8.2.4
+
+allocated channel: c4
+channel c4: SID=6 device type=SBT_TAPE
+channel c4: NMDA Oracle v8.2.4
+
+executing command: SET DBID
+database name is "BDERP" and DBID is 3668667346
+
+executing command: SET NEWNAME
+
+sent command to channel: c1
+sent command to channel: c2
+sent command to channel: c3
+sent command to channel: c4
+
+executing command: SET until clause
+
+Starting restore at 22-OCT-20
+
+channel c1: starting datafile backup set restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-3668667346-20200905-02
+channel c1: piece handle=c-3668667346-20200905-02 tag=TAG20200905T043636
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:02:15
+output file name=+DG_DATA001/bderp/cntrl01.dbf.1288623583432
+output file name=+DG_DATA001/bderp/cntrl02.dbf.1288623583432
+output file name=+DG_DATA001/bderp/cntrl03.dbf.1288623583432
+Finished restore at 22-OCT-20
+
+sql statement: ALTER DATABASE MOUNT
+
+Starting restore at 22-OCT-20
+Starting implicit crosscheck backup at 22-OCT-20
+Finished implicit crosscheck backup at 22-OCT-20
+
+Starting implicit crosscheck copy at 22-OCT-20
+Crosschecked 2 objects
+Finished implicit crosscheck copy at 22-OCT-20
+
+searching for all files in the recovery area
+cataloging files...
+no files cataloged
+
+
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00006 to +DG_DATA001
+channel c1: restoring datafile 00008 to +DG_DATA001
+channel c1: restoring datafile 00023 to +DG_DATA001
+channel c1: restoring datafile 00035 to +DG_DATA001
+channel c1: restoring datafile 00036 to +DG_DATA001
+channel c1: restoring datafile 00039 to +DG_DATA001
+channel c1: restoring datafile 00043 to +DG_DATA001
+channel c1: restoring datafile 00051 to +DG_DATA001
+channel c1: reading from backup piece full_bderp_1050278192_104474_1
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00003 to +DG_DATA001
+channel c2: restoring datafile 00012 to +DG_DATA001
+channel c2: restoring datafile 00017 to +DG_DATA001
+channel c2: restoring datafile 00019 to +DG_DATA001
+channel c2: restoring datafile 00022 to +DG_DATA001
+channel c2: restoring datafile 00025 to +DG_DATA001
+channel c2: restoring datafile 00030 to +DG_DATA001
+channel c2: restoring datafile 00033 to +DG_DATA001
+channel c2: restoring datafile 00050 to +DG_DATA001
+channel c2: restoring datafile 00053 to +DG_DATA001
+channel c2: reading from backup piece full_bderp_1050278192_104477_1
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00001 to +DG_DATA001
+channel c3: restoring datafile 00007 to +DG_DATA001
+channel c3: restoring datafile 00013 to +DG_DATA001
+channel c3: restoring datafile 00014 to +DG_DATA001
+channel c3: restoring datafile 00020 to +DG_DATA001
+channel c3: restoring datafile 00024 to +DG_DATA001
+channel c3: restoring datafile 00028 to +DG_DATA001
+channel c3: restoring datafile 00044 to +DG_DATA001
+channel c3: reading from backup piece full_bderp_1050278192_104475_1
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00004 to +DG_DATA001
+channel c4: restoring datafile 00010 to +DG_DATA001
+channel c4: restoring datafile 00018 to +DG_DATA001
+channel c4: restoring datafile 00026 to +DG_DATA001
+channel c4: restoring datafile 00034 to +DG_DATA001
+channel c4: restoring datafile 00040 to +DG_DATA001
+channel c4: restoring datafile 00042 to +DG_DATA001
+channel c4: restoring datafile 00045 to +DG_DATA001
+channel c4: restoring datafile 00052 to +DG_DATA001
+channel c4: reading from backup piece full_bderp_1050278192_104476_1
+channel c2: piece handle=full_bderp_1050278192_104477_1 tag=BDERP NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 01:29:56
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00002 to +DG_DATA001
+channel c2: restoring datafile 00009 to +DG_DATA001
+channel c2: restoring datafile 00016 to +DG_DATA001
+channel c2: restoring datafile 00027 to +DG_DATA001
+channel c2: restoring datafile 00032 to +DG_DATA001
+channel c2: restoring datafile 00038 to +DG_DATA001
+channel c2: restoring datafile 00046 to +DG_DATA001
+channel c2: restoring datafile 00047 to +DG_DATA001
+channel c2: restoring datafile 00049 to +DG_DATA001
+channel c2: restoring datafile 00054 to +DG_DATA001
+channel c2: reading from backup piece full_bderp_1050285221_104479_1
+channel c4: piece handle=full_bderp_1050278192_104476_1 tag=BDERP NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 03:10:23
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00005 to +DG_DATA001
+channel c4: restoring datafile 00011 to +DG_DATA001
+channel c4: restoring datafile 00015 to +DG_DATA001
+channel c4: restoring datafile 00021 to +DG_DATA001
+channel c4: restoring datafile 00029 to +DG_DATA001
+channel c4: restoring datafile 00031 to +DG_DATA001
+channel c4: restoring datafile 00037 to +DG_DATA001
+channel c4: restoring datafile 00041 to +DG_DATA001
+channel c4: restoring datafile 00048 to +DG_DATA001
+channel c4: reading from backup piece full_bderp_1050285646_104480_1
+channel c3: piece handle=full_bderp_1050278192_104475_1 tag=BDERP NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 04:38:40
+channel c1: piece handle=full_bderp_1050278192_104474_1 tag=BDERP NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 06:03:41
+channel c4: piece handle=full_bderp_1050285646_104480_1 tag=BDERP NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 04:32:29
+channel c2: piece handle=full_bderp_1050285221_104479_1 tag=BDERP NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 07:39:16
+Finished restore at 23-OCT-20
+
+datafile 1 switched to datafile copy
+input datafile copy RECID=56 STAMP=1054543114 file name=+DG_DATA001/bderp/datafile/system.263.1054521579
+datafile 2 switched to datafile copy
+input datafile copy RECID=57 STAMP=1054543114 file name=+DG_DATA001/bderp/datafile/system.315.1054538081
+datafile 3 switched to datafile copy
+input datafile copy RECID=58 STAMP=1054543114 file name=+DG_DATA001/bderp/datafile/system.289.1054510345
+datafile 4 switched to datafile copy
+input datafile copy RECID=59 STAMP=1054543114 file name=+DG_DATA001/bderp/datafile/system.280.1054515549
+datafile 5 switched to datafile copy
+input datafile copy RECID=60 STAMP=1054543114 file name=+DG_DATA001/bderp/datafile/system.302.1054532141
+datafile 6 switched to datafile copy
+input datafile copy RECID=61 STAMP=1054543114 file name=+DG_DATA001/bderp/datafile/system.301.1054526871
+datafile 7 switched to datafile copy
+input datafile copy RECID=62 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/system.264.1054521579
+datafile 8 switched to datafile copy
+input datafile copy RECID=63 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/system.300.1054526871
+datafile 9 switched to datafile copy
+input datafile copy RECID=64 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/system.316.1054538081
+datafile 10 switched to datafile copy
+input datafile copy RECID=65 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/system.266.1054515549
+datafile 11 switched to datafile copy
+input datafile copy RECID=66 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/system.307.1054532141
+datafile 12 switched to datafile copy
+input datafile copy RECID=67 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_undots1.292.1054510345
+datafile 13 switched to datafile copy
+input datafile copy RECID=68 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_archive.268.1054521579
+datafile 14 switched to datafile copy
+input datafile copy RECID=69 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_interface.270.1054521579
+datafile 15 switched to datafile copy
+input datafile copy RECID=70 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_media.299.1054532139
+datafile 16 switched to datafile copy
+input datafile copy RECID=71 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_nologging.317.1054538241
+datafile 17 switched to datafile copy
+input datafile copy RECID=72 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_queues.288.1054510347
+datafile 18 switched to datafile copy
+input datafile copy RECID=73 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_queues.274.1054515549
+datafile 19 switched to datafile copy
+input datafile copy RECID=74 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_seed.290.1054510345
+datafile 20 switched to datafile copy
+input datafile copy RECID=75 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_seed.262.1054521579
+datafile 21 switched to datafile copy
+input datafile copy RECID=76 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_summary.303.1054532141
+datafile 22 switched to datafile copy
+input datafile copy RECID=77 STAMP=1054543115 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_data.295.1054510343
+datafile 23 switched to datafile copy
+input datafile copy RECID=78 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_data.277.1054526869
+datafile 24 switched to datafile copy
+input datafile copy RECID=79 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_data.272.1054521577
+datafile 25 switched to datafile copy
+input datafile copy RECID=80 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_idx.293.1054510345
+datafile 26 switched to datafile copy
+input datafile copy RECID=81 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_idx.282.1054515549
+datafile 27 switched to datafile copy
+input datafile copy RECID=82 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_idx.312.1054538081
+datafile 28 switched to datafile copy
+input datafile copy RECID=83 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_idx.269.1054521579
+datafile 29 switched to datafile copy
+input datafile copy RECID=84 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_idx.304.1054532141
+datafile 30 switched to datafile copy
+input datafile copy RECID=85 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/ctxd.287.1054510443
+datafile 31 switched to datafile copy
+input datafile copy RECID=86 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/odm.308.1054532399
+datafile 32 switched to datafile copy
+input datafile copy RECID=87 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/olap.318.1054538279
+datafile 33 switched to datafile copy
+input datafile copy RECID=88 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/owapub.286.1054510473
+datafile 34 switched to datafile copy
+input datafile copy RECID=89 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/portal.273.1054515659
+datafile 35 switched to datafile copy
+input datafile copy RECID=90 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/sysaux.259.1054526871
+datafile 36 switched to datafile copy
+input datafile copy RECID=91 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/xbold.279.1054526869
+datafile 37 switched to datafile copy
+input datafile copy RECID=92 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/xbold.306.1054532139
+datafile 38 switched to datafile copy
+input datafile copy RECID=93 STAMP=1054543116 file name=+DG_DATA001/bderp/datafile/xbolx.309.1054538079
+datafile 39 switched to datafile copy
+input datafile copy RECID=94 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_tools.257.1054526871
+datafile 40 switched to datafile copy
+input datafile copy RECID=95 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/data_bderp_aud.281.1054515549
+datafile 41 switched to datafile copy
+input datafile copy RECID=96 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_undots1.305.1054532141
+datafile 42 switched to datafile copy
+input datafile copy RECID=97 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.285.1054515547
+datafile 43 switched to datafile copy
+input datafile copy RECID=98 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_idx.258.1054526871
+datafile 44 switched to datafile copy
+input datafile copy RECID=99 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.271.1054521579
+datafile 45 switched to datafile copy
+input datafile copy RECID=100 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/xbolx.283.1054515547
+datafile 46 switched to datafile copy
+input datafile copy RECID=101 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.310.1054538079
+datafile 47 switched to datafile copy
+input datafile copy RECID=102 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_interface.314.1054538081
+datafile 48 switched to datafile copy
+input datafile copy RECID=103 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.298.1054532139
+datafile 49 switched to datafile copy
+input datafile copy RECID=104 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/xbolx.313.1054538081
+datafile 50 switched to datafile copy
+input datafile copy RECID=105 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.294.1054510345
+datafile 51 switched to datafile copy
+input datafile copy RECID=106 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.276.1054526869
+datafile 52 switched to datafile copy
+input datafile copy RECID=107 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.284.1054515547
+datafile 53 switched to datafile copy
+input datafile copy RECID=108 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_tx_data.291.1054510345
+datafile 54 switched to datafile copy
+input datafile copy RECID=109 STAMP=1054543117 file name=+DG_DATA001/bderp/datafile/apps_ts_media.311.1054538079
+
+Starting recover at 23-OCT-20
+renamed tempfile 1 to +DG_DATA001 in control file
+renamed tempfile 2 to +DG_DATA001 in control file
+
+starting media recovery
+
+channel c1: starting archived log restore to default destination
+channel c1: restoring archived log
+archived log thread=1 sequence=440730
+channel c1: restoring archived log
+archived log thread=1 sequence=440731
+channel c1: reading from backup piece log_bderp_1050289558_104481_1
+channel c2: starting archived log restore to default destination
+channel c2: restoring archived log
+archived log thread=1 sequence=440732
+channel c2: restoring archived log
+archived log thread=1 sequence=440733
+channel c2: restoring archived log
+archived log thread=1 sequence=440734
+channel c2: reading from backup piece log_bderp_1050289558_104482_1
+channel c3: starting archived log restore to default destination
+channel c3: restoring archived log
+archived log thread=1 sequence=440735
+channel c3: reading from backup piece log_bderp_1050292547_104484_1
+channel c4: starting archived log restore to default destination
+channel c4: restoring archived log
+archived log thread=1 sequence=440736
+channel c4: reading from backup piece log_bderp_1050292547_104485_1
+channel c4: piece handle=log_bderp_1050292547_104485_1 tag=BDERP NIVEL 0 - ARCHIVE LOGS
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:00:15
+channel c4: starting archived log restore to default destination
+channel c4: restoring archived log
+archived log thread=1 sequence=440737
+channel c4: restoring archived log
+archived log thread=1 sequence=440738
+channel c4: restoring archived log
+archived log thread=1 sequence=440739
+channel c4: reading from backup piece log_bderp_1050299746_104490_1
+channel c1: piece handle=log_bderp_1050289558_104481_1 tag=BDERP NIVEL 0 - ARCHIVE LOGS
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:18
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440730.321.1054543151 thread=1 sequence=440730
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440730.321.1054543151 RECID=440651 STAMP=1054543154
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440731.320.1054543151 thread=1 sequence=440731
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440731.320.1054543151 RECID=440652 STAMP=1054543154
+channel c3: piece handle=log_bderp_1050292547_104484_1 tag=BDERP NIVEL 0 - ARCHIVE LOGS
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 00:00:20
+channel c2: piece handle=log_bderp_1050289558_104482_1 tag=BDERP NIVEL 0 - ARCHIVE LOGS
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 00:00:24
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440732.323.1054543155 thread=1 sequence=440732
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440732.323.1054543155 RECID=440656 STAMP=1054543158
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440733.324.1054543155 thread=1 sequence=440733
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440733.324.1054543155 RECID=440654 STAMP=1054543155
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440734.325.1054543155 thread=1 sequence=440734
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440734.325.1054543155 RECID=440653 STAMP=1054543155
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440735.322.1054543153 thread=1 sequence=440735
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440735.322.1054543153 RECID=440655 STAMP=1054543157
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440736.319.1054543151 thread=1 sequence=440736
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440736.319.1054543151 RECID=440650 STAMP=1054543150
+channel c4: piece handle=log_bderp_1050299746_104490_1 tag=BDERP NIVEL 0 - ARCHIVE LOGS
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 00:00:31
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440737.322.1054543175 thread=1 sequence=440737
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440737.322.1054543175 RECID=440658 STAMP=1054543178
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440738.325.1054543177 thread=1 sequence=440738
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440738.325.1054543177 RECID=440657 STAMP=1054543176
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440739.319.1054543175 thread=1 sequence=440739
+channel default: deleting archived log(s)
+archived log file name=+DG_DATA001/bderp/archivelog/2020_10_23/thread_1_seq_440739.319.1054543175 RECID=440659 STAMP=1054543178
+media recovery complete, elapsed time: 00:00:02
+Finished recover at 23-OCT-20
+
+released channel: c1
+
+released channel: c2
+
+released channel: c3
+
+released channel: c4
+
+Recovery Manager complete.
+oracle@:/oracle/scripts/restore/BDERP>
