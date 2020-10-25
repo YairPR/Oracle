@@ -1,0 +1,24 @@
+https://dbaclass.com/article/ora-19809-limit-exceeded-recovery-files/
+
+
+released channel: c6
+RMAN-00571: ===========================================================
+RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+RMAN-00571: ===========================================================
+RMAN-03002: failure of recover command at 10/25/2020 12:28:20
+ORA-19870: error while restoring backup piece davblrfh_1_1
+ORA-19809: limit exceeded for recovery files
+ORA-19804: cannot reclaim 3760193536 bytes disk space from 4385144832 limit
+
+solution:
+
+ select SPACE_USED/1024/1024/1024 "SPACE_USED(GB)" ,SPACE_LIMIT/1024/1024/1024 "SPACE_LIMIT(GB)" from v$recovery_file_dest;
+
+SPACE_USED(GB) SPACE_LIMIT(GB)
+-------------- ---------------
+    4874.45313	    4.08398438
+
+SQL>  alter system set db_recovery_file_dest_size=8G;
+
+System altered.
+
