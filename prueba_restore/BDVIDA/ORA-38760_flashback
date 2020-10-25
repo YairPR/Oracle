@@ -1,0 +1,20 @@
+released channel: c6
+RMAN-00571: ===========================================================
+RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+RMAN-00571: ===========================================================
+RMAN-03002: failure of recover command at 10/24/2020 14:39:27
+ORA-00283: recovery session canceled due to errors
+RMAN-11003: failure during parse/execution of SQL statement: alter database recover if needed
+ start until time 'SEP 30 2020 12:36:32' using backup controlfile
+ORA-00283: recovery session canceled due to errors
+ORA-38760: This database instance failed to turn on flashback database
+
+SOLUTION
+--------
+-- https://juanmercadoit.com/2009/12/05/ora-38760-this-database-instance-failed-to-turn-on-flashback-database/
+
+desactivar flashback:
+SQL> alter database flashback off;
+ Database altered.
+
+
