@@ -1,17 +1,17 @@
---https://docs.oracle.com/cd/B28359_01/server.111/b28310/dbrm004.htm#ADMIN11879
-
+--Resource Manager: https://docs.oracle.com/cd/B28359_01/server.111/b28310/dbrm004.htm#ADMIN11879
+--AUDSID: https://mwidlake.wordpress.com/2010/06/17/what-is-audsid/
 
 set role all;
 set linesize 2000 pagesize 200 feedback on
 col spid format a10
 col osuser format a15
-col username format a14
-col sid format 99999
+col username format a15
+col sid format 999999
 col serial# format 999999
 col module format a20
 col kill format a18
 col query format a35
-col last_call format 9999.99
+col last_call format 99999.99
 col status format a10
 SELECT /*+ rule */ to_char(sysdate,'hh24:mi:ss') fecha, to_char(s.Logon_Time,'dd/mm/yyyy hh24:mi:ss') Logon_Time,p.spid, s.OsUser, s.UserName, 
 /* (select NOMUSR from usuario where codusr = s.username) uname,*/ 
