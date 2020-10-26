@@ -1,3 +1,6 @@
+--https://docs.oracle.com/cd/B28359_01/server.111/b28310/dbrm004.htm#ADMIN11879
+
+
 set role all;
 set linesize 2000 pagesize 200 feedback on
 col spid format a10
@@ -10,7 +13,10 @@ col kill format a18
 col query format a35
 col last_call format 9999.99
 col status format a10
-SELECT /*+ rule */ to_char(sysdate,'hh24:mi:ss') fecha, to_char(s.Logon_Time,'dd/mm/yyyy hh24:mi:ss') Logon_Time,p.spid, s.OsUser, s.UserName, /* (select NOMUSR from usuario where codusr = s.username) uname,*/ s.sid, s.serial#, s.module, decode(sql_hash_value, 0, prev_hash_value, sql_hash_value) hash ,s.status, 'kill -9 '||p.spid kill, LAST_CALL_ET/60 last_call, '@s '||s.sql_address||' '||s.sql_hash_value QUERY, RESOURCE_CONSUMER_GROUP rgr, s.machine, s.Program,  s.action, audsid
+SELECT /*+ rule */ to_char(sysdate,'hh24:mi:ss') fecha, to_char(s.Logon_Time,'dd/mm/yyyy hh24:mi:ss') Logon_Time,p.spid, s.OsUser, s.UserName, 
+/* (select NOMUSR from usuario where codusr = s.username) uname,*/ 
+s.sid, s.serial#, s.module, decode(sql_hash_value, 0, prev_hash_value, sql_hash_value) hash ,s.status, 'kill -9 '||p.spid kill, LAST_CALL_ET/60 last_call,
+'@s '||s.sql_address||' '||s.sql_hash_value QUERY, RESOURCE_CONSUMER_GROUP rgr, s.machine, s.Program,  s.action, audsid
   FROM V$Session s , v$process p
  WHERE s.UserName Is Not Null
   AND  s.Status='ACTIVE'
