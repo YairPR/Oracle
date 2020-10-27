@@ -1,0 +1,2024 @@
+[oracle@rsdcprstsas01 BDVIDA]$ cat restore_bd_2020.10.22.log
+
+Recovery Manager: Release 11.2.0.4.0 - Production on Thu Oct 22 16:40:48 2020
+
+Copyright (c) 1982, 2011, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: BDVIDA (not mounted)
+connected to recovery catalog database
+
+RMAN> run {
+2> allocate channel c1 type 'SBT_TAPE';
+3> allocate channel c2 type 'SBT_TAPE';
+4> allocate channel c3 type 'SBT_TAPE';
+5> allocate channel c4 type 'SBT_TAPE';
+6> allocate channel c5 type 'SBT_TAPE';
+7> allocate channel c6 type 'SBT_TAPE';
+8> set DBID=233382885
+9> SET NEWNAME FOR DATABASE TO '+DATA';
+10> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rsdpedbadm01.rimac.com.pe)';
+11> set until time "to_date('2020-09-30 12:36:32', 'yyyy-mm-dd hh24:mi:ss')";
+12> restore controlfile;
+13> sql 'ALTER DATABASE MOUNT';
+14> restore database;
+15> switch datafile all;
+16> recover database;
+17> release channel c1;
+18> release channel c2;
+19> release channel c3;
+20> release channel c4;
+21> release channel c5;
+22> release channel c6;
+23> }
+24> 
+25> 
+allocated channel: c1
+channel c1: SID=201 device type=SBT_TAPE
+channel c1: NMDA Oracle v8.2.4
+
+allocated channel: c2
+channel c2: SID=393 device type=SBT_TAPE
+channel c2: NMDA Oracle v8.2.4
+
+allocated channel: c3
+channel c3: SID=585 device type=SBT_TAPE
+channel c3: NMDA Oracle v8.2.4
+
+allocated channel: c4
+channel c4: SID=6 device type=SBT_TAPE
+channel c4: NMDA Oracle v8.2.4
+
+allocated channel: c5
+channel c5: SID=202 device type=SBT_TAPE
+channel c5: NMDA Oracle v8.2.4
+
+allocated channel: c6
+channel c6: SID=394 device type=SBT_TAPE
+channel c6: NMDA Oracle v8.2.4
+
+executing command: SET DBID
+database name is "BDVIDA" and DBID is 233382885
+
+executing command: SET NEWNAME
+
+sent command to channel: c1
+sent command to channel: c2
+sent command to channel: c3
+sent command to channel: c4
+sent command to channel: c5
+sent command to channel: c6
+
+executing command: SET until clause
+
+Starting restore at 22-OCT-20
+
+channel c1: starting datafile backup set restore
+channel c1: restoring control file
+channel c1: reading from backup piece c-233382885-20200930-03
+channel c1: piece handle=c-233382885-20200930-03 tag=TAG20200930T123629
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 00:00:35
+output file name=+DATA/bdvida/controlfile/current.515.1054485687
+output file name=+DATA/bdvida/controlfile/current.256.1054485689
+Finished restore at 22-OCT-20
+
+sql statement: ALTER DATABASE MOUNT
+
+Starting restore at 22-OCT-20
+Starting implicit crosscheck backup at 22-OCT-20
+Finished implicit crosscheck backup at 22-OCT-20
+
+Starting implicit crosscheck copy at 22-OCT-20
+Crosschecked 2 objects
+Finished implicit crosscheck copy at 22-OCT-20
+
+searching for all files in the recovery area
+cataloging files...
+no files cataloged
+
+
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00021 to +DATA
+channel c1: restoring datafile 00086 to +DATA
+channel c1: restoring datafile 00158 to +DATA
+channel c1: restoring datafile 00208 to +DATA
+channel c1: restoring datafile 00210 to +DATA
+channel c1: restoring datafile 00251 to +DATA
+channel c1: restoring datafile 00346 to +DATA
+channel c1: restoring datafile 00393 to +DATA
+channel c1: restoring datafile 00409 to +DATA
+channel c1: restoring datafile 00470 to +DATA
+channel c1: reading from backup piece full_bdvida_1052191496_124085_1
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00014 to +DATA
+channel c2: restoring datafile 00083 to +DATA
+channel c2: restoring datafile 00191 to +DATA
+channel c2: restoring datafile 00204 to +DATA
+channel c2: restoring datafile 00246 to +DATA
+channel c2: restoring datafile 00250 to +DATA
+channel c2: restoring datafile 00342 to +DATA
+channel c2: restoring datafile 00343 to +DATA
+channel c2: restoring datafile 00390 to +DATA
+channel c2: restoring datafile 00500 to +DATA
+channel c2: reading from backup piece full_bdvida_1052191821_124086_1
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00030 to +DATA
+channel c3: restoring datafile 00035 to +DATA
+channel c3: restoring datafile 00074 to +DATA
+channel c3: restoring datafile 00148 to +DATA
+channel c3: restoring datafile 00211 to +DATA
+channel c3: restoring datafile 00249 to +DATA
+channel c3: restoring datafile 00285 to +DATA
+channel c3: restoring datafile 00405 to +DATA
+channel c3: restoring datafile 00414 to +DATA
+channel c3: restoring datafile 00493 to +DATA
+channel c3: reading from backup piece full_bdvida_1052203458_124091_1
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00031 to +DATA
+channel c4: restoring datafile 00075 to +DATA
+channel c4: restoring datafile 00153 to +DATA
+channel c4: restoring datafile 00159 to +DATA
+channel c4: restoring datafile 00213 to +DATA
+channel c4: restoring datafile 00248 to +DATA
+channel c4: restoring datafile 00286 to +DATA
+channel c4: restoring datafile 00406 to +DATA
+channel c4: restoring datafile 00413 to +DATA
+channel c4: restoring datafile 00507 to +DATA
+channel c4: reading from backup piece full_bdvida_1052204234_124095_1
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00049 to +DATA
+channel c5: restoring datafile 00107 to +DATA
+channel c5: restoring datafile 00194 to +DATA
+channel c5: restoring datafile 00234 to +DATA
+channel c5: restoring datafile 00245 to +DATA
+channel c5: restoring datafile 00319 to +DATA
+channel c5: restoring datafile 00374 to +DATA
+channel c5: restoring datafile 00404 to +DATA
+channel c5: restoring datafile 00490 to +DATA
+channel c5: reading from backup piece full_bdvida_1052214221_124103_1
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00022 to +DATA
+channel c6: restoring datafile 00088 to +DATA
+channel c6: restoring datafile 00168 to +DATA
+channel c6: restoring datafile 00209 to +DATA
+channel c6: restoring datafile 00241 to +DATA
+channel c6: restoring datafile 00352 to +DATA
+channel c6: restoring datafile 00394 to +DATA
+channel c6: restoring datafile 00417 to +DATA
+channel c6: restoring datafile 00471 to +DATA
+channel c6: reading from backup piece full_bdvida_1052215257_124104_1
+channel c5: piece handle=full_bdvida_1052214221_124103_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 03:44:29
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00024 to +DATA
+channel c5: restoring datafile 00091 to +DATA
+channel c5: restoring datafile 00170 to +DATA
+channel c5: restoring datafile 00214 to +DATA
+channel c5: restoring datafile 00291 to +DATA
+channel c5: restoring datafile 00354 to +DATA
+channel c5: restoring datafile 00396 to +DATA
+channel c5: restoring datafile 00473 to +DATA
+channel c5: restoring datafile 00514 to +DATA
+channel c5: reading from backup piece full_bdvida_1052228715_124122_1
+channel c6: piece handle=full_bdvida_1052215257_124104_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 04:31:35
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00026 to +DATA
+channel c6: restoring datafile 00098 to +DATA
+channel c6: restoring datafile 00172 to +DATA
+channel c6: restoring datafile 00221 to +DATA
+channel c6: restoring datafile 00294 to +DATA
+channel c6: restoring datafile 00356 to +DATA
+channel c6: restoring datafile 00398 to +DATA
+channel c6: restoring datafile 00480 to +DATA
+channel c6: restoring datafile 00516 to +DATA
+channel c6: reading from backup piece full_bdvida_1052231881_124123_1
+channel c3: piece handle=full_bdvida_1052203458_124091_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 04:48:42
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00002 to +DATA
+channel c3: restoring datafile 00047 to +DATA
+channel c3: restoring datafile 00106 to +DATA
+channel c3: restoring datafile 00167 to +DATA
+channel c3: restoring datafile 00230 to +DATA
+channel c3: restoring datafile 00318 to +DATA
+channel c3: restoring datafile 00373 to +DATA
+channel c3: restoring datafile 00403 to +DATA
+channel c3: restoring datafile 00489 to +DATA
+channel c3: reading from backup piece full_bdvida_1052221883_124105_1
+channel c4: piece handle=full_bdvida_1052204234_124095_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 05:21:47
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00023 to +DATA
+channel c4: restoring datafile 00089 to +DATA
+channel c4: restoring datafile 00212 to +DATA
+channel c4: restoring datafile 00242 to +DATA
+channel c4: restoring datafile 00353 to +DATA
+channel c4: restoring datafile 00395 to +DATA
+channel c4: restoring datafile 00416 to +DATA
+channel c4: restoring datafile 00472 to +DATA
+channel c4: restoring datafile 00504 to +DATA
+channel c4: reading from backup piece full_bdvida_1052223439_124106_1
+channel c1: piece handle=full_bdvida_1052191496_124085_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 05:25:33
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00078 to +DATA
+channel c1: restoring datafile 00123 to +DATA
+channel c1: restoring datafile 00137 to +DATA
+channel c1: restoring datafile 00150 to +DATA
+channel c1: restoring datafile 00269 to +DATA
+channel c1: restoring datafile 00275 to +DATA
+channel c1: restoring datafile 00358 to +DATA
+channel c1: restoring datafile 00412 to +DATA
+channel c1: restoring datafile 00450 to +DATA
+channel c1: restoring datafile 00475 to +DATA
+channel c1: reading from backup piece full_bdvida_1052238137_124124_1
+channel c2: piece handle=full_bdvida_1052191821_124086_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 05:37:09
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00001 to +DATA
+channel c2: restoring datafile 00004 to +DATA
+channel c2: restoring datafile 00077 to +DATA
+channel c2: restoring datafile 00129 to +DATA
+channel c2: restoring datafile 00174 to +DATA
+channel c2: restoring datafile 00268 to +DATA
+channel c2: restoring datafile 00280 to +DATA
+channel c2: restoring datafile 00407 to +DATA
+channel c2: restoring datafile 00478 to +DATA
+channel c2: restoring datafile 00513 to +DATA
+channel c2: reading from backup piece full_bdvida_1052240343_124125_1
+channel c3: piece handle=full_bdvida_1052221883_124105_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 03:35:15
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00087 to +DATA
+channel c3: restoring datafile 00092 to +DATA
+channel c3: restoring datafile 00124 to +DATA
+channel c3: restoring datafile 00140 to +DATA
+channel c3: restoring datafile 00157 to +DATA
+channel c3: restoring datafile 00270 to +DATA
+channel c3: restoring datafile 00276 to +DATA
+channel c3: restoring datafile 00359 to +DATA
+channel c3: restoring datafile 00451 to +DATA
+channel c3: restoring datafile 00476 to +DATA
+channel c3: reading from backup piece full_bdvida_1052246579_124132_1
+channel c1: piece handle=full_bdvida_1052238137_124124_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 03:45:30
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00099 to +DATA
+channel c1: restoring datafile 00126 to +DATA
+channel c1: restoring datafile 00127 to +DATA
+channel c1: restoring datafile 00141 to +DATA
+channel c1: restoring datafile 00173 to +DATA
+channel c1: restoring datafile 00271 to +DATA
+channel c1: restoring datafile 00279 to +DATA
+channel c1: restoring datafile 00360 to +DATA
+channel c1: restoring datafile 00452 to +DATA
+channel c1: restoring datafile 00477 to +DATA
+channel c1: reading from backup piece full_bdvida_1052247874_124143_1
+channel c4: piece handle=full_bdvida_1052223439_124106_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 03:51:10
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00029 to +DATA
+channel c4: restoring datafile 00058 to +DATA
+channel c4: restoring datafile 00146 to +DATA
+channel c4: restoring datafile 00201 to +DATA
+channel c4: restoring datafile 00284 to +DATA
+channel c4: restoring datafile 00308 to +DATA
+channel c4: restoring datafile 00453 to +DATA
+channel c4: restoring datafile 00488 to +DATA
+channel c4: restoring datafile 00495 to +DATA
+channel c4: restoring datafile 00509 to +DATA
+channel c4: reading from backup piece full_bdvida_1052254031_124144_1
+channel c5: piece handle=full_bdvida_1052228715_124122_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 05:45:53
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00016 to +DATA
+channel c5: restoring datafile 00054 to +DATA
+channel c5: restoring datafile 00055 to +DATA
+channel c5: restoring datafile 00134 to +DATA
+channel c5: restoring datafile 00152 to +DATA
+channel c5: restoring datafile 00195 to +DATA
+channel c5: restoring datafile 00283 to +DATA
+channel c5: restoring datafile 00454 to +DATA
+channel c5: restoring datafile 00487 to +DATA
+channel c5: restoring datafile 00510 to +DATA
+channel c5: reading from backup piece full_bdvida_1052255116_124145_1
+channel c6: piece handle=full_bdvida_1052231881_124123_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 05:46:53
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00060 to +DATA
+channel c6: restoring datafile 00066 to +DATA
+channel c6: restoring datafile 00071 to +DATA
+channel c6: restoring datafile 00111 to +DATA
+channel c6: restoring datafile 00239 to +DATA
+channel c6: restoring datafile 00256 to +DATA
+channel c6: restoring datafile 00311 to +DATA
+channel c6: restoring datafile 00361 to +DATA
+channel c6: restoring datafile 00461 to +DATA
+channel c6: restoring datafile 00505 to +DATA
+channel c6: reading from backup piece full_bdvida_1052262463_124146_1
+channel c1: piece handle=full_bdvida_1052247874_124143_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 02:56:03
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00063 to +DATA
+channel c1: restoring datafile 00067 to +DATA
+channel c1: restoring datafile 00112 to +DATA
+channel c1: restoring datafile 00223 to +DATA
+channel c1: restoring datafile 00240 to +DATA
+channel c1: restoring datafile 00314 to +DATA
+channel c1: restoring datafile 00332 to +DATA
+channel c1: restoring datafile 00362 to +DATA
+channel c1: restoring datafile 00462 to +DATA
+channel c1: restoring datafile 00506 to +DATA
+channel c1: reading from backup piece full_bdvida_1052263868_124147_1
+channel c2: piece handle=full_bdvida_1052240343_124125_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 06:58:33
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00042 to +DATA
+channel c2: restoring datafile 00090 to +DATA
+channel c2: restoring datafile 00114 to +DATA
+channel c2: restoring datafile 00120 to +DATA
+channel c2: restoring datafile 00224 to +DATA
+channel c2: restoring datafile 00254 to +DATA
+channel c2: restoring datafile 00272 to +DATA
+channel c2: restoring datafile 00333 to +DATA
+channel c2: restoring datafile 00363 to +DATA
+channel c2: restoring datafile 00464 to +DATA
+channel c2: reading from backup piece full_bdvida_1052269805_124162_1
+channel c6: piece handle=full_bdvida_1052262463_124146_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 02:51:18
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00051 to +DATA
+channel c6: restoring datafile 00064 to +DATA
+channel c6: restoring datafile 00093 to +DATA
+channel c6: restoring datafile 00115 to +DATA
+channel c6: restoring datafile 00121 to +DATA
+channel c6: restoring datafile 00225 to +DATA
+channel c6: restoring datafile 00259 to +DATA
+channel c6: restoring datafile 00334 to +DATA
+channel c6: restoring datafile 00364 to +DATA
+channel c6: restoring datafile 00465 to +DATA
+channel c6: reading from backup piece full_bdvida_1052276656_124164_1
+channel c3: piece handle=full_bdvida_1052246579_124132_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 06:45:17
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00045 to +DATA
+channel c3: restoring datafile 00056 to +DATA
+channel c3: restoring datafile 00110 to +DATA
+channel c3: restoring datafile 00144 to +DATA
+channel c3: restoring datafile 00238 to +DATA
+channel c3: restoring datafile 00255 to +DATA
+channel c3: restoring datafile 00310 to +DATA
+channel c3: restoring datafile 00381 to +DATA
+channel c3: restoring datafile 00492 to +DATA
+channel c3: restoring datafile 00511 to +DATA
+channel c3: reading from backup piece full_bdvida_1052271110_124163_1
+channel c4: piece handle=full_bdvida_1052254031_124144_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 06:07:32
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00061 to +DATA
+channel c4: restoring datafile 00065 to +DATA
+channel c4: restoring datafile 00095 to +DATA
+channel c4: restoring datafile 00122 to +DATA
+channel c4: restoring datafile 00125 to +DATA
+channel c4: restoring datafile 00226 to +DATA
+channel c4: restoring datafile 00262 to +DATA
+channel c4: restoring datafile 00335 to +DATA
+channel c4: restoring datafile 00365 to +DATA
+channel c4: restoring datafile 00466 to +DATA
+channel c4: reading from backup piece full_bdvida_1052277912_124165_1
+channel c5: piece handle=full_bdvida_1052255116_124145_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 06:22:22
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00007 to +DATA
+channel c5: restoring datafile 00080 to +DATA
+channel c5: restoring datafile 00181 to +DATA
+channel c5: restoring datafile 00198 to +DATA
+channel c5: restoring datafile 00329 to +DATA
+channel c5: restoring datafile 00339 to +DATA
+channel c5: restoring datafile 00387 to +DATA
+channel c5: restoring datafile 00411 to +DATA
+channel c5: restoring datafile 00445 to +DATA
+channel c5: restoring datafile 00524 to +DATA
+channel c5: reading from backup piece full_bdvida_1052287109_124166_1
+channel c1: piece handle=full_bdvida_1052263868_124147_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 04:55:15
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00008 to +DATA
+channel c1: restoring datafile 00009 to +DATA
+channel c1: restoring datafile 00081 to +DATA
+channel c1: restoring datafile 00184 to +DATA
+channel c1: restoring datafile 00199 to +DATA
+channel c1: restoring datafile 00330 to +DATA
+channel c1: restoring datafile 00340 to +DATA
+channel c1: restoring datafile 00388 to +DATA
+channel c1: restoring datafile 00428 to +DATA
+channel c1: restoring datafile 00522 to +DATA
+channel c1: reading from backup piece full_bdvida_1052288725_124171_1
+channel c2: piece handle=full_bdvida_1052269805_124162_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 05:39:46
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00050 to +DATA
+channel c2: restoring datafile 00108 to +DATA
+channel c2: restoring datafile 00215 to +DATA
+channel c2: restoring datafile 00237 to +DATA
+channel c2: restoring datafile 00288 to +DATA
+channel c2: restoring datafile 00375 to +DATA
+channel c2: restoring datafile 00460 to +DATA
+channel c2: restoring datafile 00491 to +DATA
+channel c2: restoring datafile 00512 to +DATA
+channel c2: restoring datafile 00523 to +DATA
+channel c2: reading from backup piece full_bdvida_1052297561_124182_1
+channel c5: piece handle=full_bdvida_1052287109_124166_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 03:43:50
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00005 to +DATA
+channel c5: restoring datafile 00079 to +DATA
+channel c5: restoring datafile 00180 to +DATA
+channel c5: restoring datafile 00197 to +DATA
+channel c5: restoring datafile 00267 to +DATA
+channel c5: restoring datafile 00328 to +DATA
+channel c5: restoring datafile 00338 to +DATA
+channel c5: restoring datafile 00379 to +DATA
+channel c5: restoring datafile 00386 to +DATA
+channel c5: restoring datafile 00444 to +DATA
+channel c5: reading from backup piece full_bdvida_1052298447_124183_1
+channel c3: piece handle=full_bdvida_1052271110_124163_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 04:42:06
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00037 to +DATA
+channel c3: restoring datafile 00053 to +DATA
+channel c3: restoring datafile 00164 to +DATA
+channel c3: restoring datafile 00182 to +DATA
+channel c3: restoring datafile 00232 to +DATA
+channel c3: restoring datafile 00305 to +DATA
+channel c3: restoring datafile 00312 to +DATA
+channel c3: restoring datafile 00369 to +DATA
+channel c3: restoring datafile 00426 to +DATA
+channel c3: restoring datafile 00441 to +DATA
+channel c3: reading from backup piece full_bdvida_1052306093_124184_1
+channel c6: piece handle=full_bdvida_1052276656_124164_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 07:30:59
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00039 to +DATA
+channel c6: restoring datafile 00059 to +DATA
+channel c6: restoring datafile 00166 to +DATA
+channel c6: restoring datafile 00185 to +DATA
+channel c6: restoring datafile 00252 to +DATA
+channel c6: restoring datafile 00307 to +DATA
+channel c6: restoring datafile 00321 to +DATA
+channel c6: restoring datafile 00378 to +DATA
+channel c6: restoring datafile 00448 to +DATA
+channel c6: restoring datafile 00521 to +DATA
+channel c6: reading from backup piece full_bdvida_1052306458_124185_1
+channel c4: piece handle=full_bdvida_1052277912_124165_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 05:42:42
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00040 to +DATA
+channel c4: restoring datafile 00062 to +DATA
+channel c4: restoring datafile 00128 to +DATA
+channel c4: restoring datafile 00175 to +DATA
+channel c4: restoring datafile 00186 to +DATA
+channel c4: restoring datafile 00196 to +DATA
+channel c4: restoring datafile 00299 to +DATA
+channel c4: restoring datafile 00309 to +DATA
+channel c4: restoring datafile 00322 to +DATA
+channel c4: restoring datafile 00380 to +DATA
+channel c4: reading from backup piece full_bdvida_1052315255_124202_1
+channel c5: piece handle=full_bdvida_1052298447_124183_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 02:38:43
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00043 to +DATA
+channel c5: restoring datafile 00070 to +DATA
+channel c5: restoring datafile 00177 to +DATA
+channel c5: restoring datafile 00189 to +DATA
+channel c5: restoring datafile 00301 to +DATA
+channel c5: restoring datafile 00317 to +DATA
+channel c5: restoring datafile 00325 to +DATA
+channel c5: restoring datafile 00383 to +DATA
+channel c5: restoring datafile 00443 to +DATA
+channel c5: restoring datafile 00446 to +DATA
+channel c5: reading from backup piece full_bdvida_1052316361_124203_1
+channel c1: piece handle=full_bdvida_1052288725_124171_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 06:04:52
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00003 to +DATA
+channel c1: restoring datafile 00076 to +DATA
+channel c1: restoring datafile 00116 to +DATA
+channel c1: restoring datafile 00155 to +DATA
+channel c1: restoring datafile 00179 to +DATA
+channel c1: restoring datafile 00192 to +DATA
+channel c1: restoring datafile 00304 to +DATA
+channel c1: restoring datafile 00323 to +DATA
+channel c1: restoring datafile 00327 to +DATA
+channel c1: restoring datafile 00385 to +DATA
+channel c1: reading from backup piece full_bdvida_1052323507_124204_1
+channel c2: piece handle=full_bdvida_1052297561_124182_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 07:26:24
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00072 to +DATA
+channel c2: restoring datafile 00154 to +DATA
+channel c2: restoring datafile 00156 to +DATA
+channel c2: restoring datafile 00178 to +DATA
+channel c2: restoring datafile 00266 to +DATA
+channel c2: restoring datafile 00289 to +DATA
+channel c2: restoring datafile 00302 to +DATA
+channel c2: restoring datafile 00303 to +DATA
+channel c2: restoring datafile 00326 to +DATA
+channel c2: restoring datafile 00384 to +DATA
+channel c2: reading from backup piece full_bdvida_1052324193_124205_1
+channel c1: piece handle=full_bdvida_1052323507_124204_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 02:53:04
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00013 to +DATA
+channel c1: restoring datafile 00046 to +DATA
+channel c1: restoring datafile 00143 to +DATA
+channel c1: restoring datafile 00161 to +DATA
+channel c1: restoring datafile 00217 to +DATA
+channel c1: restoring datafile 00247 to +DATA
+channel c1: restoring datafile 00293 to +DATA
+channel c1: restoring datafile 00348 to +DATA
+channel c1: restoring datafile 00423 to +DATA
+channel c1: restoring datafile 00438 to +DATA
+channel c1: reading from backup piece full_bdvida_1052346968_124224_1
+channel c3: piece handle=full_bdvida_1052306093_124184_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 06:09:33
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00041 to +DATA
+channel c3: restoring datafile 00069 to +DATA
+channel c3: restoring datafile 00176 to +DATA
+channel c3: restoring datafile 00188 to +DATA
+channel c3: restoring datafile 00300 to +DATA
+channel c3: restoring datafile 00313 to +DATA
+channel c3: restoring datafile 00324 to +DATA
+channel c3: restoring datafile 00382 to +DATA
+channel c3: restoring datafile 00442 to +DATA
+channel c3: restoring datafile 00447 to +DATA
+channel c3: reading from backup piece full_bdvida_1052329931_124206_1
+channel c6: piece handle=full_bdvida_1052306458_124185_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 05:41:13
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00038 to +DATA
+channel c6: restoring datafile 00057 to +DATA
+channel c6: restoring datafile 00165 to +DATA
+channel c6: restoring datafile 00183 to +DATA
+channel c6: restoring datafile 00236 to +DATA
+channel c6: restoring datafile 00306 to +DATA
+channel c6: restoring datafile 00320 to +DATA
+channel c6: restoring datafile 00377 to +DATA
+channel c6: restoring datafile 00427 to +DATA
+channel c6: restoring datafile 00440 to +DATA
+channel c6: reading from backup piece full_bdvida_1052330629_124207_1
+channel c4: piece handle=full_bdvida_1052315255_124202_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 06:03:23
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00068 to +DATA
+channel c4: restoring datafile 00096 to +DATA
+channel c4: restoring datafile 00131 to +DATA
+channel c4: restoring datafile 00138 to +DATA
+channel c4: restoring datafile 00231 to +DATA
+channel c4: restoring datafile 00264 to +DATA
+channel c4: restoring datafile 00336 to +DATA
+channel c4: restoring datafile 00429 to +DATA
+channel c4: restoring datafile 00449 to +DATA
+channel c4: restoring datafile 00467 to +DATA
+channel c4: reading from backup piece full_bdvida_1052337756_124222_1
+channel c5: piece handle=full_bdvida_1052316361_124203_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 05:08:23
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00012 to +DATA
+channel c5: restoring datafile 00044 to +DATA
+channel c5: restoring datafile 00142 to +DATA
+channel c5: restoring datafile 00160 to +DATA
+channel c5: restoring datafile 00216 to +DATA
+channel c5: restoring datafile 00235 to +DATA
+channel c5: restoring datafile 00290 to +DATA
+channel c5: restoring datafile 00347 to +DATA
+channel c5: restoring datafile 00422 to +DATA
+channel c5: restoring datafile 00439 to +DATA
+channel c5: reading from backup piece full_bdvida_1052339351_124223_1
+channel c1: piece handle=full_bdvida_1052346968_124224_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 03:04:20
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00018 to +DATA
+channel c1: restoring datafile 00048 to +DATA
+channel c1: restoring datafile 00149 to +DATA
+channel c1: restoring datafile 00162 to +DATA
+channel c1: restoring datafile 00218 to +DATA
+channel c1: restoring datafile 00260 to +DATA
+channel c1: restoring datafile 00297 to +DATA
+channel c1: restoring datafile 00349 to +DATA
+channel c1: restoring datafile 00424 to +DATA
+channel c1: restoring datafile 00437 to +DATA
+channel c1: reading from backup piece full_bdvida_1052349055_124225_1
+channel c3: piece handle=full_bdvida_1052329931_124206_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 03:18:10
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00117 to +DATA
+channel c3: restoring datafile 00119 to +DATA
+channel c3: restoring datafile 00136 to +DATA
+channel c3: restoring datafile 00274 to +DATA
+channel c3: restoring datafile 00287 to +DATA
+channel c3: restoring datafile 00370 to +DATA
+channel c3: restoring datafile 00418 to +DATA
+channel c3: restoring datafile 00435 to +DATA
+channel c3: restoring datafile 00457 to +DATA
+channel c3: restoring datafile 00474 to +DATA
+channel c3: reading from backup piece full_bdvida_1052356378_124244_1
+channel c6: piece handle=full_bdvida_1052330629_124207_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 03:30:40
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00006 to +DATA
+channel c6: restoring datafile 00032 to +DATA
+channel c6: restoring datafile 00130 to +DATA
+channel c6: restoring datafile 00187 to +DATA
+channel c6: restoring datafile 00281 to +DATA
+channel c6: restoring datafile 00419 to +DATA
+channel c6: restoring datafile 00436 to +DATA
+channel c6: restoring datafile 00458 to +DATA
+channel c6: restoring datafile 00483 to +DATA
+channel c6: restoring datafile 00496 to +DATA
+channel c6: reading from backup piece full_bdvida_1052358713_124245_1
+channel c2: piece handle=full_bdvida_1052324193_124205_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 04:59:52
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00100 to +DATA
+channel c2: restoring datafile 00109 to +DATA
+channel c2: restoring datafile 00132 to +DATA
+channel c2: restoring datafile 00207 to +DATA
+channel c2: restoring datafile 00243 to +DATA
+channel c2: restoring datafile 00265 to +DATA
+channel c2: restoring datafile 00277 to +DATA
+channel c2: restoring datafile 00431 to +DATA
+channel c2: restoring datafile 00455 to +DATA
+channel c2: restoring datafile 00468 to +DATA
+channel c2: reading from backup piece full_bdvida_1052364560_124246_1
+channel c4: piece handle=full_bdvida_1052337756_124222_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 05:33:47
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00019 to +DATA
+channel c4: restoring datafile 00052 to +DATA
+channel c4: restoring datafile 00151 to +DATA
+channel c4: restoring datafile 00163 to +DATA
+channel c4: restoring datafile 00219 to +DATA
+channel c4: restoring datafile 00261 to +DATA
+channel c4: restoring datafile 00298 to +DATA
+channel c4: restoring datafile 00368 to +DATA
+channel c4: restoring datafile 00425 to +DATA
+channel c4: restoring datafile 00434 to +DATA
+channel c4: reading from backup piece full_bdvida_1052368816_124247_1
+channel c5: piece handle=full_bdvida_1052339351_124223_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 05:55:17
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00015 to +DATA
+channel c5: restoring datafile 00034 to +DATA
+channel c5: restoring datafile 00133 to +DATA
+channel c5: restoring datafile 00193 to +DATA
+channel c5: restoring datafile 00282 to +DATA
+channel c5: restoring datafile 00420 to +DATA
+channel c5: restoring datafile 00433 to +DATA
+channel c5: restoring datafile 00459 to +DATA
+channel c5: restoring datafile 00484 to +DATA
+channel c5: restoring datafile 00508 to +DATA
+channel c5: reading from backup piece full_bdvida_1052378284_124256_1
+channel c1: piece handle=full_bdvida_1052349055_124225_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 04:27:15
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00073 to +DATA
+channel c1: restoring datafile 00097 to +DATA
+channel c1: restoring datafile 00113 to +DATA
+channel c1: restoring datafile 00139 to +DATA
+channel c1: restoring datafile 00233 to +DATA
+channel c1: restoring datafile 00253 to +DATA
+channel c1: restoring datafile 00337 to +DATA
+channel c1: restoring datafile 00421 to +DATA
+channel c1: restoring datafile 00432 to +DATA
+channel c1: restoring datafile 00463 to +DATA
+channel c1: reading from backup piece full_bdvida_1052383431_124263_1
+channel c3: piece handle=full_bdvida_1052356378_124244_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 06:00:47
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00103 to +DATA
+channel c3: restoring datafile 00118 to +DATA
+channel c3: restoring datafile 00135 to +DATA
+channel c3: restoring datafile 00244 to +DATA
+channel c3: restoring datafile 00263 to +DATA
+channel c3: restoring datafile 00273 to +DATA
+channel c3: restoring datafile 00278 to +DATA
+channel c3: restoring datafile 00430 to +DATA
+channel c3: restoring datafile 00456 to +DATA
+channel c3: restoring datafile 00469 to +DATA
+channel c3: reading from backup piece full_bdvida_1052389960_124264_1
+channel c6: piece handle=full_bdvida_1052358713_124245_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 06:17:37
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00011 to +DATA
+channel c6: restoring datafile 00020 to +DATA
+channel c6: restoring datafile 00085 to +DATA
+channel c6: restoring datafile 00171 to +DATA
+channel c6: restoring datafile 00202 to +DATA
+channel c6: restoring datafile 00206 to +DATA
+channel c6: restoring datafile 00345 to +DATA
+channel c6: restoring datafile 00351 to +DATA
+channel c6: restoring datafile 00392 to +DATA
+channel c6: restoring datafile 00501 to +DATA
+channel c6: reading from backup piece full_bdvida_1052456102_124365_1
+channel c2: piece handle=full_bdvida_1052364560_124246_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 06:39:48
+channel c2: starting datafile backup set restore
+channel c2: specifying datafile(s) to restore from backup set
+channel c2: restoring datafile 00025 to +DATA
+channel c2: restoring datafile 00094 to +DATA
+channel c2: restoring datafile 00220 to +DATA
+channel c2: restoring datafile 00257 to +DATA
+channel c2: restoring datafile 00292 to +DATA
+channel c2: restoring datafile 00355 to +DATA
+channel c2: restoring datafile 00366 to +DATA
+channel c2: restoring datafile 00397 to +DATA
+channel c2: restoring datafile 00479 to +DATA
+channel c2: restoring datafile 00515 to +DATA
+channel c2: reading from backup piece full_bdvida_1052456103_124366_1
+channel c4: piece handle=full_bdvida_1052368816_124247_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 05:33:07
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00010 to +DATA
+channel c4: restoring datafile 00082 to +DATA
+channel c4: restoring datafile 00145 to +DATA
+channel c4: restoring datafile 00190 to +DATA
+channel c4: restoring datafile 00203 to +DATA
+channel c4: restoring datafile 00331 to +DATA
+channel c4: restoring datafile 00341 to +DATA
+channel c4: restoring datafile 00389 to +DATA
+channel c4: restoring datafile 00499 to +DATA
+channel c4: restoring datafile 00503 to +DATA
+channel c4: reading from backup piece full_bdvida_1052456101_124364_1
+channel c3: piece handle=full_bdvida_1052389960_124264_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 02:59:04
+channel c3: starting datafile backup set restore
+channel c3: specifying datafile(s) to restore from backup set
+channel c3: restoring datafile 00017 to +DATA
+channel c3: restoring datafile 00084 to +DATA
+channel c3: restoring datafile 00169 to +DATA
+channel c3: restoring datafile 00200 to +DATA
+channel c3: restoring datafile 00205 to +DATA
+channel c3: restoring datafile 00344 to +DATA
+channel c3: restoring datafile 00350 to +DATA
+channel c3: restoring datafile 00376 to +DATA
+channel c3: restoring datafile 00391 to +DATA
+channel c3: restoring datafile 00502 to +DATA
+channel c3: reading from backup piece full_bdvida_1052456101_124363_1
+channel c5: piece handle=full_bdvida_1052378284_124256_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 05:06:11
+channel c5: starting datafile backup set restore
+channel c5: specifying datafile(s) to restore from backup set
+channel c5: restoring datafile 00028 to +DATA
+channel c5: restoring datafile 00102 to +DATA
+channel c5: restoring datafile 00227 to +DATA
+channel c5: restoring datafile 00296 to +DATA
+channel c5: restoring datafile 00367 to +DATA
+channel c5: restoring datafile 00400 to +DATA
+channel c5: restoring datafile 00408 to +DATA
+channel c5: restoring datafile 00482 to +DATA
+channel c5: restoring datafile 00494 to +DATA
+channel c5: restoring datafile 00518 to +DATA
+channel c5: reading from backup piece full_bdvida_1052464805_124380_1
+channel c6: piece handle=full_bdvida_1052456102_124365_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 02:57:29
+channel c6: starting datafile backup set restore
+channel c6: specifying datafile(s) to restore from backup set
+channel c6: restoring datafile 00027 to +DATA
+channel c6: restoring datafile 00101 to +DATA
+channel c6: restoring datafile 00147 to +DATA
+channel c6: restoring datafile 00222 to +DATA
+channel c6: restoring datafile 00258 to +DATA
+channel c6: restoring datafile 00295 to +DATA
+channel c6: restoring datafile 00357 to +DATA
+channel c6: restoring datafile 00399 to +DATA
+channel c6: restoring datafile 00481 to +DATA
+channel c6: restoring datafile 00517 to +DATA
+channel c6: reading from backup piece full_bdvida_1052464630_124379_1
+channel c1: piece handle=full_bdvida_1052383431_124263_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 05:45:47
+channel c1: starting datafile backup set restore
+channel c1: specifying datafile(s) to restore from backup set
+channel c1: restoring datafile 00036 to +DATA
+channel c1: restoring datafile 00105 to +DATA
+channel c1: restoring datafile 00229 to +DATA
+channel c1: restoring datafile 00316 to +DATA
+channel c1: restoring datafile 00372 to +DATA
+channel c1: restoring datafile 00402 to +DATA
+channel c1: restoring datafile 00415 to +DATA
+channel c1: restoring datafile 00486 to +DATA
+channel c1: restoring datafile 00498 to +DATA
+channel c1: restoring datafile 00520 to +DATA
+channel c1: reading from backup piece full_bdvida_1052465200_124382_1
+channel c4: piece handle=full_bdvida_1052456101_124364_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 02:57:58
+channel c4: starting datafile backup set restore
+channel c4: specifying datafile(s) to restore from backup set
+channel c4: restoring datafile 00033 to +DATA
+channel c4: restoring datafile 00104 to +DATA
+channel c4: restoring datafile 00228 to +DATA
+channel c4: restoring datafile 00315 to +DATA
+channel c4: restoring datafile 00371 to +DATA
+channel c4: restoring datafile 00401 to +DATA
+channel c4: restoring datafile 00410 to +DATA
+channel c4: restoring datafile 00485 to +DATA
+channel c4: restoring datafile 00497 to +DATA
+channel c4: restoring datafile 00519 to +DATA
+channel c4: reading from backup piece full_bdvida_1052464991_124381_1
+channel c3: piece handle=full_bdvida_1052456101_124363_1 tag=BDVIDA NIVEL 0 - FULL
+channel c3: restored backup piece 1
+channel c3: restore complete, elapsed time: 03:21:59
+channel c2: piece handle=full_bdvida_1052456103_124366_1 tag=BDVIDA NIVEL 0 - FULL
+channel c2: restored backup piece 1
+channel c2: restore complete, elapsed time: 04:42:30
+channel c1: piece handle=full_bdvida_1052465200_124382_1 tag=BDVIDA NIVEL 0 - FULL
+channel c1: restored backup piece 1
+channel c1: restore complete, elapsed time: 06:22:26
+channel c4: piece handle=full_bdvida_1052464991_124381_1 tag=BDVIDA NIVEL 0 - FULL
+channel c4: restored backup piece 1
+channel c4: restore complete, elapsed time: 04:29:09
+channel c5: piece handle=full_bdvida_1052464805_124380_1 tag=BDVIDA NIVEL 0 - FULL
+channel c5: restored backup piece 1
+channel c5: restore complete, elapsed time: 07:25:58
+channel c6: piece handle=full_bdvida_1052464630_124379_1 tag=BDVIDA NIVEL 0 - FULL
+channel c6: restored backup piece 1
+channel c6: restore complete, elapsed time: 06:45:12
+Finished restore at 24-OCT-20
+
+datafile 1 switched to datafile copy
+input datafile copy RECID=526 STAMP=1054651003 file name=+DATA/bdvida/datafile/system.352.1054530389
+datafile 2 switched to datafile copy
+input datafile copy RECID=527 STAMP=1054651003 file name=+DATA/bdvida/datafile/sysaux.407.1054514557
+datafile 3 switched to datafile copy
+input datafile copy RECID=528 STAMP=1054651003 file name=+DATA/bdvida/datafile/undotbs1.542.1054569069
+datafile 4 switched to datafile copy
+input datafile copy RECID=529 STAMP=1054651003 file name=+DATA/bdvida/datafile/users.412.1054509215
+datafile 5 switched to datafile copy
+input datafile copy RECID=530 STAMP=1054651003 file name=+DATA/bdvida/datafile/undotbs2.280.1054556441
+datafile 6 switched to datafile copy
+input datafile copy RECID=531 STAMP=1054651004 file name=+DATA/bdvida/datafile/data_bdvida_big.636.1054594873
+datafile 7 switched to datafile copy
+input datafile copy RECID=532 STAMP=1054651004 file name=+DATA/bdvida/datafile/data_bdvida_med.318.1054543011
+datafile 8 switched to datafile copy
+input datafile copy RECID=533 STAMP=1054651004 file name=+DATA/bdvida/datafile/data_bdvida_tools.540.1054568889
+datafile 9 switched to datafile copy
+input datafile copy RECID=534 STAMP=1054651004 file name=+DATA/bdvida/datafile/indx_bdvida_big.300.1054547175
+datafile 10 switched to datafile copy
+input datafile copy RECID=535 STAMP=1054651004 file name=+DATA/bdvida/datafile/data_bdvida_sma.708.1054623455
+datafile 11 switched to datafile copy
+input datafile copy RECID=536 STAMP=1054651004 file name=+DATA/bdvida/datafile/tbsd_audit.699.1054616281
+datafile 12 switched to datafile copy
+input datafile copy RECID=537 STAMP=1054651004 file name=+DATA/bdvida/datafile/indx_bdvida_big.626.1054593391
+datafile 13 switched to datafile copy
+input datafile copy RECID=538 STAMP=1054651005 file name=+DATA/bdvida/datafile/indx_bdvida_big.558.1054579465
+datafile 14 switched to datafile copy
+input datafile copy RECID=539 STAMP=1054651005 file name=+DATA/bdvida/datafile/indx_bdvida_med.490.1054486207
+datafile 15 switched to datafile copy
+input datafile copy RECID=540 STAMP=1054651005 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.668.1054606651
+datafile 16 switched to datafile copy
+input datafile copy RECID=541 STAMP=1054651005 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.364.1054529457
+datafile 17 switched to datafile copy
+input datafile copy RECID=542 STAMP=1054651005 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.716.1054623795
+datafile 18 switched to datafile copy
+input datafile copy RECID=543 STAMP=1054651005 file name=+DATA/bdvida/datafile/indx_bdvida_big.600.1054590527
+datafile 19 switched to datafile copy
+input datafile copy RECID=544 STAMP=1054651005 file name=+DATA/bdvida/datafile/data_bdvida_sma.654.1054603457
+datafile 20 switched to datafile copy
+input datafile copy RECID=545 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.692.1054616277
+datafile 21 switched to datafile copy
+input datafile copy RECID=546 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.505.1054485855
+datafile 22 switched to datafile copy
+input datafile copy RECID=547 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.474.1054487595
+datafile 23 switched to datafile copy
+input datafile copy RECID=548 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.424.1054506059
+datafile 24 switched to datafile copy
+input datafile copy RECID=549 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.465.1054499319
+datafile 25 switched to datafile copy
+input datafile copy RECID=550 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.728.1054626711
+datafile 26 switched to datafile copy
+input datafile copy RECID=551 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.448.1054502781
+datafile 27 switched to datafile copy
+input datafile copy RECID=552 STAMP=1054651006 file name=+DATA/bdvida/datafile/data_bdvida_sma.758.1054636997
+datafile 28 switched to datafile copy
+input datafile copy RECID=553 STAMP=1054651007 file name=+DATA/bdvida/datafile/data_bdvida_sma.766.1054637275
+datafile 29 switched to datafile copy
+input datafile copy RECID=554 STAMP=1054651007 file name=+DATA/bdvida/datafile/indx_bdvida_sma.374.1054527443
+datafile 30 switched to datafile copy
+input datafile copy RECID=555 STAMP=1054651007 file name=+DATA/bdvida/datafile/indx_bdvida_sma.500.1054485855
+datafile 31 switched to datafile copy
+input datafile copy RECID=556 STAMP=1054651007 file name=+DATA/bdvida/datafile/indx_bdvida_sma.478.1054486583
+datafile 32 switched to datafile copy
+input datafile copy RECID=557 STAMP=1054651007 file name=+DATA/bdvida/datafile/indx_bdvida_sma.637.1054594873
+datafile 33 switched to datafile copy
+input datafile copy RECID=558 STAMP=1054651007 file name=+DATA/bdvida/datafile/indx_bdvida_sma.742.1054635561
+datafile 34 switched to datafile copy
+input datafile copy RECID=559 STAMP=1054651008 file name=+DATA/bdvida/datafile/indx_bdvida_sma.669.1054606651
+datafile 35 switched to datafile copy
+input datafile copy RECID=560 STAMP=1054651008 file name=+DATA/bdvida/datafile/indx_bdvida_sma.496.1054485857
+datafile 36 switched to datafile copy
+input datafile copy RECID=561 STAMP=1054651008 file name=+DATA/bdvida/datafile/indx_bdvida_sma.750.1054635885
+datafile 37 switched to datafile copy
+input datafile copy RECID=562 STAMP=1054651008 file name=+DATA/bdvida/datafile/data_bdvida_sma.521.1054565467
+datafile 38 switched to datafile copy
+input datafile copy RECID=563 STAMP=1054651008 file name=+DATA/bdvida/datafile/data_bdvida_sma.576.1054580755
+datafile 39 switched to datafile copy
+input datafile copy RECID=564 STAMP=1054651008 file name=+DATA/bdvida/datafile/data_bdvida_sma.525.1054565939
+datafile 40 switched to datafile copy
+input datafile copy RECID=565 STAMP=1054651008 file name=+DATA/bdvida/datafile/indx_bdvida_sma.264.1054561629
+datafile 41 switched to datafile copy
+input datafile copy RECID=566 STAMP=1054651009 file name=+DATA/bdvida/datafile/indx_bdvida_sma.566.1054579483
+datafile 42 switched to datafile copy
+input datafile copy RECID=567 STAMP=1054651009 file name=+DATA/bdvida/datafile/indx_bdvida_sma.344.1054533203
+datafile 43 switched to datafile copy
+input datafile copy RECID=568 STAMP=1054651009 file name=+DATA/bdvida/datafile/data_bdvida_sma.534.1054565949
+datafile 44 switched to datafile copy
+input datafile copy RECID=569 STAMP=1054651009 file name=+DATA/bdvida/datafile/data_bdvida_sma.627.1054593391
+datafile 45 switched to datafile copy
+input datafile copy RECID=570 STAMP=1054651009 file name=+DATA/bdvida/datafile/indx_bdvida_sma.301.1054547157
+datafile 46 switched to datafile copy
+input datafile copy RECID=571 STAMP=1054651009 file name=+DATA/bdvida/datafile/data_bdvida_sma.559.1054579465
+datafile 47 switched to datafile copy
+input datafile copy RECID=572 STAMP=1054651009 file name=+DATA/bdvida/datafile/indx_bdvida_sma.440.1054503181
+datafile 48 switched to datafile copy
+input datafile copy RECID=573 STAMP=1054651010 file name=+DATA/bdvida/datafile/data_bdvida_sma.601.1054590529
+datafile 49 switched to datafile copy
+input datafile copy RECID=574 STAMP=1054651010 file name=+DATA/bdvida/datafile/indx_bdvida_sma.514.1054485851
+datafile 50 switched to datafile copy
+input datafile copy RECID=575 STAMP=1054651010 file name=+DATA/bdvida/datafile/data_bdvida_sma.288.1054556419
+datafile 51 switched to datafile copy
+input datafile copy RECID=576 STAMP=1054651010 file name=+DATA/bdvida/datafile/indx_bdvida_sma.336.1054533239
+datafile 52 switched to datafile copy
+input datafile copy RECID=577 STAMP=1054651010 file name=+DATA/bdvida/datafile/data_bdvida_sma.655.1054603459
+datafile 53 switched to datafile copy
+input datafile copy RECID=578 STAMP=1054651010 file name=+DATA/bdvida/datafile/indx_bdvida_sma.520.1054565467
+datafile 54 switched to datafile copy
+input datafile copy RECID=579 STAMP=1054651010 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.363.1054529459
+datafile 55 switched to datafile copy
+input datafile copy RECID=580 STAMP=1054651011 file name=+DATA/bdvida/datafile/indx_bdvida_sma.362.1054529459
+datafile 56 switched to datafile copy
+input datafile copy RECID=581 STAMP=1054651011 file name=+DATA/bdvida/datafile/data_bdvida_sma.308.1054547153
+datafile 57 switched to datafile copy
+input datafile copy RECID=582 STAMP=1054651011 file name=+DATA/bdvida/datafile/data_bdvida_sma.577.1054580757
+datafile 58 switched to datafile copy
+input datafile copy RECID=583 STAMP=1054651011 file name=+DATA/bdvida/datafile/indx_bdvida_sma.373.1054527443
+datafile 59 switched to datafile copy
+input datafile copy RECID=584 STAMP=1054651011 file name=+DATA/bdvida/datafile/data_bdvida_sma.524.1054565941
+datafile 60 switched to datafile copy
+input datafile copy RECID=585 STAMP=1054651011 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.386.1054523131
+datafile 61 switched to datafile copy
+input datafile copy RECID=586 STAMP=1054651011 file name=+DATA/bdvida/datafile/indx_bdvida_sma.324.1054541097
+datafile 62 switched to datafile copy
+input datafile copy RECID=587 STAMP=1054651011 file name=+DATA/bdvida/datafile/data_bdvida_sma.263.1054561629
+datafile 63 switched to datafile copy
+input datafile copy RECID=588 STAMP=1054651012 file name=+DATA/bdvida/datafile/undotbs1.360.1054529473
+datafile 64 switched to datafile copy
+input datafile copy RECID=589 STAMP=1054651012 file name=+DATA/bdvida/datafile/undotbs3.269.1054559259
+datafile 65 switched to datafile copy
+input datafile copy RECID=590 STAMP=1054651012 file name=+DATA/bdvida/datafile/undotbs3.267.1054560809
+datafile 66 switched to datafile copy
+input datafile copy RECID=591 STAMP=1054651012 file name=+DATA/bdvida/datafile/undotbs4.349.1054532467
+datafile 67 switched to datafile copy
+input datafile copy RECID=592 STAMP=1054651012 file name=+DATA/bdvida/datafile/undotbs4.309.1054546385
+datafile 68 switched to datafile copy
+input datafile copy RECID=593 STAMP=1054651012 file name=+DATA/bdvida/datafile/indx_bdvida_sma.610.1054591419
+datafile 69 switched to datafile copy
+input datafile copy RECID=594 STAMP=1054651012 file name=+DATA/bdvida/datafile/data_bdvida_sma.567.1054579483
+datafile 70 switched to datafile copy
+input datafile copy RECID=595 STAMP=1054651012 file name=+DATA/bdvida/datafile/data_bdvida_sma.535.1054565949
+datafile 71 switched to datafile copy
+input datafile copy RECID=596 STAMP=1054651013 file name=+DATA/bdvida/datafile/indx_bdvida_sma.379.1054523137
+datafile 72 switched to datafile copy
+input datafile copy RECID=597 STAMP=1054651013 file name=+DATA/bdvida/datafile/sysaux.589.1054584433
+datafile 73 switched to datafile copy
+input datafile copy RECID=598 STAMP=1054651013 file name=+DATA/bdvida/datafile/data_bdvida_med.672.1054609769
+datafile 74 switched to datafile copy
+input datafile copy RECID=599 STAMP=1054651013 file name=+DATA/bdvida/datafile/indx_bdvida_sma.498.1054485855
+datafile 75 switched to datafile copy
+input datafile copy RECID=600 STAMP=1054651013 file name=+DATA/bdvida/datafile/indx_bdvida_sma.477.1054486585
+datafile 76 switched to datafile copy
+input datafile copy RECID=601 STAMP=1054651013 file name=+DATA/bdvida/datafile/data_bdvida_sma.545.1054569071
+datafile 77 switched to datafile copy
+input datafile copy RECID=602 STAMP=1054651014 file name=+DATA/bdvida/datafile/data_bdvida_big.411.1054509217
+datafile 78 switched to datafile copy
+input datafile copy RECID=603 STAMP=1054651014 file name=+DATA/bdvida/datafile/data_bdvida_big.427.1054505385
+datafile 79 switched to datafile copy
+input datafile copy RECID=604 STAMP=1054651014 file name=+DATA/bdvida/datafile/indx_bdvida_big.277.1054556443
+datafile 80 switched to datafile copy
+input datafile copy RECID=605 STAMP=1054651014 file name=+DATA/bdvida/datafile/indx_bdvida_big.315.1054543013
+datafile 81 switched to datafile copy
+input datafile copy RECID=606 STAMP=1054651014 file name=+DATA/bdvida/datafile/indx_bdvida_big.297.1054547177
+datafile 82 switched to datafile copy
+input datafile copy RECID=607 STAMP=1054651014 file name=+DATA/bdvida/datafile/indx_bdvida_big.711.1054623457
+datafile 83 switched to datafile copy
+input datafile copy RECID=608 STAMP=1054651014 file name=+DATA/bdvida/datafile/indx_bdvida_big.487.1054486209
+datafile 84 switched to datafile copy
+input datafile copy RECID=609 STAMP=1054651015 file name=+DATA/bdvida/datafile/indx_bdvida_big.719.1054623797
+datafile 85 switched to datafile copy
+input datafile copy RECID=610 STAMP=1054651015 file name=+DATA/bdvida/datafile/indx_bdvida_big.695.1054616279
+datafile 86 switched to datafile copy
+input datafile copy RECID=611 STAMP=1054651015 file name=+DATA/bdvida/datafile/indx_bdvida_big.497.1054485857
+datafile 87 switched to datafile copy
+input datafile copy RECID=612 STAMP=1054651015 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.398.1054518903
+datafile 88 switched to datafile copy
+input datafile copy RECID=613 STAMP=1054651015 file name=+DATA/bdvida/datafile/data_bdvida_sma.471.1054487597
+datafile 89 switched to datafile copy
+input datafile copy RECID=614 STAMP=1054651015 file name=+DATA/bdvida/datafile/data_bdvida_sma.421.1054506061
+datafile 90 switched to datafile copy
+input datafile copy RECID=615 STAMP=1054651016 file name=+DATA/bdvida/datafile/data_bdvida_sma.348.1054533201
+datafile 91 switched to datafile copy
+input datafile copy RECID=616 STAMP=1054651016 file name=+DATA/bdvida/datafile/indx_bdvida_big.462.1054499321
+datafile 92 switched to datafile copy
+input datafile copy RECID=617 STAMP=1054651016 file name=+DATA/bdvida/datafile/sysaux.332.1054539487
+datafile 93 switched to datafile copy
+input datafile copy RECID=618 STAMP=1054651016 file name=+DATA/bdvida/datafile/data_bdvida_sma.340.1054533237
+datafile 94 switched to datafile copy
+input datafile copy RECID=619 STAMP=1054651016 file name=+DATA/bdvida/datafile/indx_bdvida_sma.731.1054626713
+datafile 95 switched to datafile copy
+input datafile copy RECID=620 STAMP=1054651016 file name=+DATA/bdvida/datafile/data_bdvida_sma.328.1054541095
+datafile 96 switched to datafile copy
+input datafile copy RECID=621 STAMP=1054651017 file name=+DATA/bdvida/datafile/data_bdvida_sma.606.1054591417
+datafile 97 switched to datafile copy
+input datafile copy RECID=622 STAMP=1054651017 file name=+DATA/bdvida/datafile/undotbs2.676.1054609771
+datafile 98 switched to datafile copy
+input datafile copy RECID=623 STAMP=1054651017 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.445.1054502783
+datafile 99 switched to datafile copy
+input datafile copy RECID=624 STAMP=1054651017 file name=+DATA/bdvida/datafile/indx_bdvida_sma.390.1054518921
+datafile 100 switched to datafile copy
+input datafile copy RECID=625 STAMP=1054651017 file name=+DATA/bdvida/datafile/data_bdvida_sma.642.1054597253
+datafile 101 switched to datafile copy
+input datafile copy RECID=626 STAMP=1054651017 file name=+DATA/bdvida/datafile/indx_bdvida_sma.761.1054636999
+datafile 102 switched to datafile copy
+input datafile copy RECID=627 STAMP=1054651017 file name=+DATA/bdvida/datafile/indx_bdvida_big.769.1054637277
+datafile 103 switched to datafile copy
+input datafile copy RECID=628 STAMP=1054651018 file name=+DATA/bdvida/datafile/data_bdvida_sma.682.1054613939
+datafile 104 switched to datafile copy
+input datafile copy RECID=629 STAMP=1054651018 file name=+DATA/bdvida/datafile/sysaux.745.1054635565
+datafile 105 switched to datafile copy
+input datafile copy RECID=630 STAMP=1054651018 file name=+DATA/bdvida/datafile/indx_bdvida_sma.753.1054635887
+datafile 106 switched to datafile copy
+input datafile copy RECID=631 STAMP=1054651018 file name=+DATA/bdvida/datafile/data_bdvida_sma.437.1054503183
+datafile 107 switched to datafile copy
+input datafile copy RECID=632 STAMP=1054651018 file name=+DATA/bdvida/datafile/data_bdvida_sma.511.1054485851
+datafile 108 switched to datafile copy
+input datafile copy RECID=633 STAMP=1054651018 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.285.1054556421
+datafile 109 switched to datafile copy
+input datafile copy RECID=634 STAMP=1054651018 file name=+DATA/bdvida/datafile/data_bdvida_big.647.1054597257
+datafile 110 switched to datafile copy
+input datafile copy RECID=635 STAMP=1054651019 file name=+DATA/bdvida/datafile/sysaux.305.1054547155
+datafile 111 switched to datafile copy
+input datafile copy RECID=636 STAMP=1054651019 file name=+DATA/bdvida/datafile/indx_bdvida_sma.383.1054523135
+datafile 112 switched to datafile copy
+input datafile copy RECID=637 STAMP=1054651019 file name=+DATA/bdvida/datafile/indx_bdvida_big.357.1054529475
+datafile 113 switched to datafile copy
+input datafile copy RECID=638 STAMP=1054651019 file name=+DATA/bdvida/datafile/data_bdvida_sma.675.1054609771
+datafile 114 switched to datafile copy
+input datafile copy RECID=639 STAMP=1054651019 file name=+DATA/bdvida/datafile/data_bdvida_sma.345.1054533203
+datafile 115 switched to datafile copy
+input datafile copy RECID=640 STAMP=1054651019 file name=+DATA/bdvida/datafile/indx_bdvida_sma.337.1054533239
+datafile 116 switched to datafile copy
+input datafile copy RECID=641 STAMP=1054651019 file name=+DATA/bdvida/datafile/sysaux.554.1054578645
+datafile 117 switched to datafile copy
+input datafile copy RECID=642 STAMP=1054651020 file name=+DATA/bdvida/datafile/data_bdvida_sma.614.1054591431
+datafile 118 switched to datafile copy
+input datafile copy RECID=643 STAMP=1054651020 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.687.1054613943
+datafile 119 switched to datafile copy
+input datafile copy RECID=644 STAMP=1054651020 file name=+DATA/bdvida/datafile/data_bdvida_big.619.1054591435
+datafile 120 switched to datafile copy
+input datafile copy RECID=645 STAMP=1054651020 file name=+DATA/bdvida/datafile/data_bdvida_big.343.1054533203
+datafile 121 switched to datafile copy
+input datafile copy RECID=646 STAMP=1054651020 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.335.1054533241
+datafile 122 switched to datafile copy
+input datafile copy RECID=647 STAMP=1054651020 file name=+DATA/bdvida/datafile/indx_bdvida_big.325.1054541097
+datafile 123 switched to datafile copy
+input datafile copy RECID=648 STAMP=1054651020 file name=+DATA/bdvida/datafile/data_bdvida_sma.432.1054505381
+datafile 124 switched to datafile copy
+input datafile copy RECID=649 STAMP=1054651021 file name=+DATA/bdvida/datafile/data_bdvida_sma.403.1054518899
+datafile 125 switched to datafile copy
+input datafile copy RECID=650 STAMP=1054651021 file name=+DATA/bdvida/datafile/indx_bdvida_sma.323.1054541097
+datafile 126 switched to datafile copy
+input datafile copy RECID=651 STAMP=1054651021 file name=+DATA/bdvida/datafile/sysaux.370.1054528391
+datafile 127 switched to datafile copy
+input datafile copy RECID=652 STAMP=1054651021 file name=+DATA/bdvida/datafile/data_bdvida_sma.395.1054518917
+datafile 128 switched to datafile copy
+input datafile copy RECID=653 STAMP=1054651021 file name=+DATA/bdvida/datafile/sysaux.583.1054582489
+datafile 129 switched to datafile copy
+input datafile copy RECID=654 STAMP=1054651021 file name=+DATA/bdvida/datafile/data_bdvida_sma.416.1054509213
+datafile 130 switched to datafile copy
+input datafile copy RECID=655 STAMP=1054651022 file name=+DATA/bdvida/datafile/data_bdvida_sma.632.1054594871
+datafile 131 switched to datafile copy
+input datafile copy RECID=656 STAMP=1054651022 file name=+DATA/bdvida/datafile/data_bdvida_sma.609.1054591419
+datafile 132 switched to datafile copy
+input datafile copy RECID=657 STAMP=1054651022 file name=+DATA/bdvida/datafile/indx_bdvida_sma.645.1054597255
+datafile 133 switched to datafile copy
+input datafile copy RECID=658 STAMP=1054651022 file name=+DATA/bdvida/datafile/data_bdvida_sma.664.1054606647
+datafile 134 switched to datafile copy
+input datafile copy RECID=659 STAMP=1054651022 file name=+DATA/bdvida/datafile/data_bdvida_sma.368.1054529455
+datafile 135 switched to datafile copy
+input datafile copy RECID=660 STAMP=1054651022 file name=+DATA/bdvida/datafile/indx_bdvida_big.685.1054613941
+datafile 136 switched to datafile copy
+input datafile copy RECID=661 STAMP=1054651022 file name=+DATA/bdvida/datafile/indx_bdvida_big.617.1054591433
+datafile 137 switched to datafile copy
+input datafile copy RECID=662 STAMP=1054651023 file name=+DATA/bdvida/datafile/sysaux.404.1054517695
+datafile 138 switched to datafile copy
+input datafile copy RECID=663 STAMP=1054651023 file name=+DATA/bdvida/datafile/indx_bdvida_sma.611.1054591421
+datafile 139 switched to datafile copy
+input datafile copy RECID=664 STAMP=1054651023 file name=+DATA/bdvida/datafile/indx_bdvida_sma.677.1054609771
+datafile 140 switched to datafile copy
+input datafile copy RECID=665 STAMP=1054651023 file name=+DATA/bdvida/datafile/sysaux.331.1054539487
+datafile 141 switched to datafile copy
+input datafile copy RECID=666 STAMP=1054651023 file name=+DATA/bdvida/datafile/sysaux.369.1054528391
+datafile 142 switched to datafile copy
+input datafile copy RECID=667 STAMP=1054651023 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.629.1054593393
+datafile 143 switched to datafile copy
+input datafile copy RECID=668 STAMP=1054651023 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.561.1054579467
+datafile 144 switched to datafile copy
+input datafile copy RECID=669 STAMP=1054651023 file name=+DATA/bdvida/datafile/sysaux.271.1054556795
+datafile 145 switched to datafile copy
+input datafile copy RECID=670 STAMP=1054651024 file name=+DATA/bdvida/datafile/sysaux.737.1054632155
+datafile 146 switched to datafile copy
+input datafile copy RECID=671 STAMP=1054651024 file name=+DATA/bdvida/datafile/data_bdvida_sma.378.1054527439
+datafile 147 switched to datafile copy
+input datafile copy RECID=672 STAMP=1054651024 file name=+DATA/bdvida/datafile/sysaux.781.1054648427
+datafile 148 switched to datafile copy
+input datafile copy RECID=673 STAMP=1054651024 file name=+DATA/bdvida/datafile/data_bdvida_sma.509.1054485853
+datafile 149 switched to datafile copy
+input datafile copy RECID=674 STAMP=1054651024 file name=+DATA/bdvida/datafile/indx_bdvida_sma.603.1054590529
+datafile 150 switched to datafile copy
+input datafile copy RECID=675 STAMP=1054651024 file name=+DATA/bdvida/datafile/indx_bdvida_big.429.1054505383
+datafile 151 switched to datafile copy
+input datafile copy RECID=676 STAMP=1054651025 file name=+DATA/bdvida/datafile/indx_bdvida_sma.657.1054603459
+datafile 152 switched to datafile copy
+input datafile copy RECID=677 STAMP=1054651025 file name=+DATA/bdvida/datafile/sysaux.319.1054542555
+datafile 153 switched to datafile copy
+input datafile copy RECID=678 STAMP=1054651025 file name=+DATA/bdvida/datafile/data_bdvida_sma.482.1054486581
+datafile 154 switched to datafile copy
+input datafile copy RECID=679 STAMP=1054651025 file name=+DATA/bdvida/datafile/data_bdvida_sma.586.1054584431
+datafile 155 switched to datafile copy
+input datafile copy RECID=680 STAMP=1054651025 file name=+DATA/bdvida/datafile/sysaux.555.1054578647
+datafile 156 switched to datafile copy
+input datafile copy RECID=681 STAMP=1054651025 file name=+DATA/bdvida/datafile/sysaux.641.1054595539
+datafile 157 switched to datafile copy
+input datafile copy RECID=682 STAMP=1054651025 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.400.1054518901
+datafile 158 switched to datafile copy
+input datafile copy RECID=683 STAMP=1054651026 file name=+DATA/bdvida/datafile/tbsd_audit.491.1054485859
+datafile 159 switched to datafile copy
+input datafile copy RECID=684 STAMP=1054651026 file name=+DATA/bdvida/datafile/tbsd_audit.476.1054486585
+datafile 160 switched to datafile copy
+input datafile copy RECID=685 STAMP=1054651026 file name=+DATA/bdvida/datafile/data_bdvida_sma.624.1054593389
+datafile 161 switched to datafile copy
+input datafile copy RECID=686 STAMP=1054651026 file name=+DATA/bdvida/datafile/data_bdvida_sma.556.1054579463
+datafile 162 switched to datafile copy
+input datafile copy RECID=687 STAMP=1054651026 file name=+DATA/bdvida/datafile/data_bdvida_sma.598.1054590527
+datafile 163 switched to datafile copy
+input datafile copy RECID=688 STAMP=1054651026 file name=+DATA/bdvida/datafile/data_bdvida_sma.652.1054603457
+datafile 164 switched to datafile copy
+input datafile copy RECID=689 STAMP=1054651027 file name=+DATA/bdvida/datafile/data_bdvida_big.518.1054565469
+datafile 165 switched to datafile copy
+input datafile copy RECID=690 STAMP=1054651027 file name=+DATA/bdvida/datafile/data_bdvida_big.579.1054580757
+datafile 166 switched to datafile copy
+input datafile copy RECID=691 STAMP=1054651027 file name=+DATA/bdvida/datafile/data_bdvida_big.522.1054565941
+datafile 167 switched to datafile copy
+input datafile copy RECID=692 STAMP=1054651027 file name=+DATA/bdvida/datafile/tbsd_audit.433.1054503187
+datafile 168 switched to datafile copy
+input datafile copy RECID=693 STAMP=1054651027 file name=+DATA/bdvida/datafile/tbsd_audit.467.1054487601
+datafile 169 switched to datafile copy
+input datafile copy RECID=694 STAMP=1054651027 file name=+DATA/bdvida/datafile/tbsd_audit.739.1054633865
+datafile 170 switched to datafile copy
+input datafile copy RECID=695 STAMP=1054651027 file name=+DATA/bdvida/datafile/tbsd_audit.408.1054511961
+datafile 171 switched to datafile copy
+input datafile copy RECID=696 STAMP=1054651028 file name=+DATA/bdvida/datafile/tbsd_audit.725.1054624835
+datafile 172 switched to datafile copy
+input datafile copy RECID=697 STAMP=1054651028 file name=+DATA/bdvida/datafile/tbsd_audit.387.1054521811
+datafile 173 switched to datafile copy
+input datafile copy RECID=698 STAMP=1054651028 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.392.1054518919
+datafile 174 switched to datafile copy
+input datafile copy RECID=699 STAMP=1054651028 file name=+DATA/bdvida/datafile/data_bdvida_sma.413.1054509215
+datafile 175 switched to datafile copy
+input datafile copy RECID=700 STAMP=1054651028 file name=+DATA/bdvida/datafile/indx_bdvida_sma.261.1054561629
+datafile 176 switched to datafile copy
+input datafile copy RECID=701 STAMP=1054651028 file name=+DATA/bdvida/datafile/indx_bdvida_sma.569.1054579485
+datafile 177 switched to datafile copy
+input datafile copy RECID=702 STAMP=1054651028 file name=+DATA/bdvida/datafile/indx_bdvida_sma.537.1054565951
+datafile 178 switched to datafile copy
+input datafile copy RECID=703 STAMP=1054651029 file name=+DATA/bdvida/datafile/indx_bdvida_sma.591.1054584435
+datafile 179 switched to datafile copy
+input datafile copy RECID=704 STAMP=1054651029 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.547.1054569073
+datafile 180 switched to datafile copy
+input datafile copy RECID=705 STAMP=1054651029 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.275.1054556443
+datafile 181 switched to datafile copy
+input datafile copy RECID=706 STAMP=1054651029 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.313.1054543015
+datafile 182 switched to datafile copy
+input datafile copy RECID=707 STAMP=1054651029 file name=+DATA/bdvida/datafile/data_bdvida_sma.529.1054565465
+datafile 183 switched to datafile copy
+input datafile copy RECID=708 STAMP=1054651029 file name=+DATA/bdvida/datafile/data_bdvida_sma.574.1054580755
+datafile 184 switched to datafile copy
+input datafile copy RECID=709 STAMP=1054651029 file name=+DATA/bdvida/datafile/indx_bdvida_sma.295.1054547177
+datafile 185 switched to datafile copy
+input datafile copy RECID=710 STAMP=1054651029 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.527.1054565939
+datafile 186 switched to datafile copy
+input datafile copy RECID=711 STAMP=1054651030 file name=+DATA/bdvida/datafile/data_bdvida_med.266.1054561627
+datafile 187 switched to datafile copy
+input datafile copy RECID=712 STAMP=1054651030 file name=+DATA/bdvida/datafile/indx_bdvida_big.635.1054594873
+datafile 188 switched to datafile copy
+input datafile copy RECID=713 STAMP=1054651030 file name=+DATA/bdvida/datafile/data_bdvida_sma.564.1054579481
+datafile 189 switched to datafile copy
+input datafile copy RECID=714 STAMP=1054651030 file name=+DATA/bdvida/datafile/data_bdvida_sma.532.1054565947
+datafile 190 switched to datafile copy
+input datafile copy RECID=715 STAMP=1054651030 file name=+DATA/bdvida/datafile/indx_bdvida_sma.713.1054623459
+datafile 191 switched to datafile copy
+input datafile copy RECID=716 STAMP=1054651030 file name=+DATA/bdvida/datafile/indx_bdvida_sma.485.1054486211
+datafile 192 switched to datafile copy
+input datafile copy RECID=717 STAMP=1054651030 file name=+DATA/bdvida/datafile/data_bdvida_med.543.1054569071
+datafile 193 switched to datafile copy
+input datafile copy RECID=718 STAMP=1054651031 file name=+DATA/bdvida/datafile/indx_bdvida_big.667.1054606651
+datafile 194 switched to datafile copy
+input datafile copy RECID=719 STAMP=1054651031 file name=+DATA/bdvida/datafile/tbsd_audit.503.1054485855
+datafile 195 switched to datafile copy
+input datafile copy RECID=720 STAMP=1054651031 file name=+DATA/bdvida/datafile/data_bdvida_sma.365.1054529457
+datafile 196 switched to datafile copy
+input datafile copy RECID=721 STAMP=1054651031 file name=+DATA/bdvida/datafile/tbsd_audit.582.1054582487
+datafile 197 switched to datafile copy
+input datafile copy RECID=722 STAMP=1054651031 file name=+DATA/bdvida/datafile/data_bdvida_sma.279.1054556441
+datafile 198 switched to datafile copy
+input datafile copy RECID=723 STAMP=1054651031 file name=+DATA/bdvida/datafile/data_bdvida_sma.317.1054543013
+datafile 199 switched to datafile copy
+input datafile copy RECID=724 STAMP=1054651032 file name=+DATA/bdvida/datafile/data_bdvida_sma.299.1054547175
+datafile 200 switched to datafile copy
+input datafile copy RECID=725 STAMP=1054651032 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.721.1054623799
+datafile 201 switched to datafile copy
+input datafile copy RECID=726 STAMP=1054651032 file name=+DATA/bdvida/datafile/indx_bdvida_big.375.1054527441
+datafile 202 switched to datafile copy
+input datafile copy RECID=727 STAMP=1054651032 file name=+DATA/bdvida/datafile/indx_bdvida_sma.697.1054616279
+datafile 203 switched to datafile copy
+input datafile copy RECID=728 STAMP=1054651032 file name=+DATA/bdvida/datafile/data_bdvida_sma.709.1054623457
+datafile 204 switched to datafile copy
+input datafile copy RECID=729 STAMP=1054651032 file name=+DATA/bdvida/datafile/indx_bdvida_med.489.1054486207
+datafile 205 switched to datafile copy
+input datafile copy RECID=730 STAMP=1054651032 file name=+DATA/bdvida/datafile/data_bdvida_med.717.1054623795
+datafile 206 switched to datafile copy
+input datafile copy RECID=731 STAMP=1054651032 file name=+DATA/bdvida/datafile/data_bdvida_sma.693.1054616277
+datafile 207 switched to datafile copy
+input datafile copy RECID=732 STAMP=1054651033 file name=+DATA/bdvida/datafile/tbsd_audit.702.1054619491
+datafile 208 switched to datafile copy
+input datafile copy RECID=733 STAMP=1054651033 file name=+DATA/bdvida/datafile/data_bdvida_sma.501.1054485855
+datafile 209 switched to datafile copy
+input datafile copy RECID=734 STAMP=1054651033 file name=+DATA/bdvida/datafile/data_bdvida_sma.473.1054487597
+datafile 210 switched to datafile copy
+input datafile copy RECID=735 STAMP=1054651033 file name=+DATA/bdvida/datafile/indx_bdvida_sma.493.1054485857
+datafile 211 switched to datafile copy
+input datafile copy RECID=736 STAMP=1054651033 file name=+DATA/bdvida/datafile/data_bdvida_sma.502.1054485855
+datafile 212 switched to datafile copy
+input datafile copy RECID=737 STAMP=1054651033 file name=+DATA/bdvida/datafile/data_bdvida_sma.423.1054506059
+datafile 213 switched to datafile copy
+input datafile copy RECID=738 STAMP=1054651034 file name=+DATA/bdvida/datafile/indx_bdvida_big.479.1054486583
+datafile 214 switched to datafile copy
+input datafile copy RECID=739 STAMP=1054651034 file name=+DATA/bdvida/datafile/data_bdvida_med.464.1054499319
+datafile 215 switched to datafile copy
+input datafile copy RECID=740 STAMP=1054651034 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.283.1054556421
+datafile 216 switched to datafile copy
+input datafile copy RECID=741 STAMP=1054651034 file name=+DATA/bdvida/datafile/indx_bdvida_big.628.1054593393
+datafile 217 switched to datafile copy
+input datafile copy RECID=742 STAMP=1054651034 file name=+DATA/bdvida/datafile/data_bdvida_sma.560.1054579467
+datafile 218 switched to datafile copy
+input datafile copy RECID=743 STAMP=1054651034 file name=+DATA/bdvida/datafile/indx_bdvida_sma.602.1054590529
+datafile 219 switched to datafile copy
+input datafile copy RECID=744 STAMP=1054651035 file name=+DATA/bdvida/datafile/data_bdvida_sma.656.1054603459
+datafile 220 switched to datafile copy
+input datafile copy RECID=745 STAMP=1054651035 file name=+DATA/bdvida/datafile/data_bdvida_sma.729.1054626711
+datafile 221 switched to datafile copy
+input datafile copy RECID=746 STAMP=1054651035 file name=+DATA/bdvida/datafile/data_bdvida_sma.447.1054502781
+datafile 222 switched to datafile copy
+input datafile copy RECID=747 STAMP=1054651035 file name=+DATA/bdvida/datafile/data_bdvida_sma.759.1054636999
+datafile 223 switched to datafile copy
+input datafile copy RECID=748 STAMP=1054651035 file name=+DATA/bdvida/datafile/indx_bdvida_sma.353.1054529479
+datafile 224 switched to datafile copy
+input datafile copy RECID=749 STAMP=1054651035 file name=+DATA/bdvida/datafile/indx_bdvida_sma.341.1054533205
+datafile 225 switched to datafile copy
+input datafile copy RECID=750 STAMP=1054651035 file name=+DATA/bdvida/datafile/indx_bdvida_sma.333.1054533243
+datafile 226 switched to datafile copy
+input datafile copy RECID=751 STAMP=1054651036 file name=+DATA/bdvida/datafile/indx_bdvida_sma.321.1054541099
+datafile 227 switched to datafile copy
+input datafile copy RECID=752 STAMP=1054651036 file name=+DATA/bdvida/datafile/data_bdvida_sma.767.1054637277
+datafile 228 switched to datafile copy
+input datafile copy RECID=753 STAMP=1054651036 file name=+DATA/bdvida/datafile/data_bdvida_sma.743.1054635563
+datafile 229 switched to datafile copy
+input datafile copy RECID=754 STAMP=1054651036 file name=+DATA/bdvida/datafile/data_bdvida_sma.751.1054635885
+datafile 230 switched to datafile copy
+input datafile copy RECID=755 STAMP=1054651036 file name=+DATA/bdvida/datafile/data_bdvida_sma.439.1054503183
+datafile 231 switched to datafile copy
+input datafile copy RECID=756 STAMP=1054651036 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.613.1054591421
+datafile 232 switched to datafile copy
+input datafile copy RECID=757 STAMP=1054651037 file name=+DATA/bdvida/datafile/data_bdvida_sma.519.1054565469
+datafile 233 switched to datafile copy
+input datafile copy RECID=758 STAMP=1054651037 file name=+DATA/bdvida/datafile/indx_bdvida_big.679.1054609773
+datafile 234 switched to datafile copy
+input datafile copy RECID=759 STAMP=1054651037 file name=+DATA/bdvida/datafile/data_bdvida_sma.513.1054485851
+datafile 235 switched to datafile copy
+input datafile copy RECID=760 STAMP=1054651037 file name=+DATA/bdvida/datafile/indx_bdvida_big.631.1054593395
+datafile 236 switched to datafile copy
+input datafile copy RECID=761 STAMP=1054651037 file name=+DATA/bdvida/datafile/data_bdvida_sma.578.1054580757
+datafile 237 switched to datafile copy
+input datafile copy RECID=762 STAMP=1054651038 file name=+DATA/bdvida/datafile/data_bdvida_sma.287.1054556419
+datafile 238 switched to datafile copy
+input datafile copy RECID=763 STAMP=1054651038 file name=+DATA/bdvida/datafile/data_bdvida_sma.307.1054547153
+datafile 239 switched to datafile copy
+input datafile copy RECID=764 STAMP=1054651038 file name=+DATA/bdvida/datafile/data_bdvida_sma.385.1054523133
+datafile 240 switched to datafile copy
+input datafile copy RECID=765 STAMP=1054651038 file name=+DATA/bdvida/datafile/data_bdvida_sma.359.1054529475
+datafile 241 switched to datafile copy
+input datafile copy RECID=766 STAMP=1054651038 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.469.1054487599
+datafile 242 switched to datafile copy
+input datafile copy RECID=767 STAMP=1054651039 file name=+DATA/bdvida/datafile/indx_bdvida_sma.419.1054506063
+datafile 243 switched to datafile copy
+input datafile copy RECID=768 STAMP=1054651039 file name=+DATA/bdvida/datafile/data_bdvida_sma.646.1054597257
+datafile 244 switched to datafile copy
+input datafile copy RECID=769 STAMP=1054651039 file name=+DATA/bdvida/datafile/data_bdvida_sma.686.1054613941
+datafile 245 switched to datafile copy
+input datafile copy RECID=770 STAMP=1054651039 file name=+DATA/bdvida/datafile/indx_bdvida_sma.466.1054496985
+datafile 246 switched to datafile copy
+input datafile copy RECID=771 STAMP=1054651039 file name=+DATA/bdvida/datafile/indx_bdvida_sma.449.1054502673
+datafile 247 switched to datafile copy
+input datafile copy RECID=772 STAMP=1054651039 file name=+DATA/bdvida/datafile/indx_bdvida_sma.563.1054579469
+datafile 248 switched to datafile copy
+input datafile copy RECID=773 STAMP=1054651039 file name=+DATA/bdvida/datafile/indx_bdvida_big.452.1054502449
+datafile 249 switched to datafile copy
+input datafile copy RECID=774 STAMP=1054651040 file name=+DATA/bdvida/datafile/indx_bdvida_big.457.1054499981
+datafile 250 switched to datafile copy
+input datafile copy RECID=775 STAMP=1054651040 file name=+DATA/bdvida/datafile/indx_bdvida_big.450.1054502657
+datafile 251 switched to datafile copy
+input datafile copy RECID=776 STAMP=1054651040 file name=+DATA/bdvida/datafile/indx_bdvida_big.454.1054501117
+datafile 252 switched to datafile copy
+input datafile copy RECID=777 STAMP=1054651040 file name=+DATA/bdvida/datafile/data_bdvida_sma.523.1054565941
+datafile 253 switched to datafile copy
+input datafile copy RECID=778 STAMP=1054651040 file name=+DATA/bdvida/datafile/data_bdvida_sma.673.1054609769
+datafile 254 switched to datafile copy
+input datafile copy RECID=779 STAMP=1054651040 file name=+DATA/bdvida/datafile/data_bdvida_sma.347.1054533201
+datafile 255 switched to datafile copy
+input datafile copy RECID=780 STAMP=1054651040 file name=+DATA/bdvida/datafile/data_bdvida_big.303.1054547155
+datafile 256 switched to datafile copy
+input datafile copy RECID=781 STAMP=1054651040 file name=+DATA/bdvida/datafile/data_bdvida_big.381.1054523135
+datafile 257 switched to datafile copy
+input datafile copy RECID=782 STAMP=1054651041 file name=+DATA/bdvida/datafile/data_bdvida_sma.740.1054635049
+datafile 258 switched to datafile copy
+input datafile copy RECID=783 STAMP=1054651041 file name=+DATA/bdvida/datafile/data_bdvida_sma.779.1054648039
+datafile 259 switched to datafile copy
+input datafile copy RECID=784 STAMP=1054651041 file name=+DATA/bdvida/datafile/data_bdvida_sma.339.1054533237
+datafile 260 switched to datafile copy
+input datafile copy RECID=785 STAMP=1054651041 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.605.1054590531
+datafile 261 switched to datafile copy
+input datafile copy RECID=786 STAMP=1054651041 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.659.1054603461
+datafile 262 switched to datafile copy
+input datafile copy RECID=787 STAMP=1054651041 file name=+DATA/bdvida/datafile/data_bdvida_sma.327.1054541095
+datafile 263 switched to datafile copy
+input datafile copy RECID=788 STAMP=1054651042 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.706.1054623131
+datafile 264 switched to datafile copy
+input datafile copy RECID=789 STAMP=1054651042 file name=+DATA/bdvida/datafile/data_bdvida_sma.607.1054591417
+datafile 265 switched to datafile copy
+input datafile copy RECID=790 STAMP=1054651042 file name=+DATA/bdvida/datafile/data_bdvida_sma.643.1054597253
+datafile 266 switched to datafile copy
+input datafile copy RECID=791 STAMP=1054651042 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.640.1054595537
+datafile 267 switched to datafile copy
+input datafile copy RECID=792 STAMP=1054651043 file name=+DATA/bdvida/datafile/tbsd_appvida_sma.258.1054565013
+datafile 268 switched to datafile copy
+input datafile copy RECID=793 STAMP=1054651043 file name=+DATA/bdvida/datafile/indx_bdvida_big.410.1054509217
+datafile 269 switched to datafile copy
+input datafile copy RECID=794 STAMP=1054651043 file name=+DATA/bdvida/datafile/indx_bdvida_big.426.1054505385
+datafile 270 switched to datafile copy
+input datafile copy RECID=795 STAMP=1054651043 file name=+DATA/bdvida/datafile/data_bdvida_big.397.1054518903
+datafile 271 switched to datafile copy
+input datafile copy RECID=796 STAMP=1054651043 file name=+DATA/bdvida/datafile/data_bdvida_big.389.1054518921
+datafile 272 switched to datafile copy
+input datafile copy RECID=797 STAMP=1054651043 file name=+DATA/bdvida/datafile/tbsd_audit.291.1054550805
+datafile 273 switched to datafile copy
+input datafile copy RECID=798 STAMP=1054651043 file name=+DATA/bdvida/datafile/data_bdvida_med.683.1054613939
+datafile 274 switched to datafile copy
+input datafile copy RECID=799 STAMP=1054651044 file name=+DATA/bdvida/datafile/data_bdvida_med.615.1054591431
+datafile 275 switched to datafile copy
+input datafile copy RECID=800 STAMP=1054651044 file name=+DATA/bdvida/datafile/indx_bdvida_med.431.1054505381
+datafile 276 switched to datafile copy
+input datafile copy RECID=801 STAMP=1054651044 file name=+DATA/bdvida/datafile/indx_bdvida_med.402.1054518901
+datafile 277 switched to datafile copy
+input datafile copy RECID=802 STAMP=1054651044 file name=+DATA/bdvida/datafile/indx_bdvida_sma.648.1054597257
+datafile 278 switched to datafile copy
+input datafile copy RECID=803 STAMP=1054651044 file name=+DATA/bdvida/datafile/indx_bdvida_sma.688.1054613943
+datafile 279 switched to datafile copy
+input datafile copy RECID=804 STAMP=1054651045 file name=+DATA/bdvida/datafile/data_bdvida_sma.394.1054518919
+datafile 280 switched to datafile copy
+input datafile copy RECID=805 STAMP=1054651045 file name=+DATA/bdvida/datafile/data_bdvida_sma.415.1054509213
+datafile 281 switched to datafile copy
+input datafile copy RECID=806 STAMP=1054651045 file name=+DATA/bdvida/datafile/data_bdvida_sma.633.1054594871
+datafile 282 switched to datafile copy
+input datafile copy RECID=807 STAMP=1054651045 file name=+DATA/bdvida/datafile/data_bdvida_sma.665.1054606649
+datafile 283 switched to datafile copy
+input datafile copy RECID=808 STAMP=1054651045 file name=+DATA/bdvida/datafile/data_bdvida_sma.367.1054529455
+datafile 284 switched to datafile copy
+input datafile copy RECID=809 STAMP=1054651045 file name=+DATA/bdvida/datafile/data_bdvida_sma.377.1054527441
+datafile 285 switched to datafile copy
+input datafile copy RECID=810 STAMP=1054651046 file name=+DATA/bdvida/datafile/data_bdvida_sma.507.1054485853
+datafile 286 switched to datafile copy
+input datafile copy RECID=811 STAMP=1054651046 file name=+DATA/bdvida/datafile/data_bdvida_sma.481.1054486581
+datafile 287 switched to datafile copy
+input datafile copy RECID=812 STAMP=1054651046 file name=+DATA/bdvida/datafile/indx_bdvida_sma.620.1054591435
+datafile 288 switched to datafile copy
+input datafile copy RECID=813 STAMP=1054651046 file name=+DATA/bdvida/datafile/indx_bdvida_sma.282.1054556423
+datafile 289 switched to datafile copy
+input datafile copy RECID=814 STAMP=1054651046 file name=+DATA/bdvida/datafile/data_bdvida_big.587.1054584433
+datafile 290 switched to datafile copy
+input datafile copy RECID=815 STAMP=1054651046 file name=+DATA/bdvida/datafile/indx_bdvida_sma.625.1054593391
+datafile 291 switched to datafile copy
+input datafile copy RECID=816 STAMP=1054651047 file name=+DATA/bdvida/datafile/indx_bdvida_sma.460.1054499323
+datafile 292 switched to datafile copy
+input datafile copy RECID=817 STAMP=1054651047 file name=+DATA/bdvida/datafile/indx_bdvida_sma.733.1054626713
+datafile 293 switched to datafile copy
+input datafile copy RECID=818 STAMP=1054651047 file name=+DATA/bdvida/datafile/indx_bdvida_sma.557.1054579465
+datafile 294 switched to datafile copy
+input datafile copy RECID=819 STAMP=1054651047 file name=+DATA/bdvida/datafile/indx_bdvida_big.443.1054502785
+datafile 295 switched to datafile copy
+input datafile copy RECID=820 STAMP=1054651047 file name=+DATA/bdvida/datafile/indx_bdvida_big.763.1054637001
+datafile 296 switched to datafile copy
+input datafile copy RECID=821 STAMP=1054651047 file name=+DATA/bdvida/datafile/tbsd_audit.771.1054637279
+datafile 297 switched to datafile copy
+input datafile copy RECID=822 STAMP=1054651047 file name=+DATA/bdvida/datafile/data_bdvida_sma.599.1054590527
+datafile 298 switched to datafile copy
+input datafile copy RECID=823 STAMP=1054651048 file name=+DATA/bdvida/datafile/data_bdvida_sma.653.1054603457
+datafile 299 switched to datafile copy
+input datafile copy RECID=824 STAMP=1054651048 file name=+DATA/bdvida/datafile/indx_bdvida_med.262.1054561629
+datafile 300 switched to datafile copy
+input datafile copy RECID=825 STAMP=1054651048 file name=+DATA/bdvida/datafile/indx_bdvida_med.568.1054579485
+datafile 301 switched to datafile copy
+input datafile copy RECID=826 STAMP=1054651048 file name=+DATA/bdvida/datafile/indx_bdvida_med.536.1054565951
+datafile 302 switched to datafile copy
+input datafile copy RECID=827 STAMP=1054651048 file name=+DATA/bdvida/datafile/data_bdvida_med.590.1054584435
+datafile 303 switched to datafile copy
+input datafile copy RECID=828 STAMP=1054651048 file name=+DATA/bdvida/datafile/indx_bdvida_med.588.1054584433
+datafile 304 switched to datafile copy
+input datafile copy RECID=829 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.546.1054569073
+datafile 305 switched to datafile copy
+input datafile copy RECID=830 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.528.1054565467
+datafile 306 switched to datafile copy
+input datafile copy RECID=831 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.575.1054580755
+datafile 307 switched to datafile copy
+input datafile copy RECID=832 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.526.1054565939
+datafile 308 switched to datafile copy
+input datafile copy RECID=833 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.372.1054527443
+datafile 309 switched to datafile copy
+input datafile copy RECID=834 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.265.1054561627
+datafile 310 switched to datafile copy
+input datafile copy RECID=835 STAMP=1054651049 file name=+DATA/bdvida/datafile/indx_bdvida_med.302.1054547157
+datafile 311 switched to datafile copy
+input datafile copy RECID=836 STAMP=1054651050 file name=+DATA/bdvida/datafile/indx_bdvida_med.380.1054523135
+datafile 312 switched to datafile copy
+input datafile copy RECID=837 STAMP=1054651050 file name=+DATA/bdvida/datafile/data_bdvida_med.516.1054565471
+datafile 313 switched to datafile copy
+input datafile copy RECID=838 STAMP=1054651050 file name=+DATA/bdvida/datafile/data_bdvida_med.565.1054579483
+datafile 314 switched to datafile copy
+input datafile copy RECID=839 STAMP=1054651050 file name=+DATA/bdvida/datafile/data_bdvida_med.355.1054529477
+datafile 315 switched to datafile copy
+input datafile copy RECID=840 STAMP=1054651050 file name=+DATA/bdvida/datafile/data_bdvida_med.747.1054635565
+datafile 316 switched to datafile copy
+input datafile copy RECID=841 STAMP=1054651050 file name=+DATA/bdvida/datafile/data_bdvida_med.755.1054635889
+datafile 317 switched to datafile copy
+input datafile copy RECID=842 STAMP=1054651050 file name=+DATA/bdvida/datafile/data_bdvida_med.533.1054565949
+datafile 318 switched to datafile copy
+input datafile copy RECID=843 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.435.1054503185
+datafile 319 switched to datafile copy
+input datafile copy RECID=844 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.508.1054485853
+datafile 320 switched to datafile copy
+input datafile copy RECID=845 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.581.1054580759
+datafile 321 switched to datafile copy
+input datafile copy RECID=846 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.531.1054565943
+datafile 322 switched to datafile copy
+input datafile copy RECID=847 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.259.1054561631
+datafile 323 switched to datafile copy
+input datafile copy RECID=848 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.544.1054569071
+datafile 324 switched to datafile copy
+input datafile copy RECID=849 STAMP=1054651051 file name=+DATA/bdvida/datafile/data_bdvida_med.571.1054579487
+datafile 325 switched to datafile copy
+input datafile copy RECID=850 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.539.1054565953
+datafile 326 switched to datafile copy
+input datafile copy RECID=851 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.593.1054584437
+datafile 327 switched to datafile copy
+input datafile copy RECID=852 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.549.1054569075
+datafile 328 switched to datafile copy
+input datafile copy RECID=853 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.278.1054556443
+datafile 329 switched to datafile copy
+input datafile copy RECID=854 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.316.1054543013
+datafile 330 switched to datafile copy
+input datafile copy RECID=855 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.298.1054547177
+datafile 331 switched to datafile copy
+input datafile copy RECID=856 STAMP=1054651052 file name=+DATA/bdvida/datafile/data_bdvida_med.710.1054623457
+datafile 332 switched to datafile copy
+input datafile copy RECID=857 STAMP=1054651053 file name=+DATA/bdvida/datafile/indx_bdvida_med.354.1054529477
+datafile 333 switched to datafile copy
+input datafile copy RECID=858 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_med.342.1054533205
+datafile 334 switched to datafile copy
+input datafile copy RECID=859 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_med.334.1054533241
+datafile 335 switched to datafile copy
+input datafile copy RECID=860 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_med.322.1054541099
+datafile 336 switched to datafile copy
+input datafile copy RECID=861 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_med.612.1054591421
+datafile 337 switched to datafile copy
+input datafile copy RECID=862 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_med.678.1054609773
+datafile 338 switched to datafile copy
+input datafile copy RECID=863 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_sma.276.1054556443
+datafile 339 switched to datafile copy
+input datafile copy RECID=864 STAMP=1054651053 file name=+DATA/bdvida/datafile/data_bdvida_sma.314.1054543013
+datafile 340 switched to datafile copy
+input datafile copy RECID=865 STAMP=1054651054 file name=+DATA/bdvida/datafile/data_bdvida_sma.296.1054547177
+datafile 341 switched to datafile copy
+input datafile copy RECID=866 STAMP=1054651054 file name=+DATA/bdvida/datafile/indx_bdvida_med.712.1054623459
+datafile 342 switched to datafile copy
+input datafile copy RECID=867 STAMP=1054651054 file name=+DATA/bdvida/datafile/indx_bdvida_med.486.1054486209
+datafile 343 switched to datafile copy
+input datafile copy RECID=868 STAMP=1054651054 file name=+DATA/bdvida/datafile/data_bdvida_sma.488.1054486209
+datafile 344 switched to datafile copy
+input datafile copy RECID=869 STAMP=1054651054 file name=+DATA/bdvida/datafile/data_bdvida_sma.718.1054623795
+datafile 345 switched to datafile copy
+input datafile copy RECID=870 STAMP=1054651054 file name=+DATA/bdvida/datafile/data_bdvida_sma.694.1054616277
+datafile 346 switched to datafile copy
+input datafile copy RECID=871 STAMP=1054651054 file name=+DATA/bdvida/datafile/data_bdvida_sma.499.1054485855
+datafile 347 switched to datafile copy
+input datafile copy RECID=872 STAMP=1054651054 file name=+DATA/bdvida/datafile/indx_bdvida_big.630.1054593393
+datafile 348 switched to datafile copy
+input datafile copy RECID=873 STAMP=1054651055 file name=+DATA/bdvida/datafile/indx_bdvida_big.562.1054579469
+datafile 349 switched to datafile copy
+input datafile copy RECID=874 STAMP=1054651055 file name=+DATA/bdvida/datafile/indx_bdvida_big.604.1054590529
+datafile 350 switched to datafile copy
+input datafile copy RECID=875 STAMP=1054651055 file name=+DATA/bdvida/datafile/data_bdvida_sma.720.1054623797
+datafile 351 switched to datafile copy
+input datafile copy RECID=876 STAMP=1054651055 file name=+DATA/bdvida/datafile/data_bdvida_sma.696.1054616279
+datafile 352 switched to datafile copy
+input datafile copy RECID=877 STAMP=1054651055 file name=+DATA/bdvida/datafile/data_bdvida_sma.472.1054487597
+datafile 353 switched to datafile copy
+input datafile copy RECID=878 STAMP=1054651055 file name=+DATA/bdvida/datafile/data_bdvida_sma.422.1054506061
+datafile 354 switched to datafile copy
+input datafile copy RECID=879 STAMP=1054651055 file name=+DATA/bdvida/datafile/data_bdvida_sma.463.1054499319
+datafile 355 switched to datafile copy
+input datafile copy RECID=880 STAMP=1054651056 file name=+DATA/bdvida/datafile/data_bdvida_sma.730.1054626711
+datafile 356 switched to datafile copy
+input datafile copy RECID=881 STAMP=1054651056 file name=+DATA/bdvida/datafile/data_bdvida_sma.446.1054502781
+datafile 357 switched to datafile copy
+input datafile copy RECID=882 STAMP=1054651056 file name=+DATA/bdvida/datafile/data_bdvida_sma.760.1054636999
+datafile 358 switched to datafile copy
+input datafile copy RECID=883 STAMP=1054651056 file name=+DATA/bdvida/datafile/indx_bdvida_sma.428.1054505383
+datafile 359 switched to datafile copy
+input datafile copy RECID=884 STAMP=1054651056 file name=+DATA/bdvida/datafile/indx_bdvida_sma.399.1054518903
+datafile 360 switched to datafile copy
+input datafile copy RECID=885 STAMP=1054651056 file name=+DATA/bdvida/datafile/indx_bdvida_sma.391.1054518921
+datafile 361 switched to datafile copy
+input datafile copy RECID=886 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_med.350.1054532465
+datafile 362 switched to datafile copy
+input datafile copy RECID=887 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_med.310.1054546385
+datafile 363 switched to datafile copy
+input datafile copy RECID=888 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_med.292.1054550803
+datafile 364 switched to datafile copy
+input datafile copy RECID=889 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_med.270.1054559257
+datafile 365 switched to datafile copy
+input datafile copy RECID=890 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_med.268.1054560807
+datafile 366 switched to datafile copy
+input datafile copy RECID=891 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_med.741.1054635303
+datafile 367 switched to datafile copy
+input datafile copy RECID=892 STAMP=1054651057 file name=+DATA/bdvida/datafile/data_bdvida_sma.768.1054637277
+datafile 368 switched to datafile copy
+input datafile copy RECID=893 STAMP=1054651057 file name=+DATA/bdvida/datafile/indx_bdvida_sma.658.1054603461
+datafile 369 switched to datafile copy
+input datafile copy RECID=894 STAMP=1054651058 file name=+DATA/bdvida/datafile/indx_bdvida_big.517.1054565471
+datafile 370 switched to datafile copy
+input datafile copy RECID=895 STAMP=1054651058 file name=+DATA/bdvida/datafile/data_bdvida_sma.618.1054591433
+datafile 371 switched to datafile copy
+input datafile copy RECID=896 STAMP=1054651058 file name=+DATA/bdvida/datafile/data_bdvida_sma.744.1054635563
+datafile 372 switched to datafile copy
+input datafile copy RECID=897 STAMP=1054651058 file name=+DATA/bdvida/datafile/data_bdvida_sma.752.1054635887
+datafile 373 switched to datafile copy
+input datafile copy RECID=898 STAMP=1054651058 file name=+DATA/bdvida/datafile/data_bdvida_sma.438.1054503183
+datafile 374 switched to datafile copy
+input datafile copy RECID=899 STAMP=1054651058 file name=+DATA/bdvida/datafile/data_bdvida_sma.512.1054485851
+datafile 375 switched to datafile copy
+input datafile copy RECID=900 STAMP=1054651059 file name=+DATA/bdvida/datafile/data_bdvida_sma.286.1054556419
+datafile 376 switched to datafile copy
+input datafile copy RECID=901 STAMP=1054651059 file name=+DATA/bdvida/datafile/indx_bdvida_big.723.1054623801
+datafile 377 switched to datafile copy
+input datafile copy RECID=902 STAMP=1054651059 file name=+DATA/bdvida/datafile/indx_bdvida_big.580.1054580759
+datafile 378 switched to datafile copy
+input datafile copy RECID=903 STAMP=1054651059 file name=+DATA/bdvida/datafile/indx_bdvida_big.530.1054565943
+datafile 379 switched to datafile copy
+input datafile copy RECID=904 STAMP=1054651059 file name=+DATA/bdvida/datafile/indx_bdvida_big.273.1054556445
+datafile 380 switched to datafile copy
+input datafile copy RECID=905 STAMP=1054651059 file name=+DATA/bdvida/datafile/data_bdvida_med.260.1054561631
+datafile 381 switched to datafile copy
+input datafile copy RECID=906 STAMP=1054651060 file name=+DATA/bdvida/datafile/data_bdvida_sma.306.1054547153
+datafile 382 switched to datafile copy
+input datafile copy RECID=907 STAMP=1054651060 file name=+DATA/bdvida/datafile/indx_bdvida_sma.570.1054579485
+datafile 383 switched to datafile copy
+input datafile copy RECID=908 STAMP=1054651060 file name=+DATA/bdvida/datafile/indx_bdvida_sma.538.1054565951
+datafile 384 switched to datafile copy
+input datafile copy RECID=909 STAMP=1054651060 file name=+DATA/bdvida/datafile/indx_bdvida_sma.592.1054584435
+datafile 385 switched to datafile copy
+input datafile copy RECID=910 STAMP=1054651060 file name=+DATA/bdvida/datafile/data_bdvida_sma.548.1054569073
+datafile 386 switched to datafile copy
+input datafile copy RECID=911 STAMP=1054651061 file name=+DATA/bdvida/datafile/data_bdvida_sma.274.1054556445
+datafile 387 switched to datafile copy
+input datafile copy RECID=912 STAMP=1054651061 file name=+DATA/bdvida/datafile/data_bdvida_sma.312.1054543015
+datafile 388 switched to datafile copy
+input datafile copy RECID=913 STAMP=1054651061 file name=+DATA/bdvida/datafile/data_bdvida_sma.294.1054547179
+datafile 389 switched to datafile copy
+input datafile copy RECID=914 STAMP=1054651061 file name=+DATA/bdvida/datafile/data_bdvida_sma.714.1054623459
+datafile 390 switched to datafile copy
+input datafile copy RECID=915 STAMP=1054651061 file name=+DATA/bdvida/datafile/data_bdvida_sma.484.1054486211
+datafile 391 switched to datafile copy
+input datafile copy RECID=916 STAMP=1054651061 file name=+DATA/bdvida/datafile/data_bdvida_sma.722.1054623799
+datafile 392 switched to datafile copy
+input datafile copy RECID=917 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_sma.698.1054616281
+datafile 393 switched to datafile copy
+input datafile copy RECID=918 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_sma.492.1054485859
+datafile 394 switched to datafile copy
+input datafile copy RECID=919 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_sma.468.1054487599
+datafile 395 switched to datafile copy
+input datafile copy RECID=920 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_sma.418.1054506065
+datafile 396 switched to datafile copy
+input datafile copy RECID=921 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_sma.459.1054499323
+datafile 397 switched to datafile copy
+input datafile copy RECID=922 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_sma.734.1054626713
+datafile 398 switched to datafile copy
+input datafile copy RECID=923 STAMP=1054651062 file name=+DATA/bdvida/datafile/data_bdvida_med.442.1054502785
+datafile 399 switched to datafile copy
+input datafile copy RECID=924 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.764.1054637001
+datafile 400 switched to datafile copy
+input datafile copy RECID=925 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.772.1054637279
+datafile 401 switched to datafile copy
+input datafile copy RECID=926 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.748.1054635565
+datafile 402 switched to datafile copy
+input datafile copy RECID=927 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.756.1054635889
+datafile 403 switched to datafile copy
+input datafile copy RECID=928 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.434.1054503187
+datafile 404 switched to datafile copy
+input datafile copy RECID=929 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.506.1054485853
+datafile 405 switched to datafile copy
+input datafile copy RECID=930 STAMP=1054651063 file name=+DATA/bdvida/datafile/data_bdvida_med.494.1054485857
+datafile 406 switched to datafile copy
+input datafile copy RECID=931 STAMP=1054651064 file name=+DATA/bdvida/datafile/data_bdvida_med.475.1054486585
+datafile 407 switched to datafile copy
+input datafile copy RECID=932 STAMP=1054651064 file name=+DATA/bdvida/datafile/data_bdvida_med.409.1054509217
+datafile 408 switched to datafile copy
+input datafile copy RECID=933 STAMP=1054651064 file name=+DATA/bdvida/datafile/indx_bdvida_big.780.1054648321
+datafile 409 switched to datafile copy
+input datafile copy RECID=934 STAMP=1054651064 file name=+DATA/bdvida/datafile/indx_bdvida_big.453.1054501727
+datafile 410 switched to datafile copy
+input datafile copy RECID=935 STAMP=1054651064 file name=+DATA/bdvida/datafile/indx_bdvida_big.776.1054647563
+datafile 411 switched to datafile copy
+input datafile copy RECID=936 STAMP=1054651064 file name=+DATA/bdvida/datafile/indx_bdvida_big.311.1054543015
+datafile 412 switched to datafile copy
+input datafile copy RECID=937 STAMP=1054651064 file name=+DATA/bdvida/datafile/indx_bdvida_big.405.1054517695
+datafile 413 switched to datafile copy
+input datafile copy RECID=938 STAMP=1054651065 file name=+DATA/bdvida/datafile/indx_bdvida_big.451.1054502451
+datafile 414 switched to datafile copy
+input datafile copy RECID=939 STAMP=1054651065 file name=+DATA/bdvida/datafile/indx_bdvida_big.456.1054499981
+datafile 415 switched to datafile copy
+input datafile copy RECID=940 STAMP=1054651065 file name=+DATA/bdvida/datafile/indx_bdvida_big.777.1054647633
+datafile 416 switched to datafile copy
+input datafile copy RECID=941 STAMP=1054651065 file name=+DATA/bdvida/datafile/indx_bdvida_big.406.1054517693
+datafile 417 switched to datafile copy
+input datafile copy RECID=942 STAMP=1054651065 file name=+DATA/bdvida/datafile/indx_bdvida_big.455.1054500365
+datafile 418 switched to datafile copy
+input datafile copy RECID=943 STAMP=1054651065 file name=+DATA/bdvida/datafile/indx_bdvida_med.680.1054612113
+datafile 419 switched to datafile copy
+input datafile copy RECID=944 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.690.1054615437
+datafile 420 switched to datafile copy
+input datafile copy RECID=945 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.700.1054616975
+datafile 421 switched to datafile copy
+input datafile copy RECID=946 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.726.1054626681
+datafile 422 switched to datafile copy
+input datafile copy RECID=947 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.660.1054605121
+datafile 423 switched to datafile copy
+input datafile copy RECID=948 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.594.1054589881
+datafile 424 switched to datafile copy
+input datafile copy RECID=949 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.662.1054605907
+datafile 425 switched to datafile copy
+input datafile copy RECID=950 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.704.1054622805
+datafile 426 switched to datafile copy
+input datafile copy RECID=951 STAMP=1054651066 file name=+DATA/bdvida/datafile/indx_bdvida_med.552.1054578451
+datafile 427 switched to datafile copy
+input datafile copy RECID=952 STAMP=1054651067 file name=+DATA/bdvida/datafile/indx_bdvida_med.622.1054592475
+datafile 428 switched to datafile copy
+input datafile copy RECID=953 STAMP=1054651067 file name=+DATA/bdvida/datafile/indx_bdvida_sma.293.1054547179
+datafile 429 switched to datafile copy
+input datafile copy RECID=954 STAMP=1054651067 file name=+DATA/bdvida/datafile/indx_bdvida_sma.651.1054602513
+datafile 430 switched to datafile copy
+input datafile copy RECID=955 STAMP=1054651067 file name=+DATA/bdvida/datafile/indx_bdvida_sma.707.1054623131
+datafile 431 switched to datafile copy
+input datafile copy RECID=956 STAMP=1054651067 file name=+DATA/bdvida/datafile/indx_bdvida_sma.703.1054619493
+datafile 432 switched to datafile copy
+input datafile copy RECID=957 STAMP=1054651067 file name=+DATA/bdvida/datafile/indx_bdvida_sma.727.1054626683
+datafile 433 switched to datafile copy
+input datafile copy RECID=958 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.701.1054616979
+datafile 434 switched to datafile copy
+input datafile copy RECID=959 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.705.1054622807
+datafile 435 switched to datafile copy
+input datafile copy RECID=960 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.681.1054612115
+datafile 436 switched to datafile copy
+input datafile copy RECID=961 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.691.1054615443
+datafile 437 switched to datafile copy
+input datafile copy RECID=962 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.663.1054605909
+datafile 438 switched to datafile copy
+input datafile copy RECID=963 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.595.1054589883
+datafile 439 switched to datafile copy
+input datafile copy RECID=964 STAMP=1054651068 file name=+DATA/bdvida/datafile/indx_bdvida_sma.661.1054605123
+datafile 440 switched to datafile copy
+input datafile copy RECID=965 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.623.1054592477
+datafile 441 switched to datafile copy
+input datafile copy RECID=966 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.553.1054578451
+datafile 442 switched to datafile copy
+input datafile copy RECID=967 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.597.1054590483
+datafile 443 switched to datafile copy
+input datafile copy RECID=968 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.585.1054583629
+datafile 444 switched to datafile copy
+input datafile copy RECID=969 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.257.1054565015
+datafile 445 switched to datafile copy
+input datafile copy RECID=970 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.290.1054555879
+datafile 446 switched to datafile copy
+input datafile copy RECID=971 STAMP=1054651069 file name=+DATA/bdvida/datafile/indx_bdvida_sma.584.1054583629
+datafile 447 switched to datafile copy
+input datafile copy RECID=972 STAMP=1054651070 file name=+DATA/bdvida/datafile/indx_bdvida_sma.596.1054590481
+datafile 448 switched to datafile copy
+input datafile copy RECID=973 STAMP=1054651070 file name=+DATA/bdvida/datafile/indx_bdvida_sma.572.1054580073
+datafile 449 switched to datafile copy
+input datafile copy RECID=974 STAMP=1054651070 file name=+DATA/bdvida/datafile/indx_bdvida_sma.650.1054602511
+datafile 450 switched to datafile copy
+input datafile copy RECID=975 STAMP=1054651070 file name=+DATA/bdvida/datafile/data_bdvida_sma.425.1054505385
+datafile 451 switched to datafile copy
+input datafile copy RECID=976 STAMP=1054651070 file name=+DATA/bdvida/datafile/data_bdvida_sma.396.1054518903
+datafile 452 switched to datafile copy
+input datafile copy RECID=977 STAMP=1054651070 file name=+DATA/bdvida/datafile/data_bdvida_sma.388.1054518923
+datafile 453 switched to datafile copy
+input datafile copy RECID=978 STAMP=1054651070 file name=+DATA/bdvida/datafile/data_bdvida_sma.371.1054527445
+datafile 454 switched to datafile copy
+input datafile copy RECID=979 STAMP=1054651070 file name=+DATA/bdvida/datafile/data_bdvida_sma.361.1054529459
+datafile 455 switched to datafile copy
+input datafile copy RECID=980 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.649.1054597259
+datafile 456 switched to datafile copy
+input datafile copy RECID=981 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.689.1054613943
+datafile 457 switched to datafile copy
+input datafile copy RECID=982 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.621.1054591437
+datafile 458 switched to datafile copy
+input datafile copy RECID=983 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.639.1054594875
+datafile 459 switched to datafile copy
+input datafile copy RECID=984 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.671.1054606653
+datafile 460 switched to datafile copy
+input datafile copy RECID=985 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.281.1054556423
+datafile 461 switched to datafile copy
+input datafile copy RECID=986 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.384.1054523133
+datafile 462 switched to datafile copy
+input datafile copy RECID=987 STAMP=1054651071 file name=+DATA/bdvida/datafile/data_bdvida_sma.358.1054529475
+datafile 463 switched to datafile copy
+input datafile copy RECID=988 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.674.1054609769
+datafile 464 switched to datafile copy
+input datafile copy RECID=989 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.346.1054533201
+datafile 465 switched to datafile copy
+input datafile copy RECID=990 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.338.1054533239
+datafile 466 switched to datafile copy
+input datafile copy RECID=991 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.326.1054541097
+datafile 467 switched to datafile copy
+input datafile copy RECID=992 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.608.1054591419
+datafile 468 switched to datafile copy
+input datafile copy RECID=993 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.644.1054597255
+datafile 469 switched to datafile copy
+input datafile copy RECID=994 STAMP=1054651072 file name=+DATA/bdvida/datafile/data_bdvida_sma.684.1054613941
+datafile 470 switched to datafile copy
+input datafile copy RECID=995 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs1.495.1054485857
+datafile 471 switched to datafile copy
+input datafile copy RECID=996 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs1.470.1054487599
+datafile 472 switched to datafile copy
+input datafile copy RECID=997 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs2.420.1054506061
+datafile 473 switched to datafile copy
+input datafile copy RECID=998 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs2.461.1054499321
+datafile 474 switched to datafile copy
+input datafile copy RECID=999 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs1.616.1054591433
+datafile 475 switched to datafile copy
+input datafile copy RECID=1000 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs1.430.1054505383
+datafile 476 switched to datafile copy
+input datafile copy RECID=1001 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs1.401.1054518901
+datafile 477 switched to datafile copy
+input datafile copy RECID=1002 STAMP=1054651073 file name=+DATA/bdvida/datafile/undotbs1.393.1054518919
+datafile 478 switched to datafile copy
+input datafile copy RECID=1003 STAMP=1054651074 file name=+DATA/bdvida/datafile/undotbs1.414.1054509213
+datafile 479 switched to datafile copy
+input datafile copy RECID=1004 STAMP=1054651074 file name=+DATA/bdvida/datafile/undotbs2.732.1054626713
+datafile 480 switched to datafile copy
+input datafile copy RECID=1005 STAMP=1054651074 file name=+DATA/bdvida/datafile/undotbs2.444.1054502783
+datafile 481 switched to datafile copy
+input datafile copy RECID=1006 STAMP=1054651074 file name=+DATA/bdvida/datafile/undotbs2.762.1054637001
+datafile 482 switched to datafile copy
+input datafile copy RECID=1007 STAMP=1054651074 file name=+DATA/bdvida/datafile/undotbs2.770.1054637279
+datafile 483 switched to datafile copy
+input datafile copy RECID=1008 STAMP=1054651074 file name=+DATA/bdvida/datafile/undotbs2.634.1054594871
+datafile 484 switched to datafile copy
+input datafile copy RECID=1009 STAMP=1054651075 file name=+DATA/bdvida/datafile/data_bdvida_sma.666.1054606649
+datafile 485 switched to datafile copy
+input datafile copy RECID=1010 STAMP=1054651075 file name=+DATA/bdvida/datafile/undotbs1.746.1054635565
+datafile 486 switched to datafile copy
+input datafile copy RECID=1011 STAMP=1054651075 file name=+DATA/bdvida/datafile/undotbs2.754.1054635887
+datafile 487 switched to datafile copy
+input datafile copy RECID=1012 STAMP=1054651075 file name=+DATA/bdvida/datafile/undotbs1.366.1054529457
+datafile 488 switched to datafile copy
+input datafile copy RECID=1013 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.376.1054527441
+datafile 489 switched to datafile copy
+input datafile copy RECID=1014 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.436.1054503185
+datafile 490 switched to datafile copy
+input datafile copy RECID=1015 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.510.1054485853
+datafile 491 switched to datafile copy
+input datafile copy RECID=1016 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.284.1054556421
+datafile 492 switched to datafile copy
+input datafile copy RECID=1017 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.304.1054547155
+datafile 493 switched to datafile copy
+input datafile copy RECID=1018 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.504.1054485855
+datafile 494 switched to datafile copy
+input datafile copy RECID=1019 STAMP=1054651076 file name=+DATA/bdvida/datafile/data_bdvida_sma.778.1054648011
+datafile 495 switched to datafile copy
+input datafile copy RECID=1020 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.329.1054540459
+datafile 496 switched to datafile copy
+input datafile copy RECID=1021 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.638.1054594875
+datafile 497 switched to datafile copy
+input datafile copy RECID=1022 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.774.1054647137
+datafile 498 switched to datafile copy
+input datafile copy RECID=1023 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.775.1054647289
+datafile 499 switched to datafile copy
+input datafile copy RECID=1024 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.715.1054623461
+datafile 500 switched to datafile copy
+input datafile copy RECID=1025 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.483.1054486211
+datafile 501 switched to datafile copy
+input datafile copy RECID=1026 STAMP=1054651077 file name=+DATA/bdvida/datafile/data_bdvida_sma.724.1054624579
+datafile 502 switched to datafile copy
+input datafile copy RECID=1027 STAMP=1054651078 file name=+DATA/bdvida/datafile/data_bdvida_sma.738.1054633729
+datafile 503 switched to datafile copy
+input datafile copy RECID=1028 STAMP=1054651078 file name=+DATA/bdvida/datafile/data_bdvida_sma.736.1054632147
+datafile 504 switched to datafile copy
+input datafile copy RECID=1029 STAMP=1054651078 file name=+DATA/bdvida/datafile/data_bdvida_med.417.1054506065
+datafile 505 switched to datafile copy
+input datafile copy RECID=1030 STAMP=1054651078 file name=+DATA/bdvida/datafile/data_bdvida_backup.382.1054523135
+datafile 506 switched to datafile copy
+input datafile copy RECID=1031 STAMP=1054651078 file name=+DATA/bdvida/datafile/data_bdvida_backup.356.1054529477
+datafile 507 switched to datafile copy
+input datafile copy RECID=1032 STAMP=1054651079 file name=+DATA/bdvida/datafile/undotbs1.480.1054486583
+datafile 508 switched to datafile copy
+input datafile copy RECID=1033 STAMP=1054651079 file name=+DATA/bdvida/datafile/data_bdvida_med.670.1054606653
+datafile 509 switched to datafile copy
+input datafile copy RECID=1034 STAMP=1054651079 file name=+DATA/bdvida/datafile/users.330.1054540457
+datafile 510 switched to datafile copy
+input datafile copy RECID=1035 STAMP=1054651079 file name=+DATA/bdvida/datafile/data_bdvida_med.320.1054542551
+datafile 511 switched to datafile copy
+input datafile copy RECID=1036 STAMP=1054651080 file name=+DATA/bdvida/datafile/data_bdvida_med.272.1054556793
+datafile 512 switched to datafile copy
+input datafile copy RECID=1037 STAMP=1054651080 file name=+DATA/bdvida/datafile/data_bdvida_med.550.1054577889
+datafile 513 switched to datafile copy
+input datafile copy RECID=1038 STAMP=1054651080 file name=+DATA/bdvida/datafile/data_bdvida_med.351.1054530389
+datafile 514 switched to datafile copy
+input datafile copy RECID=1039 STAMP=1054651080 file name=+DATA/bdvida/datafile/data_bdvida_sma.458.1054499323
+datafile 515 switched to datafile copy
+input datafile copy RECID=1040 STAMP=1054651081 file name=+DATA/bdvida/datafile/data_bdvida_sma.735.1054626715
+datafile 516 switched to datafile copy
+input datafile copy RECID=1041 STAMP=1054651081 file name=+DATA/bdvida/datafile/data_bdvida_sma.441.1054502785
+datafile 517 switched to datafile copy
+input datafile copy RECID=1042 STAMP=1054651081 file name=+DATA/bdvida/datafile/data_bdvida_sma.765.1054637003
+datafile 518 switched to datafile copy
+input datafile copy RECID=1043 STAMP=1054651081 file name=+DATA/bdvida/datafile/data_bdvida_sma.773.1054637281
+datafile 519 switched to datafile copy
+input datafile copy RECID=1044 STAMP=1054651081 file name=+DATA/bdvida/datafile/data_bdvida_sma.749.1054635567
+datafile 520 switched to datafile copy
+input datafile copy RECID=1045 STAMP=1054651081 file name=+DATA/bdvida/datafile/data_bdvida_sma.757.1054635889
+datafile 521 switched to datafile copy
+input datafile copy RECID=1046 STAMP=1054651082 file name=+DATA/bdvida/datafile/tbs_ogg.573.1054580075
+datafile 522 switched to datafile copy
+input datafile copy RECID=1047 STAMP=1054651082 file name=+DATA/bdvida/datafile/data_bdvida_sma1.541.1054568891
+datafile 523 switched to datafile copy
+input datafile copy RECID=1048 STAMP=1054651082 file name=+DATA/bdvida/datafile/data_bdvida_sma1.551.1054577889
+datafile 524 switched to datafile copy
+input datafile copy RECID=1049 STAMP=1054651082 file name=+DATA/bdvida/datafile/data_bdvida_sma1.289.1054555879
+
+Starting recover at 24-OCT-20
+renamed tempfile 1 to +DATA in control file
+renamed tempfile 2 to +DATA in control file
+renamed tempfile 3 to +DATA in control file
+renamed tempfile 4 to +DATA in control file
+added tempfile +DATA to tablespace TEMP in control file
+added tempfile +DATA to tablespace TEMP in control file
+added tempfile +DATA to tablespace TEMP in control file
+added tempfile +DATA to tablespace TEMP in control file
+added tempfile +DATA to tablespace TEMP in control file
+added tempfile +DATA to tablespace TEMP in control file
+added tempfile +DATA to tablespace TEMP in control file
+
+starting media recovery
+media recovery failed
+released channel: c1
+released channel: c2
+released channel: c3
+released channel: c4
+released channel: c5
+released channel: c6
+RMAN-00571: ===========================================================
+RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+RMAN-00571: ===========================================================
+RMAN-03002: failure of recover command at 10/24/2020 14:39:27
+ORA-00283: recovery session canceled due to errors
+RMAN-11003: failure during parse/execution of SQL statement: alter database recover if needed
+ start until time 'SEP 30 2020 12:36:32' using backup controlfile
+ORA-00283: recovery session canceled due to errors
+ORA-38760: This database instance failed to turn on flashback database
+
+Recovery Manager complete.
