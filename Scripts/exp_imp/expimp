@@ -16,7 +16,7 @@ Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bi
 With the Automatic Storage Management option
 oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
 
-nohup expdp \'/ as sysdba\'  directory=IMP SCHEMAS=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_27082020.dmp log=exp_ESPERU_PRODUC_27082020.log &
+nohup expdp \'/ as sysdba\'  directory=IMP SCHEMAS=SYSFIS dumpfile=exp_SYSFIS_28102020.dmp log=exp_SYSFIS_28102020.log &
 
 nohup expdp \'/ as sysdba\'  directory=DIR_TAB_PUMP TABLES=ACSELX.ITFCTRLACRE dumpfile=exp_ITFCTRLACRE_%U.dmp log=exp_ITFCTRLACRE_29082020.log parallel=4 &
 
@@ -31,7 +31,7 @@ nohup expdp \'/ as sysdba\' tables=DW_SUMA.BP_RTE_EMISION dumpfile=exp_table_BP_
 
 nohup impdp \'/ as sysdba\' remap_schema= DW_SUMA:DW_SUMA directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U logfile=imp_BP_RTE_EMISION0330.log content=all TABLE_EXISTS_ACTION=TRUNCATE METRICS=Y parallel=4 &
 
-nohup impdp \'/ as sysdba\' TABLES=OWNER.TABLE directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U  logfile=imp_BP_RTE_EMISION0330.log &
+nohup impdp \'/ as sysdba\' schemas=OWNER.TABLE directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U  logfile=imp_BP_RTE_EMISION0330.log &
 
 nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESERVA_RIESGO_CURSO_ERP_enero_2020.log tables=ACSELX.RESERVA_RIESGO_CURSO_ERP buffer=1000000 &
 
@@ -53,5 +53,5 @@ imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX to
 
 -- 11g
 impdp  mantenimiento/mn2013mn dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp  logfile=exp_INT_RVSUNARP_AX_18032020.log  directory=IMP_BDSAS  table_exists_action=TRUNCATE
-
+nohup impdp \'/ as sysdba\' schemas=SYSFIS directory=IMP_DIR dumpfile=exp_SYSFIS_28102020.dmp logfile=impdpSYSFIS_28102020.log
 
