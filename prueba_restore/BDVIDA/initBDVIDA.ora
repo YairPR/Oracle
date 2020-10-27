@@ -1,0 +1,23 @@
+*.audit_file_dest='/oracle/dbbase/admin/BDVIDA/adump'
+*.audit_trail='db'
+*.compatible='11.2.0.4.0'
+*.control_files='+DATA/bdvida/controlfile/current.262.991568505','+DATA/bdvida/controlfile/current.261.991568505'
+*.db_block_size=8192
+*.db_create_file_dest='+DATA'
+*.db_domain=''
+*.db_file_name_convert='+DATAC1/BDVIDA','+DATA/BDVIDA','+RECOC1/BDVIDA','+ARCH/BDVIDA'
+*.log_file_name_convert='+DATAC1/BDVIDA','+DATA/BDVIDA','+RECOC1/BDVIDA','+ARCH/BDVIDA'
+*.db_name='BDVIDA'
+*.db_unique_name='BDVIDA'
+*.db_files=1024
+*.db_recovery_file_dest='+DATA'
+*.db_recovery_file_dest_size=4385144832
+*.diagnostic_dest='/oracle/dbbase'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=BDVIDATPXDB)'
+*.open_cursors=300
+*.pga_aggregate_target=1462763520
+*.processes=500
+*.remote_login_passwordfile='EXCLUSIVE'
+*.sessions=555
+*.sga_target=4388290560
+*.undo_tablespace='UNDOTBS1'
