@@ -16,7 +16,7 @@ Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bi
 With the Automatic Storage Management option
 oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
 
-nohup expdp \'/ as sysdba\'  directory=IMP SCHEMAS=SYSFIS dumpfile=exp_SYSFIS_28102020.dmp log=exp_SYSFIS_28102020.log &
+nohup expdp \'/ as sysdba\'  directory=DATA_PUMP_DIR SCHEMAS=SYSFIS dumpfile=exp_SYSFIS_28102020.dmp log=exp_SYSFIS_28102020.log &
 
 nohup expdp \'/ as sysdba\'  directory=DIR_TAB_PUMP TABLES=ACSELX.ITFCTRLACRE dumpfile=exp_ITFCTRLACRE_%U.dmp log=exp_ITFCTRLACRE_29082020.log parallel=4 &
 
