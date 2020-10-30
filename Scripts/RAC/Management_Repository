@@ -8,7 +8,8 @@ As it’s a single instance database, it will be up and running on one node in t
 As it’s managed by GI, in case the hosting node is down, the database will be automatically failed over to other node.
 Management Database will be the central repository to store Cluster Health Monitor (aka CHM/OS, ora.crf) and other data in 12c
 Management database uses the same shared storage as OCR/Voting File (  voting disk size >5G : ( 3.2G+ is being used by MGMTDB – 2G for CHM )
-If Management Database is not selected to be configured during installation/upgrade OUI, all features (Cluster Health Monitor (CHM/OS) etc)  that depend on it will be disabled. Note: there’s no supported procedure to enable Management Database once the GI stack is configured
+If Management Database is not selected to be configured during installation/upgrade OUI, all features (Cluster Health Monitor (CHM/OS) etc)  
+that depend on it will be disabled. Note: there’s no supported procedure to enable Management Database once the GI stack is configured
  
 
 How to start Management Database
