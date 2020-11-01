@@ -23,7 +23,7 @@ s.sid, s.serial#, s.module, decode(sql_hash_value, 0, prev_hash_value, sql_hash_
 --  AND  s.Status='KILLED'
    AND  p.addr=s.paddr
 --   AND s.action like '%PVILLACAMPA%'
---AND  s.username = 'DS_CRMACSELX'
+AND  s.username = '&username'
 -- AND s.osuser <> 'djara'
 --  and module = 'ServicioPLW.exe'
 -- AND s.machine like 'j2ee04'
