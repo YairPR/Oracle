@@ -1,0 +1,25 @@
+*.audit_file_dest='/oracle/dbbase/admin/BDERP/adump'
+*.audit_trail='DB'
+*.compatible='10.2.0'
+*.control_files='+DG_DATA001/bderp/cntrl01.dbf.1288623583432','+DG_DATA001/bderp/cntrl02.dbf.1288623583432','+DG_DATA001/bderp/cntrl03.dbf.1288623583432'
+*.db_block_size=8192
+*.db_create_file_dest='+DG_DATA001'
+*.db_domain=''
+*.db_file_name_convert='+DATA/BDERP','+DG_DATA001/BDERP','+ARCH/BDERP','+ARCH/BDERP'
+*.log_file_name_convert='+DATA/BDERP','+DG_DATA001/BDERP','+ARCH/BDERP','+ARCH/BDERP'
+*.db_name='BDERP'
+*.db_unique_name='BDERP'
+*.db_files=512
+*.db_recovery_file_dest_size=33285996544
+*.db_recovery_file_dest='+DG_DATA001'
+*.diagnostic_dest='/oracle/dbbase'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=BDERPXDB)'
+*.open_cursors=600
+*.pga_aggregate_target=3221225472
+*.plsql_code_type='INTERPRETED'
+*.processes=1000
+*.remote_login_passwordfile='EXCLUSIVE'
+*.sessions=1105
+*.sga_target=14g
+*.undo_tablespace='APPS_UNDOTS1'
+
