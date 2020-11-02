@@ -1,4 +1,4 @@
--- Muestra sesiones activas, 
+-- Muestra TODAS las sesiones ACTIVAS, 
 /*
 OS_DB_USER           SID_SERIAL     LAST_EXE MODULE                           QUERY                          MACHINE              LOGON_TIME        PROGRAM                                 LAST_CALL KILL_PID
 -------------------- -------------- -------- -------------------------------- ------------------------------ -------------------- ----------------- ------------------------------------- ----------- ----------------
