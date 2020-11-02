@@ -26,7 +26,7 @@ SELECT /*+ rule*/ substr(UPPER(s.OsUser) || ' ' || s.UserName, 1, 20) os_db_user
        LAST_CALL_ET/60 last_call, s.status,
        'kill -9 '|| p.spid kill_pid
 FROM v$Session s , v$process p
-WHERE s.UserName = '&&w_user'  AND  p.addr=s.paddr
+WHERE s.UserName = '&w_user'  AND  p.addr=s.paddr
 order by logon_time
 ;
 
