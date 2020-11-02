@@ -1,5 +1,11 @@
 -- Script muestra sesiones activas 
 -- Parametro a ingresa USERNAME
+-- Muestra lo siguiente:
+/*
+OS_DB_USER           SID_SERIAL     LAST_EXE MODULE                         QUERY                          MACHINE              LOGON_TIME        PROGRAM                               LAST_CALL STATUS   KILL_PID
+-------------------- -------------- -------- ------------------------------ ------------------------------ -------------------- ----------------- ------------------------------------- --------- -------- ----------------
+OPERADORSB JALARCONT 1835,7101      20:44:10 NumRelIng 17427447             @s 07000116FC8036F8 96492195   RIMAC\RSVDIW8OP01    20-11-01 20:25:27 -Cantidad 1                                  71 INACTIVE kill -9 19202658
+*/
 
 set linesize 2000 pagesize 20000 feedback on
 set linesize 2000 pagesize 20000 feedback on
