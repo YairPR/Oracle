@@ -1,4 +1,5 @@
---Display session enter username value
+-- Script muestra sesiones activas 
+-- Parametro a ingresa USERNAME
 
 set linesize 2000 pagesize 20000 feedback on
 set linesize 2000 pagesize 20000 feedback on
