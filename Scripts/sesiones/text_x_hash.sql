@@ -16,8 +16,9 @@ where   a.hash_value = t.hash_value
 order by 1,2
 /
 
-
+/*
   Line SQL Statement Text
 ------ -----------------------------------------------------------------
      0 DELETE GEN_DATA_TEMP WHERE FECDEPURA < SYSDATE OR FECDEPURA IS N
      1 ULL
+*/
