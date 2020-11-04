@@ -9,7 +9,9 @@
 set line 100
 col username format a30
 select username, sql_hash_value, count(1) 
-from v$session where status = 'ACTIVE' and type !='BACKGROUND' 
+from v$session 
+where type !='BACKGROUND' 
+--and status = 'ACTIVE'
 group by username, sql_hash_value 
 order by 1, 2;
 
