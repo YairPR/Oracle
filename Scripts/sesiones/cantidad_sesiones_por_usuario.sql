@@ -8,6 +8,7 @@ FROM
    v$session s
 WHERE  paddr(+)=addr
 and s.username <> ' '
+AND s.username = '&username'
 GROUP BY  s.status, s.username
 ORDER BY 2 desc;
 
