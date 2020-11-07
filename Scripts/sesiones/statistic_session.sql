@@ -1,4 +1,4 @@
-*/
+/*
 RDBMS Version: 10g.
 Script shows following session statistic values:
 PGA Memory, in MB;
