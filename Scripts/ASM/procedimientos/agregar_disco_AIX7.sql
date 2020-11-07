@@ -90,10 +90,10 @@ DATA_MEDIUM_0003               /dev/rhdisk9
 Now we need to check status of the disk we want to add to ASM diskgroup. If we already used that disk in ASM, HEADER_STATUS will have value FORMER. On new disk HEADER_STATUS will be CANDIDATE.
 
 
-SQL> SELECT group_number, disk_number, mount_status,
-  2  header_status, state, path
-  3  FROM   v$asm_disk
-  4   where HEADER_STATUS is in ('CANDIDATE','FORMER');
+SELECT group_number, disk_number, mount_status,
+header_status, state, path
+FROM   v$asm_disk
+where HEADER_STATUS in ('CANDIDATE','FORMER');
  
 
 GROUP_NUMBER DISK_NUMBER MOUNT_S HEADER_STATU STATE    PATH
