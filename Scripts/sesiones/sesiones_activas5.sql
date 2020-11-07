@@ -1,3 +1,6 @@
+--- Informacion de sesiones activas e inactivas
+--- forma de reporte y sumatoria de sesiones
+
 set feed off
 set pagesize 1000
 set linesize 1000
@@ -38,3 +41,19 @@ select lpad(' ',39,' '),'Total  Conexiones   ','==> '||to_char(count(*),'9999')
 from v$session where type='USER' and status in ('INACTIVE','ACTIVE','KILLED');
 set heading on
 ttitle on
+                                                     
+/*
+SID   SERIAL LOCKWAIT	   ID_SO     USUARIO	       MAQUINA			      APLICACION      STATUS   FECHA_HORA
+-------- -------- ---------------- --------- ----------------- ------------------------------ --------------- -------- ----------------
+ 1027    10572		         16420     XT1771	       01-040726				                   INACTIVE   06 NOV 11:11:35
+ 111      147		          16467     XT1771	       01-040726				                   INACTIVE   06 NOV 11:11:37
+ 1347    57359		         23376     XT1771	       01-040726				                   INACTIVE   06 NOV 11:13:10
+SQL> SQL> SQL> SQL>
+=======================================================================================================================
+SQL>   2    3    4    5    6    7    8    9   10   11  
+					Conexiones Activas    ==>     9
+					Conexiones Inactivas  ==>   389
+					Conexiones Killed     ==>     0
+					Total  Conexiones     ==>   399
+
+*/
