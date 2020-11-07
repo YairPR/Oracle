@@ -41,6 +41,7 @@ and    s.username is not null
 order by 6 asc
 /
 
+/*
 RESULT
 -------
   UNIX	   Oracle
@@ -52,4 +53,4 @@ Proces	  Session Is   Oracle		    System			 Time
 352658 770,1	       DS_BPM_SAS	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17252       2
 352656 738,1	       DS_BPM_SAS	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17442       2
 352645 674,1	       DS_BPM_SAS	    oracle	     2019/11/06 12:50 rsdpedbadm03.rima 	      class slave wait			  17434       5
-
+*/
