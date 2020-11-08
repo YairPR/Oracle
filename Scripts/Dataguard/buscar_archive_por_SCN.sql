@@ -1,5 +1,9 @@
 --http://select-star-from.blogspot.com/2013/05/finding-archivelog-names-using-scn.html
 
+You can get the archivelog sequence number containing a specific scn.
+
+select sequence# from v$archived_log where &scn between FIRST_CHANGE# and NEXT_CHANGE#;
+
 Finding Archivelog Names using the SCN
 How to find the Archivelog names using the SCN
 During database recovery,we may have a SCN number and need to know the archivelog names. 
