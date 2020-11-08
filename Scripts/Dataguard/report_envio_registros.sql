@@ -1,6 +1,4 @@
---https://gavinsoorma.com/2009/07/data-guard-log-shipping-report/
 /*
-
 Si tenemos varios entornos de base de datos en espera física de Data Guard para administrar, el siguiente informe puede ayudarnos rápidamente
 identificar el registro transportado y el estado de registro aplicado de las bases de datos primaria y en espera en nuestro entorno y si hay alguna en espera
 La base de datos también está rezagada con respecto a la primaria.
@@ -61,21 +59,21 @@ SELECT NAME DB_NAME
 FROM V$DATABASE
 ),
 (
-SELECT UPPER(SUBSTR(HOST_NAME,1,(DECODE(INSTR(HOST_NAME,’.’),0,LENGTH(HOST_NAME),
-(INSTR(HOST_NAME,’.’)-1))))) HOSTNAME
+SELECT UPPER(SUBSTR(HOST_NAME,1,(DECODE(INSTR(HOST_NAME,'.'),0,LENGTH(HOST_NAME),
+(INSTR(HOST_NAME,'.')-1))))) HOSTNAME
 FROM V$INSTANCE
 ),
 (
 SELECT MAX(SEQUENCE#) LOG_ARCHIVED
-FROM V$ARCHIVED_LOG WHERE DEST_ID=1 AND ARCHIVED=’YES’
+FROM V$ARCHIVED_LOG WHERE DEST_ID=1 AND ARCHIVED='YES'
 ),
 (
 SELECT MAX(SEQUENCE#) LOG_APPLIED
-FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED=’YES’
+FROM V$ARCHIVED_LOG WHERE DEST_ID=1 AND APPLIED='YES'
 ),
 (
-SELECT TO_CHAR(MAX(COMPLETION_TIME),’DD-MON/HH24:MI’) APPLIED_TIME
-FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED=’YES’
+SELECT TO_CHAR(MAX(COMPLETION_TIME),'DD-MON/HH24:MI') APPLIED_TIME
+FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED='YES'
 );
 
 --------------------------------------------------------------------------------------------
