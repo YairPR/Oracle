@@ -1,21 +1,49 @@
 --https://gavinsoorma.com/2009/07/data-guard-log-shipping-report/
 /*
-If we have a number of Data Guard physical standby database environments to manage, the following report can help us quickly 
-identify the log transported and log applied status of the Primary and Standby databases in our environment and if any standby 
-database is lagging behind the primary as well.
 
-The script can also be customised so as to email an alert notification if the standby and the primary go out of sync by say 5 
-log files. Drop me a line if you need that customisation script.
+Si tenemos varios entornos de base de datos en espera física de Data Guard para administrar, el siguiente informe puede ayudarnos rápidamente
+identificar el registro transportado y el estado de registro aplicado de las bases de datos primaria y en espera en nuestro entorno y si hay alguna en espera
+La base de datos también está rezagada con respecto a la primaria.
 
-This report is based on a Unix shell script (check_logship.sh) which in turn calls a SQL script (check_logship.sql).
+La secuencia de comandos también se puede personalizar para enviar por correo electrónico una notificación de alerta si el modo de espera y el principal no están sincronizados por decir 5
+archivos de registro. Envíeme un mensaje si necesita ese script de personalización.
 
-The script requires a user MONITOR to be created in each target database with the CONNECT and SELECT ANY DICTIONARY
-privileges. We also have a config file (in our case bw_dg.lst) which will contain the list of all the TNS aliases of the 
-Primary databases which we need to monitor.
+Este informe se basa en un script de shell de Unix (check_logship.sh) que a su vez llama a un script de SQL (check_logship.sql).
+
+El script requiere que se cree un MONITOR de usuario en cada base de datos de destino con CONNECT y SELECT ANY DICTIONARY
+privilegios. También tenemos un archivo de configuración (en nuestro caso bw_dg.lst) que contendrá la lista de todos los alias TNS del
+Bases de datos primarias que necesitamos monitorear.
+
+RESULT:
+
+[PROD] emrep:/u01/oracle/scripts > ./check_logship.sh
+
+#######################################################################################
+	Data Guard Log Shipping Summary Report:  Thu Jul 16 14:22:02 WAUST 2009
+#######################################################################################
+
+DB_NAME  HOSTNAME     LOG_ARCHIVED LOG_APPLIED APPLIED_TIME  LOG_GAP
+-------- ------------ ------------ ----------- ------------  -------
+
+GENPRD   CBDORCA201          16742       16742 16-JUL/14:12       0
+
+
+CPSPRD   PRDU009N1           11494       11494 16-JUL/14:10       0
+
+
+LN1P     CBDORCA101          51173       51171 16-JUL/12:25       2
+
+
+LA1P     CBDORCA105          76971       76970 16-JUL/13:10       1
+
+#######################################################################################
+
 */
 
 --------------------------------------------------------------------------------------
-check_logship.sql
+########################
+#   check_logship.sql  #
+########################
 
 SET PAGESIZE 124
 SET HEAD OFF
@@ -49,9 +77,12 @@ FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED=’YES’
 SELECT TO_CHAR(MAX(COMPLETION_TIME),’DD-MON/HH24:MI’) APPLIED_TIME
 FROM V$ARCHIVED_LOG WHERE DEST_ID=2 AND APPLIED=’YES’
 );
+
 --------------------------------------------------------------------------------------------
 
-check_logship.sh
+######################
+#  check_logship.sh  #
+######################
 
 if [ -f /tmp/dataguard1.out ]
 then
