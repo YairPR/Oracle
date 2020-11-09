@@ -3,10 +3,14 @@ Configure:
 Archive log is not deleted before applied or shipped to all standby Server
 
 Cause:
-In Oracle Dataguard environment, Archive is going to ship on standby database for applied on it. But some primary also configured on Flash Recovery Area (FRA) as archivelog file destination which may lead to space crunch in the location of archive destination. When you use the RMAN command “backup archivelog all delete all input”. It will delete backupset files in FRA location according to retention policy or archivelog files that have been backed according to redundancy policy.
+En el entorno de Oracle Dataguard, Archive se enviará en una base de datos en espera para su aplicación. Pero algunos primarios 
+también están configurados en el Área de recuperación de Flash (FRA) como destino del archivo de registro de archivo, lo que puede 
+provocar una reducción del espacio en la ubicación del destino del archivo. Cuando utiliza el comando RMAN “backup archivelog all delete all input”. 
+Eliminará los archivos del conjunto de copias de seguridad (backupset) en la ubicación de FRA de acuerdo con la política de retención o los archivos de registro de 
+archivo que se hayan respaldado de acuerdo con la política de redundancia.
 
 Problem:
-Oracle clean the archive log as we issued RMAN command, it may or may not applied on standby.
+Oracle limpia el registro de archivo a medida que emitimos el comando RMAN, puede o no aplicarse en modo de espera
 
 Solution:
 
@@ -16,7 +20,7 @@ Note: Configure _log_deletion_policy=’ALL’ and “configure deletion policy 
 
 ALTER SYSTEM SET "_log_deletion_policy"='ALL' SCOPE=SPFILE;
 
-2. Configure RMAN deletion policy using RMAN command
+2. Configurar la política de eliminación de RMAN mediante el comando RMAN
 
 -- Set for current standby or primary
 RMAN> CONFIGURE DELETION POLICY TO APPLIED ON STANDBY;
@@ -24,7 +28,7 @@ RMAN> CONFIGURE DELETION POLICY TO APPLIED ON STANDBY;
 -- Set for all Standby
 RMAN> CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON ALL STANDBY;
 
-3. You can also configure this command on Primary Server.
+3. También puede configurar este comando en el servidor primario.
 RMAN donot delete the archive log until it shipped to all standby databases.
 
 RMAN> CONFIGURE ARCHIVE DELETION POLICY TO SHIPPED TO ALL STANDBY;
@@ -37,7 +41,7 @@ ALLOCATE CHANNEL FOR MAINTENANCE DEVICE TYPE DISK;
 DELETE ARCHIVELOG UNTIL TIME 'SYSDATE -5';
 }
 
-Note:
-RMAN “backup … archivelog all delete all input” will not delete archivelog files that are still needed for Data Guard if
-(a) they are not in FRA.
-(b) they are in FRA but no FRA space crunch situation.
+Nota:
+RMAN "backup ... archivelog all delete all input" no eliminará los archivos de archivelog que aún son necesarios para Data Guard Si:
+(a) no están en FRA.
+(b) están en FRA pero no en una situación de escasez de espacio de FRA.
