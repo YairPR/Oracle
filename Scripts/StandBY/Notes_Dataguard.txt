@@ -39,18 +39,20 @@ WHERE applied='YES';
 
 
 -- iniciar y detener la sincronización en Dataguard
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE disconnect; (?)
+
+Bajar:
 alter database recover managed standby database cancel;
-alter database recover managed standby database disconnect;
-ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE disconnect;
+
+Activar
+alter database recover managed standby database disconnect from session;
+
+Verificar
+select process,status,thread#,sequence# from v$managed_standby;
 
 
 -- Registrar manualmente archivelog
 alter database register physical logfile '<fullpath/filename>';
-
--- EN PRIMARIO
- -- configurar envío de archuvelog en primario
-alter system set log_archive_dest_3='SERVICE=DEVPCOMB LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES, PRIMARY_ROLE) DB_UNIQUE_NAME=DEVPCOMB';
-alter system set log_archive_dest_state_3='enable';
 
 -- Compruebe si los registros en espera están configurados correctamente
 
@@ -64,3 +66,7 @@ FROM	v$standby_log	st,	v$logfile	lf
 WHERE	st.group# = lf.group#
 /
 
+-- EN PRIMARIO
+ -- configurar envío de archuvelog en primario
+alter system set log_archive_dest_3='SERVICE=DEVPCOMB LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES, PRIMARY_ROLE) DB_UNIQUE_NAME=DEVPCOMB';
+alter system set log_archive_dest_state_3='enable';
