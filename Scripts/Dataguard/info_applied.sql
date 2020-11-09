@@ -12,8 +12,10 @@ Sí REGISTRAR = RFS and APPLIED = IN-MEMORY, entonces el archivo de registro se 
 sido actualizado.
 Sí REGISTRAR = RFS and APPLIED = YES,luego se aplicó el archivo de registro y se actualizaron los archivos de datos.
 Entonces, los registros se habían aplicado pero los archivos de datos no se habían actualizado. Esperamos mucho tiempo y vinieron más troncos del
-El sistema primario y la columna APPLIED mostraron YES pero los más antiguos no cambiaron. 
-Cancele la recuperación administrada, reinicie la instancia y luego reinicie la recuperación administrada. Entonces todo
+
+Caso:
+Sí el sistema primario y la columna APPLIED mostraron YES pero los más antiguos no cambiaron. 
+Entoces cancele la recuperación administrada, reinicie la instancia y luego reinicie la recuperación administrada. Entonces todo
 los registros, de ambos subprocesos mostraban YES en la barra de columnas APPLIED los últimos registros.
 
 -- REPORTE DE ARCHIVE, ESTADO APPLIED= NO, YES, IN MEMORY
