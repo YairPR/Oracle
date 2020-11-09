@@ -21,8 +21,9 @@ To check redo apply  and Media recovery service status:
 SQL> SELECT PROCESS,STATUS, THREAD#,SEQUENCE#, BLOCK#, BLOCKS FROM V$MANAGED_STANDBY ;
 
 If managed standby recovery is not running or not started with real-time apply, restart managed recovery with real-time apply enabled:
-
+--stop
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+--start
 SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT
 
 To gather Data Guard configuration information(standby)
@@ -38,12 +39,12 @@ RECOVERY_MODE
 -----------------------
 MANAGED REAL TIME APPLY
 
-To calculate the Redo bytes per second
+To calculate the Redo bytes per second -- revisar script
 
-SQL> SELECT SUM (BLOCKS * BLOCK_SIZE) / 1024 / 1024 / 60 / 60 / 30 REDO_MB_PER_SEC
+ SELECT SUM (BLOCKS * BLOCK_SIZE)/1024/1024/60/60/30 REDO_MB_PER_SEC
  FROM GV$ARCHIVED_LOG
- WHERE FIRST_TIME BETWEEN TO_DATE ('01.05.2016', 'DD.MM.YYYY')
- AND TO_DATE ('01.06.2016', 'DD.MM.YYYY')
+ WHERE FIRST_TIME BETWEEN TO_DATE ('08.11.2020', 'DD.MM.YYYY')
+ AND TO_DATE ('08.11.2020', 'DD.MM.YYYY');
  
 To check status of Data Guard synchronization(standby):
 
