@@ -1,3 +1,4 @@
+Leer:
 --https://weidongzhou.wordpress.com/2014/09/20/script-to-identify-the-restore-and-recover-point-for-archive-logs/
 
 col "Restore Command" for a100
