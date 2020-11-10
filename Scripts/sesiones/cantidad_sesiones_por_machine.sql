@@ -9,7 +9,7 @@ FROM
    v$session s
 WHERE 
    paddr(+)=addr
-   and s.schemaname = upper('&Usuario')
+   --and s.schemaname = upper('&Usuario')
    and s.status = 'ACTIVE'
 GROUP BY 
    s.schemaname, 
