@@ -1,5 +1,5 @@
 col type for a15
-set lines 122
+set lines 200
 set pages 33
 col item for a20
 col units for a15
