@@ -10,6 +10,7 @@ FROM
 WHERE 
    paddr(+)=addr
    --and s.schemaname = upper('&Usuario')
+   and s.username <> ' '
    and s.status = 'ACTIVE'
 GROUP BY 
    s.schemaname, 
