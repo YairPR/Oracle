@@ -4,7 +4,7 @@ set linesize 100
 set feedback off
 set heading off
 
-spool c:\obj_to_compile.sql
+spool obj_to_compile.sql
 
 select 'PROM ALTER ' || decode(owner,'PUBLIC','PUBLIC ','') || object_type || decode(owner,'PUBLIC',' "',' "' || OWNER || '"."') || OBJECT_NAME || '" ... ' || CHR(10) || 'ALTER ' || decode(owner,'PUBLIC','PUBLIC ','') || decode(object_type,'PACKAGE BODY','PACKAGE',object_type) || decode(owner,'PUBLIC',' "',' "' || OWNER || '"."') || OBJECT_NAME || '" COMPILE' || decode(object_type,'PACKAGE BODY',' BODY','') || ';' || decode(object_type, 'SYNONYM', '', CHR(10) || 'SHOW ERRORS ' || OBJECT_TYPE || ' ' || OWNER || '.' || OBJECT_NAME || ';' || CHR(10) )
 from all_objects
@@ -51,7 +51,7 @@ END;
 /
 /*Fin de compilacion de sinonimos*/
 
-spool c:\stat_obj_compile.txt
+spool stat_obj_compile.txt
 
 select count(1) "Nro Invalid Objects"
 from all_objects
@@ -61,7 +61,7 @@ and object_type in ('VIEW','TRIGGER','PROCEDURE','FUNCTION','PACKAGE','PACKAGE B
 order by object_type, owner, object_name
 /
 
-@ c:\obj_to_compile.sql
+@obj_to_compile.sql
 
 select count(1) "Nro Invalid Objects"
 from all_objects
