@@ -73,9 +73,10 @@ With the Real Application Clusters and Automatic Storage Management options
 
 SQL>
 SQL>
-SQL> set linesize 300
-SQL> col path for a40
-SQL> select name, path from v$asm_disk;
+set line 500
+set linesize 300
+col path for a40
+select name, path from v$asm_disk;
 
 NAME                           PATH
 ------------------------------ ----------------------------------------
