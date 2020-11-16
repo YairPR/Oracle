@@ -31,6 +31,7 @@ FROM   (SELECT file_id,
         FROM dba_free_space
         GROUP BY file_id) f
 WHERE  df.file_id = f.file_id (+)
+            and df.tablespace_name ='&tbs_name'
 ORDER BY df.tablespace_name,
          df.file_name;
 
