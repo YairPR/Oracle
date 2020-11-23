@@ -9,12 +9,12 @@ SET VERIFY OFF
 
 SPOOL temp.sql
 
-SELECT 'GRANT SELECT ON "' || u.object_name || '" TO &1;'
-FROM   user_objects u
+SELECT 'GRANT SELECT ON "' || u.object_name || '" TO &username;'
+FROM   dba_objects u
 WHERE  u.object_type IN ('TABLE','VIEW','SEQUENCE')
 AND    NOT EXISTS (SELECT '1'
                    FROM   all_tab_privs a
-                   WHERE  a.grantee    = UPPER('&1')
+                   WHERE  a.grantee    = UPPER('&username')
                    AND    a.privilege  = 'SELECT'
                    AND    a.table_name = u.object_name);
 
