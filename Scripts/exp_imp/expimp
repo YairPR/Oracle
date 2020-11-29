@@ -17,6 +17,25 @@ Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bi
 With the Automatic Storage Management option
 oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
 
+TABLAS ACSELX
+
+nohup expdp \'/ as sysdba\' directory=DIR_DATA_PUMP tables=ACSELX.TERCERO, ACSELX.IVAL,ACSELX.OPERACION,ACSELX.POLIZA,ACSELX.PRODUCTO dumpfile=prueba_restore_NOV.dmp log=prueba_restore_NOV.log &
+nohup impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log &
+impdp \'/ as sysdba\'  directory=IMPTAB dumpfile=prueba_restore_NOV.dmp indexfile=index.sql
+
+[oracle@rsdcatdbtest01]/home/oracle> cat imptabPROD.par
+directory=IMPDMP
+dumpfile=PROD_full_20200627.dmp%U
+logfile=imp_tab_PRODUCTO_JUL20.log
+TABLES=ACSELX.TERCERO
+REMAP_SCHEMA=ACSELX:MANTENIMIENTO
+encryption_password='5d8K9w2&9%3&#K81'
+
+ nohup impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log &
+
+impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO TABLES=ACSELX.TERCERO REMAP_TABLESPACE=DATA_PROD_SSD_MED:DATA_BDCONTA_BIG  directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log 
+--------------FIN TABLAS ACSELX
+
 Winodws: 12c
 expdp "'/ as sysdba'"  directory=EXPIMP SCHEMAS=SYSFIS dumpfile=exp_SYSFIS_28102020.dmp log=exp_SYSFIS_28102020.log 
 
