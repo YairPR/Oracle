@@ -1,4 +1,6 @@
 --https://dbaclass.com/article/table_exists_action-option-impdp/
+## FULL BDINVER
+expdp mantenimiento/mn2013mn directory=DATA_PUMP_DIR dumpfile=BDINVERFULL_18122020.dmp logfile=expdpBDINVER_07072020.log FULL=YES
 
 Estimad tamaño de export:
 expdp \"/ as sysdba\" SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
