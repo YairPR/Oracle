@@ -79,3 +79,8 @@ impdp  mantenimiento/mn2013mn dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp  logfile
 nohup impdp \'/ as sysdba\' schemas=SYSFIS directory=IMP_DIR dumpfile=exp_SYSFIS_28102020.dmp logfile=impdpSYSFIS_28102020.log
 
 impdp \'/ as sysdba\' directory=IMP_TAB_RIESERP dumpfile=expdp_RESERVA_RIESGO_CURSO_ERP_20201030.dmp REMAP_SCHEMA=ACSELX:APP_RESTORE tables=ACSELX.RESERVA_RIESGO_CURSO_ERP REMAP_TABLESPACE=TBSD_MCRITICO_NOR:TBSD_RESTORE_ERP logfile=app_res_reserva_riesgo_imp.log ignore=y EXCLUDE=INDEX,CONSTRAINT,GRANT
+
+nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=exp_ESPERU_PRODUC_SR6766958.log directory=DIR_EXP &
+
+
+mount -n 172.24.146.4 -o bg,hard,intr,rsize=32768,wsize=32768,vers=3,proto=tcp,sec=sys,rw /BKP9 /BKP9
