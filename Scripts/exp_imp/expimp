@@ -69,6 +69,9 @@ expdp \'/ as sysdba\' FULL=Y directory=D:\bk190320_no_eliminar dumpfile=FULL_SR3
 12c
 nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_%T_%U.dmp logfile=exp_ESPERU_PRODUC.log directory=IMP parallel=4 &
 
+nohup impdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_%T_%U.dmp logfile=exp_ESPERU_PRODUC.log directory=IMP parallel=4 &
+
+
 IMPORT:
 
 -- 9i
@@ -80,7 +83,9 @@ nohup impdp \'/ as sysdba\' schemas=SYSFIS directory=IMP_DIR dumpfile=exp_SYSFIS
 
 impdp \'/ as sysdba\' directory=IMP_TAB_RIESERP dumpfile=expdp_RESERVA_RIESGO_CURSO_ERP_20201030.dmp REMAP_SCHEMA=ACSELX:APP_RESTORE tables=ACSELX.RESERVA_RIESGO_CURSO_ERP REMAP_TABLESPACE=TBSD_MCRITICO_NOR:TBSD_RESTORE_ERP logfile=app_res_reserva_riesgo_imp.log ignore=y EXCLUDE=INDEX,CONSTRAINT,GRANT
 
+
 nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=exp_ESPERU_PRODUC_SR6766958.log directory=DIR_EXP &
 
-
 mount -n 172.24.146.4 -o bg,hard,intr,rsize=32768,wsize=32768,vers=3,proto=tcp,sec=sys,rw /BKP9 /BKP9
+
+nohup impdp \'/ as sysdba\' directory=EXPIMP dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp schemas=ESPERU_PRODUC table_exists_action=TRUNCATE transform=disable_archive_logging:y parallel=4 logtime=all &
