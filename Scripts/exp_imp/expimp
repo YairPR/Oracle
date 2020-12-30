@@ -88,4 +88,4 @@ nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_SR6
 
 mount -n 172.24.146.4 -o bg,hard,intr,rsize=32768,wsize=32768,vers=3,proto=tcp,sec=sys,rw /BKP9 /BKP9
 
-nohup impdp \'/ as sysdba\' directory=EXPIMP dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp schemas=ESPERU_PRODUC table_exists_action=TRUNCATE transform=disable_archive_logging:y parallel=4 logtime=all &
+nohup impdp \'/ as sysdba\' directory=EXPIMP dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=imp_ESPERU_PRODUC_SR6766996.LOG schemas=ESPERU_PRODUC table_exists_action=REPLACE transform=disable_archive_logging:y parallel=4 logtime=all &
