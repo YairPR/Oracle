@@ -29,7 +29,7 @@ Depending on the settings of the init parameter processes, it could be that the 
 
 The query below gives the max allocated memory by a user session. We’ll use this to calculate the remaining memory requirements for the unconnected processes.
 
-select max(p.pga_max_mem)/1024/1024 "PGA MAX MEMORY OF USER SESSION (MB)"
+select max(p.pga_max_mem)/1024/1024 "pga_max_por_ses(MB)"
 from v$process p, v$session s
 where P.ADDR = S.paddr and s.username is not null;
 
