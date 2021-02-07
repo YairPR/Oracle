@@ -71,14 +71,3 @@ WHERE p.addr = s.paddr
   and s.sid = &&w_sid;
 undef w_sid
 set verify on
-
-
-
-select
-owner as "Schema"
-, segment_name as "Object Name"
-, segment_type as "Object Type"
-, round(bytes/1024/1024,2) as "Object Size (Mb)"
-, tablespace_name as "Tablespace"
-from dba_segments
-where segment_name='&tab_name';
