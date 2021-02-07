@@ -1,21 +1,39 @@
-
--- AIX
-uname -a   ->  AIX 1 6 
-
--- version AIX
+-- version
 oslevel -r 
 uname -a
+prtconf
 
+oslevel -s
+5300-09-02-0849
+This will give you
+
+"5300" - Base Level
+"09" - Technology Level
+"02" - Maintenance Level
+"0849" - Service Pack
+
+oslevel -s | awk -F- '{printf "AIX %.1f - Technology Level %d - Service Pack %d\n",$1/1000,$2,$3}'
+---------------------------------------------------------------------------------------------------------------------
+
+--Matar procesos
 KILL
 ps -ef | grep LOCAL=NO | awk '{print $2}' | xargs /usr/bin/kill -9
+kill -9 `ps -ef | grep LOCAL=NO | grep $ORACLE_SID | grep -v grep | awk '{print $2}'`
+
+---------------------------------------------------------------------------------------------------------------------
+--Convertir tamaño a GB de un archivo
 
 ls -l *4960378* | awk '{$5=sprintf("%.9f GB", $5/1024^3)} 1'
 ls -l| awk '{$5=sprintf("%.9f GB", $5/1024^2)} 1'
                                      , 
+---------------------------------------------------------------------------------------------------------------------
 
+--Uso TKPROF
 tkprof "nombredeltrace.trc" "output.txt" sys=n waits=y sort=exeela,fchela,prsela
 
-delete AUD
+---------------------------------------------------------------------------------------------------------------------
+
+---delete AUD
 find /oracle/admin/testP/adump/*.aud -mtime +5 -exec rm {} \;
 
 for i in /dir_in_question/20051008/*
@@ -23,14 +41,13 @@ do
   rm $i
 done
 
-How to list the most biggest directory on AIX
+------------------------------------------------------------------------------------------------------------------------------
+
+--How to list the most biggest directory on AIX
 du -sk ./* | sort -rn | head -5
 
-#How to list the most biggest directory on AIX
-du -sk ./* | sort -rn | head -5
-
-Displaying top CPU_consuming processes:
-#ps aux | head -1; ps aux | sort -rn +2 | head -10
+--Displaying top CPU_consuming processes:
+ps aux | head -1; ps aux | sort -rn +2 | head -10
 
 Displaying top 10 memory-consuming processes:
 #ps aux | head -1; ps aux | sort -rn +3 | head
@@ -64,5 +81,17 @@ Wait process bound to CPU
 
 Cpu usage with priority levels
 #topas -P
+
+------------------------------------------------------------------------------------------------------------------
+MOntar filesystem para oracle
+
+mount -t nfs -o rw,bg,hard,nointr,rsize=1048576,wsize=1048576,tcp,vers=3,timeo=600 172.25.122.25:/export/backup-project/backup2 /zfs/backup/backup2
+mount -n 172.24.146.4 -o bg,hard,intr,rsize=32768,wsize=32768,vers=3,proto=tcp,sec=sys,rw /BKP9 /BKP9
+
+-----------------------------
+
+Memoria:
+
+svmon -O summary=basic,unit=auto
 
 
