@@ -12,3 +12,11 @@ FROM gv$archived_log
 GROUP BY TRUNC(completion_time)
 ORDER BY TRUNC(completion_time)
 /
+
+Generation Date      Total for the Day in MB
+-------------------- -----------------------
+13-OCT-20                              11538
+14-OCT-20                               2866
+15-OCT-20                               3093
+16-OCT-20                               4115
+17-OCT-20                               1731
