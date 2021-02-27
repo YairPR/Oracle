@@ -58,6 +58,13 @@ nohup impdp \'/ as sysdba\' schemas=OWNER.TABLE directory=DIR_DATA_PUMP dumpfile
 
 nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESERVA_RIESGO_CURSO_ERP_enero_2020.log tables=ACSELX.RESERVA_RIESGO_CURSO_ERP buffer=1000000 &
 
+ESSALUD:
+nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log statistics=none buffer=1000000 &
+
+
+nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log buffer=1000000 &
+/backup_oracle
+
 -- 10g
 expdp scott/tiger@db10g schemas=SCOTT directory=TEST_DIR dumpfile=SCOTT.dmp logfile=expdpSCOTT.log
 expdp \'/ as sysdba\' schemas=APP_BPM_SIN_VEH directory=DATAPUMP dumpfile=exp_APP_BPM_SIN_VEH_16032020.dmp logfile=exp_APP_BPM_SIN_VEH_16032020.log
@@ -76,7 +83,7 @@ IMPORT:
 
 -- 9i
 imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX touser=ACSELX tables=PLAN_FINANCIAMIENTO_TABLE
-
+nohup imp \'/ as sysdba\' file=exp_table_SCCMDGAT_26022021.dmp log=imp_table_SCCMDGAT_26022021.log tables=SIA.SCCMDGAT &
 -- 11g
 impdp  mantenimiento/mn2013mn dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp  logfile=exp_INT_RVSUNARP_AX_18032020.log  directory=IMP_BDSAS  table_exists_action=TRUNCATE
 nohup impdp \'/ as sysdba\' schemas=SYSFIS directory=IMP_DIR dumpfile=exp_SYSFIS_28102020.dmp logfile=impdpSYSFIS_28102020.log
