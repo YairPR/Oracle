@@ -24,8 +24,10 @@ echo "Mes importar $FECHA_MES_ANT  " >> $LOGFILE
 echo "`ls -l $ARCH_DMP" >> $LOGFILE
 echo "=== Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : `date` ===" >> $LOGFILE
 
-imp \'/ as sysdba\' file=$ARCH_DMP fromuser=ACSELX touser=APP_RESTORE tables=RESERVA_RIESGO_CURSO_ERP  log=app_res_reserva_riesgo_${FECHA_MES_ANT}_imp.log ignore=y INDEXES=n CONStraints=n  grants=n
-
+##9i
+#imp \'/ as sysdba\' file=$ARCH_DMP fromuser=ACSELX touser=APP_RESTORE tables=RESERVA_RIESGO_CURSO_ERP  log=app_res_reserva_riesgo_${FECHA_MES_ANT}_imp.log ignore=y INDEXES=n CONStraints=n  grants=n
+#11g
+impdp \'/ as sysdba\' directory=IMP_TAB_RIESERP dumpfile=expdp_RESERVA_RIESGO_CURSO_ERP_20210129-0000.dmp REMAP_SCHEMA=ACSELX:APP_RESTORE remap_tablespace=TBSD_MCRITICO_NOR:TBSD_RESTORE_ERP tables=ACSELX.RESERVA_RIESGO_CURSO_ERP  logfile=app_res_reserva_riesgo_${FECHA_MES_ANT}_imp.log ignore=y exclude=constraint, grant, index
 cat $LOG_DMP    >> $LOGFILE
 echo "=== Renombrando y Modificando la Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : `date` ===" >> $LOGFILE
 /oracle/scripts/crons/shs/DDLs_RESERVA_RIESGO_CURSO_ERP.sh $FECHA_MES_ANT
