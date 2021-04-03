@@ -1,0 +1,4 @@
+#! /bin/ksh
+
+
+memusada='free
