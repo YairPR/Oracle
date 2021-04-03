@@ -19,23 +19,30 @@ tm=$(cat $im | grep "total" | awk '{printf($1/1024/1024)}')
 mu=$(cat $im | sed -n 2p | awk '{printf($1/1024/1024)}')
 ml=$(cat $im | grep "free" | awk '{printf($1/1024/1024)}')
 
-
 #Variables
 autenticacion='/ as sysdba'
 
-
 tsesion=$(sqlplus -s $autenticacion  << EOF
 set pagesize 0 feedback off verify off heading off echo off;
-show user;
-SELECT 'Date: '||to_char(sysdate,'DD-MM-YYYY HH24:MI')||' The test is passed' from dual;
+SELECT
+ VP.VALUE 
+FROM 
+  V$PARAMETER VP
+WHERE VP.NAME = 'sessions';
 exit;
 EOF
 )
 
 tactive=$(sqlplus -s $autenticacion  << EOF
 set pagesize 0 feedback off verify off heading off echo off;
-show user;
-SELECT 'Date: '||to_char(sysdate,'DD-MM-YYYY HH24:MI')||' The test is passed' from dual;
+SELECT 
+   count(1) nro_sesiones, 
+FROM 
+   v$process p, 
+   v$session s
+WHERE  paddr(+)=addr
+and s.username <> ' '
+AND s.status = 'ACTIVE';
 exit;
 EOF
 )
