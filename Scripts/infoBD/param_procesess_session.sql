@@ -49,7 +49,7 @@ Currently, 1034 out of 4185 connections are used.
 -- Cantidad de sesiones usadas en resource_limit
 select resource_name, current_utilization, max_utilization, limit_value 
 from v$resource_limit 
-where resource_name in ('sessions', 'processes');
+where resource_name in ('sessions', 'processes', 'transactions');
 
 RESOURCE_NAME                  CURRENT_UTILIZATION MAX_UTILIZATION LIMIT_VALU
 ------------------------------ ------------------- --------------- ----------
