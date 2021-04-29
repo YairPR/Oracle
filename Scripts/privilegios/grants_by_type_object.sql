@@ -1,7 +1,7 @@
 _-- SELECT
-select 'GRANT SELECT ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user_or_rol' || ';'
+select 'GRANT SELECT ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user' || ';'
 from dba_objects 
-where OWNER in ('USERNAME') 
+where OWNER in ('&schema') 
 AND OBJECT_TYPE IN ('TABLE', 'VIEW');
 
 -- WITH GRANT OPTION
