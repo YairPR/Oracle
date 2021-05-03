@@ -1,11 +1,8 @@
 --https://dbaclass.com/article/table_exists_action-option-impdp/
-## FULL BDINVER
-expdp mantenimiento/mn2013mn directory=DATA_PUMP_DIR dumpfile=BDINVERFULL_18122020.dmp logfile=expdpBDINVER_07072020.log FULL=YES
 
-Estimad tamaño de export:
-expdp \"/ as sysdba\" SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
-expdp "'/ as sysdba'"  SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
-
+##############################
+Crear directorio
+##############################
 SQL> create directory DMPEXP as '/gold_fs/backup/data';
 
 Directory created.
@@ -14,17 +11,32 @@ SQL> grant read, write on directory DMPEXP to SYS;
 
 Grant succeeded.
 
-SQL> exit
-Disconnected from Oracle Database 12c Standard Edition Release 12.1.0.2.0 - 64bit Production
-With the Automatic Storage Management option
-oracle@:/gold_fs/backup/data>expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
+##############################
+Oracle 9i 
+##############################
+---Export
+nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESERVA_RIESGO_CURSO_ERP_enero_2020.log tables=ACSELX.RESERVA_RIESGO_CURSO_ERP buffer=1000000 &
+nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log statistics=none buffer=1000000 &
+nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log buffer=1000000 &
 
-TABLAS ACSELX
+-- Import
+imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX touser=ACSELX tables=PLAN_FINANCIAMIENTO_TABLE
+nohup imp \'/ as sysdba\' file=exp_table_SCCMDGAT_26022021.dmp log=imp_table_SCCMDGAT_26022021.log tables=SIA.SCCMDGAT &
 
+##############################
+Oracle 10g, 11g, 12c
+##############################
+## FULL BDINVER
+expdp mantenimiento/mn2013mn directory=DATA_PUMP_DIR dumpfile=BDINVERFULL_18122020.dmp logfile=expdpBDINVER_07072020.log FULL=YES
+expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
+
+##TABLAS ACSELX
 nohup expdp \'/ as sysdba\' directory=DIR_DATA_PUMP tables=ACSELX.TERCERO, ACSELX.IVAL,ACSELX.OPERACION,ACSELX.POLIZA,ACSELX.PRODUCTO dumpfile=prueba_restore_NOV.dmp log=prueba_restore_NOV.log &
 nohup impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log &
-impdp \'/ as sysdba\'  directory=IMPTAB dumpfile=prueba_restore_NOV.dmp indexfile=index.sql
 
+nohup impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log &
+
+##parfile
 [oracle@rsdcatdbtest01]/home/oracle> cat imptabPROD.par
 directory=IMPDMP
 dumpfile=PROD_full_20200627.dmp%U
@@ -33,38 +45,15 @@ TABLES=ACSELX.TERCERO
 REMAP_SCHEMA=ACSELX:MANTENIMIENTO
 encryption_password='5d8K9w2&9%3&#K81'
 
- nohup impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log &
-
+impdp \'/ as sysdba\'  directory=IMPTAB dumpfile=prueba_restore_NOV.dmp indexfile=index.sql
 impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO TABLES=ACSELX.TERCERO REMAP_TABLESPACE=DATA_PROD_SSD_MED:DATA_BDCONTA_BIG  directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log 
---------------FIN TABLAS ACSELX
+###FIN TABLAS ACSELX
 
-Winodws: 12c
 expdp "'/ as sysdba'"  directory=EXPIMP SCHEMAS=SYSFIS dumpfile=exp_SYSFIS_28102020.dmp log=exp_SYSFIS_28102020.log 
-
 nohup expdp \'/ as sysdba\'  directory=DIR_TAB_PUMP TABLES=ACSELX.ITFCTRLACRE dumpfile=exp_ITFCTRLACRE_%U.dmp log=exp_ITFCTRLACRE_29082020.log parallel=4 &
-
 nohup expdp \'/ as sysdba\' directory=DIR_TAB_PUMP tables=ACSELX.RESERVA_RIESGO_CURSO_ERP dumpfile=RESERVA_RIESGO_CURSO_ERP_20200902.dmp log=RESERVA_RIESGO_CURSO_ERP_20200902.log &
-
-EXPORT:
-
--- 9i
 nohup expdp \'/ as sysdba\' tables=DW_SUMA.BP_RTE_EMISION_ACT dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U logfile=exp_table_BP_RTE_EMISION_ACT.log directory=DIR_DATA_PUMP content=ALL EXCLUDE=INDEX,CONSTRAINT,statistics FILESIZE=32G parallel=4 &
-
 nohup expdp \'/ as sysdba\' tables=DW_SUMA.BP_RTE_EMISION dumpfile=exp_table_BP_RTE_EMISION.dmp%U logfile=exp_table_BP_RTE_EMISION.log directory=DIR_DATA_PUMP content=ALL exclude=statistics FILESIZE=32G parallel=4 &
-
-nohup impdp \'/ as sysdba\' remap_schema= DW_SUMA:DW_SUMA directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U logfile=imp_BP_RTE_EMISION0330.log content=all TABLE_EXISTS_ACTION=TRUNCATE METRICS=Y parallel=4 &
-
-nohup impdp \'/ as sysdba\' schemas=OWNER.TABLE directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U  logfile=imp_BP_RTE_EMISION0330.log &
-
-nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESERVA_RIESGO_CURSO_ERP_enero_2020.log tables=ACSELX.RESERVA_RIESGO_CURSO_ERP buffer=1000000 &
-
-ESSALUD:
-nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log statistics=none buffer=1000000 &
-
-
-nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log buffer=1000000 &
-/backup_oracle
-
 -- 10g
 expdp scott/tiger@db10g schemas=SCOTT directory=TEST_DIR dumpfile=SCOTT.dmp logfile=expdpSCOTT.log
 expdp \'/ as sysdba\' schemas=APP_BPM_SIN_VEH directory=DATAPUMP dumpfile=exp_APP_BPM_SIN_VEH_16032020.dmp logfile=exp_APP_BPM_SIN_VEH_16032020.log
@@ -72,27 +61,27 @@ expdp   schemas=APP_EPS directory=DMP_APP_EPS dumpfile=exp_APP_EPS.dmp%U logfile
 --11g
 expdp mantenimiento/mn2013mn directory=IMP_BDSAS tables=APP_IAA_INTERFAZ.INT_RVSUNARP_AX dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp logfile=exp_INT_RVSUNARP_AX.log
 expdp \'/ as sysdba\' FULL=Y directory=D:\bk190320_no_eliminar dumpfile=FULL_SR3605293.dmp logfile=FULL_SR3605293.log
+nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=exp_ESPERU_PRODUC_SR6766958.log directory=DIR_EXP &
+nohup impdp \'/ as sysdba\' remap_schema= DW_SUMA:DW_SUMA directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U logfile=imp_BP_RTE_EMISION0330.log content=all TABLE_EXISTS_ACTION=TRUNCATE METRICS=Y parallel=4 &
+nohup impdp \'/ as sysdba\' schemas=OWNER.TABLE directory=DIR_DATA_PUMP dumpfile=exp_table_BP_RTE_EMISION_ACT.dmp%U  logfile=imp_BP_RTE_EMISION0330.log &
+nohup impdp \'/ as sysdba\' directory=EXPIMP dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=imp_ESPERU_PRODUC_SR6766996.LOG schemas=ESPERU_PRODUC table_exists_action=REPLACE transform=disable_archive_logging:y parallel=4 logtime=all &
+impdp  mantenimiento/mn2013mn dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp  logfile=exp_INT_RVSUNARP_AX_18032020.log  directory=IMP_BDSAS  table_exists_action=TRUNCATE
+nohup impdp \'/ as sysdba\' schemas=SYSFIS directory=IMP_DIR dumpfile=exp_SYSFIS_28102020.dmp logfile=impdpSYSFIS_28102020.log
+impdp \'/ as sysdba\' directory=IMP_TAB_RIESERP dumpfile=expdp_RESERVA_RIESGO_CURSO_ERP_20201030.dmp REMAP_SCHEMA=ACSELX:APP_RESTORE tables=ACSELX.RESERVA_RIESGO_CURSO_ERP REMAP_TABLESPACE=TBSD_MCRITICO_NOR:TBSD_RESTORE_ERP logfile=app_res_reserva_riesgo_imp.log ignore=y EXCLUDE=INDEX,CONSTRAINT,GRANT
 
 12c
 nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_%T_%U.dmp logfile=exp_ESPERU_PRODUC.log directory=IMP parallel=4 &
-
 nohup impdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_%T_%U.dmp logfile=exp_ESPERU_PRODUC.log directory=IMP parallel=4 &
 
+##############################
+Estimación de tamaño dmp
+##############################
+Estimad tamaño de export:
+expdp \"/ as sysdba\" SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
+expdp "'/ as sysdba'"  SCHEMAS=SYSFIS ESTIMATE_ONLY=YES
 
-IMPORT:
-
--- 9i
-imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX touser=ACSELX tables=PLAN_FINANCIAMIENTO_TABLE
-nohup imp \'/ as sysdba\' file=exp_table_SCCMDGAT_26022021.dmp log=imp_table_SCCMDGAT_26022021.log tables=SIA.SCCMDGAT &
--- 11g
-impdp  mantenimiento/mn2013mn dumpfile=exp_INT_RVSUNARP_AX_18032020.dmp  logfile=exp_INT_RVSUNARP_AX_18032020.log  directory=IMP_BDSAS  table_exists_action=TRUNCATE
-nohup impdp \'/ as sysdba\' schemas=SYSFIS directory=IMP_DIR dumpfile=exp_SYSFIS_28102020.dmp logfile=impdpSYSFIS_28102020.log
-
-impdp \'/ as sysdba\' directory=IMP_TAB_RIESERP dumpfile=expdp_RESERVA_RIESGO_CURSO_ERP_20201030.dmp REMAP_SCHEMA=ACSELX:APP_RESTORE tables=ACSELX.RESERVA_RIESGO_CURSO_ERP REMAP_TABLESPACE=TBSD_MCRITICO_NOR:TBSD_RESTORE_ERP logfile=app_res_reserva_riesgo_imp.log ignore=y EXCLUDE=INDEX,CONSTRAINT,GRANT
-
-
-nohup expdp \'/ as sysdba\' schemas=ESPERU_PRODUC dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=exp_ESPERU_PRODUC_SR6766958.log directory=DIR_EXP &
-
+##############################
+Mount Filesystem
+##############################
 mount -n 172.24.146.4 -o bg,hard,intr,rsize=32768,wsize=32768,vers=3,proto=tcp,sec=sys,rw /BKP9 /BKP9
-
-nohup impdp \'/ as sysdba\' directory=EXPIMP dumpfile=exp_ESPERU_PRODUC_SR6766958.dmp logfile=imp_ESPERU_PRODUC_SR6766996.LOG schemas=ESPERU_PRODUC table_exists_action=REPLACE transform=disable_archive_logging:y parallel=4 logtime=all &
+mount -n 172.24.146.4 -o bg,hard,intr,rsize=32768,wsize=32768,vers=3,proto=tcp,sec=sys,rw /BKP9 /BKP9
