@@ -19,10 +19,6 @@ HOST_NAME       INSTANCE_NAME   INSTANCE_ROLE        VERSION           ACTIVE_ST
 siaprd          prdsia01        PRIMARY_INSTANCE     9.2.0.7.0         NORMAL    OPEN       STARTED ACTIVE            READ WRITE ARCHIVELOG   17-04-2010 18:16          07-03-2020 01:13
 
 
-
-
-
-
 select b.name, b.open_mode, a.status , a.STARTUP_TIME from v$instance a, v$database b where a.INSTANCE_NAME=b.name;
 
 NAME      OPEN_MODE            STATUS       STARTUP_T
