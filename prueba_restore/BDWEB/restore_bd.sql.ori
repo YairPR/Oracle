@@ -1,0 +1,11 @@
+run {
+allocate channel c1 type 'SBT_TAPE';
+set DBID=1099557380
+send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=rsdcpdbbdweb01.rimac.com.pe)';
+set until time "to_date('2021-01-31 18:17:28', 'yyyy-mm-dd hh24:mi:ss')";
+restore controlfile;
+sql 'ALTER DATABASE MOUNT';
+restore database;
+recover database;
+release channel c1;
+}
