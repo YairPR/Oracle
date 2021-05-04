@@ -44,4 +44,22 @@ WITH TS AS (SELECT UPPER ('&TABLESPACE') TS_NAME FROM DUAL),
 --where savings >= 1
 ORDER BY TotalSpace desc, A.tablespace_name, file_name
 /
+                                    
+                                    TABLESPACE                                            FILE
+ NAME                  TOTAL_GB    FREE_GB    FILE_GB  NAME                                              RESIZE                         SHRINK
+-------------------- ---------- ---------- ---------- -------------------------------------------------- ------------------------------ ------------------------------------------------------
+INDX_PROD_TRANS_BIG     4368.49      46.77         32 +DG_DATA/prod/datafile/indx_prod_trans_big.1291.10 @rs 1015 33                    @tbsff_shrink 1015
+                                                      67248509
+
+INDX_PROD_TRANS_BIG     4368.49      46.77         32 +DG_DATA/prod/datafile/indx_prod_trans_big.1314.10 @rs 1038 33                    @tbsff_shrink 1038
+                                                      70464619
+
+INDX_PROD_TRANS_BIG     4368.49      46.77         32 +DG_DATA/prod/datafile/indx_prod_trans_big.1315.10 @rs 1039 33                    @tbsff_shrink 1039
+                                                      70464663
+
+INDX_PROD_TRANS_BIG     4368.49      46.77         32 +DG_DATA/prod/datafile/indx_prod_trans_big.714.103 @rs 686 33                     @tbsff_shrink 686
+                                                      7154165
+
+INDX_PROD_TRANS_BIG     4368.49      46.77         32 +DG_DATA/prod/datafile/indx_prod_trans_big.722.103 @rs 753 33                     @tbsff_shrink 753
+
 
