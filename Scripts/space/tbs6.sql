@@ -56,3 +56,7 @@ where y.tablespace_name = x.tablespace_name
 order by 1
 /
 
+ TABLESPACE_NAME      BIG EXTENT_MAN ALLOCATIO NEXT_EXTENTMB     SIZEMB     FREEMB    PORFREE
+-------------------- --- ---------- --------- ------------- ---------- ---------- ----------
+INDX_PROD_TRANS_BIG  NO  LOCAL      UNIFORM             160 4473329.97      39200        .88
+
