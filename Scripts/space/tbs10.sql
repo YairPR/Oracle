@@ -1,3 +1,5 @@
+--Muestra espacio libre de mayor a menor PERC
+
 WITH my_ddf AS
     (
         SELECT file_id, tablespace_name, file_name,
