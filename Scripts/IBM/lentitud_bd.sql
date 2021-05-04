@@ -1,0 +1,8 @@
+- Listar procesos 
+- Bloqueos
+- Top CPU
+- Top IO
+- Sessions Stats
+- SQL_ID
+- SGA History
+- Snapper
