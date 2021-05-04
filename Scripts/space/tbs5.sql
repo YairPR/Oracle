@@ -27,3 +27,14 @@ WHERE
     a.tablespace_name = c.tablespace_name
 GROUP BY a.tablespace_name, c.Free/1024
 order by 6;
+
+TABLESPACE_NAME      CURRENT_MB       MAX_MB    USED_MB    FREE_MB   USED_PCT
+-------------------- ---------- ------------ ---------- ---------- ----------
+DATA_BDTEST_CTXSYS          100     32768.00          7   32760.98          0
+TBS_OGG                    1400     32768.00         93   32674.98          0
+USERS                        55    196608.00         10  196597.91          0
+DATA_PROD_MV                100     32768.00          0   32767.98          0
+TBSI_QUEST                  400     32768.00        314   32453.98          1
+TBSD_QUEST                  500     32768.00        403   32364.98          1
+INDX_PROD_SSD_MED          7544    163840.00       1309  162530.92          1
+INDX_PROD_TRANS_PAR0       1724     65536.00        604   64931.97          1
