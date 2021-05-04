@@ -1,3 +1,5 @@
+--- Evalua por tablespace
+
 select x.tablespace_name,
        y.EXTENT_MANAGEMENT,
        y.ALLOCATION_TYPE,
@@ -52,3 +54,11 @@ group by tablespace_name
 where y.tablespace_name = x.tablespace_name
 order by 1
 /
+
+        
+        TABLESPACE_NAME           EXTENT_MAN ALLOCATIO NEXT_EXTENTMB     SIZEMB     FREEMB    PORFREE
+------------------------- ---------- --------- ------------- ---------- ---------- ----------
+INDX_PROD_TRANS_BIG       LOCAL      UNIFORM             160 4473329.97      39200        .88
+
+1 row selected.
+
