@@ -71,3 +71,24 @@ FROM (select tablespace_name, bytes_used bytes
 WHERE fs.tablespace_name (+) = df.tablespace_name
 GROUP BY df.tablespace_name, df.bytes, df.maxbytes
 ORDER BY 4 DESC;
+     
+TABLESPACE_NAME           AUT MAX_TS_SIZE MAX_TS_PCT_USED CURR_TS_SIZE USED_TS_SIZE TS_PCT_USED FREE_TS_SIZE TS_PCT_FREE
+------------------------- --- ----------- --------------- ------------ ------------ ----------- ------------ -----------
+INDX_PROD_TRANS_BIG       YES  4476334.34           99.06   4473329.97   4434129.97       99.12        39200           1
+INDX_PROD_NOTRANS_BIG     YES  2468422.13           98.79   2464089.98   2438649.98       98.97        25440           1
+DATA_PROD_TRANS_BIG       YES  2485736.06           97.89   2460870.95   2433190.95       98.88        27680           1
+DATA_PROD_SSD_BIG         YES   915454.59           97.71    913347.98    894467.98       97.93        18880           2
+TBSD_EVENTUAL_NOR         YES   2385507.2           97.27   2385123.39   2320353.39       97.28        64770           3
+INDX_PROD_TRANS_MED       YES  1831800.34           97.06   1833829.63   1778034.63       96.96        55795           3
+DATA_PROD_NOTRANS_BIG     YES  2260311.09           96.92   2256374.95   2190614.95       97.09        65760           3
+DATA_PROD_TRANS_MED       YES    909193.7            96.1    909184.84    873729.84        96.1        35455           4
+DATA_PROD_NOTRANS_MED     YES   941739.77           95.52    945828.84    899578.84       95.11        46250           5
+TBSI_PROD_SMA             YES   884527.64           95.29    856767.72    842899.28       98.38     13868.44           2
+TBSD_PROD_SMA             YES   524287.75           93.34    510975.78    489359.38       95.77     21616.41           4
+INDX_PROD_NOTRANS_MED     YES   950271.55            89.5     893320.7     850455.7        95.2        42865           5
+TBSD_PROD_LOGMNR          YES   372410.88           84.02    321586.92     312909.3        97.3      8677.63           3
+TEMP_PROD_NOTRANS_BIG     YES   229369.98           80.15       217082       183835       84.68        33247          15
+UNDOTBS2                  NO       360437           77.65       360437       279893       77.65        80544          22
+TBSD_PROD_MED             YES   458751.78           76.04    393127.97    348812.97       88.73        44315          11
+TBSD_MCRITICO_ESP         YES  1115135.47           74.38       926853       829413       89.49        97440          11
+
