@@ -217,3 +217,101 @@ and   (ses.inst_id,ses.sid)
                 and blocked.block = 0
                 and blocked.id1 = blocker.id1)
 order by inst_id,sid,piece;
+
+==========================================================================================================0
+Resultado:
+
+-- In this example (see "blocked sessions from GV$LOCK" section) we have a case of:
+--       SID-3084 on INST_ID=4 is blocking two SIDs on INST_ID=6
+--
+-- NOTE: "blocked objects from GV$LOCK and SYS.OBJ$" section 
+--       is just an FYI of all current locks
+--
+
+17:31:45 VMOGILEVSKIY@LPROD3=> @locks.sql
+
+blocked objects from GV$LOCK and SYS.OBJ$
+
+   INST_ID        SID      LMODE MIN_BLOCKED BLOCKED_OBJ
+---------- ---------- ---------- ----------- -----------------------------------
+         3       3961          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       3866          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         5       3887          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       3484          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       3161          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2998          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2979          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2752          3           1 APPUSER_OWNER.DBJOBREQUESTS
+         3       2618          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2610          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2456          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2368          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2243          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2134          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         3       2132          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       3854          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       3507          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       3417          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       3303          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       3222          3           1 APPUSER_OWNER.DBJOBREQUESTS
+         6       3135          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       2804          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         6       2786          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         4       3818          3           0 APPUSER_OWNER.DBJOBREQUESTS
+         4       2869          3           0 APPUSER_OWNER.DBJOBREQUESTS
+
+25 rows selected.
+
+Elapsed: 00:00:00.03
+blocked sessions from GV$LOCK
+
+   INST_ID BLOCKER_SID    INST_ID BLOCKED_SID MIN_BLOCKED    REQUEST
+---------- ----------- ---------- ----------- ----------- ----------
+         4        3084          6        3135           0          6
+         4        3084          6        3485           0          6
+
+2 rows selected.
+
+Elapsed: 00:00:00.02
+blocked session details from GV$SESSION and GV$SQLTEXT
+
+Instance........ :          6
+Sid ............ :       3135
+Serial ......... :      30604
+Username ....... : APP1USER_NAME
+SQL Id ......... : null
+Prev SQL Id .... : gm424t8fyx3w6
+Displayed SQL Id : gm424t8fyx3w6
+Client Info .... : null
+Machine ........ : dbt4.dc1.mydomain.com
+OSuser ......... : dbt
+Process ........ : 1234
+Action ......... : JDBC Thin Client
+SQL_TEXT
+----------------------------------------------------------------------
+select this_.WorkRequestId as WorkRequ1_1_0_, this_.CreateTime a
+s CreateTime1_0_, this_.Event_Type as Event3_1_0_, this_.Status
+as Status1_0_, this_.UserId as UserId1_0_ from DBJOBREQUESTS thi
+s_ where this_.WorkRequestId = :1  and this_.Status=:2  for upda
+te
+
+Instance........ :          6
+Sid ............ :       3485
+Serial ......... :      45149
+Username ....... : APP1USER_NAME
+SQL Id ......... : null
+Prev SQL Id .... : gm424t8fyx3w6
+Displayed SQL Id : gm424t8fyx3w6
+Client Info .... : null
+Machine ........ : dbt5.dc1.mydomain.com
+OSuser ......... : dbt
+Process ........ : 1234
+Action ......... : JDBC Thin Client
+SQL_TEXT
+----------------------------------------------------------------------
+select this_.WorkRequestId as WorkRequ1_1_0_, this_.CreateTime a
+s CreateTime1_0_, this_.Event_Type as Event3_1_0_, this_.Status
+as Status1_0_, this_.UserId as UserId1_0_ from DBJOBREQUESTS thi
+s_ where this_.WorkRequestId = :1  and this_.Status=:2  for upda
+te
+
