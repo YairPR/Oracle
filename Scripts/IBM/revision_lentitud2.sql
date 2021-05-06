@@ -186,23 +186,43 @@ and session_id=846;
 
 Nota: si no se encuentra en v$active_session_history se debe buscar en dba_hist_active_sess_history:
 -- Saber que estaba ejecutando la sesion por SID, se puede validar del query de arriba el nlocking_session u session_id
+set pagesize 2000
+set line 1000
+col username for a15
+col sample_time for a20
 SELECT DISTINCT ash.session_id,
+ u.username,
 ash.SESSION_SERIAL#,
 ash.sql_id,
 st.PIECE line_no,
 st.sql_text Blocking_SQL_TEXT,
+ash.sample_time,
 ash.session_state,
 ash.BLOCKING_SESSION,
 ash.BLOCKING_SESSION_status,
 ash.event_id,
 ash.program,
 ash.module
-FROM dba_hist_active_sess_history ash, v$SQLTEXT st
-WHERE ash.snap_id BETWEEN 99858 AND 99859
-AND session_id =846
+FROM dba_hist_active_sess_history ash,dba_users u, v$SQLTEXT st
+WHERE  u.user_id = ash.user_id
 AND ash.SQL_ID = st.sql_id
-ORDER BY event_id,blocking_session, line_no
+and ash.snap_id BETWEEN 90273 AND 90274
+AND session_id =3413
+ORDER BY  4
 /
+
+SELECT DISTINCT  ash.session_id,
+ash.sql_id,
+ash.sample_time,
+ash.session_state,
+ash.BLOCKING_SESSION
+FROM dba_hist_active_sess_history ash, v$SQLTEXT st
+WHERE ash.snap_id BETWEEN 90273 AND 90274
+-----AND session_id =846
+AND ash.SQL_ID = st.sql_id
+ORDER BY 3
+/
+
 
 --- Ver Snap_ID
 select SNAP_ID  from dba_hist_active_sess_history a
@@ -233,11 +253,11 @@ FROM
    DBA_HIST_ACTIVE_SESS_HISTORY h,
    DBA_USERS u,
    DBA_HIST_SQLTEXT s
-WHERE  sample_time  between to_date('04/05/2021 15:00', 'dd/mm/yyyy hh24:mi')
-and to_date('04/05/2021 15:30', 'dd/mm/yyyy hh24:mi')
+WHERE  sample_time  between to_date('04/05/2021 01:30', 'dd/mm/yyyy hh24:mi')
+and to_date('04/05/2021 02:30', 'dd/mm/yyyy hh24:mi')
    AND h.user_id=u.user_id
    AND h.sql_id = s.sql_iD
-and s.SQL_ID= 'fszrn4bqas9kd'
+and s.SQL_ID= '7d9twcc56kjjz'
 ---and rownum < 5
 ORDER BY 1 desc
 /
