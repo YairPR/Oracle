@@ -1,0 +1,2 @@
+-- Backups entre fechas
+ list backup of database completed between "to_date('2018-11-15','yyyy-mm-dd')" and "to_date('2018-11-17','yyyy-mm-dd')";
