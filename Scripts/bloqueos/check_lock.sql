@@ -30,7 +30,7 @@ from v$session s, v$process p
 where s.paddr = p.addr
 and s.sid in (select sid
 from gv$access
-where owner = 'APP_EPS'
+where owner = '&Owner'
 and object = '&Obj_Name')
 order by 5,4
 ;
