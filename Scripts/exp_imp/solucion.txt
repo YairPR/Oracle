@@ -1,0 +1,48 @@
+Hola estimados,
+
+Se solicita hacer una restauración de data de Producción de la base de datos ODSPRD al ambiente de calidad en la base de datos OWEBPPR  para las siguientes tablas, esto con el objetivo de tener un ambiente mas parecido a producción para verificar y medir tiempos de respuesta de los servicios que se viene desarrollando, dado que en calidad se obtuvo en pocos segundo y en Producción tiene tiempos más altos.
+
+SET LINESIZE  145
+SET PAGESIZE  9999
+SET VERIFY    off
+set line 1000
+col Schema format a20
+col "Object Name" format a30
+col "Tablespace" format a30
+col "Object Type" format a10
+break on report on disk_group_name skip 1
+compute sum label "Grand Total: " of Size_MB on report
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024,2) as Size_MB
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_name in (
+'ASEGURADO',
+'POLIZA_ASEGURADO',
+'POLIZA',
+'CLIENTE',
+'PRODUCTO',
+'MAE_PARAMETRO',
+'ASEGURADO_LATENCIA',
+'POLIZA_MOVIMIENTO',
+'CUOTA',
+'PREEXISTENCIA',
+'ASEGURADO_OBSERVACION',
+'CLINICA'
+)
+and owner = 'USALUD00';
+
+
+
+··············
+RUTA:
+··············
+--- export 
+nohup expdp \'/ as sysdba\' directory=DP_DIR1 tables=USALUD00.ASEGURADO,USALUD00.POLIZA_ASEGURADO,USALUD00.POLIZA,USALUD00.CLIENTE,USALUD00.PRODUCTO,USALUD00.MAE_PARAMETRO,USALUD00.ASEGURADO_LATENCIA,USALUD00.POLIZA_MOVIMIENTO,USALUD00.CUOTA,USALUD00.PREEXISTENCIA,USALUD00.ASEGURADO_OBSERVACION,USALUD00.CLINICA dumpfile=backup_owebppr_RITM0275782.dmp log=backup_owebppr_RITM0275782.log &
+
+nohup impdp  \'/ as sysdba\' directory=DP_DIR1  tables=USALUD00.ASEGURADO,USALUD00.POLIZA_ASEGURADO,USALUD00.POLIZA,USALUD00.CLIENTE,USALUD00.PRODUCTO,USALUD00.MAE_PARAMETRO,USALUD00.ASEGURADO_LATENCIA,USALUD00.POLIZA_MOVIMIENTO,USALUD00.CUOTA,USALUD00.PREEXISTENCIA,USALUD00.ASEGURADO_OBSERVACION,USALUD00.CLINICA dumpfile=exp_odsprod1_RITM0275782.dmp TABLE_EXISTS_ACTION=REPLACE log=imp_owebppr_RITM0275782.log &
+
+:
