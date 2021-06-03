@@ -6,6 +6,7 @@ Una vez los 4 archivos hay q ejecutar la shell
 awr_parse.sh
 -- Una vez generado el csv llevarlo al excel para sacar los datos y poder realizar graficas.
 TAmbien se puede con tableu.
+https://fatdba.com/2018/01/28/visualize-your-database-performance-statistics-using-tableau/
 Ejemplo:
 [oracle@rsdpedbadm03 awrreport]$ sh awr_parse.sh -p awwr_text_0621.lst > awr_02.csv
 
