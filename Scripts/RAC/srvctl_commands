@@ -1,0 +1,184 @@
+SRVCTL is known as server control utility, which is used to add, remove,relocate and manage different crs services or components in RAC database.
+
+1. STOP DATABASE :
+
+SYNTAX – srvctl stop database -d db_name [-o stop_options] where stop_options is normal/immediate(default)/transactional/abort
+
+srvctl stop database -d PRODB -o normal
+srvctl stop database -d PRODB -o immediate
+srvctl stop database -d PRODB -o transactional
+srvctl stop database -d PRODB -o abort
+
+2. START DATABASE
+SYNTAX – srvctl start database -d db_name [-o start_options] where start_option is nomount/mount/open(default)
+srvctl start database -d PRODB -o nomount
+srvctl start database -d PRODB -o mount
+srvctl start database -d PRODB -o open
+
+3. STOP AN INSTANCE
+
+SYNTAX – srvctl stop instance -d db_unique_name [-i “instance_name_list”]} [-o stop_options] [-f]
+
+srvctl stop instance -d PRODB -i PRODB1
+
+4. START AN INSTANCE
+SYNTAX – srvctl start instance -d db_unique_name [-i “instance_name_list”} [-o start_options]
+
+srvctl start instance -d PRODB -i PRODB1
+
+
+5. REMOVING DB FROM CRS:
+SYNTAX – srvctl remove database -d db_unique_name [-f] [-y] [-v]
+
+srvctl remove database -d PRODB -f -y
+
+6. ADDING DB IN CRS :
+SYNTAX – srvctl add database -d db_unique_name -o ORACLE_HOME [-p spfile]
+srvctl add database -d PRODB -o /u01/app/oracle/product/12.1.0.2/dbhome_1 -p +DATA/PRODDB/parameterfile/spfilePRODB.ora
+
+7. REMOVING AN INSTANCE FROM CRS:
+SYNTAX – srvctl remove instance -d DB_UNIQUE_NAME -i INSTANCE_NAME
+srvctl remove instance -d PRODB - I PRODB1
+
+8.ADDING AN INSTANCE TO CRS:
+SYNTAX – srvctl add instance –d db_unique_name –i inst_name -n node_name
+
+srvctl add instance -d PRODB - i PRODB1 -n rachost1
+
+9. Enable/disable auto restart of the instance
+
+srvctl enable instance -d DB_UNIQUE_NAME-i INSTANCE_NAME
+srvctl disable instance -d DB_UNIQUE_NAME-i INSTANCE_NAME
+
+10. Enable/disable auto restart of the database
+
+srvctl enable database -d DB_UNIQUE_NAME
+srvctl disable database -d DB_UNIQUE_NAME
+
+11. ADDING A SERVICE:
+
+SYNTAX – srvctl add servicec -d {DB_NAME} -s {SERVICE_NAME} -r {“preferred_list”} -a {“available_list”} [-P {BASIC | NONE | PRECONNECT}]
+
+srvctl add service -d PREDB -s PRDB_SRV -r "PREDB1,PREDB2" -a "PREDB2" -P BASIC
+
+12.REMOVING A SERVICE:
+SYNTAX – srvctl remove service -d {DB_NAME} -s {SERVICE_NAME}
+
+srvctl remove service -d PREDB -s PRDB_SRV
+
+13. START A SERVICE
+SYNTAX– srvctl start servicec -d {DB_NAME} -s {SERVICE_NAME}
+
+srvctl start service -d PREDB -s PRDB_SRV
+
+14. START A SERVICE
+
+SYNTAX– srvctl stop servicec -d {DB_NAME} -s {SERVICE_NAME}
+
+srvctl stop service -d PREDB -s PRDB_SRV
+
+15. RELOCATE A SERVICE
+SYNTAX – srvctl relocate service -d {database_name} -s {service_name} -i {old_inst_name} -r {new_inst_name}
+
+EXAMPLE: (Relocating service PRDB_SRV from PREDB2 to PREDB1)
+
+srvctl relocate service -d PREDB -s PRDB_SVC -i PREDB2 -t PREDB1
+
+16. Check the status of service
+SYNTAX – srvctl status service -d {database_name} -s {service_name}
+
+srvctl status service -d PREDB -s PRDB_SVC
+
+17. Check the configuration of service
+SYNTAX – srvctl config service -d {database_name} -s {service_name}
+srvctl config service -d PREDB -s PRDB_SVC
+
+18. Check scan listener configuration
+srvctl config scan_listener
+
+SCAN Listener LISTENER_SCAN1 exists. Port: TCP:1522
+Registration invited nodes:
+Registration invited subnets:
+SCAN Listener is enabled.
+SCAN Listener is individually enabled on nodes:
+SCAN Listener is individually disabled on nodes:
+SCAN Listener LISTENER_SCAN2 exists. Port: TCP:1522
+Registration invited nodes:
+Registration invited subnets:
+SCAN Listener is enabled.
+SCAN Listener is individually enabled on nodes:
+SCAN Listener is individually disabled on nodes:
+SCAN Listener LISTENER_SCAN3 exists. Port: TCP:1522
+Registration invited nodes:
+Registration invited subnets:
+SCAN Listener is enabled.
+SCAN Listener is individually enabled on nodes:
+SCAN Listener is individually disabled on nodes:
+
+19. Modify scan_listener port:
+srvctl modify scan_listener -p {new-SCAN-port}
+
+srvctl modify scan_listener -p 1523
+$GRID_HOME/bin/srvctl stop scan_listener
+$GRID_HOME/bin/srvctl start scan_listener
+
+Alter system set remote_listener='orcl-scan.stc.com.sa:1523' scope=both sid='*';
+
+20. Manage MGMTDB in oracle 12c:
+
+srvctl status mgmtdb
+Database is enabled
+Instance -MGMTDB is running on node node12-1
+
+-- stop and start MGMT db.
+
+srvctl stop mgmtdb
+srvctl start mgmtdb
+
+21. Enable trace for srvctl commands:
+
+-- set this to enable trace at os
+
+SRVM_TRACE=true
+export SRVM_TRACE
+
+-- run any srvctl command
+srvctl status database -d ORACL
+
+22. Set environment variables through srvctl.
+
+-- setenv to set env variables.(ORCL is the db_unique_name)
+
+srvctl setenv database -db ORCL -env "ORACLE_HOME=/oracle/app/oracle/product/12.1.0.2/dbhome_1"
+srvctl setenv database -db ORCL -env "TNS_ADMIN=/oracle/app/oracle/product/12.1.0.2/dbhome_1/network/admin"
+
+--getenv to view the env setting:
+
+srvctl getenv database -db ORCL
+
+ORCL:
+ORACLE_HOME=/oracle/app/oracle/product/12.1.0.2/dbhome_1
+TNS_ADMIN=/oracle/app/oracle/product/12.1.0.2/dbhome_1/network/admin
+
+23. Check status and config of ASM instance:
+
+srvctl config asm
+ASM home:
+Password file: +MGMT/orapwASM
+ASM listener: LISTENER
+
+
+srvctl status asm
+ASM is running on ses11-4,ses11-5
+
+24. Stop and start services running from ORACLE_HOME
+
+srvctl stop home -oraclehome /oracle/product/12.1.0.2/dbhome_1 -statefile /home/oracle/state.txt -node dbhost-1
+
+srvctl start home -oraclehome /oracle/product/12.1.0.2/dbhome_1 -statefile /home/oracle/state.txt -node dbhost-1
+
+25. Create a TAF policy
+
+srvctl add service -db ORCLDB -service TAF_ORCL -preferred ORCLDB1 -available ORCLDB2 -tafpolicy BASIC -failovertype SELECT
+
+srvctl start service -db OMPREDB -service TAF_ORCL
