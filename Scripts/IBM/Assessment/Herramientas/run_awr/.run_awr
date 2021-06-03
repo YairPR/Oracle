@@ -1,0 +1,17 @@
+#------------------------------------------------------------------------------
+# ...loop through the list of database instances specified in the ".run_awr"
+# list file...
+#
+# Entries in this file have the format:
+#
+#       dbname:rcpt-list:hrs
+#
+# where:
+#       dbname          - is the TNS connect-string of the database instance
+#       rcpt-list       - is a comma-separated list of email addresses
+#       hrs             - is the number of hours (from the present time)
+#                         marking the starting point of the AWR report
+#------------------------------------------------------------------------------
+
+
+#dbname:rcpt-list:hrs
