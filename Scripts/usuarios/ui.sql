@@ -19,7 +19,7 @@ SELECT substr(ACCOUNT_STATUS,1,20) ACCOUNT_STATUS , expiry_date,
        USERNAME||'.'||profile USUARIO_profile, CREATED CREACION,
        DEFAULT_TABLESPACE ||' / '|| TEMPORARY_TABLESPACE TABSPCs --, 'alter user '||username||' temporary tablespace temp ;' xx
   FROM DBA_USERS
- WHERE USERNAME LIKE  UPPER(trim('&UNAME')||'%')
+ WHERE USERNAME = UPPER(trim('&UNAME'))
 --and expiry_date = trunc(sysdate)
 --and account_status like '%LOCK%'
  ORDER BY 3,1, 2
