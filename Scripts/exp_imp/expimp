@@ -19,7 +19,7 @@ Oracle 9i
 nohup exp \'/ as sysdba\' file=RESERVA_RIESGO_CURSO_ERP_enero_2020.dmp log=RESERVA_RIESGO_CURSO_ERP_enero_2020.log tables=ACSELX.RESERVA_RIESGO_CURSO_ERP buffer=1000000 &
 nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log statistics=none buffer=1000000 &
 nohup exp \'/ as sysdba\' tables=SIA.SCCMDGAT file=exp_table_SCCMDGAT_26022021.dmp log=exp_table_SCCMDGAT_26022021.log buffer=1000000 &
-
+exp \'/ as sysdba\' file=exp_QUEST_SR7397172.dmp log=exp_QUEST_SR7397172.log owner=QUEST
 -- Import
 imp mantenimiento/mn2013mn file=PLAN_FINANCIAMIENTO_TABLE.dmp fromuser=ACSELX touser=ACSELX tables=PLAN_FINANCIAMIENTO_TABLE
 nohup imp \'/ as sysdba\' file=exp_table_SCCMDGAT_26022021.dmp log=imp_table_SCCMDGAT_26022021.log tables=SIA.SCCMDGAT &
