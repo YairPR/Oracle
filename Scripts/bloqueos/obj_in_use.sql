@@ -21,6 +21,15 @@ where object = '&w_obj')
 order by 5,4
 ;
 
+---- USUARIOS
+
+select DISTINCT s.username 
+from v$session s, v$process p
+where s.paddr = p.addr
+and s.sid in (select sid
+from gv$access
+where object = '&w_obj')
+;
 
 select 'alter system kill session '''||s.sid||','||s.serial#||',@'||inst_id||''' immediate;' 
 from v$session s, v$process p
