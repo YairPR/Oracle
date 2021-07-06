@@ -20,3 +20,21 @@ from gv$access
 where object = '&w_obj')
 order by 5,4
 ;
+
+
+select 'alter system kill session '''||s.sid||','||s.serial#||',@'||inst_id||''' immediate;' 
+from v$session s, v$process p
+where s.paddr = p.addr
+and s.sid in (select sid
+from gv$access
+where object = '&w_obj')
+;
+
+set pagesize 0
+set line 1000
+spool kill.sql
+select 'alter system kill session '''||a.sid||','||a.serial#||',@'||b.inst_id||''' immediate;'
+from gv$session a, gv$access b
+where a.sid=b.sid 
+and b.object = '&w_obj';
+spool off
