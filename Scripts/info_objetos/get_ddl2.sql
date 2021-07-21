@@ -11,4 +11,5 @@ and object_type = 'PACKAGE'
 AND OBJECT_NAME = '&obj_name'
 /
 
+ set long 1000
  select dbms_metadata.get_ddl('PACKAGE', 'PKG_BRKEDI', 'BRKEDI') from dual
