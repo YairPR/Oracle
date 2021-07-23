@@ -12,6 +12,18 @@ AND s.username = '&username'
 GROUP BY  s.status, s.username
 ORDER BY 2 desc;
 
+SELECT 
+   s.status, 
+   count(1) nro_sesiones, 
+   s.username 
+FROM 
+   v$process p, 
+   v$session s
+WHERE  paddr(+)=addr
+and s.username <> ' '
+GROUP BY  s.status, s.username
+ORDER BY 2 desc;
+
 
 RESULT
 -------
