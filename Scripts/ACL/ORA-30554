@@ -1,0 +1,48 @@
+http://www.nazmulhuda.info/ora-30554-function-based-index-index_name-is-disabled
+
+ORA-30554: function-based index index_name is disabled
+SQL>
+BEGIN
+  DBMS_NETWORK_ACL_ADMIN.create_acl (
+    acl          => 'user_sync.xml',
+    description  => 'Purpose of the acl is user synchronization between XE database',
+    principal    => 'USER_SYNC',
+    is_grant     => TRUE,
+    privilege    => 'connect',
+    start_date   => SYSTIMESTAMP,
+    end_date     => NULL);
+
+  DBMS_NETWORK_ACL_ADMIN.assign_acl (
+    acl         => 'user_sync.xml',
+    host        => '127.0.0.1',
+    lower_port  => 1,
+    upper_port  => 9999);
+
+  COMMIT;
+END;
+/
+
+ *
+
+ERROR at line 1:
+
+ORA-30554: function-based index XDB.XDB$ACL_XIDX is disabled
+
+ORA-06512: at "SYS.DBMS_NETWORK_ACL_ADMIN", line 252
+
+ORA-06512: at line 2
+
+
+SQL>select owner, index_name, status, domidx_status, domidx_opstatus,funcidx_status from dba_indexes where domidx_opstatus is not null;
+
+
+SQL>alter index XDB.XDB$ACL_XIDX rebuild;
+
+Index altered.
+
+SQL>select owner, index_name, status, domidx_status, domidx_opstatus,funcidx_status from dba_indexes where domidx_opstatus is not null;
+
+
+
+
+
