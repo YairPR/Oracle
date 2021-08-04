@@ -16,7 +16,7 @@ SELECT HOST
   FROM dba_network_acls;
 
 
-
+-- crear
 BEGIN
 DBMS_NETWORK_ACL_ADMIN.CREATE_ACL (
 acl => '/sys/acls/acl_sas_vimed.xml',
@@ -29,6 +29,19 @@ END;
 /
 
 
+--permisos
+BEGIN
+DBMS_NETWORK_ACL_ADMIN.add_privilege (
+acl => '/sys/acls/acl_sas_vimed.xml',
+principal => 'APP_IAA_INTERFAZ',
+is_grant => TRUE,
+privilege => 'resolve',
+position => NULL,
+start_date => NULL,
+end_date => NULL); COMMIT;
+END;
+/
+--- asignar
 BEGIN
 DBMS_NETWORK_ACL_ADMIN.ASSIGN_ACL (
 acl => '/sys/acls/acl_sas_vimed.xml',
