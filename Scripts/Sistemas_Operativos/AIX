@@ -12,6 +12,9 @@ This will give you
 "02" - Maintenance Level
 "0849" - Service Pack
 
+
+du -g | perl -ne 'print if (tr#/#/# == <maximum depth>)'
+
 oslevel -s | awk -F- '{printf "AIX %.1f - Technology Level %d - Service Pack %d\n",$1/1000,$2,$3}'
 ---------------------------------------------------------------------------------------------------------------------
 
