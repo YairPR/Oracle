@@ -1,7 +1,3 @@
-
-
-
-
 #!/usr/bin/perl
 # dbi.pl
 
