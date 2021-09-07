@@ -33,4 +33,4 @@ SET LONGC 10000
 SET TRIMSPOOL ON
 SET TERMOUT OFF
 SET RECSEP OFF
-select text from dba_source where name=upper('spu_refresco_nvo_asegurados_vm') and owner='SYS' and type='PROCEDURE';
+select text from dba_source where name=upper('spu_refresco_acreditaciones_vm') and owner='SYS' and type='PROCEDURE';
