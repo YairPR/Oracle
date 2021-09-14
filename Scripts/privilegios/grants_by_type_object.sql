@@ -1,13 +1,13 @@
 _-- SELECT
+
 SET LONG 10000
 SET LINE 1000
 SET PAGESIZE 20000
-spool grants.sql
 select 'GRANT SELECT, INSERT, UPDATE, DELETE ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user' || ';'
 from dba_objects 
 where OWNER in ('&schema1', '&SCHEMA2', '&SCHEMA3', '&SCHEMA4') 
 AND OBJECT_TYPE IN ('TABLE', 'VIEW');
-sppol off
+
 
 -- WITH GRANT OPTION
 select 'GRANT SELECT ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user WITH GRANT OPTION;' 
@@ -16,10 +16,13 @@ where owner in ('username')
 AND OBJECT_TYPE IN ('TABLE')
 
 -- EXECUTE
-select 'GRANT EXECUTE ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user_or_rol' || ';'
+SET LONG 10000
+SET LINE 1000
+SET PAGESIZE 20000
+select 'GRANT EXECUTE, DEBUG ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user_or_rol' || ';'
 from dba_objects 
-where owner in ('username')   
-AND OBJECT_TYPE IN ('FUNCTION', 'PACKAGE')
+where OWNER in ('&schema1', '&SCHEMA2', '&SCHEMA3', '&SCHEMA4') 
+AND OBJECT_TYPE IN ('FUNCTION', 'PACKAGE');
 
 -- DEBUG
 select 'GRANT DEBUG ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user_or_rol' || ';'
