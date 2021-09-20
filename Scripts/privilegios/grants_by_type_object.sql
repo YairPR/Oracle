@@ -1,28 +1,22 @@
 _-- SELECT
-
-SET LONG 10000
-SET LINE 1000
-SET PAGESIZE 20000
-select 'GRANT SELECT, INSERT, UPDATE, DELETE ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user' || ';'
+select 'GRANT SELECT ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user' || ';'
 from dba_objects 
-where OWNER in ('&schema1', '&SCHEMA2', '&SCHEMA3', '&SCHEMA4') 
+where OWNER in ('&schema') 
 AND OBJECT_TYPE IN ('TABLE', 'VIEW');
 
-
 -- WITH GRANT OPTION
-select 'GRANT SELECT ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user WITH GRANT OPTION;' 
-from dba_objects 
-where owner in ('username')   
-AND OBJECT_TYPE IN ('TABLE')
+  select 'GRANT SELECT, INSERT, UPDATE, DELETE  ON ' || OWNER || '.' || OBJECT_NAME || ' TO TRAMITE WITH GRANT OPTION;' 
+  from dba_objects 
+  where owner in ('&username')   
+  AND OBJECT_TYPE IN ('TABLE')
+  /
 
 -- EXECUTE
-SET LONG 10000
-SET LINE 1000
-SET PAGESIZE 20000
-select 'GRANT EXECUTE, DEBUG ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user_or_rol' || ';'
+select 'GRANT EXECUTE ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || 'UTEC' || ';'
 from dba_objects 
-where OWNER in ('&schema1', '&SCHEMA2', '&SCHEMA3', '&SCHEMA4') 
-AND OBJECT_TYPE IN ('FUNCTION', 'PACKAGE');
+where owner in ('&username')   
+AND OBJECT_TYPE IN ('FUNCTION', 'PACKAGE')
+/
 
 -- DEBUG
 select 'GRANT DEBUG ON ' || OWNER || '.' || OBJECT_NAME || ' TO ' || '&user_or_rol' || ';'
