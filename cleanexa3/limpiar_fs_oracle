@@ -1,4 +1,4 @@
-ssh root@rsdpedbadm03 
+ssh root@
  ______________________________________________________________________________
 *                                                                              *
 *        IBM's internal systems must only be used for conducting IBM's         *
@@ -6,14 +6,14 @@ ssh root@rsdpedbadm03
 *            Use is subject to audit at any time by IBM management             *
 *                                                                              *
 *______________________________________________________________________________*
-root@rsdpedbadm03's password: 
+root@'s password: 
 Last login: Wed Feb 26 14:36:56 2020 from 129.39.178.122
-[root@rsdpedbadm03 ~]# cd /oracle
-[root@rsdpedbadm03 oracle]# df -k .
+[root@ ~]# cd /oracle
+[root@ oracle]# df -k .
 Filesystem            1K-blocks       Used Available Use% Mounted on
 /dev/mapper/VGExaDb-LVDbOra1
                      1326337632 1219899508  39108276  97% /oracle
-[root@rsdpedbadm03 oracle]# du -sk *
+[root@ oracle]# du -sk *
 41516	32-bit
 2661984	agcloud13c
 4	crashfiles
@@ -42,17 +42,17 @@ total 12
 drwxr-xr-x 14 grid   oinstall 4096 oct  7  2018 grid
 drwxr-xr-x  5 oracle oinstall 4096 feb 28  2019 oracle
 drwxrwx---  7 grid   oinstall 4096 feb 26 19:33 oraInventory
-[root@rsdpedbadm03 product]# du -sk *
+[root@ product]# du -sk *
 37062524	grid
 363623620	oracle
 7752	oraInventory
-[root@rsdpedbadm03 product]# cd oracle
-[root@rsdpedbadm03 oracle]# du -sk *
+[root@ product]# cd oracle
+[root@ oracle]# du -sk *
 2151136	admin
 26416	cfgtoollogs
 361458336	diag
-[root@rsdpedbadm03 oracle]# cd diag
-[root@rsdpedbadm03 diag]# ls -l
+[root@ oracle]# cd diag
+[root@ diag]# ls -l
 total 36
 drwxrwxr-x  2 oracle oinstall 4096 sep 26 17:59 asm
 drwxrwxr-x  2 oracle oinstall 4096 sep 26 17:59 clients
@@ -63,7 +63,7 @@ drwxrwxr-x  2 oracle oinstall 4096 sep 26 17:59 netcman
 drwxrwxr-x  2 oracle oinstall 4096 sep 26 17:59 ofm
 drwxr-xr-x 17 oracle asmadmin 4096 feb 13  2019 rdbms
 drwxrwxr-x  2 oracle oinstall 4096 sep 26 17:59 tnslsnr
-[root@rsdpedbadm03 diag]# du -sk *
+[root@ diag]# du -sk *
 4	asm
 4	clients
 4	crs
@@ -73,8 +73,8 @@ drwxrwxr-x  2 oracle oinstall 4096 sep 26 17:59 tnslsnr
 4	ofm
 361469984	rdbms
 4	tnslsnr
-[root@rsdpedbadm03 diag]# cd rdbms/
-[root@rsdpedbadm03 rdbms]# ls -l
+[root@ diag]# cd rdbms/
+[root@ rdbms]# ls -l
 total 60
 drwxr-x---  3 oracle asmadmin 4096 feb 28  2019 bdconta
 drwxrwxr-x  3 oracle asmadmin 4096 oct 23  2015 bdedw
@@ -91,9 +91,9 @@ drwxr-x---  3 oracle asmadmin 4096 ago  4  2016 bdvidap
 drwxr-xr-x  3 oracle asmadmin 4096 sep 10  2018 bdweb
 drwxr-x---  3 oracle asmadmin 4096 ene 18  2018 orcl
 drwxr-x---  3 oracle asmadmin 4096 ene 18  2018 prueba
-[root@rsdpedbadm03 rdbms]# pwd
+[root@ rdbms]# pwd
 /oracle/product/oracle/diag/rdbms
-[root@rsdpedbadm03 rdbms]# du -sk *
+[root@  rdbms]# du -sk *
 225704912	bdconta
 702468	bdedw
 899756	bdex01
@@ -109,14 +109,14 @@ drwxr-x---  3 oracle asmadmin 4096 ene 18  2018 prueba
 605564	bdweb
 92136	orcl
 2852	prueba
-[root@rsdpedbadm03 rdbms]# ls -l bdconta/BDCONTA1/alert/*
+[root@ rdbms]# ls -l bdconta/BDCONTA1/alert/*
 -rw-r----- 1 oracle asmadmin 8893530 feb 27 13:01 bdconta/BDCONTA1/alert/log.xml
-[root@rsdpedbadm03 rdbms]# ls -l bdconta/BDCONTA1/trace/*
-[root@rsdpedbadm03 trace]# rm -f *trc *trm &
+[root@ rdbms]# ls -l bdconta/BDCONTA1/trace/*
+[root@ trace]# rm -f *trc *trm &
 [1] 95606
-[root@rsdpedbadm03 trace]# cd -
+[root@ trace]# cd -
 /oracle/product/oracle/diag/rdbms
-[root@rsdpedbadm03 rdbms]# du -sk *
+[root@  rdbms]# du -sk *
 55992912	bdconta
 702468	bdedw
 899756	bdex01
@@ -132,10 +132,10 @@ drwxr-x---  3 oracle asmadmin 4096 ene 18  2018 prueba
 605564	bdweb
 92136	orcl
 2852	prueba
-[root@rsdpedbadm03 rdbms]# cd bdrsa/BDRSA1/trace
-[root@rsdpedbadm03 trace]# rm -f *trc *trm &
+[root@ rdbms]# cd bdrsa/BDRSA1/trace
+[root@ trace]# rm -f *trc *trm &
 [2] 96024
-[root@rsdpedbadm03 trace]# df -Ph
+[root@ trace]# df -Ph
 Filesystem                                     Size  Used Avail Use% Mounted on
 /dev/mapper/VGExaDb-LVDbSys1                    65G   52G  9,6G  85% /
 tmpfs                                          252G  2,6G  250G   2% /dev/shm
