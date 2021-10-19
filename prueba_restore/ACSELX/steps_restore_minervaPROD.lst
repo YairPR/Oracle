@@ -36,7 +36,7 @@ connected to recovery catalog database
 RMAN> run
 2> {
 3> allocate channel c1 type 'SBT_TAPE';
-4> send 'NSR_ENV=(NSR_SERVER=legato.rimac.com.pe,NSR_CLIENT=minerva.rimac.com.pe)';
+4> send 'NSR_ENV=(NSR_SERVER=legato.com.pe,NSR_CLIENT=xxxxx.com.pe)';
 5> restore controlfile;
 6> alter database mount;
 7> }
