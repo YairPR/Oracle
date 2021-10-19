@@ -1,4 +1,4 @@
-[oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > cat replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
+[oracle@] /oracle/scripts/crons/logs > cat replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
 Mes importar 1219  
 -rw-------    1 oracle   ibmsysp  8958619648 Jan 22 00:16 /oracle/backup/dmp/exp_RESERVA_RIESGO_CURSO_ERP_DIC2019.dmp
 === Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:20:49 PET 2020 ===
@@ -78,4 +78,4 @@ Validacion de Cantidad de Registros de la tabla RESERVA_RIESGO_CURSO_ERP_1219
   
 === Tabla RESERVA_RIESGO_CURSO_ERP replicada en BDDYNA: Wed Jan 22 00:47:12 PET 2020 ===
   
-[oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > 
+
