@@ -45,7 +45,7 @@ FIN SCRIPT
 => Step 4: ejecutar sh por nohup ( nohup sh nombre.sh &)
 Validar log:
 
-oracle@rsdcpbddyna01] /oracle/scripts/crons/logs > tail -f replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
+oracle@01] /oracle/scripts/crons/logs > tail -f replica_RESERVA_RIESGO_CURSO_ERP_C05090_20200122-0020.log
 === Importando Tabla RESERVA_RIESGO_CURSO_ERP en BDDYNA : Wed Jan 22 00:20:49 PET 2020 ===
 
 Connected to: Oracle Database 11g Enterprise Edition Release 11.2.0.4.0 - 64bit Production
