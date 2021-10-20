@@ -1,9 +1,9 @@
 *.audit_file_dest='/oracle/admin/BDBPM/adump'
 *.compatible='10.2.0.5.0'
-*.control_files='+DATA/bdbpm/controlfile/current.256.758587227','+DATA/bdbpm/controlfile/current.257.758587227'#Restore Controlfile
+*.control_files='+DG_DATA001/bdbpm/controlfile/current.256.758587227','+DG_DATA001/bdbpm/controlfile/current.257.758587227'
 *.core_dump_dest='/oracle/admin/BDBPM/cdump'
 *.db_block_size=8192
-*.db_create_file_dest='+DATA'
+*.db_create_file_dest='+DG_DATA001'
 *.db_domain=''
 *.db_file_multiblock_read_count=16
 *.db_name='BDBPM'
@@ -30,4 +30,3 @@
 *.undo_management='AUTO'
 *.undo_retention=129600
 *.undo_tablespace='UNDOTBS1'
-
