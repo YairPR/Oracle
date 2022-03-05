@@ -1,0 +1,4 @@
+ps -ef | grep LOCAL=NO | grep testdb
+
+
+kill -9 `ps -ef | grep LOCAL=NO | grep $ORACLE_SID | grep -v grep | awk '{print $2}'`
