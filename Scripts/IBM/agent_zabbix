@@ -1,0 +1,87 @@
+Zabbix ON AIX
+
+This is the right recipe:
+
+
+
+
+Dowload zabbix Agent AIX version archive.
+Extract archive and go inside content.
+There will be direcotries like:
+bin
+conf
+sbin
+Install Zabbix Agent
+#create zabbix group
+mkgroup zabbix
+
+#create zabbix user and at it to zabbix group
+mkuser pgrp='zabbix' groups='zabbix' zabbix
+
+#make configuration direcotry
+mkdir /etc/zabbix
+
+#make log directory
+mkdir /var/log/zabbix/
+
+#log directory belongs to user zabbix and group zabbix
+chown -R zabbix:zabbix /var/log/zabbix/
+
+#make configuration direcotry
+mkdir -p /usr/local/etc/
+
+#create direoctory for zabbix process file
+mkdir -p /var/run/zabbix/
+
+#process files directory belong to zabbix
+chown -R zabbix:zabbix /var/run/zabbix/
+
+#install zabbix_get and zabbix_sender binary
+cp bin/zabbix_* /bin/
+
+#install zabbix_agent and zabbix_agentd binary
+cp sbin/zabbix_agent* /sbin/
+
+#copy configuration files
+cp -r conf/zabbix_agent* /etc/zabbix/
+
+#link configiguration file
+ln -s /etc/zabbix/zabbix_agentd.conf /usr/local/etc/zabbix_agentd.conf
+
+#backup original configuration file
+mv /etc/zabbix/zabbix_agentd.conf /etc/zabbix/zabbix_agentd.conf_bck
+
+#create your own configuration file
+cat > /etc/zabbix/zabbix_agentd.conf << EOF
+DebugLevel=3
+EnableRemoteCommands=1
+Hostname=hostname.goes.here
+LogFile=/var/log/zabbix/zabbix_agentd.log
+PidFile=/var/run/zabbix/zabbix_agentd.pid
+Server=x.y.z.w
+EOF
+
+#start zabbix agent
+zabbix_agentd
+Check if zabbix is installed to boot at startup
+lsitab zabbix
+Set Zabbix Agent to boot at startup
+mkitab "zabbix:2nce:/sbin/zabbix_agentd >/dev/null 2>&1"
+For debugging purpose use:
+#check procesees
+ps aux|grep [z]abbix
+
+#kill zabbix agent by process
+kill 12345
+
+#clear zabbix agent log
+> /var/log/zabbix/zabbix_agentd.log
+
+#start zabbix agent
+zabbix_agentd
+
+#check if process exists
+ps aux|grep [z]abbix
+
+#check log
+cat /var/log/zabbix/zabbix_agentd.log
