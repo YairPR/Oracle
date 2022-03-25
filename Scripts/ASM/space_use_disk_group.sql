@@ -23,7 +23,7 @@ SELECT
   , type                                     type
   , total_mb                                 total_mb
   , (total_mb - free_mb)                     used_mb
-  , ROUND((1- (free_mb / total_mb))*100, 2)  pct_used
+  ,  DECODE(total_mb,0,0, (ROUND((1- (free_mb / total_mb))*100, 2))) pct_used
 FROM
     v$asm_diskgroup
 ORDER BY
