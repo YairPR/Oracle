@@ -32,6 +32,8 @@ Oracle 10g, 11g, 12c
 expdp mantenimiento/mn2013mn directory=DATA_PUMP_DIR dumpfile=BDINVERFULL_18122020.dmp logfile=expdpBDINVER_07072020.log FULL=YES
 expdp \'/ as sysdba\'  directory=DMPEXP tables=BRKEDI.MENSAJE, BRKEDI.LOG dumpfile=export_MENSAJE_LOG_1208.dmp log=export_MENSAJE_log_1208.log
 
+nohup expdp \'/ as sysdba\' directory=EXPDP_DIR SCHEMAS=USROBJ_ACREDITA_ESSALUD dumpfile=exp_wsnt_usrobj.dmp logfile=exp_wsnt_usrobj.log &
+
 ##TABLAS ACSELX
 nohup expdp \'/ as sysdba\' directory=DIR_DATA_PUMP tables=ACSELX.TERCERO, ACSELX.IVAL,ACSELX.OPERACION,ACSELX.POLIZA,ACSELX.PRODUCTO dumpfile=prueba_restore_NOV.dmp log=prueba_restore_NOV.log &
 nohup impdp \'/ as sysdba\' REMAP_SCHEMA=ACSELX:MANTENIMIENTO directory=IMPTAB dumpfile=prueba_restore_NOV.dmp logfile=imp_RESTORE_NOV.log &
