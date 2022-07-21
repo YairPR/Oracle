@@ -4,3 +4,5 @@ delete noprompt obsolete;
 DELETE OBSOLETE RECOVERY WINDOW OF 10 DAYS;
 
 delete archivelog until time 'SYSDATE-1'; 
+
+delete noprompt expired archivelog all;
