@@ -1,0 +1,42 @@
+DGMGRL> SHOW DATABASE      dgorcl1
+
+Database - dgorcl1
+
+  Role:            PHYSICAL STANDBY
+  Intended State:  APPLY-ON
+  Transport Lag:   0 seconds
+  Apply Lag:       2 minutes 33 seconds
+  Real Time Query: OFF
+  Instance(s):
+    dgorcl11 (apply instance)
+    dgorcl12
+
+  Database Warning(s):
+    ORA-16826: apply service state is inconsistent with the DelayMins property<<<<<<<<<
+
+Database Status:
+WARNING<<<<<<<<<<<<
+
+Workaround :
+
+Check on Which node MRP process is running.
+
+ 
+
+On Standby
+
+Make sure  Standby redo logs files are created on standby.
+
+Please refere < Doc ID 249703.1> for the same.
+
+ 
+
+DGMGRL> edit database <standby database> set state=apply-off;
+DGMGRL> edit database <standby database> set state=apply-on;
+
+or
+
+SQL>alter database recover managed standby database cancel;
+SQL> alter database recover managed standby database using current logfile disconnect;
+
+  
