@@ -1,12 +1,34 @@
+
+SET SERVEROUTPUT ON
+SET FEEDBACK OFF
+SET PAGESIZE 100
+SET LINESIZE 150
+COLUMN TNAME FORMAT A30
+COLUMN TABLE_SIZE FORMAT A15
+COLUMN "INDEX#" FORMAT 9
+COLUMN COLUMNS_IN_INDEX FORMAT A30
+COLUMN INDEX_NAME FORMAT A30
+COLUMN INDEX_SIZE FORMAT A15
+
+VARIABLE schema_name VARCHAR2(30);
+VARIABLE table_name VARCHAR2(30);
+
+BEGIN
+  :schema_name := '&schema_name';
+  :table_name := '&table_name';
+END;
+/
+
 WITH tables AS (
   SELECT 
-    segment_name AS tname, 
-    TO_CHAR(bytes / 1024 / 1024, '999,999.99') AS table_size
+    s.segment_name AS tname, 
+    TO_CHAR(s.bytes / 1024 / 1024, '999,999.99') AS table_size
   FROM 
-    user_segments
+    dba_segments s
   WHERE 
-    segment_type = 'TABLE'
-    AND segment_name NOT LIKE 'BIN%'
+    s.segment_type = 'TABLE'
+    AND s.segment_name NOT LIKE 'BIN%'
+    AND s.owner = :schema_name
 ),
 indexes AS (
   SELECT 
@@ -16,10 +38,13 @@ indexes AS (
     ROW_NUMBER() OVER (PARTITION BY ic.table_name ORDER BY ic.index_name) AS rn,
     TO_CHAR(s.bytes / 1024 / 1024, '999,999.99') AS index_size
   FROM 
-    user_ind_columns ic
-    LEFT JOIN user_segments s 
+    dba_ind_columns ic
+    LEFT JOIN dba_segments s 
       ON ic.index_name = s.segment_name 
       AND s.segment_type = 'INDEX'
+      AND s.owner = :schema_name
+  WHERE 
+    ic.table_owner = :schema_name
   GROUP BY 
     ic.table_name, ic.index_name, s.bytes
 )
@@ -35,7 +60,6 @@ FROM
   LEFT JOIN indexes i
     ON t.tname = i.table_name
 WHERE 
-  t.tname = UPPER('&1')
+  t.tname = :table_name
 ORDER BY 
   t.tname, i.rn;
-
