@@ -1,3 +1,0 @@
-SELECT sum(bytes) / 1024 / 1024 / 1024 as "Size in GB"
-  FROM dba_segments
- WHERE owner = UPPER('&schema_name');
