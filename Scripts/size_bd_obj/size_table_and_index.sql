@@ -1,36 +1,41 @@
-with tables
-as
-(
-select segment_name tname, to_char(bytes/1024/1024,'999,999.99') table_size
-from user_segments
-where segment_type = 'TABLE'
-and segment_name not like 'BIN%'
+WITH tables AS (
+  SELECT 
+    segment_name AS tname, 
+    TO_CHAR(bytes / 1024 / 1024, '999,999.99') AS table_size
+  FROM 
+    user_segments
+  WHERE 
+    segment_type = 'TABLE'
+    AND segment_name NOT LIKE 'BIN%'
 ),
-indexes
-as
-(
-select table_name, index_name, scbp, rn,
-(select to_char(bytes/1024/1024,'999,999.99') from user_segments where segment_name = INDEX_NAME and segment_type = 'INDEX') index_size
-from (
-select table_name, index_name,
-substr( max(sys_connect_by_path( column_name, ', ' )), 3) scbp,
-row_number() over (partition by table_name order by index_name) rn
-from user_ind_columns
-start with column_position = 1
-connect by prior table_name = table_name
-and prior index_name = index_name
-and prior column_position+1 = column_position
-group by table_name, index_name
+indexes AS (
+  SELECT 
+    ic.table_name, 
+    ic.index_name, 
+    LISTAGG(ic.column_name, ', ') WITHIN GROUP (ORDER BY ic.column_position) AS scbp,
+    ROW_NUMBER() OVER (PARTITION BY ic.table_name ORDER BY ic.index_name) AS rn,
+    TO_CHAR(s.bytes / 1024 / 1024, '999,999.99') AS index_size
+  FROM 
+    user_ind_columns ic
+    LEFT JOIN user_segments s 
+      ON ic.index_name = s.segment_name 
+      AND s.segment_type = 'INDEX'
+  GROUP BY 
+    ic.table_name, ic.index_name, s.bytes
 )
-)
-select decode( nvl(rn,1), 1, tables.tname ) tname,
-decode( nvl(rn,1), 1, tables.table_size ) table_size,
-rn "INDEX#",
-indexes.scbp,
-indexes.index_name,
-indexes.index_size
-from tables, indexes
-where tables.tname = indexes.table_name(+)
-and tables.tname = '&1'
-order by tables.tname, indexes.rn
-/
+SELECT 
+  CASE WHEN NVL(rn, 1) = 1 THEN t.tname ELSE NULL END AS tname,
+  CASE WHEN NVL(rn, 1) = 1 THEN t.table_size ELSE NULL END AS table_size,
+  rn AS "INDEX#",
+  i.scbp AS columns_in_index,
+  i.index_name,
+  i.index_size
+FROM 
+  tables t
+  LEFT JOIN indexes i
+    ON t.tname = i.table_name
+WHERE 
+  t.tname = UPPER('&1')
+ORDER BY 
+  t.tname, i.rn;
+
