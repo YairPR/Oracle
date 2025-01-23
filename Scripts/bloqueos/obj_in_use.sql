@@ -39,11 +39,10 @@ from gv$access
 where object = '&w_obj')
 ;
 
-set pagesize 0
-set line 1000
-spool kill.sql
-select 'alter system kill session '''||a.sid||','||a.serial#||',@'||b.inst_id||''' immediate;'
-from gv$session a, gv$access b
-where a.sid=b.sid 
-and b.object = '&w_obj';
-spool off
+SELECT 'ALTER SYSTEM KILL SESSION ''' || s.sid || ',' || s.serial# || ',@' || s.inst_id || ''' IMMEDIATE;'
+FROM gv$session s
+WHERE s.sid IN (
+    SELECT sid
+    FROM gv$access
+    WHERE object = '&w_obj'
+);
