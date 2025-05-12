@@ -44,6 +44,7 @@ do
   rm $i
 done
 
+find /u01/app/oracle/admin/finx29p/adump -name "*.aud" | xargs rm -f
 ------------------------------------------------------------------------------------------------------------------------------
 
 --How to list the most biggest directory on AIX
