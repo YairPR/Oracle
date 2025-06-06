@@ -1,6 +1,3 @@
-Hola estimados,
-
-Se solicita hacer una restauración de data de Producción de la base de datos ODSPRD al ambiente de calidad en la base de datos OWEBPPR  para las siguientes tablas, esto con el objetivo de tener un ambiente mas parecido a producción para verificar y medir tiempos de respuesta de los servicios que se viene desarrollando, dado que en calidad se obtuvo en pocos segundo y en Producción tiene tiempos más altos.
 
 SET LINESIZE  145
 SET PAGESIZE  9999
@@ -20,20 +17,9 @@ owner as "Schema"
 , tablespace_name as "Tablespace"
 from dba_segments
 where segment_name in (
-'ASEGURADO',
-'POLIZA_ASEGURADO',
-'POLIZA',
-'CLIENTE',
-'PRODUCTO',
-'MAE_PARAMETRO',
-'ASEGURADO_LATENCIA',
-'POLIZA_MOVIMIENTO',
-'CUOTA',
-'PREEXISTENCIA',
-'ASEGURADO_OBSERVACION',
-'CLINICA'
+'SCHEMA'
 )
-and owner = 'USALUD00';
+and owner = '&USERNAME';
 
 
 
