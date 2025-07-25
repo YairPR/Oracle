@@ -1,0 +1,40 @@
+significa que DGMGRL (el broker) no puede comunicarse con una de las bases del grupo (en tu caso
+parece que es desde el standby proecosb hacia proecoh o viceversa).
+
+🔹 PASO 1: Verifica que el listener esté activo
+En ambas bases (primario y standby):
+
+🔹 PASO 2: Verifica el tnsnames.ora
+Asegúrate de que los nombres usados por el Broker (DGMGRL) coincidan con los definidos en tnsnames.ora en ambas instancias.
+
+🔹 PASO 3: Verifica que dmon esté corriendo
+En ambas bases:
+
+SELECT process FROM v$managed_processes WHERE process = 'DMON';
+
+Si no está, actívalo con:
+ALTER SYSTEM SET DG_BROKER_START=TRUE SCOPE=BOTH;
+
+
+🔹 PASO 4: Prueba la conectividad manual
+Desde standby
+
+tnsping proecoh
+
+🔹 PASO 5: Reinicia el broker (si todo lo anterior está bien)
+En ambas instancias:
+
+ALTER SYSTEM SET DG_BROKER_START=FALSE SCOPE=BOTH;
+-- espera unos segundos
+ALTER SYSTEM SET DG_BROKER_START=TRUE SCOPE=BOTH;
+
+dgmgrl sys@proecosb
+SHOW CONFIGURATION;
+
+🔹 PASO 6: Forzar la reactivación de la base en broker
+En DGMGRL:
+edit database 'proecosb' set state='apply-ready';
+
+o en casos más agresivos:
+disable configuration;
+enable configuration;
