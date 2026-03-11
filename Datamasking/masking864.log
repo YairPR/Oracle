@@ -1,0 +1,1639 @@
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.04
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.12
+
+Tabla creada.
+
+Transcurrido: 00:00:00.05
+
+Secuencia creada.
+
+Transcurrido: 00:00:00.01
+
+Tabla creada.
+
+Transcurrido: 00:00:00.10
+
+Secuencia creada.
+
+Transcurrido: 00:00:00.02
+
+Tabla creada.
+
+Transcurrido: 00:00:00.06
+
+Secuencia creada.
+
+Transcurrido: 00:00:00.01
+
+Tabla creada.
+
+Transcurrido: 00:00:00.04
+
+Tabla creada.
+
+Transcurrido: 00:00:00.07
+
+Tabla creada.
+
+Transcurrido: 00:00:00.09
+
+Tabla creada.
+
+Transcurrido: 00:00:00.05
+
+Tabla creada.
+
+Transcurrido: 00:00:00.04
+
+Tabla creada.
+
+Transcurrido: 00:00:00.04
+LOADING GRAPH TABLES
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.58
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.04
+REFRESHING PK INFO IN GRAPH TABLES
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.14
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+Beginning subset computation
+Beginning subset computation for table DM_PCSS_OWN.DICCIONARIO
+table:DM_PCSS_OWN.DICCIONARIO
+Subset computation for table DM_PCSS_OWN.DICCIONARIO complete
+Beginning subset computation for table DM_PCSS_OWN.DICCIONARIO_TIPOS
+table:DM_PCSS_OWN.DICCIONARIO_TIPOS
+Subset computation for table DM_PCSS_OWN.DICCIONARIO_TIPOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_AUDITORIA
+table:DM_PCSS_OWN.ICSS_AUDITORIA
+Subset computation for table DM_PCSS_OWN.ICSS_AUDITORIA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_BAREMO_ING
+table:DM_PCSS_OWN.ICSS_BAREMO_ING
+Subset computation for table DM_PCSS_OWN.ICSS_BAREMO_ING complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_CALC_INGRESOS
+table:DM_PCSS_OWN.ICSS_CALC_INGRESOS
+Subset computation for table DM_PCSS_OWN.ICSS_CALC_INGRESOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_COMODIN_PROPUESTA
+table:DM_PCSS_OWN.ICSS_COMODIN_PROPUESTA
+Subset computation for table DM_PCSS_OWN.ICSS_COMODIN_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_DATOS
+table:DM_PCSS_OWN.ICSS_DATOS
+Subset computation for table DM_PCSS_OWN.ICSS_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_DESGLOSE_ATRASOS
+table:DM_PCSS_OWN.ICSS_DESGLOSE_ATRASOS
+Subset computation for table DM_PCSS_OWN.ICSS_DESGLOSE_ATRASOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_DOCUMENTO
+table:DM_PCSS_OWN.ICSS_DOCUMENTO
+Subset computation for table DM_PCSS_OWN.ICSS_DOCUMENTO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_DOCUMENTO_BLOB
+table:DM_PCSS_OWN.ICSS_DOCUMENTO_BLOB
+Subset computation for table DM_PCSS_OWN.ICSS_DOCUMENTO_BLOB complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_DOCUMENTO_HIST
+table:DM_PCSS_OWN.ICSS_DOCUMENTO_HIST
+Subset computation for table DM_PCSS_OWN.ICSS_DOCUMENTO_HIST complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_CALCULO
+table:DM_PCSS_OWN.ICSS_EXP_CALCULO
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_CALCULO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_CALCULO_VIVI
+table:DM_PCSS_OWN.ICSS_EXP_CALCULO_VIVI
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_CALCULO_VIVI complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_CAMBIO_CUENTA
+table:DM_PCSS_OWN.ICSS_EXP_CAMBIO_CUENTA
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_CAMBIO_CUENTA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_CAMBIO_NIF
+table:DM_PCSS_OWN.ICSS_EXP_CAMBIO_NIF
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_CAMBIO_NIF complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_DATOS
+table:DM_PCSS_OWN.ICSS_EXP_DATOS
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_DOCS
+table:DM_PCSS_OWN.ICSS_EXP_DOCS
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_DOCS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXPEDIENTE
+table:DM_PCSS_OWN.ICSS_EXPEDIENTE
+Subset computation for table DM_PCSS_OWN.ICSS_EXPEDIENTE complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_HIS_SITU
+table:DM_PCSS_OWN.ICSS_EXP_HIS_SITU
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_HIS_SITU complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_HIST_CALCULOS
+table:DM_PCSS_OWN.ICSS_EXP_HIST_CALCULOS
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_HIST_CALCULOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_NOTAS
+table:DM_PCSS_OWN.ICSS_EXP_NOTAS
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_NOTAS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_EXP_TITULAR
+table:DM_PCSS_OWN.ICSS_EXP_TITULAR
+Subset computation for table DM_PCSS_OWN.ICSS_EXP_TITULAR complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_HIS_ESTADO
+table:DM_PCSS_OWN.ICSS_HIS_ESTADO
+Subset computation for table DM_PCSS_OWN.ICSS_HIS_ESTADO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_KIBANA_DATOS
+table:DM_PCSS_OWN.ICSS_KIBANA_DATOS
+Subset computation for table DM_PCSS_OWN.ICSS_KIBANA_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_MENU_KIBANA
+table:DM_PCSS_OWN.ICSS_MENU_KIBANA
+Subset computation for table DM_PCSS_OWN.ICSS_MENU_KIBANA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_MOTIV_PROPUESTA
+table:DM_PCSS_OWN.ICSS_MOTIV_PROPUESTA
+Subset computation for table DM_PCSS_OWN.ICSS_MOTIV_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_NOTIFICA
+table:DM_PCSS_OWN.ICSS_NOTIFICA
+Subset computation for table DM_PCSS_OWN.ICSS_NOTIFICA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_PARAMETROS
+table:DM_PCSS_OWN.ICSS_PARAMETROS
+Subset computation for table DM_PCSS_OWN.ICSS_PARAMETROS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_PERIODO
+table:DM_PCSS_OWN.ICSS_PERIODO
+Subset computation for table DM_PCSS_OWN.ICSS_PERIODO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_PERIODO_DOC
+table:DM_PCSS_OWN.ICSS_PERIODO_DOC
+Subset computation for table DM_PCSS_OWN.ICSS_PERIODO_DOC complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_PESTANAS
+table:DM_PCSS_OWN.ICSS_PESTANAS
+Subset computation for table DM_PCSS_OWN.ICSS_PESTANAS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_PREGUNTAS
+table:DM_PCSS_OWN.ICSS_PREGUNTAS
+Subset computation for table DM_PCSS_OWN.ICSS_PREGUNTAS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_REMESA_CAB
+table:DM_PCSS_OWN.ICSS_REMESA_CAB
+Subset computation for table DM_PCSS_OWN.ICSS_REMESA_CAB complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_REMESA_LIN
+table:DM_PCSS_OWN.ICSS_REMESA_LIN
+Subset computation for table DM_PCSS_OWN.ICSS_REMESA_LIN complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SITUACION_EXP
+table:DM_PCSS_OWN.ICSS_SITUACION_EXP
+Subset computation for table DM_PCSS_OWN.ICSS_SITUACION_EXP complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_ATRASO
+table:DM_PCSS_OWN.ICSS_SOL_ATRASO
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_ATRASO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_ATRASO_VIVI
+table:DM_PCSS_OWN.ICSS_SOL_ATRASO_VIVI
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_ATRASO_VIVI complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_CALCULO
+table:DM_PCSS_OWN.ICSS_SOL_CALCULO
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_CALCULO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_CALCULO_VIVI
+table:DM_PCSS_OWN.ICSS_SOL_CALCULO_VIVI
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_CALCULO_VIVI complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_CAMBIOS
+table:DM_PCSS_OWN.ICSS_SOL_CAMBIOS
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_CAMBIOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_HIST_CALCULOS
+table:DM_PCSS_OWN.ICSS_SOL_HIST_CALCULOS
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_HIST_CALCULOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOLICITUD
+table:DM_PCSS_OWN.ICSS_SOLICITUD
+Subset computation for table DM_PCSS_OWN.ICSS_SOLICITUD complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_INDEBIDOS
+table:DM_PCSS_OWN.ICSS_SOL_INDEBIDOS
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_INDEBIDOS complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_MOTPROP_INCI_LOG
+table:DM_PCSS_OWN.ICSS_SOL_MOTPROP_INCI_LOG
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_MOTPROP_INCI_LOG complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_MOT_PROPUESTA
+table:DM_PCSS_OWN.ICSS_SOL_MOT_PROPUESTA
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_MOT_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_NOTA
+table:DM_PCSS_OWN.ICSS_SOL_NOTA
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_NOTA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_PAGALAM
+table:DM_PCSS_OWN.ICSS_SOL_PAGALAM
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_PAGALAM complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SOL_RESOLUCION
+table:DM_PCSS_OWN.ICSS_SOL_RESOLUCION
+Subset computation for table DM_PCSS_OWN.ICSS_SOL_RESOLUCION complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SUBSANA
+table:DM_PCSS_OWN.ICSS_SUBSANA
+Subset computation for table DM_PCSS_OWN.ICSS_SUBSANA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_SUBTIPO_MOTIVO
+table:DM_PCSS_OWN.ICSS_SUBTIPO_MOTIVO
+Subset computation for table DM_PCSS_OWN.ICSS_SUBTIPO_MOTIVO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_TIPO_DOCUMENTO
+table:DM_PCSS_OWN.ICSS_TIPO_DOCUMENTO
+Subset computation for table DM_PCSS_OWN.ICSS_TIPO_DOCUMENTO complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_TIPO_PROPUESTA
+table:DM_PCSS_OWN.ICSS_TIPO_PROPUESTA
+Subset computation for table DM_PCSS_OWN.ICSS_TIPO_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_TITULAR
+table:DM_PCSS_OWN.ICSS_TITULAR
+Subset computation for table DM_PCSS_OWN.ICSS_TITULAR complete
+Beginning subset computation for table DM_PCSS_OWN.ICSS_USUARIOS
+table:DM_PCSS_OWN.ICSS_USUARIOS
+Subset computation for table DM_PCSS_OWN.ICSS_USUARIOS complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_ERRORES
+table:DM_PCSS_OWN.IMVSS_ERRORES
+Subset computation for table DM_PCSS_OWN.IMVSS_ERRORES complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_EXCEL_BONO_DIGITAL
+table:DM_PCSS_OWN.IMVSS_EXCEL_BONO_DIGITAL
+Subset computation for table DM_PCSS_OWN.IMVSS_EXCEL_BONO_DIGITAL complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_EXCEL_DATOS
+table:DM_PCSS_OWN.IMVSS_EXCEL_DATOS
+Subset computation for table DM_PCSS_OWN.IMVSS_EXCEL_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_EXCEL_RESULTADO
+table:DM_PCSS_OWN.IMVSS_EXCEL_RESULTADO
+Subset computation for table DM_PCSS_OWN.IMVSS_EXCEL_RESULTADO complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_EXPEDIENTES
+table:DM_PCSS_OWN.IMVSS_EXPEDIENTES
+Subset computation for table DM_PCSS_OWN.IMVSS_EXPEDIENTES complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_EXPEDIENTES_DICIEMBRE
+table:DM_PCSS_OWN.IMVSS_EXPEDIENTES_DICIEMBRE
+Subset computation for table DM_PCSS_OWN.IMVSS_EXPEDIENTES_DICIEMBRE complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_EXP_MIEMBROS
+table:DM_PCSS_OWN.IMVSS_EXP_MIEMBROS
+Subset computation for table DM_PCSS_OWN.IMVSS_EXP_MIEMBROS complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_FICH_RESPUESTA_IMV
+table:DM_PCSS_OWN.IMVSS_FICH_RESPUESTA_IMV
+Subset computation for table DM_PCSS_OWN.IMVSS_FICH_RESPUESTA_IMV complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_KIBANA01
+table:DM_PCSS_OWN.IMVSS_KIBANA01
+Subset computation for table DM_PCSS_OWN.IMVSS_KIBANA01 complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_PERSONA
+table:DM_PCSS_OWN.IMVSS_PERSONA
+Subset computation for table DM_PCSS_OWN.IMVSS_PERSONA complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_RESPUESTA_SOLICITUD
+table:DM_PCSS_OWN.IMVSS_RESPUESTA_SOLICITUD
+Subset computation for table DM_PCSS_OWN.IMVSS_RESPUESTA_SOLICITUD complete
+Beginning subset computation for table DM_PCSS_OWN.IMVSS_RESPUESTA_VAR_SOL
+table:DM_PCSS_OWN.IMVSS_RESPUESTA_VAR_SOL
+Subset computation for table DM_PCSS_OWN.IMVSS_RESPUESTA_VAR_SOL complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_ACCION
+table:DM_PCSS_OWN.PCSS_ACCION
+Subset computation for table DM_PCSS_OWN.PCSS_ACCION complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_AUDITORIA
+table:DM_PCSS_OWN.PCSS_AUDITORIA
+Subset computation for table DM_PCSS_OWN.PCSS_AUDITORIA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_BAREMO_ING
+table:DM_PCSS_OWN.PCSS_BAREMO_ING
+Subset computation for table DM_PCSS_OWN.PCSS_BAREMO_ING complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_BAREMO_PATRI
+table:DM_PCSS_OWN.PCSS_BAREMO_PATRI
+Subset computation for table DM_PCSS_OWN.PCSS_BAREMO_PATRI complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_CALC_INGRESOS
+table:DM_PCSS_OWN.PCSS_CALC_INGRESOS
+Subset computation for table DM_PCSS_OWN.PCSS_CALC_INGRESOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_CALC_PATRIMONIO
+table:DM_PCSS_OWN.PCSS_CALC_PATRIMONIO
+Subset computation for table DM_PCSS_OWN.PCSS_CALC_PATRIMONIO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_COMODIN_PROPUESTA
+table:DM_PCSS_OWN.PCSS_COMODIN_PROPUESTA
+Subset computation for table DM_PCSS_OWN.PCSS_COMODIN_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_DOCUMENTO
+table:DM_PCSS_OWN.PCSS_DOCUMENTO
+Subset computation for table DM_PCSS_OWN.PCSS_DOCUMENTO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_DOCUMENTO_BLOB
+table:DM_PCSS_OWN.PCSS_DOCUMENTO_BLOB
+Subset computation for table DM_PCSS_OWN.PCSS_DOCUMENTO_BLOB complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_DOCUMENTO_HIST
+table:DM_PCSS_OWN.PCSS_DOCUMENTO_HIST
+Subset computation for table DM_PCSS_OWN.PCSS_DOCUMENTO_HIST complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_ESTADO_SOL
+table:DM_PCSS_OWN.PCSS_ESTADO_SOL
+Subset computation for table DM_PCSS_OWN.PCSS_ESTADO_SOL complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_CALCULO
+table:DM_PCSS_OWN.PCSS_EXP_CALCULO
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_CALCULO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_CALCULO_VIVI
+table:DM_PCSS_OWN.PCSS_EXP_CALCULO_VIVI
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_CALCULO_VIVI complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_CAMBIO_CUENTA
+table:DM_PCSS_OWN.PCSS_EXP_CAMBIO_CUENTA
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_CAMBIO_CUENTA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_DATOS
+table:DM_PCSS_OWN.PCSS_EXP_DATOS
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_DOCS
+table:DM_PCSS_OWN.PCSS_EXP_DOCS
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_DOCS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXPEDIENTE
+table:DM_PCSS_OWN.PCSS_EXPEDIENTE
+Subset computation for table DM_PCSS_OWN.PCSS_EXPEDIENTE complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_HIS_SITU
+table:DM_PCSS_OWN.PCSS_EXP_HIS_SITU
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_HIS_SITU complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_HIST_CALCULOS
+table:DM_PCSS_OWN.PCSS_EXP_HIST_CALCULOS
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_HIST_CALCULOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_INGRESOS_UC
+table:DM_PCSS_OWN.PCSS_EXP_INGRESOS_UC
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_INGRESOS_UC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_MIEMBROS_UC
+table:DM_PCSS_OWN.PCSS_EXP_MIEMBROS_UC
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_MIEMBROS_UC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_NOTAS
+table:DM_PCSS_OWN.PCSS_EXP_NOTAS
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_NOTAS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_PATRIMONIO_UC
+table:DM_PCSS_OWN.PCSS_EXP_PATRIMONIO_UC
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_PATRIMONIO_UC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_PRESTEC
+table:DM_PCSS_OWN.PCSS_EXP_PRESTEC
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_PRESTEC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_REQUISITOS
+table:DM_PCSS_OWN.PCSS_EXP_REQUISITOS
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_REQUISITOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_EXP_TITULAR
+table:DM_PCSS_OWN.PCSS_EXP_TITULAR
+Subset computation for table DM_PCSS_OWN.PCSS_EXP_TITULAR complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_FASE_SOL
+table:DM_PCSS_OWN.PCSS_FASE_SOL
+Subset computation for table DM_PCSS_OWN.PCSS_FASE_SOL complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_HIS_ESTADO
+table:DM_PCSS_OWN.PCSS_HIS_ESTADO
+Subset computation for table DM_PCSS_OWN.PCSS_HIS_ESTADO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_INTERVEN_CAB
+table:DM_PCSS_OWN.PCSS_INTERVEN_CAB
+Subset computation for table DM_PCSS_OWN.PCSS_INTERVEN_CAB complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_INTERVEN_LIN
+table:DM_PCSS_OWN.PCSS_INTERVEN_LIN
+Subset computation for table DM_PCSS_OWN.PCSS_INTERVEN_LIN complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_KIBANA
+table:DM_PCSS_OWN.PCSS_KIBANA
+Subset computation for table DM_PCSS_OWN.PCSS_KIBANA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_KIBANA_DATOS
+table:DM_PCSS_OWN.PCSS_KIBANA_DATOS
+Subset computation for table DM_PCSS_OWN.PCSS_KIBANA_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_MENU_KIBANA
+table:DM_PCSS_OWN.PCSS_MENU_KIBANA
+Subset computation for table DM_PCSS_OWN.PCSS_MENU_KIBANA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_MODALIDAD
+table:DM_PCSS_OWN.PCSS_MODALIDAD
+Subset computation for table DM_PCSS_OWN.PCSS_MODALIDAD complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_MODALI_REQ
+table:DM_PCSS_OWN.PCSS_MODALI_REQ
+Subset computation for table DM_PCSS_OWN.PCSS_MODALI_REQ complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_MOTIV_PROPUESTA
+table:DM_PCSS_OWN.PCSS_MOTIV_PROPUESTA
+Subset computation for table DM_PCSS_OWN.PCSS_MOTIV_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_MOTPROP_INCIDENCIA
+table:DM_PCSS_OWN.PCSS_MOTPROP_INCIDENCIA
+Subset computation for table DM_PCSS_OWN.PCSS_MOTPROP_INCIDENCIA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_MOT_PROP_LIN_INTERVEN
+table:DM_PCSS_OWN.PCSS_MOT_PROP_LIN_INTERVEN
+Subset computation for table DM_PCSS_OWN.PCSS_MOT_PROP_LIN_INTERVEN complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_NOTIFICA
+table:DM_PCSS_OWN.PCSS_NOTIFICA
+Subset computation for table DM_PCSS_OWN.PCSS_NOTIFICA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_PARAMETROS
+table:DM_PCSS_OWN.PCSS_PARAMETROS
+Subset computation for table DM_PCSS_OWN.PCSS_PARAMETROS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_PARENTESCO
+table:DM_PCSS_OWN.PCSS_PARENTESCO
+Subset computation for table DM_PCSS_OWN.PCSS_PARENTESCO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_PERIODO
+table:DM_PCSS_OWN.PCSS_PERIODO
+Subset computation for table DM_PCSS_OWN.PCSS_PERIODO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_PERIODO_DOC
+table:DM_PCSS_OWN.PCSS_PERIODO_DOC
+Subset computation for table DM_PCSS_OWN.PCSS_PERIODO_DOC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_PESTANAS
+table:DM_PCSS_OWN.PCSS_PESTANAS
+Subset computation for table DM_PCSS_OWN.PCSS_PESTANAS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_REMESA_CAB
+table:DM_PCSS_OWN.PCSS_REMESA_CAB
+Subset computation for table DM_PCSS_OWN.PCSS_REMESA_CAB complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_REMESA_LIN
+table:DM_PCSS_OWN.PCSS_REMESA_LIN
+Subset computation for table DM_PCSS_OWN.PCSS_REMESA_LIN complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_REQUISITOS
+table:DM_PCSS_OWN.PCSS_REQUISITOS
+Subset computation for table DM_PCSS_OWN.PCSS_REQUISITOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_ROL
+table:DM_PCSS_OWN.PCSS_ROL
+Subset computation for table DM_PCSS_OWN.PCSS_ROL complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_ROL_ACCION
+table:DM_PCSS_OWN.PCSS_ROL_ACCION
+Subset computation for table DM_PCSS_OWN.PCSS_ROL_ACCION complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SITUACION_EXP
+table:DM_PCSS_OWN.PCSS_SITUACION_EXP
+Subset computation for table DM_PCSS_OWN.PCSS_SITUACION_EXP complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_ATRASO
+table:DM_PCSS_OWN.PCSS_SOL_ATRASO
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_ATRASO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_ATRASO_VIVI
+table:DM_PCSS_OWN.PCSS_SOL_ATRASO_VIVI
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_ATRASO_VIVI complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_CALCULO
+table:DM_PCSS_OWN.PCSS_SOL_CALCULO
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_CALCULO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_CALCULO_VIVI
+table:DM_PCSS_OWN.PCSS_SOL_CALCULO_VIVI
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_CALCULO_VIVI complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_CAMBIOS
+table:DM_PCSS_OWN.PCSS_SOL_CAMBIOS
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_CAMBIOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_CONSUL_SERV
+table:DM_PCSS_OWN.PCSS_SOL_CONSUL_SERV
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_CONSUL_SERV complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_DATOS
+table:DM_PCSS_OWN.PCSS_SOL_DATOS
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_DATOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_HIST_CALCULOS
+table:DM_PCSS_OWN.PCSS_SOL_HIST_CALCULOS
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_HIST_CALCULOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOLICITUD
+table:DM_PCSS_OWN.PCSS_SOLICITUD
+Subset computation for table DM_PCSS_OWN.PCSS_SOLICITUD complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_INDEBIDOS
+table:DM_PCSS_OWN.PCSS_SOL_INDEBIDOS
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_INDEBIDOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_INGRESOS_UC
+table:DM_PCSS_OWN.PCSS_SOL_INGRESOS_UC
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_INGRESOS_UC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_MIEMBROS_UC
+table:DM_PCSS_OWN.PCSS_SOL_MIEMBROS_UC
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_MIEMBROS_UC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_MOTPROP_INCI_LOG
+table:DM_PCSS_OWN.PCSS_SOL_MOTPROP_INCI_LOG
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_MOTPROP_INCI_LOG complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_MOT_PROPUESTA
+table:DM_PCSS_OWN.PCSS_SOL_MOT_PROPUESTA
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_MOT_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_NOTA
+table:DM_PCSS_OWN.PCSS_SOL_NOTA
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_NOTA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_PATRIMONIO_UC
+table:DM_PCSS_OWN.PCSS_SOL_PATRIMONIO_UC
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_PATRIMONIO_UC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_PRESTEC
+table:DM_PCSS_OWN.PCSS_SOL_PRESTEC
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_PRESTEC complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_REQUISITOS
+table:DM_PCSS_OWN.PCSS_SOL_REQUISITOS
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_REQUISITOS complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_RESOLUCION
+table:DM_PCSS_OWN.PCSS_SOL_RESOLUCION
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_RESOLUCION complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_REV
+table:DM_PCSS_OWN.PCSS_SOL_REV
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_REV complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SOL_TITULAR
+table:DM_PCSS_OWN.PCSS_SOL_TITULAR
+Subset computation for table DM_PCSS_OWN.PCSS_SOL_TITULAR complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SUBSANA
+table:DM_PCSS_OWN.PCSS_SUBSANA
+Subset computation for table DM_PCSS_OWN.PCSS_SUBSANA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_SUBTIPO_MOTIVO
+table:DM_PCSS_OWN.PCSS_SUBTIPO_MOTIVO
+Subset computation for table DM_PCSS_OWN.PCSS_SUBTIPO_MOTIVO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_TIPO_DOCUMENTO
+table:DM_PCSS_OWN.PCSS_TIPO_DOCUMENTO
+Subset computation for table DM_PCSS_OWN.PCSS_TIPO_DOCUMENTO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_TIPOID
+table:DM_PCSS_OWN.PCSS_TIPOID
+Subset computation for table DM_PCSS_OWN.PCSS_TIPOID complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_TIPOINGRESO
+table:DM_PCSS_OWN.PCSS_TIPOINGRESO
+Subset computation for table DM_PCSS_OWN.PCSS_TIPOINGRESO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_TIPOPATRIMONIO
+table:DM_PCSS_OWN.PCSS_TIPOPATRIMONIO
+Subset computation for table DM_PCSS_OWN.PCSS_TIPOPATRIMONIO complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_TIPO_PROPUESTA
+table:DM_PCSS_OWN.PCSS_TIPO_PROPUESTA
+Subset computation for table DM_PCSS_OWN.PCSS_TIPO_PROPUESTA complete
+Beginning subset computation for table DM_PCSS_OWN.PCSS_TIPO_SOLICITUD
+table:DM_PCSS_OWN.PCSS_TIPO_SOLICITUD
+Subset computation for table DM_PCSS_OWN.PCSS_TIPO_SOLICITUD complete
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.44
+SP2-0311: cadena esperada pero no encontrada
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.00
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.01
+
+Tipo creado.
+
+Transcurrido: 00:00:00.04
+
+Paquete creado.
+
+Transcurrido: 00:00:00.04
+
+Cuerpo del paquete creado.
+
+Transcurrido: 00:00:00.14
+
+Tipo creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.04
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.04
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento creado.
+
+Transcurrido: 00:00:00.02
+
+Sesion modificada.
+
+Transcurrido: 00:00:00.00
+
+Sesion modificada.
+
+Transcurrido: 00:00:00.00
+
+Sesion modificada.
+
+Transcurrido: 00:00:00.00
+
+Sesion modificada.
+
+Transcurrido: 00:00:00.00
+-- *** There are WARNINGS in the script. ***
+-- Review the Impact Report.
+--
+--   Target database:	presocsa.aragon.local_presocsa2
+--   Script generated at:	20-JAN-2026   11:38
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+Starting Data Masking
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+USER es "ASTSYSADMIN"
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+DROP TABLE "MGMT_DM_TT_856" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "APE2" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    execut
+e immediate 'create table MGMT_DM_TT_856
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(40 CHAR))
+orig_val, CAST(null AS VARCHAR2(40 CHAR
+)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from dual
+union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(40 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMBER
+) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "APE2" orig_val,
+astsysadmin.func_dm_enmascara_nombre("APE2") new_val ,rowid  rid,
+        case
+
+when 1=1 t
+hen 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR" ) group
+by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not null)
+';
+
+DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_856"',
+estimate_percent=>DBMS_STATS.AUTO_S
+AMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.43
+DROP INDEX MGMT_DM_TT_856_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+CREATE  INDEX MGMT_DM_TT_856_IDX ON MGMT_DM_TT_856(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+DROP TABLE "MGMT_DM_TT_857" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "APE1" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    execut
+e immediate 'create table MGMT_DM_TT_857
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(40 CHAR))
+orig_val, CAST(null AS VARCHAR2(40 CHAR
+)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from dual
+union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(40 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMBER
+) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "APE1" orig_val,
+astsysadmin.func_dm_enmascara_nombre("APE1") new_val ,rowid  rid,
+        case
+
+when 1=1 t
+hen 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR" ) group
+by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not null)
+';
+
+DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_857"',
+estimate_percent=>DBMS_STATS.AUTO_S
+AMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.15
+DROP INDEX MGMT_DM_TT_857_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+CREATE  INDEX MGMT_DM_TT_857_IDX ON MGMT_DM_TT_857(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.02
+DROP TABLE "MGMT_DM_TT_858" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "DOMICILIO" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    e
+xecute immediate 'create table MGMT_DM_TT_858
+        (orig_val null, new_val
+null, delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(150
+CHAR)) orig_val, CAST(null AS VARCHAR2(1
+50 CHAR)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id
+from dual union all
+     select s.orig_val,
+    case
+        when s.subset = 1
+then
+        CAST(
+        s.new_val
+         AS VARCHAR2(150 CHAR))
+    end
+new_val,
+
+    CAST(0 a
+s NUMBER) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val,
+new_val, min(subset) subset, min(rid) rid             from (select "DOMICILIO"
+orig_val, astsysadmin.func_dm_enmascara_nombre("DOMICILIO") new_val ,rowid
+rid,
+        case
+
+when 1=1 then 1
+        end
+  subset
+        from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR" ) group by orig_val , subset, new_val ) s
+
+where  1=1 and ( s.orig_val is not null)
+';
+
+DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_858"', estimate_percent=
+>DBMS_STATS.AUTO_SAMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.17
+DROP INDEX MGMT_DM_TT_858_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+CREATE  INDEX MGMT_DM_TT_858_IDX ON MGMT_DM_TT_858(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+DROP TABLE "MGMT_DM_TT_859" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "CUENTA" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    exec
+ute immediate 'create table MGMT_DM_TT_859
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(10 CHAR))
+orig_val, CAST(null AS VARCHAR2(10 CH
+AR)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from
+dual union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(10 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMB
+ER) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "CUENTA" orig_val,
+astsysadmin.func_dm_enmascara_iban("CUENTA") new_val ,rowid  rid,
+        case
+
+when 1
+=1 then 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR" )
+group by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not
+null)
+';
+    DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_859"',
+estimate_percent=>DBMS_STATS.AU
+TO_SAMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.10
+DROP INDEX MGMT_DM_TT_859_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+CREATE  INDEX MGMT_DM_TT_859_IDX ON MGMT_DM_TT_859(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+DROP TABLE "MGMT_DM_TT_860" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "NIFNIE" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    exec
+ute immediate 'create table MGMT_DM_TT_860
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(20 CHAR))
+orig_val, CAST(null AS VARCHAR2(20 CH
+AR)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from
+dual union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(20 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMB
+ER) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "NIFNIE" orig_val,
+astsysadmin.func_dm_enmascara_nif("NIFNIE") new_val ,rowid  rid,
+        case
+
+when 1=
+1 then 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR" )
+group by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not
+null)
+';
+    DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_860"',
+estimate_percent=>DBMS_STATS.AUT
+O_SAMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.22
+DROP INDEX MGMT_DM_TT_860_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+CREATE  INDEX MGMT_DM_TT_860_IDX ON MGMT_DM_TT_860(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.04
+DROP TABLE "MGMT_DM_TT_861" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "TELEF2" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 2, 0);
+    exec
+ute immediate 'create table MGMT_DM_TT_861
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(20 CHAR))
+orig_val, CAST(null AS VARCHAR2(20 CH
+AR)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from
+dual union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(20 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMB
+ER) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "TELEF2" orig_val,
+astsysadmin.func_dm_enmascara_telefono("TELEF2") new_val ,rowid  rid,
+
+case
+            wh
+en 1=1 then 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR"
+) group by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not
+null)
+';
+    DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_861"',
+estimate_percent=>DBMS_STAT
+S.AUTO_SAMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.09
+DROP INDEX MGMT_DM_TT_861_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+CREATE  INDEX MGMT_DM_TT_861_IDX ON MGMT_DM_TT_861(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+DROP TABLE "MGMT_DM_TT_862" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "TELEF1" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    exec
+ute immediate 'create table MGMT_DM_TT_862
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(20 CHAR))
+orig_val, CAST(null AS VARCHAR2(20 CH
+AR)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from
+dual union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(20 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMB
+ER) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "TELEF1" orig_val,
+astsysadmin.func_dm_enmascara_telefono("TELEF1") new_val ,rowid  rid,
+
+case
+            wh
+en 1=1 then 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR"
+) group by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not
+null)
+';
+    DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_862"',
+estimate_percent=>DBMS_STAT
+S.AUTO_SAMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.16
+DROP INDEX MGMT_DM_TT_862_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+CREATE  INDEX MGMT_DM_TT_862_IDX ON MGMT_DM_TT_862(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.03
+DROP TABLE "MGMT_DM_TT_863" PURGE
+Table or view already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+declare
+    adj number:=0;
+    num number:=0;
+    numd number:=0;
+begin
+
+select count(*) into adj from (select distinct "NOMBRE" from
+"DM_PCSS_OWN"."PCSS_SOL_TITULAR");
+    numd:= adj;
+    num := length(adj-1);
+
+adj := greatest(num - 3, 0);
+    exec
+ute immediate 'create table MGMT_DM_TT_863
+        (orig_val null, new_val null,
+delete_val null, row_id null ) NOLOGGING   PARALLEL '||
+mgmt$mask_util.get_tbps_clause ||' as
+    select CAST(null AS VARCHAR2(60 CHAR))
+orig_val, CAST(null AS VARCHAR2(60 CH
+AR)) new_val, CAST(0 AS NUMBER) delete_val, CAST(null AS ROWID) row_id  from
+dual union all
+     select s.orig_val,
+    case
+        when s.subset = 1 then
+
+CAST(
+        s.new_val
+         AS VARCHAR2(60 CHAR))
+    end new_val,
+
+
+CAST(0 as NUMB
+ER) delete_val
+, CAST(s.rid AS ROWID) row_id
+    from (select orig_val, new_val,
+min(subset) subset, min(rid) rid             from (select "NOMBRE" orig_val,
+astsysadmin.func_dm_enmascara_nombre("NOMBRE") new_val ,rowid  rid,
+
+case
+            when
+1=1 then 1
+        end
+  subset
+        from "DM_PCSS_OWN"."PCSS_SOL_TITULAR" )
+group by orig_val , subset, new_val ) s
+ where  1=1 and ( s.orig_val is not
+null)
+';
+    DBMS_STATS.GATHER_TABLE_STATS(NULL, '"MGMT_DM_TT_863"',
+estimate_percent=>DBMS_STATS.
+AUTO_SAMPLE_SIZE, degree=>DBMS_STATS.DEFAULT_DEGREE);
+end;
+
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.12
+DROP INDEX MGMT_DM_TT_863_IDX
+Index already dropped, continuing
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+CREATE  INDEX MGMT_DM_TT_863_IDX ON MGMT_DM_TT_863(orig_val) NOLOGGING  PARALLEL
+PCTFREE 0
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.02
+alter system flush shared_pool
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:02.43
+alter system checkpoint
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:01.27
+BEGIN SYS.UTL_RECOMP.RECOMP_SERIAL(); END;
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:14.83
+Completed Data Masking. Starting cleanup phase.
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+Starting cleanup of recovery tables
+Completed cleanup of recovery tables
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+Starting cleanup of generated procedures
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.09
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.03
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.01
+
+Procedimiento borrado.
+
+Transcurrido: 00:00:00.02
+Completed cleanup of generated procedures
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+Script execution complete
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.00
+
+Tabla creada.
+
+Transcurrido: 00:00:00.08
+
+1 fila creada.
+
+Transcurrido: 00:00:00.03
+
+1 fila creada.
+
+Transcurrido: 00:00:00.01
+
+1 fila creada.
+
+Transcurrido: 00:00:00.00
+
+1 fila creada.
+
+Transcurrido: 00:00:00.00
+
+1 fila creada.
+
+Transcurrido: 00:00:00.00
+
+1 fila creada.
+
+Transcurrido: 00:00:00.00
+
+1 fila creada.
+
+Transcurrido: 00:00:00.00
+
+1 fila creada.
+
+Transcurrido: 00:00:00.00
+
+Paquete creado.
+
+Transcurrido: 00:00:00.03
+
+Cuerpo del paquete creado.
+
+Transcurrido: 00:00:00.02
+begin
+*
+ERROR en linea 1:
+ORA-06531: Referencia a una recopilacion no inicializada
+ORA-06512: en "ASTSYSADMIN.DBMS_DSM_DSG", linea 3691
+ORA-06550: linea 1, columna 7:
+PLS-00306: numero o tipos de argumentos erroneos al llamar a 'DATA_REMAP'
+ORA-06550: linea 1, columna 7:
+PL/SQL: Statement ignored
+ORA-06512: en "ASTSYSADMIN.DBMS_DSM_DSG", linea 3709
+ORA-06512: en linea 2
+
+
+Transcurrido: 00:00:03.96
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.55
+Dropping subset graph from target
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:01.21
+
+Procedimiento PL/SQL terminado correctamente.
+
+Transcurrido: 00:00:00.01
+SQL>                    exit;

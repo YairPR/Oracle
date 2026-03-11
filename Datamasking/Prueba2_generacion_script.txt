@@ -1,0 +1,68 @@
+Processing Job for method: exportDump
+Preparing graph objects.
+Adding DM_PCSS_OWN, DM_PCSS_OWN to application schema map.
+Starting clob creation for graph objects data.
+Clob updated in object.
+DM ID: 48D041EB28DC7786E0631A021BACD1A1
+Inline mask script created with additional information.
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html;"><META NAME="Author" CONTENT="TurboReorg Translator"><META NAME="GENERATOR" CONTENT="Oracle Reorganize Object Wizard"><TITLE>test</TITLE></HEAD><BODY><H2>IMPACT REPORT</H2>
+<H3><a NAME="plan_gen_summary"></a>Script Generation Summary</H3>
+<HR WIDTH="100%"><TABLE COLS=2 WIDTH="100%" summary="" ><TR><TD>Target:</TD><TD>presocsa.aragon.local_presocsa2</TD></TR>
+<TR><TD>Most Serious Message Level:</TD><TD>WARNING</TD></TR>
+<TR><TD>Generation Started:</TD><TD>20-JAN-2026   11:38</TD></TR>
+<TR><TD>Generation Completed:</TD><TD>20-JAN-2026   11:38</TD></TR>
+</TABLE>
+<P>
+<H3><a NAME="script_gen"></a>Script Generation Warnings and Errors</H3>
+<HR WIDTH="100%">The following table summarizes any warnings and errors that were detected during script generation.<P>
+<TABLE COLS=3 WIDTH="100%" summary="The following table summarizes any warnings and errors that were detected during script generation." ><TR><TH ALIGN=left>Object Type</TH><TH ALIGN=left>Object Name</TH><TH ALIGN=left>Notes</TH></TR>
+<TR><TD COLSPAN ="3"><HR WIDTH="100%"></TD></TR>
+<TR><TD>TABLESPACE</TD><TD>ASTSYSADMIN</TD><TD>INFORMATION: Plan</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Sufficient free space in Tablespace ASTSYSADMIN. 
+Starting Freespace with automatic extension: 1044522MB.
+Ending Freespace: 1044521MB.
+Lowest Freespace: 1044521MB.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2"></TD></TR>
+<TR></TR>
+<TR><TD>TABLESPACE</TD><TD>TEMP01</TD><TD>INFORMATION: Plan</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Sufficient free space in Tablespace TEMP01. 
+Starting Freespace with automatic extension: 13MB.
+Ending Freespace: 12MB.
+Lowest Freespace: 12MB.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2"></TD></TR>
+<TR></TR>
+<TR><TD>TABLESPACE</TD><TD>TEMP02</TD><TD>INFORMATION: Plan</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Sufficient free space in Tablespace TEMP02. 
+Starting Freespace with automatic extension: 33MB.
+Ending Freespace: 32MB.
+Lowest Freespace: 32MB.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2"></TD></TR>
+<TR></TR>
+<TR><TD>TABLESPACE</TD><TD>TEMP03</TD><TD>INFORMATION: Plan</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Sufficient free space in Tablespace TEMP03. 
+Starting Freespace with automatic extension: 73MB.
+Ending Freespace: 72MB.
+Lowest Freespace: 72MB.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2"></TD></TR>
+<TR></TR>
+<TR><TD>TABLESPACE</TD><TD>TEMP04</TD><TD>INFORMATION: Plan</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Sufficient free space in Tablespace TEMP04. 
+Starting Freespace with automatic extension: 74MB.
+Ending Freespace: 73MB.
+Lowest Freespace: 73MB.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2"></TD></TR>
+<TR></TR>
+<TR><TD><FONT COLOR="#3366FF">USER</FONT></TD><TD><FONT COLOR="#3366FF">ASTSYSADMIN</FONT></TD><TD><FONT COLOR="#3366FF">WARNING: Plan</FONT></TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">UTL_RECOMP package not available for this user.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Grant execute on UTL_RECOMP package to this user or login as a SYSDBA user.</TD></TR>
+<TR></TR>
+<TR><TD> </TD><TD> </TD><TD>INFORMATION: Plan</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2">Sufficient tablespace quota for User ASTSYSADMIN.</TD></TR>
+<TR><TD> </TD><TD COLSPAN ="2"></TD></TR>
+<TR></TR>
+<TR><TD COLSPAN ="4"><HR WIDTH="100%"></TD></TR>
+</TABLE>
+</BODY></HTML>
+
+Generated Scripts. Copying them to masking repository.
+Removed the dump definition. 
