@@ -1,5 +1,11 @@
 Rem pkg_dm_func_mask.sql
 Rem
+Rem Este paquete implementa las funciones deterministas de enmascaramiento
+Rem utilizadas por el motor de masking de datos sensibles.
+Rem Cada función transforma un valor original en un valor ficticio,
+Rem consistente y reutilizable dentro del proceso.
+Rem
+Rem
 Rem    NOMBRE
 Rem      pkg_dm_func_mask.sql - Funciones deterministas de enmascaramiento
 Rem
@@ -114,63 +120,22 @@ Rem                           Alineado con columnas CUENTA, CCC e IBAN
 Rem
 Rem    epurisaca    03/24/26 - Revisión funcional completa del paquete
 Rem                           Alineado con masking determinista productivo
-Rem    epurisaca    04/21/26 - Se modificó el spec para la funcion 
-Rem                           func_especial_% y evitar el ORA-00904 durante el proceso
 
 
-
-create or replace PACKAGE pkg_dm_func_mask AS
-
-  FUNCTION func_nombre(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_direccion(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_telefono(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_email(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_nif(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_iban(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_cuenta(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_obs(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
+create or replace PACKAGE pkg_dm_func_mask AUTHID DEFINER AS
+  FUNCTION func_nombre(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
+  FUNCTION func_direccion(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
+  FUNCTION func_obs(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
+  FUNCTION func_telefono(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
+  FUNCTION func_email(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
+  FUNCTION func_nif(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;      -- DNI/NIE/CIF
+  FUNCTION func_cuenta(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;   -- 20
+  FUNCTION func_iban(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;     -- ES + 22
 
   FUNCTION func_generico(
     p_identificador IN VARCHAR2,
     p_valor         IN VARCHAR2
   ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_especial_doc_segun_tipo(
-    p_documento       IN VARCHAR2,
-    p_idtipodocumento IN NUMBER
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_especial_doc_keep_ends(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_especial_iban_continuo(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
 END pkg_dm_func_mask;
 /
 
