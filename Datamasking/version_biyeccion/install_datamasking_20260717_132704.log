@@ -1,0 +1,948 @@
+
+Grant succeeded.
+
+
+PL/SQL procedure successfully completed.
+
+
+Session altered.
+
+CREATE TABLE tdm_ejecucion (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejecucion_01 ON tdm_ejecucion (esquema_objetivo, fecha_inicio) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejecucion_02 ON tdm_ejecucion (fase_proceso, estado) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE UNIQUE INDEX uq_tdm_ejec_esq_activo ON tdm_ejecucion (CASE WHEN estado = 'EJECUTANDO' THEN esquema_objetivo ELSE NULL END) tablespace ASTSYSADMIN
+                    *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Session altered.
+
+
+Table created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_mask_solicitud (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_sol_01 ON tdm_mask_solicitud (ejecucion_id, estado) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_sol_02 ON tdm_mask_solicitud (esquema_objetivo, fecha_inicio) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Table altered.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+Semilla PEPPER_MASK generada (aleatoria). NO se muestra por seguridad.
+
+PL/SQL procedure successfully completed.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row updated.
+
+
+1 row updated.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row updated.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+Commit complete.
+
+
+Package created.
+
+
+Package body created.
+
+
+Package created.
+
+
+Package body created.
+
+
+Package created.
+
+
+Package body created.
+
+No errors.
+No errors.
+No errors.
+No errors.
+No errors.
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
