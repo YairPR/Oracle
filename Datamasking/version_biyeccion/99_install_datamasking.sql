@@ -27,6 +27,7 @@ Rem 1.1 PRIVILEGIOS DE SISTEMA PARA ASTSYSADMIN
 Rem ----------------------------------------------------------------
 
 grant select any dictionary to ASTSYSADMIN;
+grant execute on SYS.DBMS_CRYPTO to ASTSYSADMIN;
 
 Rem
 Rem ----------------------------------------------------------------

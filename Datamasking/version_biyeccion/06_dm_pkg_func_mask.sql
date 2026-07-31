@@ -179,6 +179,7 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
   c_max_txt CONSTANT PLS_INTEGER := 1000;
 
   g_pepper VARCHAR2(128);
+  g_pepper_raw RAW(128);
 
   FUNCTION f_get_pepper RETURN VARCHAR2 IS
   BEGIN
@@ -192,18 +193,57 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
         'PEPPER_MASK no registrado en tdm_secreto. Abortado: enmascarar sin pepper es inseguro y no reproducible.');
   END;
 
-  FUNCTION f_map_bijective(p_val NUMBER, p_mod NUMBER) RETURN NUMBER IS
-    l_seed NUMBER;
-    l_a    NUMBER;
-    l_c    NUMBER;
+  FUNCTION f_key_raw RETURN RAW IS
   BEGIN
-    l_seed := ABS(DBMS_UTILITY.GET_HASH_VALUE(f_get_pepper, 1, 2147483646));
-    l_a := l_seed * 2 + 1;
-    IF MOD(l_a, 5) = 0 THEN
-      l_a := l_a + 2;
+    IF g_pepper_raw IS NULL THEN
+      g_pepper_raw := UTL_RAW.CAST_TO_RAW(f_get_pepper);
     END IF;
-    l_c := ABS(DBMS_UTILITY.GET_HASH_VALUE(f_get_pepper || '_c', 1, 2147483646));
-    RETURN MOD(p_val * l_a + l_c, p_mod);
+    RETURN g_pepper_raw;
+  END;
+
+  -- PRF pseudoaleatoria con clave: HMAC-SHA1(pepper, ronda||dato) -> NUMBER
+  FUNCTION f_prf(p_round PLS_INTEGER, p_data NUMBER) RETURN NUMBER IS
+    l_mac RAW(20);
+  BEGIN
+    l_mac := DBMS_CRYPTO.MAC(
+               UTL_RAW.CAST_TO_RAW(p_round||':'||TO_CHAR(p_data)),
+               DBMS_CRYPTO.HMAC_SH1,        -- 11g-safe
+               f_key_raw);
+    -- 14 hex (56 bits) -> NUMBER; suficiente para reducir mod 10^h (h<=10)
+    RETURN TO_NUMBER(SUBSTR(RAWTOHEX(l_mac),1,14), 'XXXXXXXXXXXXXX');
+  END;
+
+  FUNCTION f_map_bijective(p_val NUMBER, p_mod NUMBER) RETURN NUMBER IS
+    c_rounds CONSTANT PLS_INTEGER := 4;   -- Optimizado a 4 rondas (mínimo seguro Luby-Rackoff) para rendimiento
+    l_k   PLS_INTEGER;
+    l_h   PLS_INTEGER;
+    l_hi  NUMBER;      -- 10^h  (tamaño de cada mitad)
+    l_x   NUMBER;
+    l_l   NUMBER;
+    l_r   NUMBER;
+    l_t   NUMBER;
+  BEGIN
+    IF p_val IS NULL OR p_mod IS NULL OR p_mod <= 1 THEN
+      RETURN p_val;
+    END IF;
+    l_k  := LENGTH(TO_CHAR(p_mod - 1));   -- nº de dígitos para representar [0, p_mod)
+    l_h  := CEIL(l_k/2);
+    l_hi := POWER(10, l_h);               -- dominio externo = l_hi*l_hi = 10^(2h) >= p_mod
+    l_x  := MOD(ABS(p_val), p_mod);       -- normalizar al rango
+
+    LOOP                                   -- cycle-walking: repite hasta caer en [0, p_mod)
+      l_l := TRUNC(l_x / l_hi);
+      l_r := MOD(l_x, l_hi);
+      FOR i IN 1..c_rounds LOOP            -- red Feistel balanceada
+        l_t := MOD(l_l + f_prf(i, l_r), l_hi);
+        l_l := l_r;
+        l_r := l_t;
+      END LOOP;
+      l_x := l_l * l_hi + l_r;             -- resultado en [0, 10^(2h))
+      EXIT WHEN l_x < p_mod;              -- dentro de rango -> biyectivo sobre [0, p_mod)
+    END LOOP;
+
+    RETURN l_x;
   END;
 
   FUNCTION f_hash(p_txt VARCHAR2) RETURN NUMBER IS
