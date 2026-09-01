@@ -1,0 +1,338 @@
+eypurisaca@BOV-WDRAC0304.PROAGMA>
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine object_to_find
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine owner_to_find
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine output_method
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine file_name
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine output_dir
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine skip_user
+eypurisaca@BOV-WDRAC0304.PROAGMA>undefine user_to_skip
+eypurisaca@BOV-WDRAC0304.PROAGMA>
+eypurisaca@BOV-WDRAC0304.PROAGMA>set feed off
+eypurisaca@BOV-WDRAC0304.PROAGMA>col system_date  noprint new_value val_system_date
+eypurisaca@BOV-WDRAC0304.PROAGMA>select to_char(sysdate,'Dy Mon dd hh24:mi:ss yyyy') system_date from sys.dual;
+
+
+
+eypurisaca@BOV-WDRAC0304.PROAGMA>
+eypurisaca@BOV-WDRAC0304.PROAGMA>prompt who_can_access: Release 1.0.3.0.0 - Production on &val_system_date
+who_can_access: Release 1.0.3.0.0 - Production on Jue Jun 11 12:10:06 2026
+eypurisaca@BOV-WDRAC0304.PROAGMA>prompt Copyright (c) 2004 PeteFinnigan.com Limited. All rights reserved.
+Copyright (c) 2004 PeteFinnigan.com Limited. All rights reserved.
+eypurisaca@BOV-WDRAC0304.PROAGMA>set feed on
+eypurisaca@BOV-WDRAC0304.PROAGMA>prompt
+
+eypurisaca@BOV-WDRAC0304.PROAGMA>accept object_to_find char prompt 'NAME OF OBJECT TO CHECK       [USER_OBJECTS]: ' default USER_OBJECTS
+NAME OF OBJECT TO CHECK       [USER_OBJECTS]: accept owner_to_find char prompt  'OWNER OF THE OBJECT TO CHECK          [USER]: ' default USER
+eypurisaca@BOV-WDRAC0304.PROAGMA>accept output_method char prompt  'OUTPUT METHOD Screen/File                [S]: ' default S
+OUTPUT METHOD Screen/File                [S]: accept file_name char prompt      'FILE NAME FOR OUTPUT              [priv.lst]: ' default priv.lst
+eypurisaca@BOV-WDRAC0304.PROAGMA>accept output_dir char prompt     'OUTPUT DIRECTORY [DIRECTORY  or file (/tmp)]: ' default /tmp
+OUTPUT DIRECTORY [DIRECTORY  or file (/tmp)]: accept skip_user char prompt      'EXCLUDE CERTAIN USERS                    [N]: ' default N
+eypurisaca@BOV-WDRAC0304.PROAGMA>accept user_to_skip char prompt   'USER TO SKIP                         [TEST%]: ' default TEST%
+USER TO SKIP                         [TEST%]: prompt 
+eypurisaca@BOV-WDRAC0304.PROAGMA>declare
+  2      --
+  3      lg_fptr utl_file.file_type;
+  4      lv_file_or_screen varchar2(1):='S';
+  5      --
+  6      procedure open_file (pv_file_name in varchar2,
+  7              pv_dir_name in varchar2) is
+  8      begin
+  9          lg_fptr:=utl_file.fopen(pv_dir_name,pv_file_name,'A');
+ 10      exception
+ 11          when utl_file.invalid_path  then
+ 12              dbms_output.put_line('invalid path');
+ 13          when utl_file.invalid_mode  then
+ 14              dbms_output.put_line('invalid mode');
+ 15          when utl_file.invalid_filehandle  then
+ 16              dbms_output.put_line('invalid filehandle');
+ 17          when utl_file.invalid_operation  then
+ 18              dbms_output.put_line('invalid operation');
+ 19          when utl_file.read_error  then
+ 20              dbms_output.put_line('read error');
+ 21          when utl_file.write_error  then
+ 22              dbms_output.put_line('write error');
+ 23          when utl_file.internal_error  then
+ 24              dbms_output.put_line('internal error');
+ 25          when others then
+ 26              dbms_output.put_line('ERROR (open_file) => '||sqlcode);
+ 27              dbms_output.put_line('MSG (open_file) => '||sqlerrm);
+ 28  
+ 29      end open_file;
+ 30      --
+ 31      procedure close_file is
+ 32      begin
+ 33          utl_file.fclose(lg_fptr);
+ 34      exception
+ 35          when utl_file.invalid_path  then
+ 36              dbms_output.put_line('invalid path');
+ 37          when utl_file.invalid_mode  then
+ 38              dbms_output.put_line('invalid mode');
+ 39          when utl_file.invalid_filehandle  then
+ 40              dbms_output.put_line('invalid filehandle');
+ 41          when utl_file.invalid_operation  then
+ 42              dbms_output.put_line('invalid operation');
+ 43          when utl_file.read_error  then
+ 44              dbms_output.put_line('read error');
+ 45          when utl_file.write_error  then
+ 46              dbms_output.put_line('write error');
+ 47          when utl_file.internal_error  then
+ 48              dbms_output.put_line('internal error');
+ 49          when others then
+ 50              dbms_output.put_line('ERROR (close_file) => '||sqlcode);
+ 51              dbms_output.put_line('MSG (close_file) => '||sqlerrm);
+ 52  
+ 53      end close_file;
+ 54      --
+ 55      procedure write_op (pv_str in varchar2) is
+ 56      begin
+ 57          if lv_file_or_screen='S' then
+ 58              dbms_output.put_line(pv_str);
+ 59          else
+ 60              utl_file.put_line(lg_fptr,pv_str);
+ 61          end if;
+ 62      exception
+ 63          when utl_file.invalid_path  then
+ 64              dbms_output.put_line('invalid path');
+ 65          when utl_file.invalid_mode  then
+ 66              dbms_output.put_line('invalid mode');
+ 67          when utl_file.invalid_filehandle  then
+ 68              dbms_output.put_line('invalid filehandle');
+ 69          when utl_file.invalid_operation  then
+ 70              dbms_output.put_line('invalid operation');
+ 71          when utl_file.read_error  then
+ 72              dbms_output.put_line('read error');
+ 73          when utl_file.write_error  then
+ 74              dbms_output.put_line('write error');
+ 75          when utl_file.internal_error  then
+ 76              dbms_output.put_line('internal error');
+ 77          when others then
+ 78              dbms_output.put_line('ERROR (write_op) => '||sqlcode);
+ 79              dbms_output.put_line('MSG (write_op) => '||sqlerrm);
+ 80  
+ 81      end write_op;
+ 82      --
+ 83      function user_or_role(pv_grantee in dba_users.username%type)
+ 84      return varchar2 is
+ 85          --
+ 86          cursor c_use (cp_grantee in dba_users.username%type) is
+ 87          select  'USER' userrole
+ 88          from    dba_users u
+ 89          where   u.username=cp_grantee
+ 90          union
+ 91          select  'ROLE' userrole
+ 92          from    dba_roles r
+ 93          where   r.role=cp_grantee;
+ 94          --
+ 95          lv_use c_use%rowtype;
+ 96      begin
+ 97          open c_use(pv_grantee);
+ 98          fetch c_use into lv_use;
+ 99          close c_use;
+100          return lv_use.userrole;
+101      exception
+102          when others then
+103              dbms_output.put_line('ERROR (user_or_role) => '||sqlcode);
+104              dbms_output.put_line('MSG (user_or_role) => '||sqlerrm);
+105      end user_or_role;
+106      --
+107      procedure get_obj (pv_object in varchar2,pv_owner in varchar2) is
+108          --
+109          cursor c_main (cp_object in varchar2,cp_owner in varchar2) is
+110  	select	g.name grantee,
+111  		decode(o.type#,2,'TABLE',
+112  				4,'VIEW',
+113  				6,'SEQUENCE',
+114  				7,'PROCEDURE',
+115  				8,'FUNCTION',
+116  				9,'PACKAGE',
+117  				13,'TYPE',
+118  				22,'LIBRARY',
+119  				23,'DIRECTORY',
+120  				24,'QUEUE',
+121  				29,'JAVA CLASS',
+122  				30,'JAVA RESOURCE',
+123  				32,'INDEXTYPE',
+124  				33,'OPERATOR',
+125  				48,'CONSUMER GROUP',
+126  				62,'EVALUATION CONTEXT',
+127  				'UNDEFINED') object_type,
+128  		t.name privilege,
+129  		decode(mod(a.option$,2),2,'YES','NO') grantable,
+130  		'--' column_name,
+131  		'TAB' coltype
+132  	from	sys.objauth$ a,
+133  		sys.obj$ o,
+134  		sys.user$ u,
+135  		sys.user$ g,
+136  		sys.table_privilege_map t
+137  	where	a.obj#=o.obj#
+138  	and	a.grantee#=g.user#
+139  	and	a.col# is null
+140  	and	a.privilege#=t.privilege
+141  	and	u.user#=o.owner#
+142  	and	u.name=cp_owner
+143  	and	o.name=cp_object
+144  	union
+145  	select	g.name grantee,
+146  		decode(o.type#,2,'TABLE',
+147  				4,'VIEW',
+148  				6,'SEQUENCE',
+149  				7,'PROCEDURE',
+150  				8,'FUNCTION',
+151  				9,'PACKAGE',
+152  				13,'TYPE',
+153  				22,'LIBRARY',
+154  				23,'DIRECTORY',
+155  				24,'QUEUE',
+156  				29,'JAVA CLASS',
+157  				30,'JAVA RESOURCE',
+158  				32,'INDEXTYPE',
+159  				33,'OPERATOR',
+160  				48,'CONSUMER GROUP',
+161  				62,'EVALUATION CONTEXT',
+162  				'UNDEFINED') object_type,
+163  		t.name privilege,
+164  		decode(mod(a.option$,2),2,'YES','NO') grantable,
+165  		c.name column_name,
+166  		'COL' coltype
+167  	from	sys.objauth$ a,
+168  		sys.obj$ o,
+169  		sys.user$ u,
+170  		sys.user$ g,
+171  		sys.col$ c,
+172  		sys.table_privilege_map t
+173  	where	a.obj#=o.obj#
+174  	and	a.grantee#=g.user#
+175  	and	a.col#=c.col#
+176  	and	bitand(c.property,32)=0
+177  	and	a.col# is not null
+178  	and	a.privilege#=t.privilege
+179  	and	u.user#=o.owner#
+180  	and	u.name=cp_owner
+181  	and	o.name=cp_object
+182          order by 2,3,6;
+183          --
+184          lv_old_type dba_objects.object_type%type:='NOTSET';
+185          lv_old_priv dba_tab_privs.privilege%type:='NOTSET';
+186          --
+187          lv_userrole dba_users.username%type;
+188          lv_tabstop number;
+189          --
+190          procedure get_users(pv_grantee in dba_roles.role%type,pv_tabstop in out number) is
+191              --
+192              lv_tab varchar2(50):='';
+193              lv_loop number;
+194              lv_user_or_role dba_users.username%type;
+195              --
+196              cursor c_user (cp_username in dba_role_privs.grantee%type) is
+197              select  r.grantee,
+198                      r.admin_option
+199              from    dba_role_privs r
+200              where   r.granted_role=cp_username;
+201              --
+202          begin
+203              pv_tabstop:=pv_tabstop+1;
+204              for lv_loop in 1..pv_tabstop loop
+205                  lv_tab:=lv_tab||chr(9);
+206              end loop;
+207  
+208              for lv_user in c_user(pv_grantee) loop
+209                  lv_user_or_role:=user_or_role(lv_user.grantee);
+210                  if lv_user_or_role = 'ROLE' then
+211  	            if lv_user.grantee = 'PUBLIC' then
+212         			write_op(lv_tab||'Role => '||lv_user.grantee
+213         				||' (ADM = '||lv_user.admin_option||')');
+214              	    else
+215         			write_op(lv_tab||'Role => '||lv_user.grantee
+216         				||' (ADM = '||lv_user.admin_option||')'
+217         				||' which is granted to =>');
+218              	    end if;
+219                      get_users(lv_user.grantee,pv_tabstop);
+220                  else
+221                      if upper('&&skip_user') = 'Y' and lv_user.grantee like upper('&&user_to_skip') then
+222                      	null;
+223                      else
+224  	               	    write_op(lv_tab||'User => '||lv_user.grantee
+225  	                		||' (ADM = '||lv_user.admin_option||')');
+226  		    end if;
+227                  end if;
+228              end loop;
+229              pv_tabstop:=pv_tabstop-1;
+230              lv_tab:='';
+231          exception
+232              when others then
+233                  dbms_output.put_line('ERROR (get_users) => '||sqlcode);
+234                  dbms_output.put_line('MSG (get_users) => '||sqlerrm);
+235          end get_users;
+236          --
+237      begin
+238          write_op(chr(10));
+239          lv_tabstop:=1;
+240          for lv_main in c_main(pv_object,pv_owner) loop
+241              if (lv_old_type != lv_main.object_type)  then
+242                  write_op('Object type is => '||lv_main.object_type||' ('||lv_main.coltype||') ');
+243              end if;
+244              if (lv_old_priv != lv_main.privilege) or (lv_old_type != lv_main.object_type) then
+245                  write_op(chr(9)||'Privilege => '||lv_main.privilege||' is granted to =>');
+246              end if;
+247              lv_userrole:=user_or_role(lv_main.grantee);
+248              if lv_userrole='USER' then
+249                 	if upper('&&skip_user') = 'Y' and lv_main.grantee like upper('&&user_to_skip') then
+250                      null;
+251                 	else
+252  	            write_op(chr(9)||'User => '||lv_main.grantee
+253                                 ||' (ADM = '||lv_main.grantable||')');
+254                  end if;
+255              else
+256              	if lv_main.grantee='PUBLIC' then
+257              		write_op(chr(9)||'Role => '||lv_main.grantee
+258              				||' (ADM = '||lv_main.grantable||')');
+259              	else
+260              		write_op(chr(9)||'Role => '||lv_main.grantee
+261              				||' (ADM = '||lv_main.grantable||')'
+262              				||' which is granted to =>');
+263  
+264              	end if;
+265                  get_users(lv_main.grantee,lv_tabstop);
+266              end if;
+267              lv_old_type:=lv_main.object_type;
+268              lv_old_priv:=lv_main.privilege;
+269          end loop;
+270      exception
+271          when others then
+272              dbms_output.put_line('ERROR (get_obj) => '||sqlcode);
+273              dbms_output.put_line('MSG (get_obj) => '||sqlerrm);
+274      end get_obj;
+275  begin
+276      	lv_file_or_screen:= upper('&&output_method');
+277      	if lv_file_or_screen='F' then
+278  	        open_file('&&file_name','&&output_dir');
+279      	end if;
+280      	write_op('Checking object => '||upper('&&owner_to_find')||'.'||upper('&&object_to_find'));
+281      	write_op('====================================================================');
+282      	get_obj(upper('&&object_to_find'),upper('&&owner_to_find'));
+283      	if lv_file_or_screen='F' then
+284          	close_file;
+285      	end if;
+286  exception
+287      	when others then
+288          	dbms_output.put_line('ERROR (main) => '||sqlcode);
+289          	dbms_output.put_line('MSG (main) => '||sqlerrm);
+290  
+291  end;
+292  /
+Introduzca un valor para skip_user: 
+Introduzca un valor para file_name: prompt
+Introduzca un valor para owner_to_find: prompt For updates please visit http://www.petefinnigan.com/tools.htm
+    	lv_file_or_screen:= upper('accept file_name char prompt      'FILE NAME FOR OUTPUT              [priv.lst]: ' default priv.lst');
+    	                                                              *
+ERROR en linea 276:
+ORA-06550: linea 276, columna 68:
+PLS-00103: Se ha encontrado el simbolo "FILE" cuando se esperaba uno de los
+siguientes:
+) , * & = - + < / > at in is mod remainder not rem =>
+<an exponent (**)> <> or != or ~= >= <= <> and or default
+like like2 like4 likec as between from using || multiset
+member submultiset
+
+
