@@ -1,85 +1,148 @@
-# Motor de Data Masking Personalizado para Oracle
+# Motor Enmascaramiento Oracle
 
-Este repositorio contiene el código fuente y los scripts de despliegue del **Motor Nactivo de Enmascaramiento de Datos (Data Masking)** para bases de datos Oracle.
-
----
-
-## 🎯 ¿Por qué existe este motor?
-
-En cumplimiento con las normativas internacionales de protección de datos (como la **LOPD / RGPD**), las organizaciones tienen la obligación legal de proteger la Información de Identificación Personal (PII) de sus clientes y empleados. 
-
-Cuando los datos de producción se copian a entornos no productivos (Desarrollo, QA, Staging o Pruebas), existe un riesgo crítico de fuga de información si esta no es anonimizada.
-
-### Desafío y Solución
-Las herramientas tradicionales del mercado (como *Oracle Enterprise Manager Data Masking Pack*) requieren licenciamiento de coste elevado y arquitecturas complejas de configurar. 
-
-Este motor fue diseñado como una **alternativa de alto rendimiento, nativa (PL/SQL) y de coste cero**, que se ejecuta directamente dentro del motor de base de datos Oracle, optimizando los tiempos de procesamiento y garantizando el cumplimiento normativo.
+Motor nativo PL/SQL de alto rendimiento para bases de datos **Oracle Enterprise Database**, diseñado y construido a partir de la ingeniería de funcionamiento interno del paquete **Oracle Enterprise Manager (OEM) / Oracle Cloud Control Data Masking and Subsetting Pack**.
 
 ---
 
-## 🚀 Características Principales
+## 🎯 Origen y Fundamento Técnico (Basado en OEM Cloud Control)
 
-El motor está estructurado en tres fases operativas completamente automatizadas:
+En las arquitecturas empresariales, **Oracle Cloud Control (OEM)** ejecuta el proceso de Data Masking mediante la generación e inyección automatizada de scripts dinámicos de control y grafos de dependencias:
 
-### 1. Descubrimiento Automático (`dm_descubre`)
-* Escanea el diccionario de datos de la base de datos objetivo.
-* Identifica de manera inteligente columnas candidatas a contener PII (DNI, NIE, CIF, Teléfonos, IBAN, Nombres, Direcciones) analizando los nombres de columnas, tipos de datos y comentarios.
-* Genera un catálogo unificado de reglas propuesto para revisión del DBA.
+* `dsg_exec_pkg.sql`: Paquete motor de ejecución de transformaciones.
+* `graph_tables.sql` & `graph_data.sql`: Mapeo del grafo de relaciones y jerarquías entre tablas.
+* `inline_mask.sql` & `mask_exec.sql`: Ejecución de algoritmos de transformación por lotes e inline.
+* `subset_pre_script.sql` & `subset_post_script.sql`: Desactivación y reactivación de restricciones, disparadores e índices.
+* `t_exec_params.lst` & `tdm_import.sql`: Parámetros de control e importación de reglas del catálogo.
+
+El **Motor Enmascaramiento Oracle** replica y optimiza este mismo flujo operativo en un entorno **autónomo y nativo PL/SQL** (desplegado sobre el esquema administrador `ASTSYSADMIN`). Ofrece una solución de **coste cero en licencias** (sin requerir *Oracle Advanced Security Option* ni licencias OEM por Core), ejecutable de forma transparente mediante `SQL*Plus`, tareas programadas o pipelines de CI/CD.
+
+---
+
+## 🧬 Evolución Arquitectónica: Los 3 Modelos del Motor
+
+Para lograr un motor técnicamente defendible, eficiente, seguro y capaz de propagar integridad referencial en bases de datos gigabyte/terabyte, la arquitectura evolucionó a través de **3 modelos bien definidos**:
+
+```
+ [ Modelo 1: Sin Biyección ]  ──►  [ Modelo 2: Biyección Afín ]  ──►  [ Modelo 3: Biyección Feistel (FPE) ]
+   (Hash Determinista OEM)          (Aritmética Modular 1:1)           (Red Feistel 4-Rondas + HMAC)
+   - Colisiona en UNIQUE            - Cero colisiones                  - Cero colisiones
+   - Requiere exclusiones           - Reversible por Known-Plaintext   - Irreversible (Criptográficamente seguro)
+```
+
+---
+
+### 1️⃣ Modelo 1: Versión Sin Biyección (`version_sin_biyeccion`)
+* **Mecanismo:** Inspirado en el enfoque estándar de hash con sal (*pepper*) de Cloud Control (`DBMS_UTILITY.GET_HASH_VALUE` / SHA-1 + `PEPPER_MASK`).
+* **Ventajas:** Implementación simple, determinista e irreversible de forma individual.
+* **Limitación Técnica:** Incurre en el **Principio del Cajón de Palomas (*Pigeonhole Principle*)**. Al reducir la entropía de salida sobre dominios finitos, genera **colisiones de datos en columnas con restricciones `UNIQUE`**, lo que obligaba a realizar exclusiones manuales o fallos en cargas masivas.
+
+---
+
+### 2️⃣ Modelo 2: Versión Biyección - Modelo Afín (`version_biyeccion/Modelo_Afin`)
+* **Mecanismo:** Introduce la **Transformación Afín Modular Biunívoca**:
+  $$f(x) = (a \cdot x + c) \pmod m$$
+  donde el multiplicador $a$ se fuerza a ser impar y no divisible por 5 ($\gcd(a, 10^k) = 1$).
+* **Ventajas:** **Cero colisiones garantizadas** (mapeo biyectivo 1:1) en restricciones `UNIQUE` y velocidad de ejecución ultra-rápida en CPU nativa.
+* **Limitación Técnica:** Es una función lineal. Con solo **dos pares de datos conocidos** $(x_1, y_1)$ y $(x_2, y_2)$ (*Known-Plaintext Attack*), un atacante puede despejar $a$ y $c$ mediante aritmética modular y **descifrar todo el dominio** (pseudonimización reversible).
+
+---
+
+### 3️⃣ Modelo 3: Versión Biyección - Modelo Feistel / FPE (`version_biyeccion/Modelo_Feistel`) ⭐ *RECOMENDADO*
+* **Mecanismo:** Implementa **Cifrado Preservador de Formato (Format-Preserving Encryption - FPE)** utilizando una **Red de Feistel Balanceada de 4 Rondas** combinada con *Cycle-Walking* y una Pseudo-Random Function (PRF) impulsada por `DBMS_CRYPTO.MAC` (`HMAC-SHA1`).
+* **Ventajas Definitivas:**
+  1. **Cero Colisiones:** Permutación biyectiva estricta por construcción matemática.
+  2. **Irreversibilidad Criptográfica:** Resistente a ataques de texto claro conocido (*Known-Plaintext*); imposible de descifrar sin el Pepper secreto.
+  3. **Independencia de Coprimalidad:** Funciona de manera transparente sobre cualquier módulo $m$ (sin importar si es potencia de 10).
+  4. **Cumplimiento RGPD / LOPD Defendible:** Proporciona **anonimización real** lista para auditoría y exportación a entornos de terceros.
+
+---
+
+## 📊 Equivalencia Técnica frente a OEM Cloud Control
+
+Este motor proporciona una equivalencia funcional y técnica completa con **Oracle Enterprise Manager Cloud Control Data Masking and Subsetting Pack**:
+
+| Capacidad Técnica | OEM Cloud Control Data Masking | Motor Enmascaramiento Oracle (Nativo) |
+|---|---|---|
+| **Descubrimiento de PII** | Escaneo mediante reglas de catálogo OEM | Algoritmo Regex + Score Semántico por Diccionario (`dm_descubre`) |
+| **Propagación Referencial** | Grafo de dependencias (`graph_tables.sql`) | **Algoritmo Union-Find (Disjoint-Set)** + Prioridad PK/FK |
+| **Preservación de Estructura** | Módulos de formato OEM | Cálculo de control DNI/NIE/CIF y Checksum IBAN Módulo 97 |
+| **Gestión de Restricciones** | `subset_pre_script` / `subset_post_script` | Desactivación y Reactivación con preservación del estado `ENABLED` |
+| **Sanado de Esquema** | Compilación manual tras fallas | **Autocompilación Iterativa + Filtro de Errores Ambientales (`ORA-00942`)** |
+| **Procesamiento Masivo** | Cargas por Agent | `DBMS_PARALLEL_EXECUTE` por Chunks de ROWID |
+| **Control de Calidad (Quality Gate)** | Reporte gráfico de la consola | **Puerta de Calidad Automatizada con 8+ KPIs (`dm_validar_flujo`)** |
+| **Licenciamiento** | Coste elevado por Socket/Core | **Nativo PL/SQL - 100% Coste Cero** |
+
+---
+
+## 🛠️ Arquitectura de Fases Operativas
+
+```mermaid
+graph TD
+    A[Diccionario de Datos Oracle] -->|1. Descubrimiento| B(dm_descubre)
+    B -->|Genera Catálogo| C[tdm_columna_final]
+    C -->|2. Propagación Union-Find & Masking| D(dm_enmascara)
+    D -->|Deshabilita FK/Triggers| E[Carga Masiva / DBMS_PARALLEL_EXECUTE]
+    E -->|Rehabilita FK/Triggers + Recompila| F(dm_recompilar)
+    F -->|3. Validación Quality Gate| G(dm_validar_flujo)
+    G -->|8+ KPIs PASS| H[Base de Datos Anonimizada / LOPD OK]
+```
+
+### 1. Descubrimiento Automático e Incremental (`dm_descubre`)
+Escanea el diccionario de datos (`dba_tab_columns`, `dba_col_comments`), identifica patrones sensibles (DNI, NIF, Teléfono, IBAN, Nombres, Direcciones) y genera el catálogo de reglas `tdm_columna_final`. Reevalúa solo tablas modificadas (`incremental`).
 
 ### 2. Propagación Referencial y Enmascaramiento (`dm_enmascara`)
-* **Propagación en Cascada (Union-Find):** Identifica relaciones jerárquicas (Claves Primarias, Únicas y Foráneas) y propaga de manera determinista las reglas de enmascaramiento de los padres a las tablas hijas para **mantener la integridad referencial** sin romper la base de datos.
-* **Preservación de Estructura:** Genera valores ficticios pero matemáticamente válidos (letras de control de DNI/NIE/CIF correctas y checksum de IBAN módulo 97 válidos) para que las aplicaciones cliente sigan funcionando sin errores de formato.
-* **Control de Dependencias:** Deshabilita automáticamente índices, disparadores y restricciones durante la carga masiva y los rehabilita al finalizar para optimizar la velocidad.
+Aplica el algoritmo **Union-Find** para agrupar claves primarias y foráneas relacionadas. Genera mapas de dominio estables (`tdm_mask_key_map`) para garantizar que **el valor padre y el valor hijo se enmascaren con exactamente el mismo dato**, manteniendo la integridad referencial sin generar huérfanos.
 
 ### 3. Puerta de Calidad / Quality Gate (`dm_validar_flujo`)
-Valida automáticamente la ejecución del enmascaramiento ejecutando 8 controles clave (KPIs):
-* **KPI-01 (Objetos Válidos):** Verifica la ausencia de objetos inválidos en el esquema (con lógica de autocuración y recompilación iterativa).
-* **KPI-02 (Dependencias):** Comprueba que todas las restricciones y triggers hayan sido reactivados.
-* **KPI-03 (Logs):** Audita las tablas de fallas del proceso para verificar que no hubo errores.
-* **KPI-04 (Algoritmo DNI/NIE/CIF):** Comprobación matemática del dígito de control de los documentos generados.
-* **KPI-05 (Algoritmo IBAN):** Comprobación matemática del checksum módulo 97.
-* **KPI-06 (Unicidad):** Verifica que no existan colisiones de datos en columnas con restricciones de clave única (`UNIQUE`).
-* **KPI-07 (Concurrencia):** Protege contra ejecuciones paralelas accidentales en el mismo esquema.
-* **KPI-08 (Integridad Referencial):** Valida la ausencia de registros huérfanos entre tablas padre-hija.
+Audita el resultado ejecutando controles automatizados de calidad:
+* **KPI-01:** Objetos válidos (autocuración y filtro de errores de entorno `ORA-00942`).
+* **KPI-02:** Restauración exitosa de restricciones y triggers.
+* **KPI-03:** Ausencia de errores en logs de ejecución.
+* **KPI-04 & KPI-05:** Validación matemática de dígitos de control (DNI/CIF) e IBAN Módulo 97.
+* **KPI-06:** Ausencia de colisiones en columnas `UNIQUE`.
+* **KPI-07:** Control de concurrencia de ejecuciones.
+* **KPI-08:** Integridad referencial (cero registros huérfanos PK/FK).
 
 ---
 
 ## 📂 Estructura del Repositorio
 
-El repositorio se divide en dos versiones de la arquitectura:
-
-* **`version_sin_biyeccion/`**
-  * La implementación original del motor. Utiliza algoritmos estándar de hash y Pepper para la alteración de datos sensibles. 
-  * *Nota:* En esta versión existía la probabilidad de colisiones de datos en columnas con restricciones de valores únicos (`UNIQUE`), lo que requería exclusiones manuales.
-  
-* **`version_biyeccion/`**
-  * **La versión optimizada y recomendada.** Introduce mapeos matemáticos biyectivos basados en aritmética modular (inverso multiplicativo modular).
-  * Garantiza la unicidad estricta (no colisiones) manteniendo el determinismo relacional.
-  * Integra lógica autocurativa de compilación iterativa de esquemas y filtro inteligente de errores ambientales (omisión de errores `ORA-00942` por esquemas ausentes en ambientes de prueba).
+```text
+Datamasking/
+├── README.md
+├── version_sin_biyeccion/            # Modelo 1: Hash Determinista (OEM Standalone)
+└── version_biyeccion/                # Modelos Biyectivos 1:1
+    ├── Modelo_Afin/                  # Modelo 2: Transformación Afín Modular (Fast CPU)
+    └── Modelo_Feistel/               # Modelo 3: Red Feistel / FPE con DBMS_CRYPTO (Recomendado)
+```
 
 ---
 
-## 🛠️ Modo de Uso Rápido
+## 🚀 Guía de Instalación y Uso Rápido (Modelo Feistel Recomendado)
 
-Para utilizar el motor en el servidor Oracle a través de SQL*Plus:
+### 1. Instalación (Conectado como `SYS` o DBA)
+```sql
+-- Ejecutar el instalador desde la carpeta Modelo_Feistel:
+@version_biyeccion/Modelo_Feistel/99_install_datamasking.sql
+```
 
-1. **Instalar el motor en el esquema de administración (`ASTSYSADMIN`):**
-   ```sql
-   @99_install_datamasking.sql
-   ```
-2. **Ejecutar el descubrimiento de un esquema:**
-   ```sql
-   @dm_descubre MI_ESQUEMA_APP
-   ```
-3. **Ejecutar el enmascaramiento (ejemplo con ID de ejecución 3):**
-   ```sql
-   @dm_enmascara 3 Y
-   ```
-4. **Validar la calidad del proceso:**
-   ```sql
-   @dm_validar_flujo MI_ESQUEMA_APP 3
-   ```
-5. **Recompilar dependencias del esquema en cualquier momento:**
-   ```sql
-   @dm_recompilar MI_ESQUEMA_APP
-   ```
+### 2. Descubrimiento de Esquema
+```sql
+@version_biyeccion/Modelo_Feistel/dm_descubre MI_ESQUEMA_APP
+```
+
+### 3. Ejecución del Enmascaramiento
+```sql
+-- Ejecuta el enmascaramiento con el ID de ejecución generado:
+@version_biyeccion/Modelo_Feistel/dm_enmascara 1 Y
+```
+
+### 4. Validación de la Puerta de Calidad (Quality Gate)
+```sql
+@version_biyeccion/Modelo_Feistel/dm_validar_flujo MI_ESQUEMA_APP 1
+```
+
+### 5. Recompilación de Apoyo (Opcional)
+```sql
+@version_biyeccion/Modelo_Feistel/dm_recompilar MI_ESQUEMA_APP
+```
