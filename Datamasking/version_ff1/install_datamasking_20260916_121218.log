@@ -1,0 +1,1138 @@
+
+Grant succeeded.
+
+grant execute on SYS.DBMS_CRYPTO to ASTSYSADMIN
+                     *
+ERROR at line 1:
+ORA-01031: insufficient privileges
+
+
+ROL_DATAMASKING ya existe, se reutiliza.
+
+PL/SQL procedure successfully completed.
+
+
+Session altered.
+
+CREATE TABLE tdm_ejecucion (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejecucion_01 ON tdm_ejecucion (esquema_objetivo, fecha_inicio) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejecucion_02 ON tdm_ejecucion (fase_proceso, estado) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE UNIQUE INDEX uq_tdm_ejec_esq_activo ON tdm_ejecucion (CASE WHEN estado = 'EJECUTANDO' THEN esquema_objetivo ELSE NULL END) tablespace ASTSYSADMIN
+                    *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_ejecucion_error (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejec_error_01 ON tdm_ejecucion_error (ejecucion_id, fecha_error) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejec_error_02 ON tdm_ejecucion_error (etapa, codigo_error) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_ejecucion_scope (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_ejec_scope_01 ON tdm_ejecucion_scope (ejecucion_id, owner_name, table_name, column_name) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_objeto_ctrl (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_objeto_ctrl_01 ON tdm_objeto_ctrl (owner_name, estado_objeto) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_regla (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_regla_01 ON tdm_regla (activa, tipo_regla, identificador, prioridad) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_columna_hist (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_col_hist_01 ON tdm_columna_hist (owner_name, table_name, estado_final, identificador) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_col_hist_02 ON tdm_columna_hist (ejecucion_id, enmascarar) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_dependencia_hist (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_dep_hist_01 ON tdm_dependencia_hist (ejecucion_id, owner_name, table_name, column_name) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_columna_final (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_col_final_01 ON tdm_columna_final (enmascarar, identificador) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_col_final_02 ON tdm_columna_final(owner_name, enmascarar, table_name, column_name) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_dependencia_final (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_dep_final_01  ON tdm_dependencia_final (owner_name, table_name, column_name) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_dep_final_02 ON tdm_dependencia_final (owner_name, tipo_dependencia, dependencia_owner, dependencia_objeto) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_excepcion_col (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_exc_col_01 ON tdm_excepcion_col (activa, accion) tablespace ASTSYSADMIN online
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE SEQUENCE seq_dm_ejecucion START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_ejecucion_err START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_ejecucion_scope START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_regla START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_columna_hist START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_dependencia_hist START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Session altered.
+
+CREATE TABLE tdm_secreto (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_mask_solicitud (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_sol_01 ON tdm_mask_solicitud (ejecucion_id, estado) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_sol_02 ON tdm_mask_solicitud (esquema_objetivo, fecha_inicio) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+    ADD CONSTRAINT fk_tdm_ejec_err_sol FOREIGN KEY (solicitud_id)
+                                       *
+ERROR at line 2:
+ORA-02275: such a referential constraint already exists in the table
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_mask_trace (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_trace_01  ON tdm_mask_trace (ejecucion_id, fase, paso, fecha_evento)  TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_trace_02  ON tdm_mask_trace (solicitud_id, fase, paso, fecha_evento)  TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_mask_dep_estado (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_dep_01 ON tdm_mask_dep_estado (solicitud_id, tipo_objeto, owner_name)  TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE SEQUENCE seq_dm_mask_solicitud START WITH 1  INCREMENT BY 1  NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_mask_trace  START WITH 1  INCREMENT BY 1  NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_mask_regla_esp  START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE SEQUENCE seq_dm_mask_relacion_sync START WITH 1 INCREMENT BY 1  NOCACHE
+                *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE TABLE tdm_mask_regla_esp (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_regla_01 ON tdm_mask_regla_esp (esquema_objetivo, owner_name, table_name, column_name, activa) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+CREATE TABLE tdm_mask_relacion_sync (
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+CREATE INDEX idm_mask_sync_01 ON tdm_mask_relacion_sync (esquema_objetivo, tabla_origen, tabla_destino, activa) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR at line 1:
+ORA-00955: name is already used by an existing object
+
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+1 row created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+1 row created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+1 row created.
+
+
+0 rows created.
+
+
+1 row updated.
+
+
+1 row updated.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+1 row updated.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+0 rows created.
+
+
+Commit complete.
+
+
+Package created.
+
+
+Package body created.
+
+
+Package created.
+
+
+Package body created.
+
+
+Package created.
+
+
+Package body created.
+
+
+Warning: Package created with compilation errors.
+
+
+Warning: Package Body created with compilation errors.
+
+
+Session altered.
+
+
+Package created.
+
+
+Package body created.
+
+No errors.
+No errors.
+No errors.
+Errors for PACKAGE PKG_DM_ENMASCARAR:
+
+LINE/COL ERROR
+-------- -----------------------------------------------------------------
+11/31    PLS-00103: Encountered the symbol "(" when expecting one of the
+         following:
+         := . ) , @ % default character
+12/20    PLS-00103: Encountered the symbol "IN" when expecting one of the
+         following:
+         <an identifier> <a double-quoted delimited-identifier> table
+         columns long double ref char time timestamp interval date
+         binary national character nchar
+Errors for PACKAGE BODY PKG_DM_ENMASCARAR:
+
+LINE/COL ERROR
+-------- -----------------------------------------------------------------
+216/31   PLS-00103: Encountered the symbol "(" when expecting one of the
+         following:
+         := . ) , @ % default character
+217/5    PLS-00103: Encountered the symbol "IS" when expecting one of the
+         following:
+         ; organization
+230/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+279/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+299/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+323/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+336/3    PLS-00103: Encountered the symbol "FUNCTION" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+336/46   PLS-00103: Encountered the symbol "NUMBER" when expecting one of
+         the following:
+         (
+No errors.
+No errors.
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+

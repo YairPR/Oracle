@@ -29,9 +29,12 @@ Rem      comparten identificador reciben el mismo ajuste y la misma longitud,
 Rem      luego el mismo valor original produce el mismo valor enmascarado en
 Rem      padre e hija. Un ajuste por fila ROMPERIA la propagacion: NO usar.
 Rem
-Rem    RESTRICCION OPERATIVA (A-02): estas funciones son DETERMINISTIC solo DENTRO
-Rem      de una campana (dependen del pepper de tdm_secreto y de set_ejecucion). NO
-Rem      crear indices basados en funcion (FBI) ni vistas materializadas sobre ellas.
+Rem    RESOLUCION AUDITORIA (A-02): se retiro la palabra clave DETERMINISTIC de
+Rem      todas las funciones de este paquete porque su resultado depende del
+Rem      estado de sesion (pepper/clave AES fijados por set_ejecucion), que
+Rem      cambia entre campanas de enmascaramiento. Declararlas DETERMINISTIC
+Rem      era una promesa falsa al optimizador; se elimina en vez de solo
+Rem      documentar la excepcion.
 Rem
 Rem    COMPATIBILIDAD
 Rem      - Oracle 11g en adelante (AES-128 y HMAC/HASH SHA-1 de DBMS_CRYPTO son 11g)
@@ -47,32 +50,32 @@ Rem                            Semilla de dominios de texto elevada a 60 bits (H
 
 create or replace PACKAGE pkg_dm_func_mask AS
 
-  FUNCTION func_nombre(   p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_direccion(p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_telefono( p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_email(    p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_nif(      p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_iban(     p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_cuenta(   p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
-  FUNCTION func_obs(      p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC;
+  FUNCTION func_nombre(   p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_direccion(p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_telefono( p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_email(    p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_nif(      p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_iban(     p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_cuenta(   p_valor IN VARCHAR2) RETURN VARCHAR2;
+  FUNCTION func_obs(      p_valor IN VARCHAR2) RETURN VARCHAR2;
 
   FUNCTION func_generico(
     p_identificador IN VARCHAR2,
     p_valor         IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
+  ) RETURN VARCHAR2;
 
   FUNCTION func_especial_doc_segun_tipo(
     p_documento       IN VARCHAR2,
     p_idtipodocumento IN NUMBER
-  ) RETURN VARCHAR2 DETERMINISTIC;
+  ) RETURN VARCHAR2;
 
   FUNCTION func_especial_doc_keep_ends(
     p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
+  ) RETURN VARCHAR2;
 
   FUNCTION func_especial_iban_continuo(
     p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
+  ) RETURN VARCHAR2;
 
   -- Fija la campana activa (ejecucion_id) de la sesion. La invoca el orquestador
   -- en el coordinador y CADA worker paralelo, para leer el pepper de su campana.
@@ -341,7 +344,7 @@ l_mac := DBMS_CRYPTO.MAC(
   -- ============================================================================
   -- FUNCIONES DE FORMATO (dominios de TEXTO: no biyectivas por naturaleza)
   -- ============================================================================
-  FUNCTION func_nombre(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_nombre(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_txt VARCHAR2(32767);
   BEGIN
     IF p_valor IS NULL THEN RETURN NULL; END IF;
@@ -349,7 +352,7 @@ l_mac := DBMS_CRYPTO.MAC(
     RETURN f_mix_alpha(l_txt, f_hash('NOMBRE|'||UPPER(l_txt)));
   END;
 
-  FUNCTION func_direccion(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_direccion(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_txt  VARCHAR2(32767);
     l_seed NUMBER;
     l_tipo VARCHAR2(20);
@@ -373,13 +376,13 @@ l_mac := DBMS_CRYPTO.MAC(
     RETURN SUBSTR(l_out, 1, c_max_txt);
   END;
 
-  FUNCTION func_obs(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_obs(p_valor VARCHAR2) RETURN VARCHAR2 IS
   BEGIN
     IF p_valor IS NULL THEN RETURN NULL; END IF;
     RETURN '***OBSERVACION ENMASCARADA***';
   END;
 
-  FUNCTION func_telefono(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_telefono(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_seed NUMBER;
     l_pref VARCHAR2(1);
     l_num  VARCHAR2(9);
@@ -391,7 +394,7 @@ l_mac := DBMS_CRYPTO.MAC(
     RETURN l_num;
   END;
 
-  FUNCTION func_email(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_email(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_txt   VARCHAR2(32767);
     l_seed  NUMBER;
     l_local VARCHAR2(64) := '';
@@ -489,7 +492,7 @@ l_mac := DBMS_CRYPTO.MAC(
     RETURN l_resultado;
   END;
 
-  FUNCTION func_nif(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_nif(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_val   VARCHAR2(50) := UPPER(TRIM(SUBSTR(p_valor,1,50)));
     l_seed  NUMBER;
     l_out   VARCHAR2(20);
@@ -530,7 +533,7 @@ l_mac := DBMS_CRYPTO.MAC(
   END;
 
   -- Cuenta bancaria (no IBAN): parte numerica cifrada con FF1, longitud conservada.
-  FUNCTION func_cuenta(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_cuenta(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_out        VARCHAR2(20);
     l_digitos    VARCHAR2(200);
     l_in_len     NUMBER;
@@ -569,7 +572,7 @@ l_mac := DBMS_CRYPTO.MAC(
   END;
 
   -- IBAN espanol: BBAN (20 digitos) cifrado con FF1 y control recalculado.
-  FUNCTION func_iban(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_iban(p_valor VARCHAR2) RETURN VARCHAR2 IS
     l_val    VARCHAR2(100);
     l_bban   VARCHAR2(20);
     l_cc     VARCHAR2(2);
@@ -603,7 +606,7 @@ l_mac := DBMS_CRYPTO.MAC(
   -- Documento manteniendo primer y ultimo caracter. Si el interior es todo
   -- digitos, se cifra con FF1 (biyectivo dentro de misma longitud+extremos);
   -- si mezcla letras, se usa la mezcla determinista por semilla.
-  FUNCTION func_especial_doc_keep_ends(p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_especial_doc_keep_ends(p_valor IN VARCHAR2) RETURN VARCHAR2 IS
     l_val    VARCHAR2(4000) := UPPER(TRIM(p_valor));
     l_len    PLS_INTEGER;
     l_medio  VARCHAR2(4000);
@@ -647,7 +650,7 @@ l_mac := DBMS_CRYPTO.MAC(
   FUNCTION func_especial_doc_segun_tipo(
     p_documento       IN VARCHAR2,
     p_idtipodocumento IN NUMBER
-  ) RETURN VARCHAR2 DETERMINISTIC IS
+  ) RETURN VARCHAR2 IS
     l_val      VARCHAR2(4000) := UPPER(TRIM(p_documento));
     l_ajuste   RAW(8) := f_ajuste_dominio('IDENTIDAD');
     l_digitos  VARCHAR2(200);
@@ -672,7 +675,7 @@ l_mac := DBMS_CRYPTO.MAC(
 
   -- IBAN "continuo" (sin separadores, 24 caracteres): BBAN cifrado con FF1 y
   -- control modulo 97. NUNCA se trunca (C-01): siempre devuelve ES + cc + 20.
-  FUNCTION func_especial_iban_continuo(p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
+  FUNCTION func_especial_iban_continuo(p_valor IN VARCHAR2) RETURN VARCHAR2 IS
     l_digitos VARCHAR2(20);
     l_bban    VARCHAR2(20);
     l_txt     VARCHAR2(200);
@@ -706,7 +709,7 @@ l_mac := DBMS_CRYPTO.MAC(
   FUNCTION func_generico(
     p_identificador IN VARCHAR2,
     p_valor         IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC IS
+  ) RETURN VARCHAR2 IS
     l_id VARCHAR2(100) := UPPER(NVL(TRIM(p_identificador),''));
   BEGIN
     IF p_valor IS NULL THEN RETURN NULL; END IF;

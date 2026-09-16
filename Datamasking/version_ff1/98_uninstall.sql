@@ -23,9 +23,11 @@ begin
   --------------------------------------------------------------------------
   -- 2) PAQUETES
   --------------------------------------------------------------------------
+  proc_drop('drop package pkg_dm_export');
   proc_drop('drop package pkg_dm_enmascarar');
   proc_drop('drop package pkg_dm_descubrimiento');
   proc_drop('drop package pkg_dm_func_mask');
+  proc_drop('drop package pkg_dm_trazabilidad');
   
   --------------------------------------------------------------------------
   -- 3) TABLAS HIJAS DE ENMASCARAMIENTO

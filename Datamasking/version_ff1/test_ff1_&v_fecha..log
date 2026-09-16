@@ -1,0 +1,55 @@
+
+Session altered.
+
+
+Session altered.
+
+
+Package created.
+
+
+Package body created.
+
+== Estado de objetos (debe ser VALID) ==
+
+OBJECT_NAME                    OBJECT_TYPE    STATUS
+------------------------------ -------------- ----------
+PKG_DM_DESCUBRIMIENTO          PACKAGE        VALID
+PKG_DM_ENMASCARAR              PACKAGE        VALID
+PKG_DM_EXPORT                  PACKAGE        VALID
+PKG_DM_FF1_TEST                PACKAGE        VALID
+PKG_DM_FUNC_MASK               PACKAGE        VALID
+PKG_DM_DESCUBRIMIENTO          PACKAGE BODY   VALID
+PKG_DM_ENMASCARAR              PACKAGE BODY   VALID
+PKG_DM_EXPORT                  PACKAGE BODY   VALID
+PKG_DM_FF1_TEST                PACKAGE BODY   VALID
+PKG_DM_FUNC_MASK               PACKAGE BODY   VALID
+
+10 rows selected.
+
+== Errores de compilacion (debe estar VACIO) ==
+
+no rows selected
+
+================================================================
+PRUEBAS DE CONFORMIDAD FF1 (NIST SP 800-38G)
+================================================================
+1) Vectores NIST (cifrado via pkg_dm_func_mask.f_ff1_cifrar_raw)
+[PASA] NIST muestra 1 (tweak vacio)
+[PASA] NIST muestra 2 (con tweak)
+2) Round-trip descifrar(cifrar(x)) = x  (2000 valores)
+[PASA] Invertibilidad (0 fallos)
+[PASA] Descifra NIST m1
+[PASA] Descifra NIST m2
+3) Biyeccion exhaustiva dominio 10^4 (0000..9999)
+[PASA] Sin colisiones en 10^4 (biyectivo)
+[PASA] Imagen completa (10000 distintos)
+4) Determinismo y separacion por tweak
+[PASA] Determinista (mismo valor+clave+tweak -> igual)
+[PASA] Tweak distinto -> salida distinta
+----------------------------------------------------------------
+RESULTADO: 9/9 pruebas PASAN
+================================================================
+
+PL/SQL procedure successfully completed.
+

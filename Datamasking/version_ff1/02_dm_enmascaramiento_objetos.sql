@@ -309,216 +309,19 @@ COMMENT ON COLUMN tdm_mask_relacion_sync.observacion IS 'Observación funcional 
 
 
 
-/*
---------------------------------------------------------------------------------
---  DATOS SEMILLA PARA SIGAD_ACAD_OWN
---    Comentar si no aplica
---------------------------------------------------------------------------------
-
--- Documento según tipo en tablas con NDOCUMENTO + IDTIPODOCUMENTO
-INSERT INTO tdm_mask_regla_esp (
-    regla_id, esquema_objetivo, owner_name, table_name, column_name,
-    tipo_regla, valor_regla, activa, observacion
-) VALUES (
-    seq_dm_mask_regla_esp.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO',
-    'NDOCUMENTO',
-    'DOC_SEGUN_TIPO',
-    'IDTIPODOCUMENTO',
-    'Y',
-    'NIF/NIE/PASAPORTE según IDTIPODOCUMENTO'
-);
-
--- Documento unificado: mantener primer y último carácter
-INSERT INTO tdm_mask_regla_esp (
-    regla_id, esquema_objetivo, owner_name, table_name, column_name,
-    tipo_regla, valor_regla, activa, observacion
-) VALUES (
-    seq_dm_mask_regla_esp.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SIGAD_ACAD_OWN',
-    'TSKPCRUNIFICARALUMNOS',
-    'NDOCUMENTO',
-    'DOC_UNIFICADO_MANTENER_1_Y_ULTIMO',
-    NULL,
-    'Y',
-    'Mantener primer y último carácter del documento'
-);
-
-INSERT INTO tdm_mask_regla_esp (
-    regla_id, esquema_objetivo, owner_name, table_name, column_name,
-    tipo_regla, valor_regla, activa, observacion
-) VALUES (
-    seq_dm_mask_regla_esp.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SIGAD_ACAD_OWN',
-    'TSKPCRUNIFICARFAMILIARES',
-    'NDOCUMENTO',
-    'DOC_UNIFICADO_MANTENER_1_Y_ULTIMO',
-    NULL,
-    'Y',
-    'Mantener primer y último carácter del documento'
-);
-
--- IBAN continuo ES + 22 dígitos con control válido
-INSERT INTO tdm_mask_regla_esp (
-    regla_id, esquema_objetivo, owner_name, table_name, column_name,
-    tipo_regla, valor_regla, activa, observacion
-) VALUES (
-    seq_dm_mask_regla_esp.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SIGAD_ACAD_OWN',
-    'CENCUENTABANCO',
-    'NUMEROCUENTA',
-    'IBAN_ES_CONTINUO',
-    NULL,
-    'Y',
-    'IBAN continuo de 24 caracteres'
-);
-
--- Coherencia post-masking: email usuario -> profesor
-INSERT INTO tdm_mask_relacion_sync (
-    sync_id, esquema_objetivo,
-    tabla_origen, columna_join_origen, tabla_destino, columna_join_destino,
-    columna_origen, columna_destino, activa, prioridad, observacion
-) VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'PERPROFESOR', 'IDUSUARIO',
-    'EMAIL', 'EMAIL',
-    'Y', 10,
-    'Coherencia email usuario-profesor'
-);
-
--- Coherencia nombre/apellidos/documento usuario -> profesor
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'PERPROFESOR', 'IDUSUARIO',
-    'NOMBRE', 'NOMBRE',
-    'Y', 20,
-    'Coherencia nombre usuario-profesor'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'PERPROFESOR', 'IDUSUARIO',
-    'APELLIDO1', 'APELLIDO1',
-    'Y', 21,
-    'Coherencia apellido1 usuario-profesor'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'PERPROFESOR', 'IDUSUARIO',
-    'APELLIDO2', 'APELLIDO2',
-    'Y', 22,
-    'Coherencia apellido2 usuario-profesor'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'PERPROFESOR', 'IDUSUARIO',
-    'NDOCUMENTO', 'NDOCUMENTO',
-    'Y', 23,
-    'Coherencia documento usuario-profesor'
-);
-
--- Coherencia usuario -> alumno
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENALUMNO', 'IDUSUARIO',
-    'NOMBRE', 'NOMBRE',
-    'Y', 30,
-    'Coherencia nombre usuario-alumno'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENALUMNO', 'IDUSUARIO',
-    'APELLIDO1', 'APELLIDO1',
-    'Y', 31,
-    'Coherencia apellido1 usuario-alumno'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENALUMNO', 'IDUSUARIO',
-    'APELLIDO2', 'APELLIDO2',
-    'Y', 32,
-    'Coherencia apellido2 usuario-alumno'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENALUMNO', 'IDUSUARIO',
-    'NDOCUMENTO', 'NDOCUMENTO',
-    'Y', 33,
-    'Coherencia documento usuario-alumno'
-);
-
--- Coherencia usuario -> familiar
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENFAMILIAR', 'IDUSUARIO',
-    'NOMBRE', 'NOMBRE',
-    'Y', 40,
-    'Coherencia nombre usuario-familiar'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENFAMILIAR', 'IDUSUARIO',
-    'APELLIDO1', 'APELLIDO1',
-    'Y', 41,
-    'Coherencia apellido1 usuario-familiar'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENFAMILIAR', 'IDUSUARIO',
-    'APELLIDO2', 'APELLIDO2',
-    'Y', 42,
-    'Coherencia apellido2 usuario-familiar'
-);
-
-INSERT INTO tdm_mask_relacion_sync VALUES (
-    seq_dm_mask_relacion_sync.NEXTVAL,
-    'SIGAD_ACAD_OWN',
-    'SEGUSUARIO', 'IDUSUARIO',
-    'CENFAMILIAR', 'IDUSUARIO',
-    'NDOCUMENTO', 'NDOCUMENTO',
-    'Y', 43,
-    'Coherencia documento usuario-familiar'
-);
-
-
-COMMIT;
-
+-- Limpieza (2026-09-16, hallazgo R-03): aqui habia un bloque comentado de
+-- ~250 lineas que mezclaba dos cosas distintas:
+--   1) INSERTs semilla especificos de SIGAD_ACAD_OWN (reglas especiales y
+--      relaciones de sincronizacion). Esto violaba el criterio de
+--      portabilidad del motor (cero literales de cliente en 01/02/03/04/05/06)
+--      y ademas estaba DUPLICADO: la version completa y vigente vive en
+--      SIGAD/config_sigad.sql (94 FORCE, 18 EXCLUDE, 16 keep-ends,
+--      1 IBAN_ES_CONTINUO, 7 DOC_SEGUN_TIPO, 13 relacion_sync). Eliminado
+--      aqui sin perdida: no era la fuente autoritativa.
+--   2) La DDL de TDM_MASK_CACHE (cache determinista opcional). Esa parte se
+--      conserva mas abajo, ahora activa y documentada por separado, ya que
+--      es infraestructura generica (no especifica de cliente) pensada para
+--      la Fase 2 de rendimiento (precifrado por valor distinto).
 
 --------------------------------------------------------------------------------
 -- 7) CACHE DETERMINISTA OPCIONAL
@@ -532,7 +335,16 @@ COMMIT;
 --   - direcciones largas
 --   - textos libres
 --   - CLOB / NCLOB
+--
+-- SIGUE DESACTIVADA A PROPOSITO (2026-09-16): ningún paquete del motor lee
+-- ni escribe esta tabla hoy (el mapa equivalente en pkg_dm_enmascarar,
+-- TDM_MASK_KEY_MAP, se eliminó deliberadamente junto con su código muerto -
+-- ver auditoría FF1). Activarla sin el código que la use sería crear
+-- infraestructura huérfana. Se deja su DDL lista y documentada para cuando
+-- se acometa la Fase 2 de rendimiento (precálculo por valor distinto);
+-- descomentar entonces junto con el código de lectura/escritura en 05.
 --------------------------------------------------------------------------------
+/*
 CREATE TABLE tdm_mask_cache (
     tipo         VARCHAR2(30)   NOT NULL,
     original     VARCHAR2(4000) NOT NULL,
@@ -555,5 +367,4 @@ COMMENT ON COLUMN tdm_mask_cache.original IS
 
 COMMENT ON COLUMN tdm_mask_cache.enmascarado IS
 'Valor enmascarado final utilizado para consistencia adicional, si se decide usar cache.';
-
 */

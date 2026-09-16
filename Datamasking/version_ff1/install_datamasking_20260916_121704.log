@@ -1,0 +1,987 @@
+
+Grant succeeded.
+
+grant execute on SYS.DBMS_CRYPTO to ASTSYSADMIN
+                     *
+ERROR at line 1:
+ORA-01031: insufficient privileges
+
+
+
+PL/SQL procedure successfully completed.
+
+
+Session altered.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Session altered.
+
+
+Table created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Table altered.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Table created.
+
+
+Index created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+Comment created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row updated.
+
+
+1 row updated.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row updated.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+Commit complete.
+
+
+Package created.
+
+
+Package body created.
+
+
+Package created.
+
+
+Package body created.
+
+
+Package created.
+
+
+Package body created.
+
+
+Warning: Package created with compilation errors.
+
+
+Warning: Package Body created with compilation errors.
+
+
+Session altered.
+
+
+Package created.
+
+
+Package body created.
+
+No errors.
+No errors.
+No errors.
+Errors for PACKAGE PKG_DM_ENMASCARAR:
+
+LINE/COL ERROR
+-------- -----------------------------------------------------------------
+11/31    PLS-00103: Encountered the symbol "(" when expecting one of the
+         following:
+         := . ) , @ % default character
+12/20    PLS-00103: Encountered the symbol "IN" when expecting one of the
+         following:
+         <an identifier> <a double-quoted delimited-identifier> table
+         columns long double ref char time timestamp interval date
+         binary national character nchar
+Errors for PACKAGE BODY PKG_DM_ENMASCARAR:
+
+LINE/COL ERROR
+-------- -----------------------------------------------------------------
+216/31   PLS-00103: Encountered the symbol "(" when expecting one of the
+         following:
+         := . ) , @ % default character
+217/5    PLS-00103: Encountered the symbol "IS" when expecting one of the
+         following:
+         ; organization
+230/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+279/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+299/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+323/3    PLS-00103: Encountered the symbol "PROCEDURE" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+         The symbol "static" was substituted for "PROCEDURE" to continue.
+336/3    PLS-00103: Encountered the symbol "FUNCTION" when expecting one
+         of the following:
+         end not pragma final instantiable persistable order
+         overriding static member constructor map
+336/46   PLS-00103: Encountered the symbol "NUMBER" when expecting one of
+         the following:
+         (
+No errors.
+No errors.
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+

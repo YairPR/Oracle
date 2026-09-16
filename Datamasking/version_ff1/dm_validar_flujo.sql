@@ -201,12 +201,16 @@ begin
                     end, object_name
         ) loop
           begin
+            -- R-01 (auditoria seguridad): identificadores saneados con DBMS_ASSERT.ENQUOTE_NAME
+            -- antes de concatenarlos en DDL dinamico, por consistencia con el resto del motor
+            -- (pkg_dm_enmascarar.f_qname). ENQUOTE_NAME ya agrega las comillas dobles, por eso
+            -- se retiran las comillas literales que tenia el texto SQL original.
             if r.object_type = 'PACKAGE BODY' then
-              l_sql_recomp := 'ALTER PACKAGE "'||v_esquema||'"."'||r.object_name||'" COMPILE BODY';
+              l_sql_recomp := 'ALTER PACKAGE '||dbms_assert.enquote_name(v_esquema, false)||'.'||dbms_assert.enquote_name(r.object_name, false)||' COMPILE BODY';
             elsif r.object_type = 'TYPE BODY' then
-              l_sql_recomp := 'ALTER TYPE "'||v_esquema||'"."'||r.object_name||'" COMPILE BODY';
+              l_sql_recomp := 'ALTER TYPE '||dbms_assert.enquote_name(v_esquema, false)||'.'||dbms_assert.enquote_name(r.object_name, false)||' COMPILE BODY';
             else
-              l_sql_recomp := 'ALTER '||r.object_type||' "'||v_esquema||'"."'||r.object_name||'" COMPILE';
+              l_sql_recomp := 'ALTER '||r.object_type||' '||dbms_assert.enquote_name(v_esquema, false)||'.'||dbms_assert.enquote_name(r.object_name, false)||' COMPILE';
             end if;
             execute immediate l_sql_recomp;
           exception
@@ -370,7 +374,10 @@ begin
          and upper(identificador) in ('IDENTIFICADOR_IDENTIDAD', 'IDENTIFICADOR_DOCUMENTO')
     ) loop
       l_dni_cols_checked := l_dni_cols_checked + 1;
-      l_sql := 'select '||r.column_name||' from '||v_esquema||'.'||r.table_name||' where '||r.column_name||' is not null and rownum <= 30';
+      -- R-01 (auditoria seguridad): identificadores saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
+      -- antes de construir el SQL dinamico (punto adicional detectado, mismo patron que KPI-01/06/08),
+      -- por consistencia con el resto del motor (pkg_dm_enmascarar.f_qname).
+      l_sql := 'select '||dbms_assert.simple_sql_name(r.column_name)||' from '||dbms_assert.simple_sql_name(v_esquema)||'.'||dbms_assert.simple_sql_name(r.table_name)||' where '||dbms_assert.simple_sql_name(r.column_name)||' is not null and rownum <= 30';
       begin
         open c_val for l_sql;
         loop
@@ -445,7 +452,10 @@ begin
          and upper(identificador) in ('IDENTIFICADOR_BANCARIO')
     ) loop
       l_iban_cols_checked := l_iban_cols_checked + 1;
-      l_sql := 'select '||r.column_name||' from '||v_esquema||'.'||r.table_name||' where '||r.column_name||' is not null and rownum <= 30';
+      -- R-01 (auditoria seguridad): identificadores saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
+      -- antes de construir el SQL dinamico (punto adicional detectado, mismo patron que KPI-01/06/08),
+      -- por consistencia con el resto del motor (pkg_dm_enmascarar.f_qname).
+      l_sql := 'select '||dbms_assert.simple_sql_name(r.column_name)||' from '||dbms_assert.simple_sql_name(v_esquema)||'.'||dbms_assert.simple_sql_name(r.table_name)||' where '||dbms_assert.simple_sql_name(r.column_name)||' is not null and rownum <= 30';
       begin
         open c_val for l_sql;
         loop
@@ -513,14 +523,39 @@ begin
        GROUP BY idx.owner, idx.index_name, idx.table_name
     ) loop
       l_uniq_idxs_checked := l_uniq_idxs_checked + 1;
-      
-      -- Comprobamos si la combinacion tiene duplicados usando GROUP BY + HAVING COUNT(*) > 1
-      l_sql := 'SELECT COUNT(*) FROM (SELECT '||r.col_list||' FROM '||v_esquema||'.'||r.table_name||
-               ' GROUP BY '||r.col_list||' HAVING COUNT(*) > 1)';
+
       begin
         declare
-          l_dup_groups NUMBER := 0;
+          -- R-01 (auditoria seguridad): r.col_list es una lista de columnas ya concatenada con comas
+          -- (LISTAGG), por lo que no puede pasarse completa a DBMS_ASSERT como si fuera un unico
+          -- identificador; se sanea columna por columna con DBMS_ASSERT.SIMPLE_SQL_NAME antes de
+          -- reconstruir la lista, por consistencia con el resto del motor (pkg_dm_enmascarar.f_qname).
+          l_col_list_safe varchar2(4000) := null;
+          l_remaining      varchar2(4000) := r.col_list;
+          l_comma_pos      pls_integer;
+          l_token          varchar2(128);
+          l_dup_groups     NUMBER := 0;
         begin
+          loop
+            l_comma_pos := instr(l_remaining, ',');
+            if l_comma_pos = 0 then
+              l_token := l_remaining;
+            else
+              l_token := substr(l_remaining, 1, l_comma_pos - 1);
+            end if;
+            l_col_list_safe := l_col_list_safe
+              || case when l_col_list_safe is null then '' else ',' end
+              || dbms_assert.simple_sql_name(l_token);
+            exit when l_comma_pos = 0;
+            l_remaining := substr(l_remaining, l_comma_pos + 1);
+          end loop;
+
+          -- Comprobamos si la combinacion tiene duplicados usando GROUP BY + HAVING COUNT(*) > 1
+          -- R-01: v_esquema y r.table_name tambien saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
+          l_sql := 'SELECT COUNT(*) FROM (SELECT '||l_col_list_safe||' FROM '||
+                   dbms_assert.simple_sql_name(v_esquema)||'.'||dbms_assert.simple_sql_name(r.table_name)||
+                   ' GROUP BY '||l_col_list_safe||' HAVING COUNT(*) > 1)';
+
           execute immediate l_sql into l_dup_groups;
           if l_dup_groups > 0 then
             l_cnt_errors := l_cnt_errors + l_dup_groups;
@@ -640,20 +675,24 @@ begin
            and cc_c.constraint_name = fk.child_cons
          order by cc_c.position
       ) loop
+        -- R-01 (auditoria seguridad): nombres de columna saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
+        -- antes de concatenarlos en el predicado de join, por consistencia con el resto del motor
+        -- (pkg_dm_enmascarar.f_qname).
         l_pred_join := l_pred_join
           || case when l_pred_join is null then '' else ' AND ' end
-          || 'p.'||col.parent_col||' = c.'||col.child_col;
+          || 'p.'||dbms_assert.simple_sql_name(col.parent_col)||' = c.'||dbms_assert.simple_sql_name(col.child_col);
         l_pred_notnull := l_pred_notnull
           || case when l_pred_notnull is null then '' else ' AND ' end
-          || 'c.'||col.child_col||' IS NOT NULL';
+          || 'c.'||dbms_assert.simple_sql_name(col.child_col)||' IS NOT NULL';
       end loop;
 
       if l_pred_join is not null then
         l_fks_checked := l_fks_checked + 1;
+        -- R-01: esquema/tabla de hija y padre saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
         l_sqlk8 :=
-          'SELECT COUNT(*) FROM '||fk.child_owner||'.'||fk.child_table||' c '||
+          'SELECT COUNT(*) FROM '||dbms_assert.simple_sql_name(fk.child_owner)||'.'||dbms_assert.simple_sql_name(fk.child_table)||' c '||
           ' WHERE '||l_pred_notnull||
-          '   AND NOT EXISTS (SELECT 1 FROM '||fk.parent_owner||'.'||fk.parent_table||' p '||
+          '   AND NOT EXISTS (SELECT 1 FROM '||dbms_assert.simple_sql_name(fk.parent_owner)||'.'||dbms_assert.simple_sql_name(fk.parent_table)||' p '||
           '                    WHERE '||l_pred_join||')';
         begin
           execute immediate l_sqlk8 into l_cnt_fk;

@@ -1237,11 +1237,17 @@ begin
            and column_name = l_col;
 
         if l_curr_enm = 'N' then
+          -- 2026-09-16: llamada ESTATICA a pkg_dm_trazabilidad. Antes era un
+          -- EXECUTE IMMEDIATE a pkg_dm_enmascarar.proc_dm_trace porque 04
+          -- compila antes que 05 en el orden de instalacion y una referencia
+          -- estatica a un paquete que aun no existe no habria compilado.
+          -- pkg_dm_trazabilidad no tiene esa restriccion (compila justo
+          -- despues de las tablas, antes que 04) - ver su cabecera.
           begin
-            execute immediate
-              'begin pkg_dm_enmascarar.proc_dm_trace(:1, :2, ''PROPAGACION'', ''RI_REINCLUYE'', :3); end;'
-              using p_solicitud_id, p_ejecucion_id,
-                    l_own||'.'||l_tab||'.'||l_col||' re-incluida (Y) por integridad referencial del dominio '||l_comps(l_root).min_node;
+            pkg_dm_trazabilidad.proc_dm_trace(
+              p_solicitud_id, p_ejecucion_id, 'PROPAGACION', 'RI_REINCLUYE',
+              l_own||'.'||l_tab||'.'||l_col||' re-incluida (Y) por integridad referencial del dominio '||l_comps(l_root).min_node
+            );
           exception
             when others then null;
           end;
@@ -1317,13 +1323,17 @@ begin
   exception
     when others then
       -- R3: No silenciar el fallo de propagación en la sincronización del catálogo
+      -- 2026-09-16: llamada estatica a pkg_dm_trazabilidad (ver nota arriba);
+      -- ya no hace falta el EXECUTE IMMEDIATE ni el comentario de "si
+      -- pkg_dm_enmascarar no esta compilado" - pkg_dm_trazabilidad siempre
+      -- esta disponible en este punto del install.
       begin
-        execute immediate
-          'begin pkg_dm_enmascarar.proc_dm_trace(-1, -1, ''DISCOVERY'', ''PROPAGA_DOMINIOS_ERR'', :1); end;'
-          using 'Fallo propagando dominios FK para '||l_esquema||': '||sqlerrm;
+        pkg_dm_trazabilidad.proc_dm_trace(
+          NULL, p_ejecucion_id, 'DISCOVERY', 'PROPAGA_DOMINIOS_ERR',
+          'Fallo propagando dominios FK para '||l_esquema||': '||sqlerrm
+        );
       exception
-        when others then
-          null; -- Evitar fallas de referencia cruzada si pkg_dm_enmascarar no está compilado
+        when others then null;
       end;
   end;
 end proc_dm_sync_col_final;

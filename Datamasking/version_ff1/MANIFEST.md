@@ -1,11 +1,17 @@
 # MANIFEST — Datamasking versión FF1
 
-**Fecha:** 2026-09-15
+**Fecha:** 2026-09-15 (última actualización de contenido: 2026-09-16 — cierre
+de triple auditoría Gemini/Antigravity/Codex, ver sección 6; instalación y
+tests FF1 ejecutados y en verde contra instancia real, ver sección 7)
 **Motor:** Oracle 11g+, esquema `ASTSYSADMIN`, rol `ROL_DATAMASKING`, sin wallet/TDE.
 **Núcleo cripto:** FF1 (NIST SP 800-38G) sobre AES-128, tweak por dominio, pepper
 efímero por campaña.
-**Estado global:** apto para QA. **NO-GO para producción regulada** hasta cerrar
-gobernanza (A-04), diseño (A-05) y ejecutar la evidencia (A-03, A-07) en instancia.
+**Estado global:** apto para QA, con los bloqueantes de código de la triple
+auditoría del 2026-09-16 cerrados (ver sección 6) y con evidencia real de
+instalación limpia + conformidad FF1 (A-03 CERRADO, ver sección 7). **NO-GO
+para producción regulada** hasta cerrar gobernanza (A-04), diseño (A-05) y
+ejecutar el flujo funcional completo + `config_sigad` (A-07) en el esquema
+real — esto sigue pendiente, en curso a la fecha de esta actualización.
 
 Leyenda de estado por archivo:
 **NUEVO** creado en esta línea de trabajo · **MODIF** modificado respecto a
@@ -23,11 +29,12 @@ Modelo_Feistel · **IGUAL** copiado sin cambios · **TEST** solo QA (no producci
 | `01_dm_descubrimiento_objetos.sql` | IGUAL | DDL descubrimiento |
 | `02_dm_enmascaramiento_objetos.sql` | MODIF | DDL enmascaramiento |
 | `03_dm_descubrimiento_carga_reglas.sql` | IGUAL | Semilla de reglas de descubrimiento |
-| `04_dm_pkg_descubrimiento.sql` | IGUAL | Paquete de descubrimiento |
+| `03b_dm_pkg_trazabilidad.sql` | NUEVO | Paquete independiente de trazabilidad/errores (2026-09-16) |
+| `04_dm_pkg_descubrimiento.sql` | MODIF | Paquete de descubrimiento |
 | `05_dm_pkg_enmascarar.sql` | MODIF | Orquestador de enmascaramiento |
 | `06_dm_pkg_func_mask.sql` | NUEVO/MODIF | Núcleo cripto FF1 + funciones de formato |
 | `07_dm_pkg_export.sql` | NUEVO | Export Data Pump (companion, fuera del motor) |
-| `97_configurar_excepciones.sql` | IGUAL | Plantillas de excepciones |
+| `97_configurar_excepciones.sql` | MODIF | Plantillas de excepciones |
 | `98_uninstall.sql` | MODIF | Desinstalador |
 | `99_install_datamasking.sql` | MODIF | Instalador ordenado |
 | `crear_sinonimos.sql` | MODIF | Sinónimos privados por DBA |
@@ -170,18 +177,29 @@ usan la API pública y nombres de columna reales (`esquema_objetivo`).
 | C-01 | IBAN continuo truncaba | **CERRADO** (06/05) |
 | C-02 | Chunks paralelos sin validar | **CERRADO** (05) |
 | A-01 | NIE divergía entre rutas | **CERRADO** (06) |
-| A-02 | `DETERMINISTIC` impropio | **DOCUMENTADO** (06) |
-| A-03 | Vectores NIST no en repo | **ARTEFACTO ENTREGADO** — falta ejecutar en 11g |
-| A-04 | Custodia del pepper | **PENDIENTE** (gobernanza/DPO) |
-| A-05 | Contrato de dominio FK / multiesquema | **PENDIENTE** (diseño) |
+| A-02 | `DETERMINISTIC` impropio | **CERRADO** (06, 2026-09-16: keyword eliminado de las 12 funciones públicas, ya no solo documentado) |
+| A-03 | Vectores NIST no en repo | **CERRADO** (2026-09-16: `tests/00_run_tests_ff1.sql` ejecutado en instancia real, 9/9 pruebas PASAN — ver sección 7) |
+| A-04 | Custodia del pepper | **DOCUMENTADO** (2026-09-16: `A04_custodia_del_pepper.md`) — decisión operativa (wallet/HSM) sigue pendiente de Riesgo/DPO |
+| A-05 | Contrato de dominio FK / multiesquema | **DOCUMENTADO** (2026-09-16: `A05_contrato_de_dominio_FK.md`) — implementación multiesquema en el orquestador sigue pendiente |
 | A-06 | Auto-exclusión dejaba PII | **CERRADO** (05, fallo cerrado) |
 | A-07 | Config SIGAD no portado | **CONFIG GENERADA** — falta ejecutar/validar |
 | A-08 | Duplicados muertos en 05 | **CERRADO** (05) |
 | 4.2.2 | `func_cuenta` fallback a hash | **CERRADO** (06) |
 | M-01 | Benchmark sin medir | **PENDIENTE** (medición) |
-| M-02 | Seudonimización, no anonimización | **PENDIENTE** (documentar) |
+| M-02 | Seudonimización, no anonimización | **DOCUMENTADO** (2026-09-16: `M02_seudonimizacion_vs_anonimizacion.md`) |
 | M-03 | NLS afecta la semilla | **CERRADO** (06) |
 | M-04 | KPIs no ven auto-exclusiones | **CERRADO indirecto** (A-06 bloquea antes) |
+| B-01 | `p_mask_tab` violaba FK de `tdm_ejecucion` (Codex) | **CERRADO** (2026-09-16, 05: crea `ejecucion_id` real vía secuencia en vez de sentinela) |
+| — | Acoplamiento cruzado 04↔05 vía `EXECUTE IMMEDIATE` (Gemini) | **CERRADO** (2026-09-16: extraído a `pkg_dm_trazabilidad`, paquete 03b sin dependencias, compila antes que 04/05) |
+| — | Propagación de dominio "fail-open" (silenciaba error y seguía) (Codex/Gemini) | **CERRADO** (2026-09-16, 05: añadido `RAISE` tras traza en el handler de propagación) |
+| — | Tipos `CHAR` obsoletos en flags de `p_mask_tab`/`p_dm_enmascara` (Gemini) | **CERRADO** (2026-09-16: `CHAR`→`VARCHAR2(1)` en params y locales) |
+| — | Código muerto: 2 bloques `EXECUTE IMMEDIATE 'UPDATE tdm_mask_solicitud SET forzar_full...'` (siempre fallaban ORA-00904) | **CERRADO** (2026-09-16: eliminados de `func_dm_crea_sol` y `p_dm_enmascara`) |
+| — | `func_dm_tiene_regla` y `proc_dm_upsert_excepcion_col` tragaban errores silenciosamente | **CERRADO** (2026-09-16: `RAISE` en vez de swallow) |
+| R-01 | DBMS_ASSERT insuficiente en SQL dinámico de `dm_validar_flujo.sql` (Antigravity) | **CERRADO** (2026-09-16: sanitización en 6 puntos — recompilación, KPI-04/05/06/08) |
+| R-02 | Usuarios DBA hardcodeados en instalador | **DOCUMENTADO** (comentario Rem en `99_install_datamasking.sql`) — mejora futura, no bloqueante |
+| R-03 | Bloque comentado obsoleto (semillas SIGAD_ACAD_OWN duplicadas) en `02` | **CERRADO** (2026-09-16: eliminado; `tdm_mask_cache` opcional reaislado y documentado, sigue sin activar) |
+| R-04 | Líneas sin prefijo `--` en `97_configurar_excepciones.sql` (rompían la ejecución literal del script) | **CERRADO** (2026-09-16) |
+| R-05 | `pkg_dm_export` y `pkg_dm_trazabilidad` ausentes en `98_uninstall.sql` | **CERRADO** (2026-09-16) |
 
 ---
 
@@ -211,6 +229,133 @@ usan la API pública y nombres de columna reales (`esquema_objetivo`).
    Riesgo/DPO.
 3. **A-05** contrato de dominio por componente FK y manejo multiesquema.
 4. **M-01** benchmark A/B (1M/10M filas) + `UPDATE` batcheado por tabla.
-5. **M-02** documentar formalmente que el resultado es seudonimización.
-6. Añadir `pkg_dm_export` y `pkg_dm_ff1_test` a `98_uninstall.sql`.
-7. Reconciliar la copia de `05` con la de Antigravity (la de aquí trae C-02/A-06).
+5. **M-02** documentado (`M02_seudonimizacion_vs_anonimizacion.md`); queda solo
+   la aprobación/firma formal por Legal/DPO como parte del expediente de
+   auditoría.
+
+~~6. Añadir `pkg_dm_export` y `pkg_dm_ff1_test` a `98_uninstall.sql`.~~ →
+**CERRADO 2026-09-16** (`pkg_dm_export` añadido; `pkg_dm_ff1_test` es un
+paquete de test que se instala/desinstala aparte y no forma parte de la
+limpieza del motor).
+
+~~7. Reconciliar la copia de `05` con la de Antigravity.~~ → **CERRADO
+2026-09-16**: no había divergencia de contenido real, sino dos carpetas
+(`Claude\FF1` y `version_biyeccion\FF1`) desincronizadas en disco;
+`version_biyeccion\FF1` se sincronizó completa contra `Claude\FF1` (fuente de
+verdad, confirmada contra las rutas y contenidos citados por la auditoría de
+Antigravity).
+
+---
+
+## 6. Cierre de triple auditoría (Gemini / Antigravity / Codex) — 2026-09-16
+
+Se recibieron 3 auditorías independientes sobre el estado del motor. Antigravity
+confirmó que C-01, C-02, A-01, A-06 y A-08 ya estaban cerrados en el código
+vigente. Gemini y Codex auditaron una instantánea con hallazgos adicionales de
+bajo nivel (algunos de Codex correspondían a una copia desactualizada de `05`,
+ya resueltos en la copia vigente; se verificaron uno a uno contra el código
+real antes de tocar nada). El detalle completo de la reconciliación de las 3
+auditorías, con cita de código y clasificación (ya cerrado / falso positivo por
+snapshot desactualizado / real y accionable) está en
+`01_PLAN_CIERRE_TRIPLE_AUDITORIA_FF1.md`.
+
+**Hallazgos reales cerrados en esta sesión** (ver detalle y ubicación exacta en
+la tabla de la sección 3): B-01 (FK de `p_mask_tab`), acoplamiento cruzado
+04↔05, propagación fail-open en `p_dm_enmascara`, tipos `CHAR` obsoletos,
+`DETERMINISTIC` en `06` (A-02, ahora cerrado del todo), R-01 (DBMS_ASSERT en
+`dm_validar_flujo.sql`), R-03 (bloque comentado obsoleto en `02`), R-04
+(líneas sueltas sin comentar en `97`), R-05 (`98` incompleto).
+
+**Bugs adicionales encontrados y corregidos que ninguna de las 3 auditorías
+había señalado explícitamente:**
+- Dos bloques de código muerto (`EXECUTE IMMEDIATE` a una columna
+  `forzar_full` inexistente en `tdm_mask_solicitud`, siempre fallaba
+  `ORA-00904` y el error se tragaba) en `func_dm_crea_sol` y `p_dm_enmascara`.
+- `func_dm_tiene_regla` devolvía `0` (silenciosamente "sin regla") ante
+  cualquier error, incluidos errores reales de la propia consulta — cambiado a
+  `RAISE`.
+- `proc_dm_upsert_excepcion_col` (API de configuración usada por DBA) tragaba
+  cualquier error sin más — eliminado el swallow.
+- `04_dm_pkg_descubrimiento.sql` invocaba la traza con `-1, -1` fijos en vez
+  de `NULL, p_ejecucion_id` en un punto — corregido de paso al migrar la
+  llamada a `pkg_dm_trazabilidad`.
+
+**Documentación de gobernanza generada** (hallazgos M-02, A-05, A-04 — estos
+tres eran de diseño/gobernanza, no de código, así que su "cierre" en esta
+sesión es documental, no ejecutable):
+- `M02_seudonimizacion_vs_anonimizacion.md`
+- `A05_contrato_de_dominio_FK.md`
+- `A04_custodia_del_pepper.md`
+
+**Paquete nuevo:** `03b_dm_pkg_trazabilidad.sql` — extrae `proc_dm_trace` y
+`proc_dm_log_ejec_error` a un paquete sin dependencias de `04`/`05`, que
+compila antes que ambos en `99_install_datamasking.sql`. Elimina la necesidad
+de `EXECUTE IMMEDIATE` para resolver la referencia circular 04↔05 que señalaba
+Gemini.
+
+**Verificación realizada — y su límite honesto:** se revisó balance
+`BEGIN`/`END` y estructura de cada paquete tocado (comprobación mecánica,
+tipo `grep`/conteo), y se releyó cada cambio en contexto contra el código
+circundante. **No se compiló el código contra una instancia Oracle real**
+(este entorno no dispone de una) — es la verificación pendiente obligatoria
+antes de promover a QA/PRE: compilar los 6 paquetes (`03b`→`04`→`05`→`06`→
+`07`, orden de `99_install_datamasking.sql`) en una instancia 11g+ de
+desarrollo y confirmar `STATUS='VALID'` sin errores en `DBA_ERRORS`, además de
+correr `tests/00_run_tests_ff1.sql` (A-03) y `SIGAD/config_sigad.sql` seguido
+de `dm_validar_flujo.sql` (A-07).
+
+**Qué queda genuinamente pendiente y por qué no se hizo aquí:** A-03
+(ejecutar los tests FF1 en Oracle real), A-07 (ejecutar `config_sigad.sql`
+contra un esquema real y validar con KPIs), y M-01 (benchmark de rendimiento
+1M/10M filas) requieren una instancia Oracle en ejecución — no son tareas de
+edición de código y no se pueden completar desde este entorno. A-04 y A-05
+tienen ya su documento de diseño/gobernanza, pero la implementación
+multiesquema (A-05) y la decisión operativa de custodia del secreto (A-04,
+wallet/HSM vs. tabla) siguen abiertas como trabajo de diseño e infraestructura,
+no de código.
+
+---
+
+## 7. Instalación y pruebas en instancia real — 2026-09-16
+
+Ejecutado por el usuario en `BEV-PDRAC0304.PRESAE` (usuario `eypurisaca`, esquema
+`ASTSYSADMIN`).
+
+**Bug real encontrado en el primer intento de instalación** (no detectado por
+ninguna de las 3 auditorías ni por la revisión de código de la sección 6,
+porque solo se manifiesta al compilar contra un motor Oracle real): al migrar
+`CHAR`→`VARCHAR2(1)` en la Fase 1 (punto 6 de la sección 4), la corrección se
+aplicó por error también a 6 **parámetros** `IN`/`OUT` de procedimientos y
+funciones (`p_dm_enmascara`, `proc_dm_upd_sol`, `func_dm_crea_sol`,
+`proc_dm_validar_reingreso_mask`, `proc_dm_mask_cat` — todos en `05`). En
+PL/SQL un parámetro no admite restricción de longitud (`VARCHAR2(1)` es
+inválido ahí; solo es válido en una variable local), lo que hizo que
+`PKG_DM_ENMASCARAR` fallara con `PLS-00103` en cascada en la primera
+instalación. Corregido a `VARCHAR2` sin longitud en los 6 parámetros
+(las 3 variables locales `l_repro`/`l_reproceso VARCHAR2(1)` quedaron igual,
+esas sí son válidas). Este es exactamente el límite de verificación que se
+advirtió arriba: la lectura de código y el balance BEGIN/END no sustituyen
+una compilación real, y aquí lo confirmó la práctica.
+
+**Segundo intento — instalación limpia:**
+- Los 5 paquetes (`PKG_DM_DESCUBRIMIENTO`, `PKG_DM_ENMASCARAR`,
+  `PKG_DM_EXPORT`, `PKG_DM_FUNC_MASK`, `PKG_DM_FF1_TEST`) + sus bodies,
+  10/10 en `VALID`, `dba_errors` vacío.
+- `tests/00_run_tests_ff1.sql`: **9/9 pruebas PASAN** — vectores NIST
+  (muestras 1 y 2), round-trip de invertibilidad sobre 2000 valores,
+  descifrado de ambas muestras NIST, biyección exhaustiva sin colisiones
+  sobre el dominio `10^4` completo, determinismo y separación por tweak.
+  Esto es la evidencia real que cierra **A-03**.
+- Nota operativa aparte (no de código): el primer intento también falló en
+  `grant execute on SYS.DBMS_CRYPTO to ASTSYSADMIN` por `ORA-01031`
+  (privilegios insuficientes de la sesión que corrió el instalador) — se
+  resolvió ejecutando ese grant puntual conectado como `SYS`. Queda como
+  recordatorio operativo para instalaciones futuras en otros entornos: ese
+  grant específico necesita una sesión con privilegio de `SYS` o
+  `GRANT ANY OBJECT PRIVILEGE`, el resto del instalador no.
+
+**Siguiente paso, en curso:** probar el flujo funcional completo
+(descubrimiento → excepciones → enmascarado → `dm_validar_flujo` → export)
+sobre un esquema real. Esto es lo que falta para poder marcar A-07 y dar
+evidencia de extremo a extremo, más allá de la conformidad criptográfica ya
+confirmada en A-03.

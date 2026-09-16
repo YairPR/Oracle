@@ -121,6 +121,12 @@ Rem Si existe el archivo y deseas cargar excepciones:
 Rem   @@97_configurar_excepciones.sql
 Rem ----------------------------------------------------------------
 Rem ----------------------------------------------------------------
+Rem 2.6 CREACION DEL PAQUETE DE TRAZABILIDAD (sin dependencias)
+Rem ----------------------------------------------------------------
+Rem Debe compilarse ANTES que 04 y 05: ambos lo llaman de forma estatica
+Rem para registrar traza/errores (ver cabecera de 03b_dm_pkg_trazabilidad.sql).
+@@03b_dm_pkg_trazabilidad.sql
+Rem ----------------------------------------------------------------
 Rem 2.3 CREACION DEL PAQUETE DE DESCUBRIMIENTO
 Rem ----------------------------------------------------------------
 @@04_dm_pkg_descubrimiento.sql
@@ -158,6 +164,7 @@ grant execute on pkg_dm_descubrimiento to ROL_DATAMASKING;
 grant execute on pkg_dm_func_mask       to ROL_DATAMASKING;
 grant execute on pkg_dm_enmascarar      to ROL_DATAMASKING;
 grant execute on pkg_dm_export          to ROL_DATAMASKING;
+grant execute on pkg_dm_trazabilidad    to ROL_DATAMASKING;
 
 grant select on tdm_ejecucion          to ROL_DATAMASKING;
 grant select on tdm_ejecucion_scope    to ROL_DATAMASKING;
@@ -200,6 +207,12 @@ Rem
 Rem ----------------------------------------------------------------
 Rem 3.1 ASIGNAR EL ROL A LOS DBA
 Rem ----------------------------------------------------------------
+Rem R-02 (auditoria, severidad baja, pendiente): estos 8 usuarios estan
+Rem   hardcodeados aqui. Mejora futura sugerida: leerlos de una tabla de
+Rem   configuracion (p.ej. tdm_dba_autorizado) e iterar con un bloque PL/SQL,
+Rem   para no tener que editar este script cada vez que cambia el equipo.
+Rem   No se aborda en esta iteracion por ser bajo riesgo y para no tocar mas
+Rem   de lo necesario en el script de instalacion.
 grant ROL_DATAMASKING to ALOPEZDIAZ;
 grant ROL_DATAMASKING to ACASTANGI;
 grant ROL_DATAMASKING to DMIRANDA;

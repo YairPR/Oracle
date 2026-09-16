@@ -183,7 +183,7 @@ create or replace PACKAGE pkg_dm_enmascarar AS
 
   PROCEDURE p_dm_enmascara(
     p_ejecucion_id IN NUMBER,
-    p_reproceso    IN CHAR   DEFAULT 'N',
+    p_reproceso    IN VARCHAR2 DEFAULT 'N',
     p_commit_lote  IN NUMBER DEFAULT 1000
   );
 
@@ -423,6 +423,11 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       RAISE;
   END proc_dm_ejecuta_update_seguro;
 
+  -- Wrapper de compatibilidad (2026-09-16): la implementacion real vive ahora
+  -- en pkg_dm_trazabilidad, un paquete sin dependencias que tanto 04 como 05
+  -- pueden llamar de forma ESTATICA (ver cabecera de 03b_dm_pkg_trazabilidad.sql
+  -- para el porque). Se conserva esta firma publica identica para no romper
+  -- a nadie que ya llame pkg_dm_enmascarar.proc_dm_trace directamente.
   PROCEDURE proc_dm_trace(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
@@ -430,22 +435,8 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     p_paso         IN VARCHAR2,
     p_detalle      IN VARCHAR2
   ) IS
-    PRAGMA AUTONOMOUS_TRANSACTION;
   BEGIN
-    INSERT INTO tdm_mask_trace(
-      trace_id, solicitud_id, ejecucion_id, fase, paso, detalle, fecha_evento
-    ) VALUES (
-      seq_dm_mask_trace.NEXTVAL,
-      p_solicitud_id,
-      p_ejecucion_id,
-      SUBSTR(p_fase,1,40),
-      SUBSTR(p_paso,1,120),
-      SUBSTR(p_detalle,1,3900),
-      SYSTIMESTAMP
-    );
-    COMMIT;
-  EXCEPTION
-    WHEN OTHERS THEN NULL;
+    pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id, p_ejecucion_id, p_fase, p_paso, p_detalle);
   END;
 
   PROCEDURE proc_dm_upd_sol(
@@ -454,7 +445,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     p_fase         IN VARCHAR2,
     p_checkpoint   IN VARCHAR2,
     p_detalle      IN VARCHAR2 DEFAULT NULL,
-    p_cerrar       IN CHAR DEFAULT 'N'
+    p_cerrar       IN VARCHAR2 DEFAULT 'N'
   ) IS
   BEGIN
     UPDATE tdm_mask_solicitud
@@ -509,7 +500,12 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
      WHERE ejecucion_id = p_ejecucion_id;
     COMMIT;
   EXCEPTION
-    WHEN OTHERS THEN NULL;
+    -- No aborta (esta rutina la llaman tambien los propios manejadores de
+    -- error, para no encadenar fallos), pero antes de este cambio el fallo
+    -- desaparecia sin dejar rastro y el estado mostrado al operador podia
+    -- quedar desactualizado sin ninguna pista. Ahora al menos queda trazado.
+    WHEN OTHERS THEN
+      proc_dm_trace(NULL, p_ejecucion_id, 'ERROR', 'UPD_EJEC_FALLO', f_safe_err(SQLERRM));
   END;
 
   PROCEDURE proc_dm_close_sol_open(p_ejecucion_id IN NUMBER) IS
@@ -526,7 +522,10 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
        AND fecha_fin IS NULL;
     COMMIT;
   EXCEPTION
-    WHEN OTHERS THEN NULL;
+    -- Igual que en proc_dm_upd_ejec: housekeeping de solicitudes huerfanas,
+    -- ahora con traza en vez de silencio total.
+    WHEN OTHERS THEN
+      proc_dm_trace(NULL, p_ejecucion_id, 'ERROR', 'CLOSE_SOL_OPEN_FALLO', f_safe_err(SQLERRM));
   END;
 
   PROCEDURE proc_dm_longops(
@@ -547,6 +546,9 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       units       => SUBSTR(p_units,1,32)
     );
   EXCEPTION
+    -- Silencio deliberado: SET_SESSION_LONGOPS es telemetria de progreso para
+    -- V$SESSION_LONGOPS (monitorizacion), no afecta al enmascarado ni a la
+    -- integridad de los datos. Un fallo aqui nunca debe abortar la campana.
     WHEN OTHERS THEN NULL;
   END;
 
@@ -580,7 +582,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     p_ejecucion_id IN NUMBER,
     p_esquema      IN VARCHAR2,
     p_detalle      IN VARCHAR2,
-    p_forzar_reproceso IN CHAR DEFAULT 'N'
+    p_forzar_reproceso IN VARCHAR2 DEFAULT 'N'
   ) RETURN NUMBER IS
     l_solicitud_id NUMBER;
     l_reintento    NUMBER;
@@ -604,15 +606,11 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       'INI', l_reintento, 'N', SYSTIMESTAMP, SYSTIMESTAMP, SUBSTR(p_detalle,1,3900),
       UPPER(TRIM(NVL(p_forzar_reproceso,'N'))), 0, 0, 0, 0, NULL, NULL, NULL, NULL
     );
-    BEGIN
-      EXECUTE IMMEDIATE
-        'UPDATE tdm_mask_solicitud '||
-        '   SET forzar_full = :1 '||
-        ' WHERE solicitud_id = :2'
-        USING UPPER(TRIM(NVL(p_forzar_reproceso,'N'))), l_solicitud_id;
-    EXCEPTION
-      WHEN OTHERS THEN NULL;
-    END;
+    -- Limpieza (2026-09-16): aqui habia un EXECUTE IMMEDIATE que actualizaba
+    -- TDM_MASK_SOLICITUD.FORZAR_FULL, columna que NO existe en esa tabla (la
+    -- columna real es FORZAR_REPROCESO, ya fijada arriba en el INSERT). El
+    -- UPDATE fallaba con ORA-00904 en cada llamada y el WHEN OTHERS lo
+    -- silenciaba - codigo muerto que nunca hizo nada. Eliminado.
 
     COMMIT;
     RETURN l_solicitud_id;
@@ -665,6 +663,10 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
      WHERE ejecucion_id = p_ejecucion_id;
     COMMIT;
   EXCEPTION
+    -- Silencio deliberado: SID/SERIAL# de sesion son datos de monitorizacion
+    -- (permiten a un DBA ver la sesion en V$SESSION); su ausencia no afecta
+    -- al enmascarado. GV$SESSION puede fallar en RAC sin privilegio o en
+    -- mitad de un failover, y no debe abortar la campana por eso.
     WHEN OTHERS THEN NULL;
   END;
 
@@ -707,6 +709,8 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     END IF;
   END;
 
+  -- Wrapper de compatibilidad (2026-09-16): ver nota de proc_dm_trace, misma
+  -- razon. Implementacion real en pkg_dm_trazabilidad.
   PROCEDURE proc_dm_log_ejec_error(
     p_ejecucion_id IN NUMBER,
     p_owner_name   IN VARCHAR2,
@@ -718,51 +722,20 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     p_backtrace    IN VARCHAR2,
     p_solicitud_id IN NUMBER DEFAULT NULL
   ) IS
-    PRAGMA AUTONOMOUS_TRANSACTION;
-    l_cnt NUMBER;
-    l_id  NUMBER;
   BEGIN
-    SELECT COUNT(*)
-      INTO l_cnt
-      FROM user_tables
-     WHERE table_name = 'TDM_EJECUCION_ERROR';
-
-    IF l_cnt = 0 THEN
-      RETURN;
-    END IF;
-
-    SELECT NVL(MAX(error_id),0)+1
-      INTO l_id
-      FROM tdm_ejecucion_error;
-
-    INSERT INTO tdm_ejecucion_error(
-      error_id, ejecucion_id, solicitud_id, owner_name, table_name, column_name, etapa,
-      codigo_error, mensaje_error, backtrace, fecha_error
-    ) VALUES (
-      l_id,
-      p_ejecucion_id,
-      p_solicitud_id,
-      SUBSTR(UPPER(TRIM(p_owner_name)),1,128),
-      SUBSTR(UPPER(TRIM(p_table_name)),1,128),
-      SUBSTR(UPPER(TRIM(p_column_name)),1,128),
-      SUBSTR(p_etapa,1,100),
-      p_codigo_error,
-      SUBSTR(p_mensaje,1,3900),
-      SUBSTR(p_backtrace,1,3900),
-      SYSTIMESTAMP
+    pkg_dm_trazabilidad.proc_dm_log_ejec_error(
+      p_ejecucion_id, p_owner_name, p_table_name, p_column_name, p_etapa,
+      p_codigo_error, p_mensaje, p_backtrace, p_solicitud_id
     );
-    COMMIT;
-  EXCEPTION
-    WHEN OTHERS THEN NULL;
   END;
 
   PROCEDURE proc_dm_validar_reingreso_mask(
     p_ejecucion_id IN NUMBER,
     p_esquema      IN VARCHAR2,
-    p_reproceso    IN CHAR
+    p_reproceso    IN VARCHAR2
   ) IS
     l_cnt NUMBER := 0;
-    l_repro CHAR(1) := UPPER(TRIM(NVL(p_reproceso,'N')));
+    l_repro VARCHAR2(1) := UPPER(TRIM(NVL(p_reproceso,'N')));
     l_esquema VARCHAR2(128) := UPPER(TRIM(p_esquema));
   BEGIN
     IF l_repro = 'Y' THEN
@@ -812,7 +785,12 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
        AND activa           = 'Y';
     RETURN l_cnt;
   EXCEPTION
-    WHEN OTHERS THEN RETURN 0;
+    -- Fail-closed (2026-09-16): un COUNT(*) sobre una tabla propia solo puede
+    -- fallar por un problema real (tabla inaccesible, privilegio revocado,
+    -- deadlock). Devolver 0 en ese caso hacia parecer "no hay regla especial"
+    -- y el motor caia al tratamiento generico sin avisar - exactamente el
+    -- tipo de fallback silencioso que el resto del motor evita. Se propaga.
+    WHEN OTHERS THEN RAISE;
   END;
 
   FUNCTION func_dm_val_regla(
@@ -1480,8 +1458,11 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       'Y'
     );
     COMMIT;
-  EXCEPTION
-    WHEN OTHERS THEN NULL;
+  -- Sin EXCEPTION propio (2026-09-16): esta es la API con la que el DBA fija
+  -- una excepcion EXCLUDE/FORCE por columna. Un WHEN OTHERS THEN NULL aqui
+  -- devolvia "exito" aunque el MERGE no hubiera grabado nada - el DBA podia
+  -- creer protegida (o forzada a un identificador) una columna que en
+  -- realidad seguia con el tratamiento por defecto. Se deja propagar.
   END;
 
   PROCEDURE proc_dm_get_excepcion(
@@ -1891,7 +1872,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
     p_esquema      IN VARCHAR2,
-    p_reproceso    IN CHAR DEFAULT 'N',
+    p_reproceso    IN VARCHAR2 DEFAULT 'N',
     p_error_count  OUT NUMBER
   ) IS
     l_total_cols NUMBER;
@@ -1901,7 +1882,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     l_last_tab   VARCHAR2(128);
     l_pct        NUMBER;
     l_esquema    VARCHAR2(128) := UPPER(TRIM(p_esquema));
-    l_reproceso  CHAR(1) := UPPER(TRIM(NVL(p_reproceso,'N')));
+    l_reproceso  VARCHAR2(1) := UPPER(TRIM(NVL(p_reproceso,'N')));
     l_msg_noop   VARCHAR2(1900);
     l_total_rows NUMBER := 0;
     l_has_final  NUMBER := 0;
@@ -2191,7 +2172,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
   ------------------------------------------------------------------------------
   PROCEDURE p_dm_enmascara(
     p_ejecucion_id IN NUMBER,
-    p_reproceso    IN CHAR   DEFAULT 'N',
+    p_reproceso    IN VARCHAR2 DEFAULT 'N',
     p_commit_lote  IN NUMBER DEFAULT 1000
   ) IS
     l_solicitud_id NUMBER;
@@ -2201,7 +2182,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     l_err_stack    VARCHAR2(1900 CHAR);
     l_err_bt       VARCHAR2(1900 CHAR);
     l_err_call     VARCHAR2(1900 CHAR);
-    l_reproceso    CHAR(1) := UPPER(TRIM(NVL(p_reproceso,'N')));
+    l_reproceso    VARCHAR2(1) := UPPER(TRIM(NVL(p_reproceso,'N')));
     l_mask_errors  NUMBER := 0;
     l_invalidos_pre NUMBER := 0;
     l_invalidos_post NUMBER := 0;
@@ -2294,18 +2275,18 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
                 WHERE e.ejecucion_id = p_ejecucion_id
              )
        WHERE s.solicitud_id = l_solicitud_id;
-      BEGIN
-        EXECUTE IMMEDIATE
-          'UPDATE tdm_mask_solicitud '||
-          '   SET forzar_full = :1, cancel_requested = ''N'' '||
-          ' WHERE solicitud_id = :2'
-          USING l_reproceso, l_solicitud_id;
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
+      -- Limpieza (2026-09-16): igual que en func_dm_crea_sol, aqui habia un
+      -- EXECUTE IMMEDIATE contra TDM_MASK_SOLICITUD.FORZAR_FULL (columna
+      -- inexistente; la real es FORZAR_REPROCESO). Fallaba con ORA-00904 en
+      -- cada llamada y quedaba silenciado - codigo muerto eliminado. El
+      -- flag de reproceso ya se fija correctamente via
+      -- p_forzar_reproceso=>l_reproceso al crear la solicitud, arriba.
+      UPDATE tdm_mask_solicitud
+         SET cancel_requested = 'N'
+       WHERE solicitud_id = l_solicitud_id;
       COMMIT;
     EXCEPTION
-      WHEN OTHERS THEN NULL;
+      WHEN OTHERS THEN NULL;   -- actualizacion de sesion/telemetria, no bloquea el enmascarado
     END;
 
     proc_dm_trace(l_solicitud_id,p_ejecucion_id,'INI','INICIO','Esquema='||l_esquema);
@@ -2314,6 +2295,13 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     proc_dm_pre_dep(l_solicitud_id,p_ejecucion_id,l_esquema);
 
     -- A.1: Re-propagar dominios referenciales con la validación final del cliente antes de enmascarar
+    --
+    -- Fail-open corregido (auditoria 2026-09-16): este bloque solo trazaba el
+    -- error y dejaba que el flujo siguiera hacia pepper y masking aunque la
+    -- propagacion de dominios FK hubiera fallado por completo. La garantia
+    -- de integridad referencial es tan critica como el pepper (que si hace
+    -- RAISE unas lineas mas abajo) - un fallo aqui debe abortar la campana,
+    -- no continuar en silencio con dominios FK potencialmente inconsistentes.
     BEGIN
       proc_dm_trace(l_solicitud_id, p_ejecucion_id, 'PROPAGACION', 'PROPAGA_START', 'Recalculando dominios FK con la validacion del cliente');
       pkg_dm_descubrimiento.proc_dm_propaga_dominios(l_esquema, l_solicitud_id, p_ejecucion_id);
@@ -2321,6 +2309,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     EXCEPTION
       WHEN OTHERS THEN
         proc_dm_trace(l_solicitud_id, p_ejecucion_id, 'PROPAGACION', 'PROPAGA_ERR', 'Error en propagacion referencial: '||SQLERRM);
+        RAISE;   -- sin propagacion valida no se puede garantizar la integridad FK
     END;
 
     -- Generar la semilla efimera (pepper) ANTES de enmascarar. Idempotente y con
@@ -2595,13 +2584,39 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     l_col_idx      PLS_INTEGER;
     l_columna      VARCHAR2(128);
     l_tabla        VARCHAR2(128);
-    l_dummy_ejec   NUMBER := -1;
+    l_ejecucion_id NUMBER;
+    l_err_code     NUMBER;
+    l_err_stack    VARCHAR2(1800);
+    l_err_bt       VARCHAR2(1800);
   BEGIN
     proc_dm_validar_base;
-    proc_dm_pepper_generar(l_dummy_ejec);   -- pepper ad-hoc de p_mask_tab (ejec=-1)
-    l_solicitud_id := func_dm_crea_sol(l_dummy_ejec,l_esquema,'Enmascaramiento selectivo final');
 
-    proc_dm_pre_dep(l_solicitud_id,l_dummy_ejec,l_esquema);
+    -- B-01 (auditoria 2026-09-16): esta rutina creaba la solicitud con
+    -- ejecucion_id=-1, un valor que nunca se siembra en tdm_ejecucion. Tanto
+    -- fk_tdm_mask_sol_ejec (tdm_mask_solicitud) como fk_tdm_mask_trace_ejec
+    -- (tdm_mask_trace) violaban ORA-02291 en la primera llamada real: la
+    -- funcion estaba rota de origen, no solo "sin documentar". Ademas, -1 es
+    -- un literal fijo, asi que TODAS las invocaciones de p_mask_tab a lo
+    -- largo del tiempo habrian compartido el mismo pepper
+    -- (clave='PEPPER_MASK:-1'), nunca purgado: justo el secreto
+    -- compartido/no rotado que el diseno de pepper por campana busca evitar.
+    --
+    -- Correccion: se crea una ejecucion real y minima ("ad-hoc"), con su
+    -- propia fila en tdm_ejecucion, para que el modo selectivo viva dentro
+    -- del mismo modelo de trazabilidad, pepper efimero y purga que una
+    -- campana completa.
+    l_ejecucion_id := seq_dm_ejecucion.NEXTVAL;
+    INSERT INTO tdm_ejecucion(
+      ejecucion_id, esquema_objetivo, ejecutado_por, fase_proceso, estado, fecha_inicio
+    ) VALUES (
+      l_ejecucion_id, l_esquema, USER, 'ENMASCARAMIENTO', 'EJECUTANDO', SYSTIMESTAMP
+    );
+    COMMIT;   -- visible para los workers paralelos antes de generar el pepper
+
+    proc_dm_pepper_generar(l_ejecucion_id);
+    l_solicitud_id := func_dm_crea_sol(l_ejecucion_id,l_esquema,'Enmascaramiento selectivo (p_mask_tab)');
+
+    proc_dm_pre_dep(l_solicitud_id,l_ejecucion_id,l_esquema);
 
     LOOP
       l_tabla := f_csv_item(p_tabla, l_idx);
@@ -2627,7 +2642,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
         IF l_cols_total > 0 AND l_cols_excl >= l_cols_total THEN
           proc_dm_trace(
             l_solicitud_id,
-            l_dummy_ejec,
+            l_ejecucion_id,
             'MASK',
             'SKIP_TABLE_TABMODE',
             l_esquema||'.'||l_tabla||' omitida en p_mask_tab: todas las columnas tipo texto están EXCLUDE'
@@ -2642,7 +2657,7 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
         LOOP
           l_columna := f_csv_item(p_columna, l_col_idx);
           EXIT WHEN l_columna IS NULL;
-          proc_dm_apl_col(l_solicitud_id,l_dummy_ejec,l_esquema,l_esquema,l_tabla,l_columna,p_identificador);
+          proc_dm_apl_col(l_solicitud_id,l_ejecucion_id,l_esquema,l_esquema,l_tabla,l_columna,p_identificador);
           l_col_idx := l_col_idx + 1;
         END LOOP;
       ELSE
@@ -2653,16 +2668,53 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
              AND table_name = l_tabla
              AND data_type IN ('CHAR','VARCHAR2','NCHAR','NVARCHAR2')
         ) LOOP
-          proc_dm_apl_col(l_solicitud_id,l_dummy_ejec,l_esquema,l_esquema,l_tabla,rc.column_name,p_identificador);
+          proc_dm_apl_col(l_solicitud_id,l_ejecucion_id,l_esquema,l_esquema,l_tabla,rc.column_name,p_identificador);
         END LOOP;
       END IF;
 
       l_idx := l_idx + 1;
     END LOOP;
 
-    proc_dm_post_sync(l_solicitud_id,l_dummy_ejec,l_esquema);
-    proc_dm_post_dep(l_solicitud_id,l_dummy_ejec);
+    proc_dm_post_sync(l_solicitud_id,l_ejecucion_id,l_esquema);
+    proc_dm_post_dep(l_solicitud_id,l_ejecucion_id);
     proc_dm_upd_sol(l_solicitud_id,'FINALIZADO','FIN','FINALIZADO','Enmascaramiento selectivo finalizado','Y');
+    proc_dm_upd_ejec(l_ejecucion_id,'ENMASCARAMIENTO','FINALIZADO',100,NULL,NULL,NULL,NULL,NULL,'FINALIZADO');
+
+    -- Ejecucion ad-hoc sin fase de export posterior: el pepper no debe
+    -- sobrevivir a esta llamada.
+    p_dm_pepper_purgar(l_ejecucion_id);
+  EXCEPTION
+    WHEN OTHERS THEN
+      l_err_code  := SQLCODE;
+      l_err_stack := f_safe_err(DBMS_UTILITY.FORMAT_ERROR_STACK);
+      l_err_bt    := f_safe_err(DBMS_UTILITY.FORMAT_ERROR_BACKTRACE);
+      BEGIN
+        IF l_solicitud_id IS NOT NULL THEN
+          proc_dm_upd_sol(l_solicitud_id,'ERROR','ERROR','ERROR',l_err_stack,'Y');
+          proc_dm_trace(l_solicitud_id,l_ejecucion_id,'ERROR','ERROR',l_err_stack);
+        END IF;
+        IF l_ejecucion_id IS NOT NULL THEN
+          proc_dm_upd_ejec(l_ejecucion_id,'ENMASCARAMIENTO','ERROR',NULL,NULL,NULL,NULL,NULL,NULL,'ERROR');
+        END IF;
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END;
+      proc_dm_log_ejec_error(
+        p_ejecucion_id => l_ejecucion_id,
+        p_owner_name   => l_esquema,
+        p_table_name   => l_tabla,
+        p_column_name  => NULL,
+        p_etapa        => 'P_MASK_TAB',
+        p_codigo_error => l_err_code,
+        p_mensaje      => l_err_stack,
+        p_backtrace    => l_err_bt,
+        p_solicitud_id => l_solicitud_id
+      );
+      -- El pepper se purga tambien en fallo: un secreto de campana ad-hoc a
+      -- medias no debe persistir indefinidamente en tdm_secreto.
+      IF l_ejecucion_id IS NOT NULL THEN
+        p_dm_pepper_purgar(l_ejecucion_id);
+      END IF;
+      RAISE;
   END;
 
 END pkg_dm_enmascarar;
