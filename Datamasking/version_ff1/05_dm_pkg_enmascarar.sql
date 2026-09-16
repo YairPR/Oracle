@@ -54,20 +54,8 @@ Rem        - la registra como SKIP en trazas
 Rem        - puede consolidarla en tdm_excepcion_col como EXCLUDE
 Rem        - continúa sin abortar la tabla completa
 Rem
-Rem    REGLAS ESPECIALES SOPORTADAS PARA SIGAD
-Rem
-Rem      func_dm_doc_tsk_keep_ends
-Rem        - Tratamiento especial para documentos unificados
-Rem        - Mantiene el primer y último carácter
-Rem        - Reemplaza el contenido intermedio de forma determinista
-Rem
-Rem      func_dm_doc_tipo
-Rem        - Aplica tratamiento según tipo documental asociado
-Rem        - NIF: genera 8 dígitos más letra válida
-Rem        - NIE: genera X/Y/Z más 7 dígitos y letra válida
-Rem        - Pasaporte u otros: sustituye dígitos conservando forma general
-Rem
-Rem      func_dm_iban_sigad
+Rem    Reglas especiales (genericas, seleccionadas por tdm_mask_regla_esp):
+Rem      DOC_KEEP_ENDS, DOC_SEGUN_TIPO, IBAN_CONTINUO -> pkg_dm_func_mask.func_especial_*
 Rem        - Genera IBAN español continuo
 Rem        - Mantiene formato ES + 22 dígitos
 Rem        - Recalcula correctamente dígitos de control
@@ -98,9 +86,7 @@ Rem        - Puede operar sobre una o varias tablas
 Rem        - También puede dirigirse a una sola columna
 Rem        - Requiere identificador semántico para resolver la función
 Rem
-Rem      p_export_mask
 Rem        - Exporta el alcance tratado o el esquema completo
-Rem        - Usa DBMS_DATAPUMP
 Rem        - Soporta alcance:
 Rem            S = solo tablas enmascaradas
 Rem            C = esquema completo
@@ -111,7 +97,7 @@ Rem      se realice preferentemente mediante importación del dump original
 Rem      en lugar de un desenmascarado fila a fila.
 Rem
 Rem      Por ello:
-Rem        - p_export_mask forma parte del flujo PRE / entrega a PRE
+Rem        - El export (Data Pump) se movio a pkg_dm_export (07)
 Rem        - el import de reversión es la estrategia preferente
 Rem        - no se depende de reconstrucción campo a campo para textos libres
 Rem
@@ -193,18 +179,7 @@ create or replace PACKAGE pkg_dm_enmascarar AS
     p_txt IN VARCHAR2
   ) RETURN VARCHAR2 DETERMINISTIC;
 
-  FUNCTION func_dm_doc_tsk_keep_ends(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_dm_doc_tipo(
-    p_documento       IN VARCHAR2,
-    p_idtipodocumento IN NUMBER
-  ) RETURN VARCHAR2 DETERMINISTIC;
-
-  FUNCTION func_dm_iban_sigad(
-    p_valor IN VARCHAR2
-  ) RETURN VARCHAR2 DETERMINISTIC;
+-- (reglas especiales muertas eliminadas: se usan pkg_dm_func_mask.func_especial_*)
 
   PROCEDURE p_dm_enmascara(
     p_ejecucion_id IN NUMBER,
@@ -227,15 +202,6 @@ create or replace PACKAGE pkg_dm_enmascarar AS
     p_identificador IN VARCHAR2,
     p_columna       IN VARCHAR2 DEFAULT NULL,
     p_commit_lote   IN NUMBER   DEFAULT 1000
-  );
-
-  PROCEDURE p_export_mask(
-    p_esquema      IN VARCHAR2,
-    p_directorio   IN VARCHAR2,
-    p_dumpfile     IN VARCHAR2,
-    p_alcance      IN VARCHAR2 DEFAULT 'S',
-    p_logfile      IN VARCHAR2 DEFAULT NULL,
-    p_ejecucion_id IN NUMBER   DEFAULT NULL
   );
 
   -- Purga la semilla efimera de ESTA campana tras el export.
@@ -357,6 +323,9 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     l_task_name VARCHAR2(100);
     l_sql_chunk VARCHAR2(32767);
     l_stmt_check VARCHAR2(1000);
+    l_estado_tarea  NUMBER;        -- C-02: estado terminal de la tarea paralela
+    l_chunks_error  NUMBER;        -- C-02: nro de chunks PROCESSED_WITH_ERROR
+    l_detalle_error VARCHAR2(400); -- C-02: ejemplo de error de chunk (diagnostico)
   BEGIN
     -- 1. Obtener número aproximado de filas e iot_type de la tabla
     l_stmt_check := 'SELECT num_rows, iot_type FROM dba_tables WHERE owner = :1 AND table_name = :2';
@@ -409,10 +378,35 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
         parallel_level => 2
       );
 
-      -- Limpiar tarea
+      -- C-02: FALLO CERRADO. No dar por buena la columna hasta confirmar que TODOS
+      -- los chunks terminaron OK. Un reintento acotado cubre errores transitorios.
+      l_estado_tarea := DBMS_PARALLEL_EXECUTE.TASK_STATUS(l_task_name);
+      IF l_estado_tarea <> DBMS_PARALLEL_EXECUTE.FINISHED THEN
+        DBMS_PARALLEL_EXECUTE.RESUME_TASK(l_task_name);          -- reintenta chunks fallidos
+        l_estado_tarea := DBMS_PARALLEL_EXECUTE.TASK_STATUS(l_task_name);
+      END IF;
+
+      SELECT COUNT(*),
+             MAX(TO_CHAR(error_code)||': '||SUBSTR(error_message,1,200))
+        INTO l_chunks_error, l_detalle_error
+        FROM user_parallel_execute_chunks
+       WHERE task_name = l_task_name
+         AND status    = 'PROCESSED_WITH_ERROR';
+
+      IF l_estado_tarea <> DBMS_PARALLEL_EXECUTE.FINISHED OR NVL(l_chunks_error,0) > 0 THEN
+        -- Se captura el diagnostico ANTES de limpiar la tarea, y se aborta la columna.
+        DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
+        RAISE_APPLICATION_ERROR(-20320,
+          'Enmascarado paralelo incompleto en '||p_owner||'.'||p_tabla||'.'||p_columna||
+          ' (estado_tarea='||l_estado_tarea||', chunks_error='||NVL(l_chunks_error,0)||
+          CASE WHEN l_detalle_error IS NOT NULL THEN ', ej='||l_detalle_error ELSE '' END||')');
+      END IF;
+
+      -- Tarea validada: limpiar.
       DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
-      
-      -- Retornar el número aproximado de filas
+      -- Nota: p_rows_out es aproximado (num_rows de dba_tables); el conteo exacto
+      -- por chunk no lo expone DBMS_PARALLEL_EXECUTE. Lo relevante es que, si algun
+      -- chunk fallo, arriba ya se abortó (no se reporta exito con datos incompletos).
       p_rows_out := l_row_count;
     ELSE
       -- Ejecución original directa
@@ -789,91 +783,6 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
         TO_CHAR(p_ejecucion_id)||',''Y'').'
       );
     END IF;
-  END;
-
-  ------------------------------------------------------------------------------
-  -- Reglas especiales públicas del spec
-  ------------------------------------------------------------------------------
-  FUNCTION func_dm_doc_tsk_keep_ends(p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
-    l_val  VARCHAR2(4000) := UPPER(TRIM(p_valor));
-    l_seed NUMBER;
-    l_mid  VARCHAR2(4000) := '';
-    l_ch   VARCHAR2(4 CHAR);
-  BEGIN
-    IF l_val IS NULL THEN RETURN NULL; END IF;
-    IF LENGTH(l_val) <= 2 THEN RETURN l_val; END IF;
-
-    l_seed := ABS(DBMS_UTILITY.GET_HASH_VALUE('DOC_KEEP_ENDS|'||l_val,1,2147483646));
-    FOR i IN 2 .. LENGTH(l_val)-1 LOOP
-      l_ch := SUBSTR(l_val,i,1);
-      IF REGEXP_LIKE(l_ch,'[0-9]') THEN
-        l_seed := MOD(l_seed*29+7,10); l_mid := l_mid || TO_CHAR(l_seed);
-      ELSIF REGEXP_LIKE(l_ch,'[[:alpha:]]') THEN
-        l_seed := MOD(l_seed*131+17,26); l_mid := l_mid || CHR(65+l_seed);
-      ELSE
-        l_mid := l_mid || l_ch;
-      END IF;
-    END LOOP;
-    RETURN SUBSTR(l_val,1,1) || l_mid || SUBSTR(l_val,-1,1);
-  END;
-
-  FUNCTION func_dm_doc_tipo(
-    p_documento       IN VARCHAR2,
-    p_idtipodocumento IN NUMBER
-  ) RETURN VARCHAR2 DETERMINISTIC IS
-    l_val  VARCHAR2(4000) := UPPER(TRIM(p_documento));
-    l_seed NUMBER;
-    l_num8 VARCHAR2(8);
-    l_num7 VARCHAR2(7);
-    l_x    VARCHAR2(1);
-
-    FUNCTION f_letra_dni(p_num NUMBER) RETURN CHAR IS
-      l_tab CONSTANT VARCHAR2(23) := 'TRWAGMYFPDXBNJZSQVHLCKE';
-    BEGIN
-      RETURN SUBSTR(l_tab, MOD(p_num,23)+1, 1);
-    END;
-  BEGIN
-    IF l_val IS NULL THEN RETURN NULL; END IF;
-
-    l_seed := ABS(DBMS_UTILITY.GET_HASH_VALUE('DOC_TIPO|'||l_val||'|'||TO_CHAR(NVL(p_idtipodocumento,-1)),1,2147483646));
-
-    IF p_idtipodocumento = 1 THEN
-      l_num8 := LPAD(TO_CHAR(MOD(l_seed*37+19,100000000)),8,'0');
-      RETURN l_num8 || f_letra_dni(TO_NUMBER(l_num8));
-    ELSIF p_idtipodocumento = 3 THEN
-      l_x    := SUBSTR('XYZ', MOD(l_seed,3)+1,1);
-      l_num7 := LPAD(TO_CHAR(MOD(l_seed*41+23,10000000)),7,'0');
-      RETURN l_x || l_num7 || f_letra_dni(TO_NUMBER(CASE l_x WHEN 'X' THEN '0' WHEN 'Y' THEN '1' ELSE '2' END || l_num7));
-    ELSE
-      RETURN REGEXP_REPLACE(l_val, '[0-9]', '9');
-    END IF;
-  END;
-
-  FUNCTION func_dm_iban_sigad(p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
-    l_seed NUMBER;
-    l_bban VARCHAR2(20);
-    l_txt  VARCHAR2(200);
-    l_rem  NUMBER := 0;
-    l_part VARCHAR2(20);
-    l_cc   VARCHAR2(2);
-    l_out  VARCHAR2(24);
-    l_in_len NUMBER;
-  BEGIN
-    IF p_valor IS NULL THEN RETURN NULL; END IF;
-    l_seed := ABS(DBMS_UTILITY.GET_HASH_VALUE('IBAN_SIGAD|'||UPPER(TRIM(p_valor)),1,2147483646));
-    l_bban := LPAD(TO_CHAR(MOD(l_seed*137+31,1000000000000)),20,'0');
-    l_txt  := l_bban || '142800';
-    FOR i IN 1 .. CEIL(LENGTH(l_txt)/7) LOOP
-      l_part := TO_CHAR(l_rem) || SUBSTR(l_txt,(i-1)*7+1,7);
-      l_rem  := MOD(TO_NUMBER(l_part),97);
-    END LOOP;
-    l_cc := LPAD(TO_CHAR(98-l_rem),2,'0');
-    l_out := 'ES'||l_cc||l_bban;
-    l_in_len := LENGTH(REPLACE(UPPER(TRIM(SUBSTR(p_valor,1,50))), ' ', ''));
-    IF NVL(l_in_len,0) > 0 AND l_in_len < LENGTH(l_out) THEN
-      l_out := SUBSTR(l_out, 1, l_in_len);
-    END IF;
-    RETURN l_out;
   END;
 
   ------------------------------------------------------------------------------
@@ -1716,15 +1625,11 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, l_rows);
 
     ELSIF func_dm_tiene_regla(p_esquema,p_owner,p_tabla,p_columna,'IBAN_ES_CONTINUO') > 0 THEN
-      IF l_data_type IN ('CHAR','VARCHAR2','NCHAR','NVARCHAR2') THEN
-        l_sql := 'UPDATE '||f_qname(p_owner)||'.'||f_qname(p_tabla)||
-                 ' SET '||f_qname(p_columna)||' = SUBSTR(pkg_dm_func_mask.func_especial_iban_continuo('||f_qname(p_columna)||'),1,'||TO_CHAR(NVL(l_char_len,4000))||')' ||
-                 ' WHERE '||f_qname(p_columna)||' IS NOT NULL';
-      ELSE
-        l_sql := 'UPDATE '||f_qname(p_owner)||'.'||f_qname(p_tabla)||
-                 ' SET '||f_qname(p_columna)||' = pkg_dm_func_mask.func_especial_iban_continuo('||f_qname(p_columna)||')' ||
-                 ' WHERE '||f_qname(p_columna)||' IS NOT NULL';
-      END IF;
+      -- C-01: NO truncar. func_especial_iban_continuo devuelve 24 chars exactos;
+      -- si la columna fuera mas corta, ORA-12899 (fallo cerrado) mejor que corromper.
+      l_sql := 'UPDATE '||f_qname(p_owner)||'.'||f_qname(p_tabla)||
+               ' SET '||f_qname(p_columna)||' = pkg_dm_func_mask.func_especial_iban_continuo('||f_qname(p_columna)||')' ||
+               ' WHERE '||f_qname(p_columna)||' IS NOT NULL';
       proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, l_rows);
 
     ELSE
@@ -2573,6 +2478,24 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       );
     END IF;
 
+    -- A-06 (fallo cerrado): una columna sensible auto-excluida por colision es PII
+    -- SIN enmascarar. Se cuenta como error para IMPEDIR FINALIZADO y, por dependencia
+    -- (pkg_dm_export.p_export_mask exige estado FINALIZADO), tambien el export.
+    DECLARE
+      l_pii_sin_masc NUMBER;
+    BEGIN
+      SELECT COUNT(*) INTO l_pii_sin_masc
+        FROM tdm_mask_trace
+       WHERE solicitud_id = l_solicitud_id
+         AND paso = 'SKIP_ORA00001';
+      IF NVL(l_pii_sin_masc,0) > 0 THEN
+        l_mask_errors := NVL(l_mask_errors,0) + l_pii_sin_masc;
+        proc_dm_trace(l_solicitud_id,p_ejecucion_id,'FIN','PII_SIN_ENMASCARAR',
+          l_pii_sin_masc||' columna(s) sensible(s) auto-excluida(s) por colision (ORA-00001): '||
+          'NO se permite FINALIZADO ni export. Reclasificar a identificador biyectivo y reprocesar.');
+      END IF;
+    END;
+
     IF l_mask_errors > 0 THEN
       proc_dm_upd_sol(l_solicitud_id,'ERROR','FIN','ERROR','Proceso finalizado con '||l_mask_errors||' errores','Y');
       proc_dm_upd_ejec(p_ejecucion_id,'ENMASCARAMIENTO','ERROR',100,NULL,NULL,NULL,NULL,NULL,'CON_ERRORES');
@@ -2740,146 +2663,6 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     proc_dm_post_sync(l_solicitud_id,l_dummy_ejec,l_esquema);
     proc_dm_post_dep(l_solicitud_id,l_dummy_ejec);
     proc_dm_upd_sol(l_solicitud_id,'FINALIZADO','FIN','FINALIZADO','Enmascaramiento selectivo finalizado','Y');
-  END;
-
-  PROCEDURE p_export_mask(
-    p_esquema      IN VARCHAR2,
-    p_directorio   IN VARCHAR2,
-    p_dumpfile     IN VARCHAR2,
-    p_alcance      IN VARCHAR2 DEFAULT 'S',
-    p_logfile      IN VARCHAR2 DEFAULT NULL,
-    p_ejecucion_id IN NUMBER   DEFAULT NULL
-  ) IS
-    l_job       NUMBER;
-    l_estado    VARCHAR2(30);
-    l_logfile   VARCHAR2(256);
-    l_name_expr VARCHAR2(32767);
-    l_esquema   VARCHAR2(128) := f_norm(p_esquema);
-    l_ejec_ref  NUMBER := p_ejecucion_id;
-    l_ok        NUMBER;
-    l_use_hist  CHAR(1) := 'N';
-    l_fecha_fin TIMESTAMP;
-    l_changed   NUMBER;
-  BEGIN
-    l_logfile := NVL(p_logfile, REGEXP_REPLACE(p_dumpfile, '\.dmp$', '.log', 1, 1, 'i'));
-
-    -- En export selectivo exigimos ejecución explícita para evitar ambigüedad
-    -- entre múltiples corridas del mismo esquema.
-    IF f_norm(p_alcance) = 'S' AND p_ejecucion_id IS NULL THEN
-      RAISE_APPLICATION_ERROR(-20095, 'Para p_alcance=''S'' debe indicar p_ejecucion_id.');
-    END IF;
-
-    -- Validación funcional: exportar sólo sobre una ejecución finalizada.
-    IF l_ejec_ref IS NOT NULL THEN
-      l_use_hist := 'Y';
-      SELECT COUNT(*)
-        INTO l_ok
-        FROM tdm_ejecucion
-       WHERE ejecucion_id = l_ejec_ref
-         AND UPPER(TRIM(esquema_objetivo)) = l_esquema
-         AND fase_proceso = 'ENMASCARAMIENTO'
-         AND estado = 'FINALIZADO';
-      IF l_ok = 0 THEN
-        RAISE_APPLICATION_ERROR(-20092, 'La ejecución '||l_ejec_ref||' no está FINALIZADA para esquema='||l_esquema||'.');
-      END IF;
-
-      SELECT COUNT(*)
-        INTO l_ok
-        FROM tdm_mask_solicitud
-       WHERE ejecucion_id = l_ejec_ref
-         AND estado = 'FINALIZADO';
-      IF l_ok = 0 THEN
-        RAISE_APPLICATION_ERROR(-20093, 'La ejecución '||l_ejec_ref||' no tiene solicitud FINALIZADA. Export bloqueado.');
-      END IF;
-    ELSE
-      SELECT MAX(ejecucion_id), COUNT(*)
-        INTO l_ejec_ref, l_ok
-        FROM tdm_ejecucion
-       WHERE UPPER(TRIM(esquema_objetivo)) = l_esquema
-         AND fase_proceso = 'ENMASCARAMIENTO'
-         AND estado = 'FINALIZADO';
-      IF l_ok = 0 THEN
-        RAISE_APPLICATION_ERROR(-20092, 'No existe ejecución FINALIZADA de enmascaramiento para esquema='||l_esquema||'.');
-      END IF;
-    END IF;
-
-    -- Verificación anti-“falso finalizado”: si el esquema fue recreado/importado
-    -- después del enmascarado, forzamos nueva ejecución antes de exportar.
-    SELECT fecha_fin
-      INTO l_fecha_fin
-      FROM tdm_ejecucion
-     WHERE ejecucion_id = l_ejec_ref;
-
-    SELECT COUNT(*)
-      INTO l_changed
-      FROM dba_objects o
-     WHERE o.owner = l_esquema
-       AND o.object_type = 'TABLE'
-       AND o.last_ddl_time > l_fecha_fin;
-
-    IF l_changed > 0 THEN
-      RAISE_APPLICATION_ERROR(
-        -20096,
-        'Se detectaron '||l_changed||' tablas alteradas/recreadas tras el enmascarado (ejecucion_id='||l_ejec_ref||'). Re-ejecute enmascarado antes de exportar.'
-      );
-    END IF;
-
-    IF f_norm(p_alcance) = 'C' THEN
-      l_job := DBMS_DATAPUMP.OPEN('EXPORT', 'SCHEMA', NULL);
-      DBMS_DATAPUMP.ADD_FILE(l_job, p_dumpfile, p_directorio, NULL, DBMS_DATAPUMP.KU$_FILE_TYPE_DUMP_FILE);
-      DBMS_DATAPUMP.ADD_FILE(l_job, l_logfile,  p_directorio, NULL, DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
-      DBMS_DATAPUMP.METADATA_FILTER(l_job, 'SCHEMA_EXPR', '= '''||l_esquema||'''');
-    ELSE
-      IF l_use_hist = 'Y' THEN
-        SELECT 'IN ('||LISTAGG(CHR(39)||table_name||CHR(39), ',') WITHIN GROUP (ORDER BY table_name)||')'
-          INTO l_name_expr
-          FROM (
-            SELECT DISTINCT table_name
-              FROM tdm_columna_hist
-             WHERE ejecucion_id = l_ejec_ref
-               AND owner_name   = l_esquema
-               AND NVL(vigente,'Y') = 'Y'
-               AND enmascarar   = 'Y'
-          );
-      ELSE
-        SELECT 'IN ('||LISTAGG(CHR(39)||table_name||CHR(39), ',') WITHIN GROUP (ORDER BY table_name)||')'
-          INTO l_name_expr
-          FROM (
-            SELECT DISTINCT table_name
-              FROM tdm_columna_final
-             WHERE owner_name = l_esquema
-               AND enmascarar = 'Y'
-          );
-      END IF;
-      IF l_name_expr IS NULL THEN
-        IF l_use_hist = 'Y' THEN
-          RAISE_APPLICATION_ERROR(-20094, 'No hay tablas en tdm_columna_hist para export selectivo (ejecucion_id='||l_ejec_ref||').');
-        ELSE
-          RAISE_APPLICATION_ERROR(-20094, 'No hay tablas marcadas en tdm_columna_final para export selectivo (esquema='||l_esquema||').');
-        END IF;
-      END IF;
-
-      l_job := DBMS_DATAPUMP.OPEN('EXPORT', 'TABLE', NULL);
-      DBMS_DATAPUMP.ADD_FILE(l_job, p_dumpfile, p_directorio, NULL, DBMS_DATAPUMP.KU$_FILE_TYPE_DUMP_FILE);
-      DBMS_DATAPUMP.ADD_FILE(l_job, l_logfile,  p_directorio, NULL, DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
-      DBMS_DATAPUMP.METADATA_FILTER(l_job, 'SCHEMA_EXPR', '= '''||l_esquema||'''');
-      DBMS_DATAPUMP.METADATA_FILTER(l_job, 'NAME_EXPR', l_name_expr, 'TABLE');
-    END IF;
-
-    DBMS_DATAPUMP.START_JOB(l_job);
-    DBMS_DATAPUMP.WAIT_FOR_JOB(l_job, l_estado);
-    DBMS_DATAPUMP.DETACH(l_job);
-  EXCEPTION
-    WHEN OTHERS THEN
-      BEGIN
-        IF l_job IS NOT NULL THEN
-          DBMS_DATAPUMP.STOP_JOB(l_job, 1, 0);
-          DBMS_DATAPUMP.DETACH(l_job);
-        END IF;
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
-      RAISE;
   END;
 
 END pkg_dm_enmascarar;

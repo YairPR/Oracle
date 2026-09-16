@@ -131,6 +131,7 @@ Rem ----------------------------------------------------------------
 Rem Ajustar estos nombres si tus archivos reales difieren:
 @@06_dm_pkg_func_mask.sql
 @@05_dm_pkg_enmascarar.sql
+@@07_dm_pkg_export.sql
 Rem ----------------------------------------------------------------
 
 Rem
@@ -146,6 +147,9 @@ show errors package body pkg_dm_func_mask
 show errors package pkg_dm_enmascarar
 show errors package body pkg_dm_enmascarar
 
+show errors package pkg_dm_export
+show errors package body pkg_dm_export
+
 Rem
 Rem ----------------------------------------------------------------
 Rem 2.9 GRANTS SOBRE OBJETOS AL ROL ROL_DATAMASKING
@@ -153,6 +157,7 @@ Rem ----------------------------------------------------------------
 grant execute on pkg_dm_descubrimiento to ROL_DATAMASKING;
 grant execute on pkg_dm_func_mask       to ROL_DATAMASKING;
 grant execute on pkg_dm_enmascarar      to ROL_DATAMASKING;
+grant execute on pkg_dm_export          to ROL_DATAMASKING;
 
 grant select on tdm_ejecucion          to ROL_DATAMASKING;
 grant select on tdm_ejecucion_scope    to ROL_DATAMASKING;

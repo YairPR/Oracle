@@ -97,7 +97,7 @@ from ( select lpad(level,8,'0')||'Z' dni from dual connect by level <= 100000 );
 Rem ================================================================================
 Rem 6) EXPORT del dump enmascarado (dato ya enmascarado; no usa el pepper)
 Rem ================================================================================
-EXEC pkg_dm_enmascarar.p_export_mask(p_esquema => '<ESQUEMA>', p_directorio => '<DIR_ORACLE>', p_dumpfile => '<ARCHIVO>.dmp', p_alcance => 'S', p_logfile => '<ARCHIVO>.log', p_ejecucion_id => <EJEC>);
+EXEC pkg_dm_export.p_export_mask(p_esquema => '<ESQUEMA>', p_directorio => '<DIR_ORACLE>', p_dumpfile => '<ARCHIVO>.dmp', p_alcance => 'S', p_logfile => '<ARCHIVO>.log', p_ejecucion_id => <EJEC>);
 
 Rem ================================================================================
 Rem 7) RECOMPILAR (si quedaron objetos INVALID en el esquema)

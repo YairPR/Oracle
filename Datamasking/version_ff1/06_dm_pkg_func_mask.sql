@@ -29,6 +29,10 @@ Rem      comparten identificador reciben el mismo ajuste y la misma longitud,
 Rem      luego el mismo valor original produce el mismo valor enmascarado en
 Rem      padre e hija. Un ajuste por fila ROMPERIA la propagacion: NO usar.
 Rem
+Rem    RESTRICCION OPERATIVA (A-02): estas funciones son DETERMINISTIC solo DENTRO
+Rem      de una campana (dependen del pepper de tdm_secreto y de set_ejecucion). NO
+Rem      crear indices basados en funcion (FBI) ni vistas materializadas sobre ellas.
+Rem
 Rem    COMPATIBILIDAD
 Rem      - Oracle 11g en adelante (AES-128 y HMAC/HASH SHA-1 de DBMS_CRYPTO son 11g)
 Rem      - No requiere wallet ni TDE. Requiere GRANT EXECUTE ON SYS.DBMS_CRYPTO.
@@ -73,6 +77,11 @@ create or replace PACKAGE pkg_dm_func_mask AS
   -- Fija la campana activa (ejecucion_id) de la sesion. La invoca el orquestador
   -- en el coordinador y CADA worker paralelo, para leer el pepper de su campana.
   PROCEDURE set_ejecucion(p_ejecucion_id IN NUMBER);
+
+  -- Primitivo FF1 de CIFRADO (radix 10) con clave y tweak EXPLICITOS. Fuente unica
+  -- de verdad del algoritmo; el motor lo usa via f_ff1_cifra con la clave del pepper.
+  -- Expuesto para validar contra los vectores oficiales del NIST. Solo CIFRA.
+  FUNCTION f_ff1_cifrar_raw(p_digitos IN VARCHAR2, p_clave IN RAW, p_ajuste IN RAW) RETURN VARCHAR2;
 
 END pkg_dm_func_mask;
 /
@@ -142,8 +151,8 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
   FUNCTION f_hash(p_txt VARCHAR2) RETURN NUMBER IS
     l_mac RAW(20);
   BEGIN
-    l_mac := DBMS_CRYPTO.MAC(
-               UTL_RAW.CAST_TO_RAW(NVL(p_txt,'~NULL~')),
+l_mac := DBMS_CRYPTO.MAC(
+               UTL_I18N.STRING_TO_RAW(NVL(p_txt,'~NULL~'), 'AL32UTF8'),  -- M-03: UTF-8 fijo, no depende del NLS
                DBMS_CRYPTO.HMAC_SH1,
                UTL_RAW.CAST_TO_RAW(f_get_pepper));
     -- 14 hex = 56 bits: entra exacto en NUMBER y en las aritmeticas MOD posteriores
@@ -179,7 +188,7 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
 
   -- Cifra una cadena de p_digitos DIGITOS (radix 10) devolviendo otra de igual
   -- longitud. Implementa FF1.Encrypt (Algoritmo 7 del NIST SP 800-38G).
-  FUNCTION f_ff1_cifra(p_digitos IN VARCHAR2, p_ajuste IN RAW) RETURN VARCHAR2 IS
+  FUNCTION f_ff1_cifrar_raw(p_digitos IN VARCHAR2, p_clave IN RAW, p_ajuste IN RAW) RETURN VARCHAR2 IS
     c_radix   CONSTANT PLS_INTEGER := 10;
     l_n       PLS_INTEGER := LENGTH(p_digitos);
     l_t       PLS_INTEGER := NVL(UTL_RAW.LENGTH(p_ajuste),0);
@@ -237,7 +246,7 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
       l_cifr := DBMS_CRYPTO.ENCRYPT(
                   HEXTORAW(l_hex_p||l_hex_q),
                   DBMS_CRYPTO.ENCRYPT_AES128 + DBMS_CRYPTO.CHAIN_CBC + DBMS_CRYPTO.PAD_NONE,
-                  f_clave_aes, c_iv_cero);
+                  p_clave, c_iv_cero);
       l_r := UTL_RAW.SUBSTR(l_cifr, UTL_RAW.LENGTH(l_cifr)-15, 16);
 
       -- 4c: expandir a d bytes (solo si d>16; en estos dominios d<=16 y no entra al bucle)
@@ -249,7 +258,7 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
                  DBMS_CRYPTO.ENCRYPT(
                    UTL_RAW.BIT_XOR(l_r, HEXTORAW(f_num_hex(l_cont,16))),
                    DBMS_CRYPTO.ENCRYPT_AES128 + DBMS_CRYPTO.CHAIN_ECB + DBMS_CRYPTO.PAD_NONE,
-                   f_clave_aes, c_iv_cero));
+                   p_clave, c_iv_cero));
         l_cont := l_cont + 1;
       END LOOP;
       l_hex_s := SUBSTR(RAWTOHEX(l_s), 1, l_d*2);
@@ -276,6 +285,12 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
   -- Cifrado FPE numerico de proposito general con cycle-walking.
   -- Si p_modulo = 10^n (dominio potencia de 10) FF1 acierta a la primera.
   -- Si no, camina hasta caer en [0, p_modulo) conservando la biyeccion.
+  -- Wrapper de PRODUCCION: cifra con la clave AES derivada del pepper de la campana.
+  FUNCTION f_ff1_cifra(p_digitos IN VARCHAR2, p_ajuste IN RAW) RETURN VARCHAR2 IS
+  BEGIN
+    RETURN f_ff1_cifrar_raw(p_digitos, f_clave_aes, p_ajuste);
+  END;
+
   FUNCTION f_fpe_num(p_valor IN NUMBER, p_modulo IN NUMBER, p_ajuste IN RAW) RETURN NUMBER IS
     l_n PLS_INTEGER;
     l_x NUMBER;
@@ -432,6 +447,48 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
 
   -- NIF / DNI / NIE / CIF. La parte numerica se cifra con FF1 (biyectivo);
   -- la letra/digito de control se recalcula sobre el numero ya enmascarado.
+  -- Enmascara un NIE de forma DETERMINISTA y COHERENTE entre rutas: el prefijo
+  -- X/Y/Z se deriva del numero generado (no de la entrada), asi el mismo NIE da
+  -- igual resultado por func_nif y por func_especial_doc_segun_tipo.
+  FUNCTION f_enmascara_nie(p_num_original IN NUMBER, p_ajuste IN RAW) RETURN VARCHAR2 IS
+    l_num7      VARCHAR2(7);
+    l_idx_pref  PLS_INTEGER;
+    l_prefijo   CHAR(1);
+  BEGIN
+    l_num7     := LPAD(TO_CHAR(f_fpe_num(p_num_original, 10000000, p_ajuste)), 7, '0');
+    l_idx_pref := MOD(TO_NUMBER(SUBSTR(l_num7,1,1)), 3);       -- 0->X, 1->Y, 2->Z
+    l_prefijo  := SUBSTR('XYZ', l_idx_pref+1, 1);
+    RETURN l_prefijo || l_num7 || f_letra_dni(TO_NUMBER(TO_CHAR(l_idx_pref) || l_num7));
+  END;
+
+  -- Sustituye cada DIGITO de un texto por otro (FF1 conjunto sobre los digitos)
+  -- manteniendo intactos los caracteres no numericos. Uso: Pasaporte.
+  FUNCTION f_cifra_digitos_en_texto(p_texto IN VARCHAR2, p_ajuste IN RAW) RETURN VARCHAR2 IS
+    l_solo_digitos VARCHAR2(200);
+    l_cifrados     VARCHAR2(200);
+    l_resultado    VARCHAR2(4000) := '';
+    l_pos_digito   PLS_INTEGER := 1;
+    l_caracter     VARCHAR2(1 CHAR);
+  BEGIN
+    IF p_texto IS NULL THEN RETURN NULL; END IF;
+    l_solo_digitos := REGEXP_REPLACE(p_texto, '[^0-9]', '');
+    IF LENGTH(l_solo_digitos) >= 2 THEN
+      l_cifrados := LPAD(f_ff1_cifra(l_solo_digitos, p_ajuste), LENGTH(l_solo_digitos), '0');
+    ELSE
+      l_cifrados := l_solo_digitos;                            -- 0 o 1 digito: FF1 no aplica
+    END IF;
+    FOR i IN 1 .. LENGTH(p_texto) LOOP
+      l_caracter := SUBSTR(p_texto, i, 1);
+      IF l_caracter BETWEEN '0' AND '9' THEN
+        l_resultado  := l_resultado || SUBSTR(l_cifrados, l_pos_digito, 1);
+        l_pos_digito := l_pos_digito + 1;
+      ELSE
+        l_resultado  := l_resultado || l_caracter;
+      END IF;
+    END LOOP;
+    RETURN l_resultado;
+  END;
+
   FUNCTION func_nif(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
     l_val   VARCHAR2(50) := UPPER(TRIM(SUBSTR(p_valor,1,50)));
     l_seed  NUMBER;
@@ -451,13 +508,9 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
       l_num8 := LPAD(TO_CHAR(l_new), 8, '0');
       l_out  := l_num8 || f_letra_dni(l_new);
 
-    -- NIE: X/Y/Z + 7 digitos + letra
+    -- NIE: prefijo derivado del numero generado (coherente con doc_segun_tipo)
     ELSIF REGEXP_LIKE(l_val,'^[XYZ][0-9]{7}[A-Z]$') THEN
-      l_tipo := SUBSTR(l_val,1,1);
-      l_new  := f_fpe_num(TO_NUMBER(SUBSTR(l_val,2,7)), 10000000, l_ajuste);
-      l_num7 := LPAD(TO_CHAR(l_new), 7, '0');
-      l_out  := l_tipo || l_num7 ||
-                f_letra_dni(TO_NUMBER(CASE l_tipo WHEN 'X' THEN '0' WHEN 'Y' THEN '1' ELSE '2' END || l_num7));
+      l_out := f_enmascara_nie(TO_NUMBER(SUBSTR(l_val,2,7)), l_ajuste);
 
     -- CIF: letra + 7 digitos + control (ahora tambien biyectivo via FF1)
     ELSE
@@ -467,11 +520,9 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
         l_num7 := LPAD(TO_CHAR(l_new), 7, '0');
         l_out  := l_tipo || l_num7 || f_cif_ctrl(l_tipo, l_num7);
       ELSE
-        -- Ultimo recurso: formato no reconocido -> semilla (no biyectivo, raro)
-        l_seed := f_hash('NIF|'||l_val);
-        l_tipo := SUBSTR(l_set, MOD(l_seed, LENGTH(l_set))+1, 1);
-        l_num7 := LPAD(TO_CHAR(MOD(l_seed*43+29, 10000000)), 7, '0');
-        l_out  := l_tipo || l_num7 || f_cif_ctrl(l_tipo, l_num7);
+        -- Formato no reconocido (p.ej. Pasaporte): cifra los digitos manteniendo
+        -- letras y separadores. Biyectivo por (longitud, patron no numerico).
+        RETURN f_cifra_digitos_en_texto(l_val, l_ajuste);
       END IF;
     END IF;
 
@@ -481,31 +532,26 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
   -- Cuenta bancaria (no IBAN): parte numerica cifrada con FF1, longitud conservada.
   FUNCTION func_cuenta(p_valor VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
     l_out        VARCHAR2(20);
+    l_digitos    VARCHAR2(200);
     l_in_len     NUMBER;
     l_target_len NUMBER;
     l_ajuste     RAW(8) := f_ajuste_dominio('CUENTA');
     l_new        NUMBER;
-    l_seed       NUMBER;
   BEGIN
     IF p_valor IS NULL THEN RETURN NULL; END IF;
-
-    l_in_len := LENGTH(REGEXP_REPLACE(SUBSTR(p_valor,1,200),'[^0-9]',''));
+    l_digitos := REGEXP_REPLACE(SUBSTR(p_valor,1,200),'[^0-9]','');
+    l_in_len  := LENGTH(l_digitos);
     IF NVL(l_in_len,0) = 0 THEN
-      l_in_len := LEAST(LENGTH(SUBSTR(p_valor,1,200)), 20);
+      RETURN p_valor;                          -- sin digitos: nada que cifrar
     END IF;
     l_target_len := LEAST(GREATEST(l_in_len, 4), 20);
-
-    BEGIN
-      l_new := f_fpe_num(
-                 TO_NUMBER(REGEXP_REPLACE(SUBSTR(p_valor,1,200),'[^0-9]','')),
-                 POWER(10, l_target_len),
-                 l_ajuste);
-      l_out := LPAD(TO_CHAR(l_new), l_target_len, '0');
-    EXCEPTION
-      WHEN OTHERS THEN
-        l_seed := f_hash('CUENTA|'||REGEXP_REPLACE(SUBSTR(p_valor,1,200),'[^0-9]',''));
-        l_out  := LPAD(TO_CHAR(MOD(l_seed*131+17, POWER(10,l_target_len))), l_target_len, '0');
-    END;
+    -- Acotar a target_len (<=20) para que TO_NUMBER NUNCA desborde: FF1 siempre
+    -- aplica y es biyectivo. Sin fallback a hash (que rompia la biyeccion).
+    l_new := f_fpe_num(
+               TO_NUMBER(SUBSTR(l_digitos, GREATEST(l_in_len - l_target_len + 1, 1))),
+               POWER(10, l_target_len),
+               l_ajuste);
+    l_out := LPAD(TO_CHAR(l_new), l_target_len, '0');
     RETURN l_out;
   END;
 
@@ -528,7 +574,6 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
     l_bban   VARCHAR2(20);
     l_cc     VARCHAR2(2);
     l_out    VARCHAR2(24);
-    l_in_len NUMBER;
     l_ajuste RAW(8) := f_ajuste_dominio('IBAN');
     l_seed   NUMBER;
     l_new    NUMBER;
@@ -546,11 +591,7 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
       l_seed := f_hash('IBAN|'||UPPER(TRIM(SUBSTR(p_valor,1,50))));
       l_bban := LPAD(TO_CHAR(MOD(l_seed*137+31, 100000000000000000000)), 20, '0');
       l_cc   := f_iban_cc_es(l_bban);
-      l_out  := 'ES'||l_cc||l_bban;
-      l_in_len := LENGTH(REPLACE(UPPER(TRIM(SUBSTR(p_valor,1,50))), ' ', ''));
-      IF NVL(l_in_len,0) > 0 AND l_in_len < LENGTH(l_out) THEN
-        l_out := SUBSTR(l_out, 1, l_in_len);
-      END IF;
+      l_out  := 'ES'||l_cc||l_bban;   -- 24 chars exactos, sin truncar (C-01)
     END IF;
     RETURN l_out;
   END;
@@ -607,35 +648,30 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
     p_documento       IN VARCHAR2,
     p_idtipodocumento IN NUMBER
   ) RETURN VARCHAR2 DETERMINISTIC IS
-    l_val    VARCHAR2(4000) := UPPER(TRIM(p_documento));
-    l_ajuste RAW(8) := f_ajuste_dominio('IDENTIDAD');
-    l_new    NUMBER;
-    l_num8   VARCHAR2(8);
-    l_num7   VARCHAR2(7);
-    l_x      VARCHAR2(1);
-    l_seed   NUMBER;
+    l_val      VARCHAR2(4000) := UPPER(TRIM(p_documento));
+    l_ajuste   RAW(8) := f_ajuste_dominio('IDENTIDAD');
+    l_digitos  VARCHAR2(200);
+    l_new      NUMBER;
+    l_num8     VARCHAR2(8);
   BEGIN
     IF l_val IS NULL THEN RETURN NULL; END IF;
+    l_digitos := REGEXP_REPLACE(l_val,'[^0-9]','');
 
-    IF p_idtipodocumento = 1 THEN               -- DNI
-      l_new  := f_fpe_num(TO_NUMBER(REGEXP_REPLACE(l_val,'[^0-9]','')), 100000000, l_ajuste);
+    IF p_idtipodocumento = 1 AND l_digitos IS NOT NULL THEN    -- DNI
+      l_new  := f_fpe_num(TO_NUMBER(l_digitos), 100000000, l_ajuste);
       l_num8 := LPAD(TO_CHAR(l_new), 8, '0');
       RETURN l_num8 || f_letra_dni(l_new);
 
-    ELSIF p_idtipodocumento = 3 THEN            -- NIE
-      l_seed := f_hash('DOC_TIPO_NIE|'||l_val);
-      l_x    := SUBSTR('XYZ', MOD(l_seed,3)+1, 1);
-      l_new  := f_fpe_num(TO_NUMBER(REGEXP_REPLACE(l_val,'[^0-9]','')), 10000000, l_ajuste);
-      l_num7 := LPAD(TO_CHAR(l_new), 7, '0');
-      RETURN l_x || l_num7 ||
-             f_letra_dni(TO_NUMBER(CASE l_x WHEN 'X' THEN '0' WHEN 'Y' THEN '1' ELSE '2' END || l_num7));
+    ELSIF p_idtipodocumento = 3 AND l_digitos IS NOT NULL THEN -- NIE (misma logica que func_nif)
+      RETURN f_enmascara_nie(TO_NUMBER(l_digitos), l_ajuste);
 
-    ELSE
-      RETURN REGEXP_REPLACE(l_val, '[0-9]', '9');
+    ELSE                                                       -- Pasaporte (o sin digitos)
+      RETURN f_cifra_digitos_en_texto(l_val, l_ajuste);
     END IF;
   END;
 
-  -- IBAN "continuo" (variante SIGAD): BBAN cifrado con FF1 y control modulo 97.
+  -- IBAN "continuo" (sin separadores, 24 caracteres): BBAN cifrado con FF1 y
+  -- control modulo 97. NUNCA se trunca (C-01): siempre devuelve ES + cc + 20.
   FUNCTION func_especial_iban_continuo(p_valor IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
     l_digitos VARCHAR2(20);
     l_bban    VARCHAR2(20);
@@ -644,7 +680,6 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
     l_part    VARCHAR2(20);
     l_cc      VARCHAR2(2);
     l_out     VARCHAR2(24);
-    l_in_len  NUMBER;
     l_ajuste  RAW(8) := f_ajuste_dominio('IBAN');
     l_solonum VARCHAR2(50);
   BEGIN
@@ -661,12 +696,7 @@ create or replace PACKAGE BODY pkg_dm_func_mask AS
       l_rem  := MOD(TO_NUMBER(l_part),97);
     END LOOP;
     l_cc  := LPAD(TO_CHAR(98-l_rem),2,'0');
-    l_out := 'ES'||l_cc||l_bban;
-
-    l_in_len := LENGTH(REPLACE(UPPER(TRIM(SUBSTR(p_valor,1,50))), ' ', ''));
-    IF NVL(l_in_len,0) > 0 AND l_in_len < LENGTH(l_out) THEN
-      l_out := SUBSTR(l_out, 1, l_in_len);
-    END IF;
+    l_out := 'ES'||l_cc||l_bban;   -- 24 caracteres exactos, sin truncar
     RETURN l_out;
   END;
 
