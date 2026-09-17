@@ -178,7 +178,7 @@ where not exists (select 1 from tdm_regla where identificador='IDENTIFICADOR_PER
 
 /* 2026-03-06 14:35 Mejora calibración OBS: reforzar evidencia en datos y penalizar catálogos */
 insert into tdm_regla(regla_id,identificador,tipo_regla,expresion,puntuacion,prioridad,descripcion)
-select seq_dm_regla.nextval,'IDENTIFICADOR_OBS','COLUMN_NAME','(^|_)(MENSAJE|COMENTARIO|OBS|OBSERVACION|OBSERVACIONES|NOTA)($|_)',35,8,'Columna potencial OBS, requiere evidencia de datos' from dual
+select seq_dm_regla.nextval,'IDENTIFICADOR_OBS','COLUMN_NAME','(^|_)(MENSAJE|COMENTARIO|OBS|OBSERVACION|OBSERVACIONES|NOTA|TEXTO)($|_)',35,8,'Columna potencial OBS, requiere evidencia de datos' from dual
 where not exists (select 1 from tdm_regla where identificador='IDENTIFICADOR_OBS' and tipo_regla='COLUMN_NAME' and expresion='(^|_)(MENSAJE|COMENTARIO|OBS|OBSERVACION|OBSERVACIONES|NOTA)($|_)');
 
 insert into tdm_regla(regla_id,identificador,tipo_regla,expresion,puntuacion,prioridad,descripcion)
