@@ -1,0 +1,1096 @@
+
+Concesion terminada correctamente.
+
+grant execute on SYS.DBMS_CRYPTO to ASTSYSADMIN
+                     *
+ERROR en linea 1:
+ORA-00942: la tabla o vista no existe
+
+
+ROL_DATAMASKING ya existe, se reutiliza.
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Sesion modificada.
+
+CREATE TABLE tdm_ejecucion (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_ejecucion_01 ON tdm_ejecucion (esquema_objetivo, fecha_inicio) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_ejecucion_02 ON tdm_ejecucion (fase_proceso, estado) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Indice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_ejecucion_error (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_ejec_error_01 ON tdm_ejecucion_error (ejecucion_id, fecha_error) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_ejec_error_02 ON tdm_ejecucion_error (etapa, codigo_error) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+COMMENT ON COLUMN tdm_ejecucion_error.solicitud_id IS 'Referencia a la solicitud de enmascaramiento si ocurrió en esa etapa (NULL para discovery).'
+                                      *
+ERROR en linea 1:
+ORA-00904: "SOLICITUD_ID": identificador no valido
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_ejecucion_scope (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_ejec_scope_01 ON tdm_ejecucion_scope (ejecucion_id, owner_name, table_name, column_name) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_objeto_ctrl (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_objeto_ctrl_01 ON tdm_objeto_ctrl (owner_name, estado_objeto) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_regla (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_regla_01 ON tdm_regla (activa, tipo_regla, identificador, prioridad) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_columna_hist (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_col_hist_01 ON tdm_columna_hist (owner_name, table_name, estado_final, identificador) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_col_hist_02 ON tdm_columna_hist (ejecucion_id, enmascarar) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_dependencia_hist (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_dep_hist_01 ON tdm_dependencia_hist (ejecucion_id, owner_name, table_name, column_name) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_columna_final (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_col_final_01 ON tdm_columna_final (enmascarar, identificador) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_col_final_02 ON tdm_columna_final(owner_name, enmascarar, table_name, column_name) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+COMMENT ON COLUMN tdm_columna_final.dominio IS 'Dominio o componente referencial al que pertenece la columna (derivado de FKs conexas).'
+                                    *
+ERROR en linea 1:
+ORA-00904: "DOMINIO": identificador no valido
+
+
+CREATE TABLE tdm_dependencia_final (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_dep_final_01  ON tdm_dependencia_final (owner_name, table_name, column_name) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_dep_final_02 ON tdm_dependencia_final (owner_name, tipo_dependencia, dependencia_owner, dependencia_objeto) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_excepcion_col (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_exc_col_01 ON tdm_excepcion_col (activa, accion) tablespace ASTSYSADMIN online
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE SEQUENCE seq_dm_ejecucion START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_ejecucion_err START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_ejecucion_scope START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_regla START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_columna_hist START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_dependencia_hist START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Sesion modificada.
+
+
+Tabla creada.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_mask_solicitud (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_sol_01 ON tdm_mask_solicitud (ejecucion_id, estado) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_sol_02 ON tdm_mask_solicitud (esquema_objetivo, fecha_inicio) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+    ADD CONSTRAINT fk_tdm_ejec_err_sol FOREIGN KEY (solicitud_id)
+                                                    *
+ERROR en linea 2:
+ORA-00904: "SOLICITUD_ID": identificador no valido
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_mask_trace (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_trace_01  ON tdm_mask_trace (ejecucion_id, fase, paso, fecha_evento)  TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_trace_02  ON tdm_mask_trace (solicitud_id, fase, paso, fecha_evento)  TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_mask_dep_estado (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_dep_01 ON tdm_mask_dep_estado (solicitud_id, tipo_objeto, owner_name)  TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE SEQUENCE seq_dm_mask_solicitud START WITH 1  INCREMENT BY 1  NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_mask_trace  START WITH 1  INCREMENT BY 1  NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_mask_regla_esp  START WITH 1 INCREMENT BY 1 NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE SEQUENCE seq_dm_mask_relacion_sync START WITH 1 INCREMENT BY 1  NOCACHE
+                *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE TABLE tdm_mask_regla_esp (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_regla_01 ON tdm_mask_regla_esp (esquema_objetivo, owner_name, table_name, column_name, activa) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+CREATE TABLE tdm_mask_relacion_sync (
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+CREATE INDEX idm_mask_sync_01 ON tdm_mask_relacion_sync (esquema_objetivo, tabla_origen, tabla_destino, activa) TABLESPACE ASTSYSADMIN ONLINE
+             *
+ERROR en linea 1:
+ORA-00955: este nombre ya lo esta utilizando otro objeto existente
+
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+1 fila creada.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+1 fila creada.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+1 fila creada.
+
+
+0 filas creadas.
+
+
+1 fila actualizada.
+
+
+1 fila actualizada.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+0 filas creadas.
+
+
+1 fila actualizada.
+
+
+1 fila creada.
+
+
+1 fila creada.
+
+
+1 fila creada.
+
+
+1 fila creada.
+
+
+Confirmacion terminada.
+
+
+Paquete creado.
+
+
+Advertencia: Cuerpo del paquete creado con errores de compilacion.
+
+
+Paquete creado.
+
+
+Advertencia: Cuerpo del paquete creado con errores de compilacion.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+
+Sesion modificada.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+Errores para PACKAGE BODY PKG_DM_DESCUBRIMIENTO:
+
+LINE/COL ERROR
+-------- -----------------------------------------------------------------
+1107/7   PL/SQL: SQL Statement ignored
+1122/81  PL/SQL: ORA-00904: "DOMINIO": identificador no valido
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+
+
+Concesion terminada correctamente.
+

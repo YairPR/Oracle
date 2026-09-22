@@ -232,11 +232,6 @@ END pkg_dm_enmascarar;
 
 create or replace PACKAGE BODY pkg_dm_enmascarar AS
 
-  ------------------------------------------------------------------------------
-  -- Estado para DBMS_APPLICATION_INFO.SET_SESSION_LONGOPS
-  ------------------------------------------------------------------------------
-  g_rindex BINARY_INTEGER;
-  g_slno   BINARY_INTEGER;
   g_resume_base_solicitud NUMBER;
   g_dep_has_categoria_uso   NUMBER;
   g_dep_has_accion_pre_mask NUMBER;
@@ -311,6 +306,38 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     RETURN f_norm(REGEXP_SUBSTR(NVL(p_lista,''), '[^,]+', 1, p_pos));
   END;
 
+  -- FIX 2026-09-18 (prueba de volumen SRI2006): deteccion conservadora de
+  -- riesgo de deadlock GES en RAC. Un trigger ENABLED de UPDATE puede
+  -- recalcular agregados de negocio por CLAVE DE NEGOCIO (no por rowid/PK),
+  -- lo cual es incompatible con el supuesto de independencia por fila de
+  -- DBMS_PARALLEL_EXECUTE.CREATE_CHUNKS_BY_ROWID: dos workers pueden acabar
+  -- bloqueandose mutuamente vía el mismo trigger sobre filas "hermanas" de
+  -- negocio aunque sus rangos de rowid no se solapen. Confirmado en
+  -- produccion (trace LMD0 preform1_lmd0_55892.trc, 77 deadlocks GES sobre
+  -- SRI_DEUDAS_DETALLE / SRI_CARTAS_PAGO_DEUDA). Fallo cerrado: ante
+  -- cualquier duda o error de metadata, se asume riesgo (RETURN 'Y') y el
+  -- llamador fuerza ejecucion en serie — mas lento en el peor caso, nunca
+  -- corrompe datos ni bloquea instancias RAC.
+  FUNCTION func_dm_tabla_tiene_trig_upd(
+    p_owner IN VARCHAR2,
+    p_tabla IN VARCHAR2
+  ) RETURN VARCHAR2 IS
+    l_cnt NUMBER;
+  BEGIN
+    SELECT COUNT(*)
+      INTO l_cnt
+      FROM dba_triggers
+     WHERE table_owner = f_norm(p_owner)
+       AND table_name  = f_norm(p_tabla)
+       AND status       = 'ENABLED'
+       AND UPPER(triggering_event) LIKE '%UPDATE%';
+
+    RETURN CASE WHEN l_cnt > 0 THEN 'Y' ELSE 'N' END;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RETURN 'Y';
+  END func_dm_tabla_tiene_trig_upd;
+
   PROCEDURE proc_dm_ejecuta_update_seguro(
     p_owner    IN VARCHAR2,
     p_tabla    IN VARCHAR2,
@@ -323,8 +350,10 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     l_task_name VARCHAR2(100);
     l_sql_chunk VARCHAR2(32767);
     l_stmt_check VARCHAR2(1000);
+    l_parallel_level NUMBER;       -- FIX 2026-09-18: dinamico segun riesgo de trigger UPDATE
     l_estado_tarea  NUMBER;        -- C-02: estado terminal de la tarea paralela
     l_chunks_error  NUMBER;        -- C-02: nro de chunks PROCESSED_WITH_ERROR
+    l_chunks_error_6502 NUMBER;    -- FIX 2026-09-18: nro de esos chunks cuyo error es ORA-06502
     l_detalle_error VARCHAR2(400); -- C-02: ejemplo de error de chunk (diagnostico)
   BEGIN
     -- 1. Obtener número aproximado de filas e iot_type de la tabla
@@ -339,7 +368,15 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
 
     IF l_row_count IS NULL OR l_row_count = 0 THEN
       BEGIN
-        EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM '||f_qname(p_owner)||'.'||f_qname(p_tabla) INTO l_row_count;
+        -- HINT 2026-09-18: PARALLEL aqui es seguro porque es una sola consulta
+        -- diagnostica en la sesion orquestadora (decide si activar
+        -- DBMS_PARALLEL_EXECUTE), NUNCA dentro de un worker paralelo -
+        -- distinto del UPDATE por chunk, donde SI se evita a proposito
+        -- (ver comentario en RUN_TASK) para no multiplicar procesos
+        -- paralelos dentro de sesiones ya paralelas. Solo se alcanza este
+        -- fallback cuando dba_tables no tiene num_rows (stats ausentes o en
+        -- 0), tipicamente tablas grandes recien cargadas sin ANALYZE.
+        EXECUTE IMMEDIATE 'SELECT /*+ PARALLEL(4) */ COUNT(*) FROM '||f_qname(p_owner)||'.'||f_qname(p_tabla) INTO l_row_count;
       EXCEPTION
         WHEN OTHERS THEN
           l_row_count := 0;
@@ -349,11 +386,18 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     -- 2. Si la tabla supera el umbral (100,000 registros) y NO es una tabla IOT (Index-Organized), usar DBMS_PARALLEL_EXECUTE
     -- De lo contrario, usar EXECUTE IMMEDIATE estándar
     IF l_row_count > 100000 AND l_iot_type IS NULL THEN
-      l_task_name := SUBSTR('TASK_DM_'||f_norm(p_tabla)||'_'||f_norm(p_columna)||'_'||TO_CHAR(DBMS_UTILITY.GET_TIME), 1, 30);
-      
+      -- FIX 2026-09-18: nombre de tarea basado en GUID. La version anterior
+      -- (SUBSTR con nombre de tabla/columna + GET_TIME truncado a 30 chars)
+      -- cortaba ANTES del sufijo temporal unico para tablas/columnas largas,
+      -- provocando colisiones ORA-29497 con tareas homonimas (incl. tareas
+      -- huerfanas de una ejecucion previa interrumpida). El contexto
+      -- tabla/columna ya queda trazado en tdm_ejecucion_error/proc_dm_trace,
+      -- asi que el nombre interno de la tarea Oracle solo necesita ser unico.
+      l_task_name := 'TDM_'||SUBSTR(RAWTOHEX(SYS_GUID()), 1, 26);
+
       -- Crear tarea
       DBMS_PARALLEL_EXECUTE.CREATE_TASK(task_name => l_task_name);
-      
+
       -- Crear chunks por ROWID
       DBMS_PARALLEL_EXECUTE.CREATE_CHUNKS_BY_ROWID(
         task_name   => l_task_name,
@@ -370,12 +414,23 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
                      CASE WHEN g_ejec_actual IS NULL THEN 'NULL' ELSE TO_CHAR(g_ejec_actual) END||
                      '); '||p_sql_base||' AND rowid BETWEEN :start_id AND :end_id; END;';
 
+      -- FIX 2026-09-18: parallel_level dinamico. Con 2 workers fijos, dos
+      -- chunks de una tabla con trigger de UPDATE por clave de negocio
+      -- pueden deadlockear entre si (GES) aunque sus rangos de rowid no se
+      -- solapen. Si se detecta ese riesgo se fuerza serie (1); si no, se
+      -- mantiene el paralelismo original de 2 (uno por instancia RAC).
+      IF func_dm_tabla_tiene_trig_upd(p_owner, p_tabla) = 'Y' THEN
+        l_parallel_level := 1;
+      ELSE
+        l_parallel_level := 2;
+      END IF;
+
       -- Ejecutar tarea
       DBMS_PARALLEL_EXECUTE.RUN_TASK(
         task_name      => l_task_name,
         sql_stmt       => l_sql_chunk,
         language_flag  => DBMS_SQL.NATIVE,
-        parallel_level => 2
+        parallel_level => l_parallel_level
       );
 
       -- C-02: FALLO CERRADO. No dar por buena la columna hasta confirmar que TODOS
@@ -387,8 +442,9 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       END IF;
 
       SELECT COUNT(*),
+             COUNT(CASE WHEN error_code = -6502 THEN 1 END),
              MAX(TO_CHAR(error_code)||': '||SUBSTR(error_message,1,200))
-        INTO l_chunks_error, l_detalle_error
+        INTO l_chunks_error, l_chunks_error_6502, l_detalle_error
         FROM user_parallel_execute_chunks
        WHERE task_name = l_task_name
          AND status    = 'PROCESSED_WITH_ERROR';
@@ -396,6 +452,25 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       IF l_estado_tarea <> DBMS_PARALLEL_EXECUTE.FINISHED OR NVL(l_chunks_error,0) > 0 THEN
         -- Se captura el diagnostico ANTES de limpiar la tarea, y se aborta la columna.
         DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
+
+        -- FIX 2026-09-18: distinguir ORA-06502 puro (buffer insuficiente en
+        -- TODOS los chunks fallidos) de cualquier otro patron de fallo
+        -- (deadlock GES, mezcla de errores, tarea que no llego a FINISHED,
+        -- etc). proc_dm_apl_col ya tiene un fallback de 3 niveles para
+        -- -6502, pero antes de este fix esa ruta era codigo muerto para
+        -- tablas grandes (>100k filas): el error real quedaba absorbido por
+        -- el framework paralelo y homogeneizado aqui a -20320 generico.
+        -- -20320 se conserva para todo lo demas (deadlocks incluidos:
+        -- fallo cerrado, sin reintento ciego ni perdida de severidad).
+        IF l_estado_tarea = DBMS_PARALLEL_EXECUTE.FINISHED
+           AND NVL(l_chunks_error,0) > 0
+           AND l_chunks_error_6502 = l_chunks_error THEN
+          RAISE_APPLICATION_ERROR(-20321,
+            'ORA-06502 (buffer insuficiente) en TODOS los chunks paralelos de '||
+            p_owner||'.'||p_tabla||'.'||p_columna||' (chunks_error='||l_chunks_error||
+            '). Requiere fallback de longitud segura.');
+        END IF;
+
         RAISE_APPLICATION_ERROR(-20320,
           'Enmascarado paralelo incompleto en '||p_owner||'.'||p_tabla||'.'||p_columna||
           ' (estado_tarea='||l_estado_tarea||', chunks_error='||NVL(l_chunks_error,0)||
@@ -528,29 +603,13 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       proc_dm_trace(NULL, p_ejecucion_id, 'ERROR', 'CLOSE_SOL_OPEN_FALLO', f_safe_err(SQLERRM));
   END;
 
-  PROCEDURE proc_dm_longops(
-    p_opname IN VARCHAR2,
-    p_target IN VARCHAR2,
-    p_sofar  IN NUMBER,
-    p_total  IN NUMBER,
-    p_units  IN VARCHAR2
-  ) IS
-  BEGIN
-    DBMS_APPLICATION_INFO.SET_SESSION_LONGOPS(
-      rindex      => g_rindex,
-      slno        => g_slno,
-      op_name     => SUBSTR(p_opname,1,64),
-      target_desc => SUBSTR(p_target,1,32),
-      sofar       => NVL(p_sofar,0),
-      totalwork   => NVL(p_total,0),
-      units       => SUBSTR(p_units,1,32)
-    );
-  EXCEPTION
-    -- Silencio deliberado: SET_SESSION_LONGOPS es telemetria de progreso para
-    -- V$SESSION_LONGOPS (monitorizacion), no afecta al enmascarado ni a la
-    -- integridad de los datos. Un fallo aqui nunca debe abortar la campana.
-    WHEN OTHERS THEN NULL;
-  END;
+  -- LIMPIEZA 2026-09-18: se elimina proc_dm_longops (junto con los globales
+  -- g_rindex/g_slno, tambien retirados). Era telemetria para
+  -- V$SESSION_LONGOPS que nunca llego a conectarse a ninguna llamada real
+  -- (g_rindex/g_slno jamas se inicializaban con
+  -- DBMS_APPLICATION_INFO.SET_SESSION_LONGOPS_NOHINT, y ningun punto del
+  -- paquete invocaba proc_dm_longops) - codigo muerto sin efecto en el
+  -- enmascarado, confirmado por grep antes de retirarlo.
 
   PROCEDURE proc_dm_chk_cancel(p_solicitud_id IN NUMBER) IS
     l_cancel CHAR(1);
@@ -1670,7 +1729,12 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
           'SKIP_ORA12899',
           l_target||' auto-excluida tras ORA-12899'
         );
-      ELSIF SQLCODE = -6502 THEN
+      ELSIF SQLCODE IN (-6502, -20321) THEN
+        -- FIX 2026-09-18: -20321 es el ORA-06502 puro detectado por
+        -- proc_dm_ejecuta_update_seguro cuando la columna se proceso via
+        -- DBMS_PARALLEL_EXECUTE (>100k filas). Antes de este fix, ese caso
+        -- llegaba aqui como -20320 generico y NUNCA activaba el fallback de
+        -- abajo (que ya funcionaba correctamente para la ruta serie/directa).
         IF l_data_type IN ('CHAR','VARCHAR2','NCHAR','NVARCHAR2') AND NVL(l_char_len,0) > 0 THEN
           BEGIN
             -- Primer fallback: reutilizar librería oficial de enmascarado
@@ -1844,8 +1908,13 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
 
       BEGIN
         -- Verificación de consistencia padre/hijo según la relación definida
+        -- HINT 2026-09-18: PARALLEL aqui es seguro (consulta diagnostica de
+        -- verificacion post-sync en la sesion orquestadora, no en un worker
+        -- paralelo) y util: es un JOIN + comparacion NVL(TO_CHAR(..)) entre
+        -- dos tablas potencialmente grandes, sin indices utilizables por la
+        -- comparacion por texto.
         l_sql :=
-          'SELECT COUNT(*) FROM '||f_qname(p_esquema)||'.'||f_qname(rc.tabla_destino)||' d '||
+          'SELECT /*+ PARALLEL(d,4) PARALLEL(s,4) */ COUNT(*) FROM '||f_qname(p_esquema)||'.'||f_qname(rc.tabla_destino)||' d '||
           'JOIN '||f_qname(p_esquema)||'.'||f_qname(rc.tabla_origen)||' s '||
           '  ON s.'||f_qname(rc.columna_join_origen)||' = d.'||f_qname(rc.columna_join_destino)||' '||
           'WHERE NVL(TO_CHAR(d.'||f_qname(rc.columna_destino)||'),''#NULL#'') '||
@@ -1906,8 +1975,15 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
            NOT EXISTS (
              SELECT 1 FROM tdm_mask_trace t
               WHERE (
-                      (g_resume_base_solicitud IS NOT NULL AND t.solicitud_id = g_resume_base_solicitud) OR
-                      (g_resume_base_solicitud IS NULL AND t.ejecucion_id = p_ejecucion_id)
+                      -- 2026-09-22: filtro simplificado a ejecucion_id (ya no a la
+                      -- solicitud_id previa via g_resume_base_solicitud). Motivo: un
+                      -- SEGUNDO reanudo consecutivo sobre la misma ejecucion_id (dos
+                      -- caidas seguidas) solo veia el historico de la ULTIMA solicitud,
+                      -- no el de la primera -- re-enmascaraba (doble cifrado, corrompe
+                      -- FF1 y rompe el dominio referencial) columnas ya confirmadas en un
+                      -- intento anterior al mas reciente. Con ejecucion_id se ve TODO el
+                      -- historico de la campana sin importar cuantos intentos tuvo.
+                      t.ejecucion_id = p_ejecucion_id
                     )
                 AND t.fase = 'MASK'
                 AND t.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
@@ -1935,8 +2011,15 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
            NOT EXISTS (
              SELECT 1 FROM tdm_mask_trace t
               WHERE (
-                      (g_resume_base_solicitud IS NOT NULL AND t.solicitud_id = g_resume_base_solicitud) OR
-                      (g_resume_base_solicitud IS NULL AND t.ejecucion_id = p_ejecucion_id)
+                      -- 2026-09-22: filtro simplificado a ejecucion_id (ya no a la
+                      -- solicitud_id previa via g_resume_base_solicitud). Motivo: un
+                      -- SEGUNDO reanudo consecutivo sobre la misma ejecucion_id (dos
+                      -- caidas seguidas) solo veia el historico de la ULTIMA solicitud,
+                      -- no el de la primera -- re-enmascaraba (doble cifrado, corrompe
+                      -- FF1 y rompe el dominio referencial) columnas ya confirmadas en un
+                      -- intento anterior al mas reciente. Con ejecucion_id se ve TODO el
+                      -- historico de la campana sin importar cuantos intentos tuvo.
+                      t.ejecucion_id = p_ejecucion_id
                     )
                 AND t.fase = 'MASK'
                 AND t.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
@@ -2011,8 +2094,9 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
              NOT EXISTS (
                SELECT 1 FROM tdm_mask_trace t
                 WHERE (
-                        (g_resume_base_solicitud IS NOT NULL AND t.solicitud_id = g_resume_base_solicitud) OR
-                        (g_resume_base_solicitud IS NULL AND t.ejecucion_id = p_ejecucion_id)
+                        -- 2026-09-22: ver comentario equivalente en la rama l_has_final=1
+                        -- arriba -- mismo fix, misma razon (multi-reanudo consecutivo).
+                        t.ejecucion_id = p_ejecucion_id
                       )
                   AND t.fase = 'MASK'
                   AND t.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
@@ -2078,8 +2162,9 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
              NOT EXISTS (
                SELECT 1 FROM tdm_mask_trace t
                 WHERE (
-                        (g_resume_base_solicitud IS NOT NULL AND t.solicitud_id = g_resume_base_solicitud) OR
-                        (g_resume_base_solicitud IS NULL AND t.ejecucion_id = p_ejecucion_id)
+                        -- 2026-09-22: ver comentario equivalente en la rama l_has_final=1
+                        -- arriba -- mismo fix, misma razon (multi-reanudo consecutivo).
+                        t.ejecucion_id = p_ejecucion_id
                       )
                   AND t.fase = 'MASK'
                   AND t.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
@@ -2261,10 +2346,22 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
     END IF;
     COMMIT;
 
+    -- 2026-09-22: p_detalle ahora distingue una solicitud de REANUDACION (via
+    -- p_mask_reanudar, g_resume_base_solicitud no nulo) de una de arranque
+    -- normal -- antes usaba el mismo texto fijo ('Enmascaramiento final;
+    -- rollback via import', residuo sin relacion aparente con este flujo)
+    -- para ambos casos, asi que TDM_MASK_SOLICITUD.DETALLE tampoco distinguia
+    -- una reanudacion de un arranque normal (solo reintento_nro>1 lo insinuaba).
     l_solicitud_id := func_dm_crea_sol(
       p_ejecucion_id      => p_ejecucion_id,
       p_esquema           => l_esquema,
-      p_detalle           => 'Enmascaramiento final; rollback via import',
+      p_detalle           => CASE
+                                WHEN g_resume_base_solicitud IS NOT NULL THEN
+                                  'Reanudacion de ejecucion_id='||p_ejecucion_id||
+                                  ' desde solicitud_id='||TO_CHAR(g_resume_base_solicitud)
+                                ELSE
+                                  'Enmascaramiento final'
+                              END,
       p_forzar_reproceso  => l_reproceso
     );
     BEGIN
@@ -2561,6 +2658,22 @@ create or replace PACKAGE BODY pkg_dm_enmascarar AS
       INTO l_prev_solicitud
       FROM tdm_mask_solicitud
      WHERE ejecucion_id = p_ejecucion_id;
+
+    -- 2026-09-22: antes de este fix, ni TDM_MASK_TRACE ni TDM_MASK_SOLICITUD
+    -- dejaban ningun rastro explicito de que una solicitud fuera una
+    -- REANUDACION (solo se podia inferir viendo que reintento_nro>1 para la
+    -- misma ejecucion_id, cruzando manualmente contra el historico). Se deja
+    -- una traza explicita aqui, antes de crear la nueva solicitud, para que
+    -- una auditoria pueda ver directamente en TDM_MASK_TRACE que esta
+    -- ejecucion_id fue interrumpida y reanudada, y desde cual solicitud.
+    BEGIN
+      proc_dm_trace(NULL, p_ejecucion_id, 'MASK', 'REANUDACION_INICIO',
+        'Reanudando ejecucion_id='||p_ejecucion_id||' desde solicitud_id='||
+        NVL(TO_CHAR(l_prev_solicitud),'(ninguna previa)')||
+        ' -- se omitiran columnas ya confirmadas en TDM_MASK_TRACE para toda la ejecucion_id.');
+    EXCEPTION
+      WHEN OTHERS THEN NULL;
+    END;
 
     g_resume_base_solicitud := l_prev_solicitud;
     p_dm_enmascara(p_ejecucion_id => p_ejecucion_id, p_reproceso => 'N', p_commit_lote => p_commit_lote);

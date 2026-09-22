@@ -128,6 +128,20 @@ create or replace package pkg_dm_descubrimiento as
       p_forzar_full      in char
   );
 
+  -- FIX 2026-09-18: descubrimiento por excepciones. Mapea metadata,
+  -- triggers e integridad SOLO de las tablas indicadas (p.ej. las ya
+  -- registradas en tdm_excepcion_col para un FORCE previo), sin escanear
+  -- el esquema completo. Usa el mismo mecanismo de alcance que ya respeta
+  -- proc_dm_prepara_objetos (tdm_ejecucion_scope), antes solo accesible
+  -- internamente porque p_dm_descubrimiento fijaba el alcance a NULL
+  -- (esquema completo) de forma fija.
+  procedure p_dm_descubrimiento_set(
+      p_esquema          in varchar2,
+      p_tablas_csv       in varchar2,
+      p_sample_rows      in number default 500,
+      p_forzar_full      in char default 'N'
+  );
+
   procedure p_dm_reanudar(
       p_ejecucion_id     in number,
       p_sample_rows      in number default 500,
@@ -964,13 +978,33 @@ procedure proc_dm_aplica_excepcion(
   l_accion        tdm_excepcion_col.accion%type;
   l_ident_forzado tdm_excepcion_col.identificador_forz%type;
 begin
+  -- 2026-09-22: se agrega ROWNUM=1 (y WHEN OTHERS defensivo). Confirmado en
+  -- produccion (SRI2006.TMP_LIQUIDACION_MENSUAL.NIF, via dm_tabref.sql) que
+  -- TDM_EXCEPCION_COL puede tener MAS de una fila activa='Y' para el mismo
+  -- owner_name+table_name+column_name a pesar de que su PK declarada es
+  -- justo esa combinacion -- indica que la PK esta deshabilitada/NOVALIDATE
+  -- o hay drift de datos historico (mismo patron de drift ya visto con
+  -- dominio/solicitud_id el 20/09). Sin este fix, esa fila dispara
+  -- ORA-01422 (TOO_MANY_ROWS) aqui; el llamador (proc_dm_procesa_desc) SI
+  -- atrapa WHEN OTHERS por columna y sigue con la siguiente (no aborta el
+  -- descubrimiento completo), pero esta columna especifica queda sin
+  -- clasificar (se pierde la excepcion Y CUALQUIER score de esa columna,
+  -- registrado solo como error PROCESA_COLUMNA en tdm_ejecucion_error, sin
+  -- ninguna senal en el resumen normal). proc_dm_get_excepcion (05, ruta de
+  -- enmascarado) ya tenia este mismo guard -- este fix solo alinea 04 con
+  -- ese patron ya existente. Con ROWNUM=1 el comportamiento pasa a ser "no
+  -- fatal, toma una fila de forma no determinista" en vez de "columna
+  -- saltada silenciosamente" -- de cualquier forma, la causa raiz (filas
+  -- duplicadas en TDM_EXCEPCION_COL) debe limpiarse en los datos, no solo
+  -- en el codigo.
   select accion, identificador_forz
     into l_accion, l_ident_forzado
     from tdm_excepcion_col
    where owner_name = p_owner
      and table_name = p_tabla
      and column_name = p_columna
-     and activa = 'Y';
+     and activa = 'Y'
+     and rownum = 1;
 
   if l_accion = 'EXCLUDE' then
     p_score_total := -999;
@@ -982,6 +1016,8 @@ begin
   end if;
 exception
   when no_data_found then
+    null;
+  when others then
     null;
 end proc_dm_aplica_excepcion;
 
@@ -1870,15 +1906,19 @@ exception
 end proc_dm_procesa_desc;
 
 ------------------------------------------------------------------------------
--- API pública: ejecutar
+-- Núcleo privado: ejecutar descubrimiento (con o sin alcance por tablas)
+-- FIX 2026-09-18: extraído de p_dm_descubrimiento para reutilizar la misma
+-- lógica (gate de ejecución maestra ORA-20014, alta en tdm_ejecucion, scope,
+-- prepara_objetos, procesa_desc) desde el nuevo modo "por excepciones"
+-- (p_dm_descubrimiento_set) sin duplicar código ni tocar el comportamiento
+-- ya usado en producción por @dm_descubre (p_tablas_csv = null se comporta
+-- exactamente igual que antes: alcance '*' = esquema completo).
 ------------------------------------------------------------------------------
-------------------------------------------------------------------------------
--- API pública: ejecutar
-------------------------------------------------------------------------------
-procedure p_dm_descubrimiento(
+procedure proc_dm_descubrimiento_core(
     p_esquema          in varchar2,
-    p_sample_rows      in number default 500,
-    p_forzar_full      in char default 'N'
+    p_tablas_csv       in varchar2,
+    p_sample_rows      in number,
+    p_forzar_full      in char
 ) is
   l_running      number;
   l_run_id       number;
@@ -1937,7 +1977,7 @@ begin
       raise_application_error(-20011, 'Existe una ejecución EJECUTANDO en curso para el esquema/alcance');
   END;
 
-  proc_dm_registra_scope(l_run_id, upper(p_esquema), null);
+  proc_dm_registra_scope(l_run_id, upper(p_esquema), p_tablas_csv);
   proc_dm_refresca_sesion(l_run_id);
 
   commit;
@@ -1949,6 +1989,23 @@ begin
   );
 
   proc_dm_procesa_desc(l_run_id, func_dm_normaliza_sample(p_sample_rows), 100);
+end proc_dm_descubrimiento_core;
+
+------------------------------------------------------------------------------
+-- API pública: ejecutar (esquema completo)
+------------------------------------------------------------------------------
+procedure p_dm_descubrimiento(
+    p_esquema          in varchar2,
+    p_sample_rows      in number default 500,
+    p_forzar_full      in char default 'N'
+) is
+begin
+  proc_dm_descubrimiento_core(
+    p_esquema     => p_esquema,
+    p_tablas_csv  => null,
+    p_sample_rows => p_sample_rows,
+    p_forzar_full => p_forzar_full
+  );
 end p_dm_descubrimiento;
 ------------------------------------------------------------------------------
 -- API pública: sobrecarga
@@ -1958,12 +2015,44 @@ procedure p_dm_descubrimiento(
     p_forzar_full in char
 ) is
 begin
-  p_dm_descubrimiento(
+  proc_dm_descubrimiento_core(
     p_esquema     => p_esquema,
+    p_tablas_csv  => null,
     p_sample_rows => 500,
     p_forzar_full => p_forzar_full
   );
 end p_dm_descubrimiento;
+
+------------------------------------------------------------------------------
+-- API pública: descubrimiento por excepciones (@dm_descubre_set)
+-- FIX 2026-09-18: alcance limitado a p_tablas_csv (tipicamente las tablas
+-- ya presentes en tdm_excepcion_col para un FORCE previo). Mapea metadata,
+-- triggers e integridad SOLO de esas tablas; el resultado del descubrimiento
+-- (Y/N en tdm_columna_final) queda registrado igual que en modo completo,
+-- pero NO reemplaza la decision FORCE de tdm_excepcion_col: esa tabla
+-- sigue resolviendo via el flujo normal de p_dm_enmascara/proc_dm_apl_col
+-- (proc_dm_get_excepcion tiene prioridad sobre el Y/N de descubrimiento).
+------------------------------------------------------------------------------
+procedure p_dm_descubrimiento_set(
+    p_esquema          in varchar2,
+    p_tablas_csv       in varchar2,
+    p_sample_rows      in number default 500,
+    p_forzar_full      in char default 'N'
+) is
+begin
+  if p_tablas_csv is null or length(trim(p_tablas_csv)) = 0 then
+    raise_application_error(-20015,
+      'p_dm_descubrimiento_set requiere p_tablas_csv con al menos una tabla; '||
+      'para descubrimiento de esquema completo use p_dm_descubrimiento.');
+  end if;
+
+  proc_dm_descubrimiento_core(
+    p_esquema     => p_esquema,
+    p_tablas_csv  => p_tablas_csv,
+    p_sample_rows => p_sample_rows,
+    p_forzar_full => p_forzar_full
+  );
+end p_dm_descubrimiento_set;
 
 ------------------------------------------------------------------------------
 -- API pública: reanudar

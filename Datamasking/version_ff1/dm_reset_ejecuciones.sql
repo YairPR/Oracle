@@ -8,6 +8,11 @@ set define on
 set linesize 200
 set pagesize 100
 set tab off
+Rem 2026-09-22: se fija current_schema=ASTSYSADMIN (antes este script no lo
+Rem hacia -- nunca lo necesito, todo ya iba con owner calificado) porque la
+Rem nueva llamada a pkg_dm_mantenimiento.* (ver mas abajo) va SIN calificar y
+Rem necesita resolver contra ese esquema.
+alter session set current_schema = ASTSYSADMIN;
 
 prompt =========================================================
 prompt dm_reset_ejecuciones - RESET COMPLETO de historico de ejecuciones
@@ -81,6 +86,24 @@ end;
 /
 
 prompt
+prompt --- Autorizando mantenimiento DDL (si dm_proteger_auditoria.sql esta instalado) ---
+Rem 2026-09-22: dm_proteger_auditoria.sql instala un trigger de DDL que
+Rem bloquea TRUNCATE/DROP sobre estas mismas tablas salvo mantenimiento
+Rem activo para la sesion. Este bloque activa esa ventana antes de truncar
+Rem y la cierra al final del script (ver mas abajo). Si ese script de
+Rem proteccion NO esta instalado todavia, PKG_DM_MANTENIMIENTO no existe y
+Rem esta llamada falla -- se envuelve para no bloquear el reset en ese caso.
+
+begin
+  pkg_dm_mantenimiento.proc_activar_mantenimiento('dm_reset_ejecuciones CONFIRMAR por '||user);
+exception
+  when others then
+    dbms_output.put_line('AVISO: no se pudo activar mantenimiento (pkg_dm_mantenimiento no instalado o sin permiso) -- ' ||
+                          'si dm_proteger_auditoria.sql esta instalado, los TRUNCATE que siguen fallaran con ORA-20900.');
+end;
+/
+
+prompt
 prompt --- Truncando TDM_EJECUCION y su jerarquia (hija -> padre) ---
 
 truncate table astsysadmin.tdm_mask_dep_estado;
@@ -96,6 +119,16 @@ prompt
 prompt --- Truncando TDM_SECRETO (peppers) ---
 
 truncate table astsysadmin.tdm_secreto;
+
+prompt
+prompt --- Cerrando la ventana de mantenimiento DDL ---
+
+begin
+  pkg_dm_mantenimiento.proc_desactivar_mantenimiento;
+exception
+  when others then null;
+end;
+/
 
 prompt
 prompt =========================================================

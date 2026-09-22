@@ -44,15 +44,6 @@ select trim('&1') final_p1,
        upper(trim(nvl('&2', '%'))) final_p2
 from dual;
 
-column c_ejecucion_id new_value V_EJEC_ID noprint
-column c_esquema new_value V_ESQUEMA_VAL noprint
-
-select &&V_ARG1 as c_ejecucion_id from dual;
-
-select esquema_objetivo as c_esquema
-  from tdm_ejecucion
- where ejecucion_id = &V_EJEC_ID;
-
 set termout on
 
 declare
@@ -65,6 +56,8 @@ declare
 
     v_total_final           number := 0;
     v_total_final_y         number := 0;
+    v_total_force_y         number := 0;
+    v_total_candidatas      number := 0;
     v_solicitud_id          number := -1;
 
     v_estado_pre            varchar2(30);
@@ -176,13 +169,49 @@ begin
      where owner_name = v_esquema
        and enmascarar = 'Y';
 
+    -- FIX 2026-09-20: el motor (pkg_dm_enmascarar.proc_dm_mask_cat, variable
+    -- l_has_final) NO exige enmascarar='Y' de forma incondicional: si no hay
+    -- NINGUNA columna en TDM_COLUMNA_FINAL con enmascarar='Y' para el
+    -- esquema, toma como fuente alterna las columnas con excepcion FORCE
+    -- activa en TDM_EXCEPCION_COL (identificador_forz definido y existente
+    -- en DBA_TAB_COLUMNS) - es el flujo "FORCE-only" acordado el 17/09
+    -- (TDM_COLUMNA_FINAL.enmascarar='N' en todo el esquema, enmascarado
+    -- 100% vía excepciones) y ya usado en producción (ejecucion_id=57).
+    -- Esta precondicion debe reflejar exactamente esa misma regla de
+    -- l_has_final; antes solo miraba enmascarar='Y' y bloqueaba con -20307
+    -- un escenario que el motor SI puede procesar.
     if v_total_final_y = 0 then
-        raise_application_error(-20307,
-            'No existen columnas marcadas para enmascarar (enmascarar=''Y'') para el esquema ' || v_esquema);
+        select count(*)
+          into v_total_force_y
+          from tdm_excepcion_col e
+         where upper(trim(e.owner_name)) = v_esquema
+           and upper(trim(e.activa)) = 'Y'
+           and upper(trim(e.accion)) = 'FORCE'
+           and e.identificador_forz is not null
+           and exists (
+             select 1
+               from dba_tab_columns c
+              where c.owner = upper(trim(e.owner_name))
+                and c.table_name = upper(trim(e.table_name))
+                and c.column_name = upper(trim(e.column_name))
+           );
+
+        if v_total_force_y = 0 then
+            raise_application_error(-20307,
+                'No existen columnas marcadas para enmascarar (enmascarar=''Y'' en TDM_COLUMNA_FINAL) ' ||
+                'ni excepciones FORCE activas y validas en TDM_EXCEPCION_COL para el esquema ' || v_esquema);
+        end if;
     end if;
 
+    v_total_candidatas := case when v_total_final_y > 0 then v_total_final_y else v_total_force_y end;
+
     dbms_output.put_line('Total columnas catalogadas : ' || v_total_final);
-    dbms_output.put_line('Columnas a enmascarar      : ' || v_total_final_y);
+    dbms_output.put_line('Columnas con enmascarar=Y  : ' || v_total_final_y);
+
+    if v_total_final_y = 0 then
+        dbms_output.put_line('Fuente de enmascarado      : EXCEPCIONES FORCE (' || v_total_force_y ||
+                              ' columna(s) - TDM_COLUMNA_FINAL.enmascarar=N en todo el esquema)');
+    end if;
 
     if v_warn_pre_error = 'Y' then
         dbms_output.put_line('ADVERTENCIA: la ejecucion venia previamente en estado ERROR.');
@@ -248,7 +277,8 @@ begin
     dbms_output.put_line('Resumen final');
     dbms_output.put_line('Esquema                : ' || v_esquema);
     dbms_output.put_line('Solicitud_id           : ' || case when v_solicitud_id = -1 then '(no encontrada)' else to_char(v_solicitud_id) end);
-    dbms_output.put_line('Columnas enmascaradas  : ' || v_total_final_y);
+    dbms_output.put_line('Columnas candidatas    : ' || v_total_candidatas ||
+                          case when v_total_final_y = 0 then ' (via excepciones FORCE)' else '' end);
 
     if v_estado_pre is not null then
         dbms_output.put_line('Estado previo          : ' || v_estado_pre);

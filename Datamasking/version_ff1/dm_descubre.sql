@@ -43,6 +43,11 @@ declare
     v_total_columnas      number := 0;
     v_total_enmascarar_y  number := 0;
 
+    v_total_excepciones   number := 0;
+    v_total_excl          number := 0;
+    v_total_force         number := 0;
+    v_excl_mostradas      number := 0;
+
     function es_numero(p_txt varchar2) return number is
         v_dummy number;
     begin
@@ -201,6 +206,68 @@ begin
 
     dbms_output.put_line('Columnas descubiertas  : ' || v_total_columnas);
     dbms_output.put_line('Con enmascarar = Y     : ' || v_total_enmascarar_y);
+
+    -- FIX 2026-09-20: excepciones vigentes del esquema (TDM_EXCEPCION_COL).
+    -- El descubrimiento clasifica Y/N por heuristica propia, pero
+    -- proc_dm_apl_col SIEMPRE respeta primero una excepcion activa
+    -- (FORCE/EXCLUDE) sobre esa clasificacion al momento de enmascarar. Sin
+    -- este bloque el operador no tenia forma de ver, en la misma salida del
+    -- descubrimiento, si el esquema tiene excepciones vigentes que van a
+    -- pisar el resultado Y/N de arriba.
+    begin
+        select count(*),
+               sum(case when accion = 'EXCLUDE' then 1 else 0 end),
+               sum(case when accion = 'FORCE'   then 1 else 0 end)
+          into v_total_excepciones,
+               v_total_excl,
+               v_total_force
+          from tdm_excepcion_col
+         where owner_name = v_esquema
+           and activa = 'Y';
+    exception
+        when others then
+            v_total_excepciones := 0;
+            v_total_excl        := 0;
+            v_total_force       := 0;
+    end;
+
+    v_total_excepciones := nvl(v_total_excepciones, 0);
+    v_total_excl         := nvl(v_total_excl, 0);
+    v_total_force         := nvl(v_total_force, 0);
+
+    dbms_output.put_line('-----------------------------------------');
+    dbms_output.put_line('Excepciones activas (TDM_EXCEPCION_COL): ' || v_total_excepciones);
+
+    if v_total_excepciones > 0 then
+        dbms_output.put_line('  EXCLUDE (fuerza N, nunca enmascara)  : ' || v_total_excl);
+        dbms_output.put_line('  FORCE   (fuerza Y, siempre enmascara): ' || v_total_force);
+        dbms_output.put_line('  Detalle (maximo 50 filas):');
+
+        for r in (
+            select table_name, column_name, accion, identificador_forz
+              from tdm_excepcion_col
+             where owner_name = v_esquema
+               and activa = 'Y'
+             order by table_name, column_name
+        )
+        loop
+            exit when v_excl_mostradas >= 50;
+            dbms_output.put_line('    ' || r.table_name || '.' || r.column_name ||
+                                  ' [' || r.accion || ']' ||
+                                  case when r.identificador_forz is not null
+                                       then ' -> ' || r.identificador_forz
+                                       else ''
+                                  end);
+            v_excl_mostradas := v_excl_mostradas + 1;
+        end loop;
+
+        if v_total_excepciones > 50 then
+            dbms_output.put_line('    ... (' || (v_total_excepciones - 50) || ' adicionales no mostradas, ver TDM_EXCEPCION_COL)');
+        end if;
+    else
+        dbms_output.put_line('  No hay excepciones activas para ' || v_esquema || '.');
+    end if;
+
     dbms_output.put_line('=========================================');
 end;
 /
