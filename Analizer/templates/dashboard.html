@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+
+{% block content %}
+{% set diag = payload.informe.diagnostico %}
+{% set pres = payload.informe.presentacion %}
+{% set hechos = payload.informe.hechos %}
+{# Hito de simplificacion (2026-10): el pipeline quedo fijo a oclumon+sar+awr
+   (core/correlacion.py, que calculaba esto dinamicamente, se retiro junto con
+   alert_log/clusterware/trace) -- 'modo' queda como constante descriptiva en
+   vez de una regla calculada; ver claude/rac_forensic_lab.md. #}
+{% set modo = {
+  "alcance_correlacion": "oclumon + sar + awr",
+  "motivo_alcance": "Alcance fijo del pipeline desde el Hito de simplificación (alert log/Clusterware/trace fuera de alcance).",
+  "profundidad_estudio": "Series de telemetría",
+  "motivo_profundidad": "Detección de anomalías sobre series de tiempo (oclumon) + AWR, sin IA automática.",
+} %}
+
+<div class="odl-topbar">
+  <div>
+    <h1 class="odl-title">{{ payload.caso }}</h1>
+    <div class="odl-subtitle">RAC · Análisis de incidente · {{ payload.resumen.rango_tiempo[0] | fecha_hora }} — {{ payload.resumen.rango_tiempo[1] | hora }}</div>
+  </div>
+  <div class="odl-tag-generado">Generado {{ payload.generado_en | fecha_hora }}</div>
+</div>
+
+{# Cabecera de infraestructura (Hito "rediseno AWR", 2026-10-02, pedido
+   del audit externo): hosts/cores/RAM/version de BD, ahora que el modelo
+   dimensional (dim_infraestructura/dim_database) los tiene tipados --
+   reusa las clases .odl-kpi-row/.odl-kpi ya validadas (antes servian a
+   la ficha de KPIs del motor narrativo, retirada de la UI, nunca se
+   borraron del CSS) en vez de inventar un componente nuevo. #}
+{% if payload.infraestructura %}
+<div class="odl-kpi-row">
+  {% for host in payload.infraestructura %}
+  <div class="odl-kpi">
+    <div class="odl-kpi-label">{{ m.icono(iconos, "nav_cpu_mem") }}{{ host.host or "host desconocido" }}</div>
+    <div class="odl-kpi-value">{{ host.db_name or "--" }}{% if host.instance_name %} / {{ host.instance_name }}{% endif %}</div>
+    <div class="odl-kpi-sub">
+      {% if host.release %}Oracle {{ host.release }}{% endif %}{% if host.rac %} · RAC {{ host.rac }}{% endif %}
+      {% if host.cores %} · {{ host.cores | int }} cores{% endif %}{% if host.sockets %} ({{ host.sockets | int }} socket{{ "s" if host.sockets != 1 }}){% endif %}
+      {% if host.mem_gb %} · {{ host.mem_gb | round(1) }} GB RAM{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
+  {% set rel = payload.informe.presentacion.series_relevantes %}
+  {% set me = payload.motor_episodios %}
+  <div class="odl-panel">
+    <div class="odl-panel-header">
+      <div class="odl-panel-title">{{ m.icono(iconos, "nav_cpu_mem") }}OCLUMON -- telemetría de sistema y red</div>
+      <div class="odl-panel-note">{{ me.node_list | length }} nodo(s) · comparación con color estable por nodo</div>
+    </div>
+
+    {# ---- Sistema ------------------------------------------------- #}
+    <div class="odl-subsection-title">{{ m.icono(iconos, "cpu_saturation") }}Sistema</div>
+    {# Limpieza 2026-10-02 (audit externo pegado por el usuario):
+       - A.1: memtotal_mb/swaptotal_mb (capacidad total, linea plana sin
+         valor forense) ya NO se grafican como panel independiente -- la
+         serie sigue calculandose (core/episode_engine.py) por si se
+         necesita como referencia mas adelante, solo se retira de la vista.
+       - A.2: swpin/swpout/nicerrors_sistema solo se muestran si realmente
+         hubo actividad (>0) en algun nodo -- ver sistema_series_condicionales
+         mas abajo, gateadas ademas por me.series_max.
+       - B.2: netr/netw ("Red total -- recepción"/"envío") se fusionan en
+         un solo chart de Trafico total Rx/Tx con area sombreada, uno por
+         nodo -- ver bloque mas abajo. #}
+    {% set sistema_series = [
+      ("cpu_pct", "CPU", "%"), ("cpuq", "Cola de CPU", "procesos en cola"),
+      ("memfree_mb", "Memoria libre", "MB"), ("swapfree_mb", "Swap libre", "MB"),
+      ("procs", "Procesos activos", "procesos"),
+    ] %}
+    {% set sistema_series_condicionales = [
+      ("swpin", "Swap in", "páginas/muestra"), ("swpout", "Swap out", "páginas/muestra"),
+      ("nicerrors_sistema", "Errores NIC (agregado sistema)", "errores/muestra"),
+    ] %}
+    {% set ns_sistema = namespace(alguno=false) %}
+    <div class="panel-grid">
+      {% for clave, titulo, unidad in sistema_series %}
+        {% if rel.get(clave) %}
+          {% set ns_sistema.alguno = true %}
+          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad}) }}
+        {% endif %}
+      {% endfor %}
+      {% for clave, titulo, unidad in sistema_series_condicionales %}
+        {% if rel.get(clave) and me.series_max.get(clave, 0) > 0 %}
+          {% set ns_sistema.alguno = true %}
+          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad}) }}
+        {% endif %}
+      {% endfor %}
+      {% if rel.get("netr") or rel.get("netw") %}
+        {% set ns_sistema.alguno = true %}
+        {% for n in me.node_list %}
+          {{ m.chart_box({"kind": "serie", "node": n, "series": ["netr", "netw"], "nombres": ["Recepción", "Envío"], "area": true, "title": "Tráfico total -- " ~ n, "unit": "KB/s"}) }}
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% if not ns_sistema.alguno %}
+    <div class="odl-empty-state">Sin telemetría de sistema (SYSTEM) en los archivos OCLUMON de este caso.</div>
+    {% endif %}
+
+    {# ---- Red (NICs) ------------------------------------------------ #}
+    <div class="odl-subsection-title">{{ m.icono(iconos, "interconnect") }}Red (NICs)</div>
+    {% set nic_metricas = [
+      ("latency_ms", "Latencia", "ms"), ("kbps", "Tráfico", "KB/s"),
+      ("discards", "Descartes", "paquetes/muestra"), ("link_errors", "Errores de enlace", "errores/muestra"),
+      ("pktsin", "Paquetes recibidos", "paquetes"), ("pktsout", "Paquetes enviados", "paquetes"),
+      ("nicerrors", "nicErrors", "errores"),
+    ] %}
+    {% set ns_red = namespace(alguno=false) %}
+    {% for tipo in me.nic_types %}
+    <div class="odl-panel-note" style="margin:10px 0 6px; font-weight:600; color:var(--color-text)">{{ tipo }}</div>
+    <div class="panel-grid">
+      {% for sufijo, titulo, unidad in nic_metricas %}
+        {% set clave = "nic_" ~ tipo ~ "_" ~ sufijo %}
+        {% if rel.get(clave) %}
+          {% set ns_red.alguno = true %}
+          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo ~ " NIC " ~ tipo, "unit": unidad}) }}
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+    {% if not ns_red.alguno %}
+    <div class="odl-empty-state">Sin sección NICS en los archivos OCLUMON de este caso.</div>
+    {% endif %}
+
+    {# ---- Protocolo -------------------------------------------------- #}
+    <div class="odl-subsection-title">{{ m.icono(iconos, "status_warning") }}Protocolo (errores de red, nuevos por muestra)</div>
+    {# Limpieza 2026-10-02 (audit, punto B.3): de los 9 contadores, solo
+       IPReasFail y UDPRcvErr son los que la literatura de Oracle asocia
+       directamente con evictions de RAC (ver INTERP_KB en
+       core/episode_engine.py) -- esos quedan siempre visibles si hay
+       datos; los otros 7 quedan disponibles (nunca se borran, el dato
+       sigue siendo real) detras de un "mostrar mas", igual mecanismo que
+       la tabla cruda de Evidencias. #}
+    {% set proto_principales = [
+      ("ipreasfail", "IP -- fallos de reensamblado (IPReasFail)"),
+      ("udprcverr", "UDP -- errores de recepción (UDPRcvErr)"),
+    ] %}
+    {% set proto_otros = [
+      ("iphdrerr", "IP -- errores de cabecera (IPHdrErr)"),
+      ("ipaddrerr", "IP -- errores de dirección (IPAddrErr)"),
+      ("ipfragfail", "IP -- fallos de fragmentación (IPFragFail)"),
+      ("tcpfailedconn", "TCP -- conexiones fallidas (TCPFailedConn)"),
+      ("tcpestrst", "TCP -- resets de conexión establecida (TCPEstRst)"),
+      ("tcpretraseg", "TCP -- segmentos retransmitidos (TCPRetraSeg)"),
+      ("udpunkport", "UDP -- puerto desconocido (UDPUnkPort)"),
+    ] %}
+    {% set ns_proto = namespace(alguno=false, alguno_otros=false) %}
+    <div class="panel-grid">
+      {% for clave, titulo in proto_principales %}
+        {% if rel.get("proto_" ~ clave) %}
+          {% set ns_proto.alguno = true %}
+          {{ m.chart_box({"kind": "multi-nodo", "serie": "proto_" ~ clave, "title": titulo, "unit": "nuevos/muestra"}) }}
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% for clave, titulo in proto_otros %}{% if rel.get("proto_" ~ clave) %}{% set ns_proto.alguno_otros = true %}{% endif %}{% endfor %}
+    {% if ns_proto.alguno_otros %}
+    <button class="odl-filter-btn" data-toggle-evidencia="protocolo-otros" aria-expanded="false" style="margin-top:10px">Mostrar otros contadores de protocolo</button>
+    <div id="protocolo-otros" class="panel-grid" style="display:none; margin-top:10px">
+      {% for clave, titulo in proto_otros %}
+        {% if rel.get("proto_" ~ clave) %}
+          {% set ns_proto.alguno = true %}
+          {{ m.chart_box({"kind": "multi-nodo", "serie": "proto_" ~ clave, "title": titulo, "unit": "nuevos/muestra"}) }}
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if not ns_proto.alguno %}
+    <div class="odl-empty-state">Sin sección PROTOCOL ERRORS en los archivos OCLUMON de este caso.</div>
+    {% endif %}
+
+    {# ---- Dispositivos (I/O) ----------------------------------------- #}
+    <div class="odl-subsection-title">
+      <span>{{ m.icono(iconos, "asm_io") }}Dispositivos (I/O)</span>
+      {% if me.device_names|length > 1 %}
+      <select id="odl-selector-device" class="odl-filter-btn">
+        {% for d in me.device_names %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+      </select>
+      {% endif %}
+    </div>
+    {% if me.device_names and me.device_names_vistos_total > me.device_names|length %}
+    <div class="odl-panel-note" style="margin:-4px 0 10px">Mostrando {{ me.device_names|length }} de {{ me.device_names_vistos_total }} dispositivos vistos en OCLUMON -- el resto no tuvo actividad de I/O en la ventana analizada y se omite del selector.</div>
+    {% endif %}
+    {% if me.device_names %}
+    {% set primer_device = me.device_names[0] %}
+    {% for d in me.device_names %}
+    <div class="panel-grid{% if d == primer_device %} odl-panel-activo{% endif %}" data-panel-group="device" data-panel-key="{{ d }}">
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "dev::" ~ d ~ "::ior", "title": "Lectura -- " ~ d, "unit": "KB/s"}) }}
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "dev::" ~ d ~ "::iow", "title": "Escritura -- " ~ d, "unit": "KB/s"}) }}
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "dev::" ~ d ~ "::ios", "title": "IOPS -- " ~ d, "unit": "operaciones/s"}) }}
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "dev::" ~ d ~ "::qlen", "title": "Cola -- " ~ d, "unit": "operaciones"}) }}
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "dev::" ~ d ~ "::wait_ms", "title": "Latencia de espera -- " ~ d, "unit": "ms"}) }}
+    </div>
+    {% endfor %}
+    {% elif me.device_names_vistos_total > 0 %}
+    <div class="odl-empty-state">Se vieron {{ me.device_names_vistos_total }} dispositivo(s) en OCLUMON, pero ninguno mostró actividad de I/O (lectura/escritura/cola/espera) en la ventana analizada.</div>
+    {% else %}
+    <div class="odl-empty-state">Sin sección DEVICES en los archivos OCLUMON de este caso.</div>
+    {% endif %}
+
+    {# ---- Filesystems ------------------------------------------------- #}
+    <div class="odl-subsection-title">
+      <span>{{ m.icono(iconos, "nav_almacenamiento") }}Filesystems</span>
+      {% if me.filesystem_mounts|length > 1 %}
+      <select id="odl-selector-fs" class="odl-filter-btn">
+        {% for f in me.filesystem_mounts %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+      </select>
+      {% endif %}
+    </div>
+    {% if me.filesystem_mounts %}
+    {% set primer_fs = me.filesystem_mounts[0] %}
+    {% for f in me.filesystem_mounts %}
+    <div class="panel-grid{% if f == primer_fs %} odl-panel-activo{% endif %}" data-panel-group="fs" data-panel-key="{{ f }}">
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "fs::" ~ f ~ "::used_pct", "title": "Uso -- " ~ f, "unit": "%"}) }}
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "fs::" ~ f ~ "::avail_mb", "title": "Disponible -- " ~ f, "unit": "MB"}) }}
+      {{ m.chart_box({"kind": "multi-nodo", "serie": "fs::" ~ f ~ "::total_mb", "title": "Capacidad total -- " ~ f, "unit": "MB"}) }}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="odl-empty-state">Sin sección FILESYSTEMS en los archivos OCLUMON de este caso.</div>
+    {% endif %}
+
+    {# ---- Procesos (top consumidores) -------------------------------- #}
+    <div class="odl-subsection-title">
+      <span>{{ m.icono(iconos, "nav_evidencias") }}Procesos -- top consumidores</span>
+      {% if me.proc_rankings|length > 1 %}
+      <select id="odl-selector-proc-nodo" class="odl-filter-btn">
+        {% for n in me.proc_rankings.keys() %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+      </select>
+      {% endif %}
+    </div>
+    {% if me.proc_rankings %}
+    {% set primer_nodo_proc = me.proc_rankings.keys() | list | first %}
+    {% for nodo, rank in me.proc_rankings.items() %}
+    <div data-panel-group="proc-nodo" data-panel-key="{{ nodo }}"{% if nodo == primer_nodo_proc %} class="odl-panel-activo"{% endif %}>
+      <div class="odl-panel-note" style="margin-bottom:8px">{{ rank.total_unique }} proceso(s) único(s) visto(s) en {{ nodo }} durante la ventana analizada.</div>
+      <div class="odl-proc-table-grid">
+        <div>
+          <h4>Top CPU</h4>
+          <table class="odl-table"><thead><tr><th>Proceso</th><th>PID</th><th>%CPU máx</th></tr></thead><tbody>
+          {% for p in rank.by_cpu[:10] %}<tr><td class="odl-mono">{{ p.name }}</td><td class="odl-mono">{{ p.pid or "--" }}</td><td>{{ p.max_cpuusage }}</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+        <div>
+          <h4>Top memoria privada</h4>
+          <table class="odl-table"><thead><tr><th>Proceso</th><th>PID</th><th>Mem máx (KB)</th></tr></thead><tbody>
+          {% for p in rank.by_privmem[:10] %}<tr><td class="odl-mono">{{ p.name }}</td><td class="odl-mono">{{ p.pid or "--" }}</td><td>{{ p.max_privmem_kb }}</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+        <div>
+          <h4>Top descriptores de archivo</h4>
+          <table class="odl-table"><thead><tr><th>Proceso</th><th>PID</th><th>#FD máx</th></tr></thead><tbody>
+          {% for p in rank.by_fd[:10] %}<tr><td class="odl-mono">{{ p.name }}</td><td class="odl-mono">{{ p.pid or "--" }}</td><td>{{ p.max_fd }}</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+        <div>
+          <h4>Top threads</h4>
+          <table class="odl-table"><thead><tr><th>Proceso</th><th>PID</th><th>#Threads máx</th></tr></thead><tbody>
+          {% for p in rank.by_threads[:10] %}<tr><td class="odl-mono">{{ p.name }}</td><td class="odl-mono">{{ p.pid or "--" }}</td><td>{{ p.max_threads }}</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="odl-empty-state">Sin sección PROCESSES en los archivos OCLUMON de este caso.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="sec-timeline" data-tab-panel>
+  <div class="odl-panel">
+    <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "nav_timeline") }}Línea de tiempo consolidada</div></div>
+    {% set linea = payload.motor_episodios.linea_tiempo %}
+    {% if linea %}
+    {# Filtros rapidos (audit, punto B.1): puramente client-side sobre las
+       filas ya renderizadas (ver dashboard-ui/src/filters.ts,
+       inicializarFiltrosTimeline) -- severidad y nodo son mutuamente
+       excluyentes dentro de su propio grupo, el texto libre se combina
+       con AND sobre ambos. #}
+    <div class="odl-filters" style="margin-bottom:10px">
+      <button class="odl-filter-btn odl-filter-activo" data-timeline-sev="all">Todos</button>
+      <button class="odl-filter-btn" data-timeline-sev="critical">Solo críticos</button>
+      <button class="odl-filter-btn odl-filter-activo" data-timeline-node="all">Todos los nodos</button>
+      {% for n in payload.motor_episodios.node_list %}
+      <button class="odl-filter-btn" data-timeline-node="{{ n }}">{{ n }}</button>
+      {% endfor %}
+      <input type="text" id="odl-timeline-buscar" class="odl-filter-input" placeholder="Buscar...">
+    </div>
+    <table class="odl-table">
+      <thead><tr><th>Hora</th><th>Nodo</th><th>Fuente</th><th>Severidad</th><th>Evento</th></tr></thead>
+      <tbody>
+      {% for item in linea[:300] %}
+        <tr data-sev="{{ item.sev }}" data-node="{{ item.node or '' }}">
+          <td class="odl-mono">{{ item.t | hora }}</td>
+          <td>{{ item.node or "--" }}</td>
+          <td>{{ item.source }}</td>
+          <td>{{ m.badge_severidad(iconos, item.sev) }}</td>
+          <td>{{ item.label }}{% if item.msg %}<br><span class="odl-panel-note">{{ item.msg }}</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if linea | length > 300 %}<div class="odl-panel-note" style="margin-top:6px">Mostrando los primeros 300 de {{ linea | length }} items (los filtros de arriba solo actuan sobre estos 300).</div>{% endif %}
+    {% else %}
+    <div class="odl-empty-state">Sin línea de tiempo narrada -- este caso no trae archivos OCLUMON ni alert log.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="sec-almacenamiento" data-tab-panel>
+  {# Rediseno AWR (Hito "Modelo de datos dimensional" + "rediseno AWR",
+     2026-10-02, pedido de la segunda auditoria externa -- AAS segun
+     metodologia oficial de Oracle, Top Wait Events por snapshot
+     coloreados por Wait Class). El viejo panel de "gipcd" se retiro --
+     era Clusterware/interconnect, fuente eliminada del pipeline desde el
+     Hito de simplificacion (2026-10-01); estaba mal etiquetado aca como
+     "Almacenamiento" desde siempre (hallazgo de la segunda auditoria). #}
+  {# Panel Tom Kyte (Grafico 1.1, auditoria externa): "DE AWR NADA MAS
+     GRAFICAS EL AAS?" -- critica textual del usuario. El DB Time
+     desglosado por categoria, apilado por snapshot, va PRIMERO (antes
+     que la linea de AAS): cuenta el "por que" del AAS, no solo su
+     magnitud. Agregacion 100% SQL (analizador.py), este panel solo
+     pivota filas -> barras apiladas (charts.ts::renderBarraApiladaDbTime). #}
+  <div class="odl-panel">
+    <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "nav_almacenamiento") }}AWR -- Balance del DB Time por categoría</div></div>
+    {% if payload.awr_dbtime_breakdown %}
+    <div class="odl-panel-note" style="margin-bottom:6px">DB Time de cada snapshot AWR, desglosado en DB CPU / User I/O / Cluster (Global Cache -- interconnect de RAC) / Concurrency + Application / Otros -- si predomina DB CPU, el cuello de botella es código/SQL, no infraestructura.</div>
+    <div class="chart-box" style="height:300px" data-chart='{"kind": "barra-apilada-dbtime"}'></div>
+    {% else %}
+    <div class="odl-empty-state">Sin wait events de AWR en este caso -- no se puede desglosar el DB Time por categoría.</div>
+    {% endif %}
+  </div>
+
+  <div class="odl-panel">
+    <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "asm_io") }}AWR -- Average Active Sessions (AAS)</div></div>
+    {% if payload.series_aas %}
+    <div class="odl-panel-note" style="margin-bottom:6px">AAS = DB Time / tiempo transcurrido del snapshot (metodología oficial de Oracle) -- un punto por snapshot AWR cargado, no muestreo continuo. Ver el panel de arriba para el desglose por categoría.</div>
+    {{ m.chart_box({"kind": "serie-cruda", "fuente": "series_aas", "title": "AAS", "unit": "sesiones activas promedio"}) }}
+    {% else %}
+    <div class="odl-empty-state">Sin snapshots AWR con AAS calculable en este caso (falta DB Time o la ventana del snapshot).</div>
+    {% endif %}
+  </div>
+
+  {# Panel Mike Dietrich (Grafico 3.1, auditoria externa): Parses/sec vs
+     Executes/sec -- en un sistema sano Executes debe estar muy por
+     encima de Parses; si estan pegadas, falta reuso de cursores (bind
+     variables), lo que degrada el Shared Pool. #}
+  <div class="odl-panel">
+    <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "trend") }}AWR -- Parses vs. Executes</div></div>
+    {% if payload.series_parses or payload.series_executes %}
+    <div class="odl-panel-note" style="margin-bottom:6px">Si "Executes" no queda claramente por encima de "Parses", la aplicación no está reusando cursores (faltan bind variables) -- esto degrada el Shared Pool en cada ejecución.</div>
+    {{ m.chart_box({"kind": "serie-cruda-multi", "fuentes": ["series_parses", "series_executes"], "nombres": ["Parses/sec", "Executes/sec"], "title": "Parses vs. Executes", "unit": "por segundo"}) }}
+    {% else %}
+    <div class="odl-empty-state">Sin datos de Parses/Executes en este caso (Load Profile no trajo esas líneas).</div>
+    {% endif %}
+  </div>
+
+  {% for snap in payload.awr.snapshots %}
+  <div class="odl-panel">
+    <div class="odl-panel-header">
+      {# Bug reportado en la auditoria externa (sec. 1/3): esta cabecera
+         mostraba solo HH:MM:SS (filtro `hora`), sin fecha -- en un caso
+         cuyo rango cruza medianoche o cuyas fuentes caen en dias
+         distintos, dos snapshots de dias diferentes podian mostrar la
+         MISMA hora. Se usa `fecha_hora` (incluye dia+mes) en ambos
+         extremos. #}
+      <div class="odl-panel-title">{{ m.icono(iconos, "trend") }}Top Wait Events -- {{ snap.host or "host desconocido" }} ({{ snap.begin_ts | fecha_hora }} -- {{ snap.end_ts | fecha_hora }})</div>
+    </div>
+    <div class="odl-panel-note" style="margin-bottom:8px">
+      DB CPU {{ "%.2f" | format(snap.db_cpu_per_sec) if snap.db_cpu_per_sec is not none else "--" }} seg/seg ·
+      DB Time {{ "%.2f" | format(snap.db_time_per_sec) if snap.db_time_per_sec is not none else "--" }} seg/seg ·
+      AAS {{ "%.2f" | format(snap.aas) if snap.aas is not none else "--" }} ·
+      elapsed {{ snap.elapsed_seg | duracion if snap.elapsed_seg is not none else "--" }}
+    </div>
+    {% if snap.wait_events %}
+    <table class="odl-table">
+      <thead><tr><th>Evento</th><th>Wait Class</th><th>Waits</th><th>Tiempo total (s)</th><th>Avg wait (ms)</th><th>% DB time</th></tr></thead>
+      <tbody>
+      {% for ev in snap.wait_events %}
+        <tr>
+          <td>{{ ev.evento or "--" }}</td>
+          <td><span class="odl-badge" style="background:transparent;border-color:{{ ev.wait_class | color_wait_class }};color:{{ ev.wait_class | color_wait_class }}">{{ ev.wait_class or "--" }}</span></td>
+          <td class="odl-mono">{{ ev.waits | int if ev.waits is not none else "--" }}</td>
+          <td class="odl-mono">{{ "%.1f" | format(ev.tiempo_s) if ev.tiempo_s is not none else "--" }}</td>
+          <td class="odl-mono">{{ "%.2f" | format(ev.avg_wait_ms) if ev.avg_wait_ms is not none else "--" }}</td>
+          <td class="odl-mono">{{ "%.1f" | format(ev.pct_dbtime) if ev.pct_dbtime is not none else "--" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="odl-panel-note" style="margin-top:8px">"Cluster" = esperas de Global Cache / interconnect de RAC (gc cr block busy, gc buffer busy, etc.) -- la Wait Class mas relevante para evictions de RAC en este listado.</div>
+    {% else %}
+    <div class="odl-empty-state">Sin wait events extraídos de este snapshot.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% if not payload.series_aas and not payload.awr.snapshots %}
+  <div class="odl-panel">
+    <div class="odl-empty-state">Sin datos de AWR en este caso -- ningún archivo de esa fuente en la carpeta analizada.</div>
+  </div>
+  {% endif %}
+</section>
+
+<section id="sec-sar" data-tab-panel>
+  {# Sistema Operativo (SAR) -- Hito "rediseno AWR + SAR" (2026-10-02),
+     instruccion explicita del usuario de ocupar aca el lugar que tenia
+     "Evidencias" en el nav. Mismo patron que sec-oclumon: chart
+     `multi-nodo` ya existente (dashboard-ui/src/charts.ts), reutilizado
+     tal cual -- cero TypeScript nuevo. `nodos_sar` (ver
+     analizador.py::_inyectar_series_sar) puede traer hosts distintos a
+     los de OCLUMON, asi que se pasa explicito en cada spec en vez de
+     dejar que el chart caiga al default (node_list de OCLUMON). #}
+  {% set nodos_sar = payload.motor_episodios.nodos_sar %}
+  <div class="odl-panel">
+    <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "capas") }}Memoria y swap (SAR)</div></div>
+    {% if nodos_sar and rel.get("sar_mem_used_pct") %}
+    {{ m.chart_box({"kind": "multi-nodo", "serie": "sar_mem_used_pct", "nodos": nodos_sar, "title": "Memoria usada", "unit": "%"}) }}
+    {% endif %}
+    {% if nodos_sar and rel.get("sar_swap_used_pct") %}
+    {{ m.chart_box({"kind": "multi-nodo", "serie": "sar_swap_used_pct", "nodos": nodos_sar, "title": "Swap usado", "unit": "%"}) }}
+    {% endif %}
+    {% if nodos_sar and rel.get("sar_mem_free_kb") %}
+    {{ m.chart_box({"kind": "multi-nodo", "serie": "sar_mem_free_kb", "nodos": nodos_sar, "title": "Memoria libre", "unit": "KB"}) }}
+    {% endif %}
+    {% if not nodos_sar %}
+    <div class="odl-empty-state">Sin archivos SAR en este caso -- <code>parsers/sar.py</code> solo extrae memoria/swap hoy (ver Pendiente del proyecto: falta verificar %iowait/CPU contra una muestra real de <code>sar -u</code>).</div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="sec-calidad" data-tab-panel>
+  <div class="odl-panel">
+    <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "nav_calidad") }}Calidad de datos y alcance del análisis</div></div>
+    <table class="odl-table">
+      <tbody>
+        <tr><td style="width:220px"><b>Alcance de correlación</b></td><td>{{ modo.alcance_correlacion }} -- {{ modo.motivo_alcance }}</td></tr>
+        <tr><td><b>Profundidad de estudio</b></td><td>{{ modo.profundidad_estudio }} -- {{ modo.motivo_profundidad }}</td></tr>
+        <tr><td><b>Fuentes presentes</b></td><td>{% for f, n in payload.resumen.fuentes.items() %}{{ f }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %}</td></tr>
+        <tr><td><b>Nodos con OCLUMON</b></td><td>{{ payload.motor_episodios.node_list | join(", ") or "ninguno" }}</td></tr>
+        <tr><td><b>Estado de salud (motor SQL)</b></td><td>{{ m.badge_severidad(iconos, "critical" if diag.estado_global == "CRITICAL" else ("warning" if diag.estado_global == "WARNING" else "info")) }}
+          {% if diag.motivos_estado_global %}<ul>{% for mo in diag.motivos_estado_global %}<li>{{ mo }}</li>{% endfor %}</ul>{% endif %}
+        </td></tr>
+        {% if payload.errores_payload %}
+        <tr><td><b>Errores al armar el payload</b></td><td>{% for e in payload.errores_payload %}{{ e }}<br>{% endfor %}</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Fusion de "Evidencias" aca (Hito "rediseno AWR + SAR", 2026-10-02,
+     instruccion explicita del usuario -- "Evidencias" ya no va en su
+     posicion anterior del nav porque este caso no trae logs evaluados,
+     solo metricas). Nunca se borro el dato: son las mismas 2 tablas
+     colapsadas de siempre (audit, punto A.5 -- 100% solapadas con la
+     Línea de tiempo/el resto del payload), ahora viven junto al resto de
+     la auditoria de "que pudo/no pudo extraer el pipeline" en vez de
+     tener su propio item de nav. #}
+  <div class="odl-panel">
+    <div class="odl-panel-header">
+      <div class="odl-panel-title">{{ m.icono(iconos, "nav_evidencias") }}Evidencias curadas ({{ hechos.eventos | length }})</div>
+      <button class="odl-filter-btn" data-toggle-evidencia="evidencias-curadas" aria-expanded="false">Mostrar / ocultar</button>
+    </div>
+    {% if hechos.eventos %}
+    <div id="evidencias-curadas" style="display:none">
+      <div class="odl-panel-note" style="margin-bottom:8px">Detalle sin agrupar, una fila por muestra que disparó una regla (antes de agruparse en episodios) -- ver la Línea de tiempo para la versión narrada y agrupada de estos mismos datos.</div>
+      <table class="odl-table">
+        <thead><tr><th>Hora</th><th>Nodo</th><th>Fuente</th><th>Código</th><th>Hallazgo</th></tr></thead>
+        <tbody>
+        {% for ev in hechos.eventos[:400] %}
+          <tr>
+            <td class="odl-mono">{{ ev.timestamp | hora }}</td>
+            <td>{{ ev.nodo or "--" }}</td>
+            <td>{{ ev.fuente }}</td>
+            <td class="odl-mono">{{ ev.codigo or "--" }}</td>
+            <td>{{ m.badge_severidad(iconos, ev.severidad) }} {{ ev.etiqueta }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="odl-empty-state">Sin eventos curados (OCLUMON) en este caso.</div>
+    {% endif %}
+  </div>
+
+  <div class="odl-panel">
+    <div class="odl-panel-header">
+      <div class="odl-panel-title">{{ m.icono(iconos, "table") if "table" in iconos else m.icono(iconos, "nav_evidencias") }}Tabla cruda ({{ payload.eventos | length }}{% if payload.resumen.tabla_truncada %}, truncada a {{ payload.resumen.limite_tabla }}{% endif %})</div>
+      <button class="odl-filter-btn" data-toggle-evidencia="tabla-cruda" aria-expanded="false">Mostrar / ocultar</button>
+    </div>
+    <div id="tabla-cruda" style="display:none">
+      <div class="odl-panel-note" style="margin-bottom:8px">Volcado unificado de fact_telemetria_so (OCLUMON/SAR) + fact_awr_snapshots/fact_awr_wait_events aplanadas (ver <code>_sql_eventos_unificados()</code> en analizador.py) -- para auditar lo que el pipeline extrajo, no para lectura diaria.</div>
+      <table class="odl-table">
+        <thead><tr><th>Hora</th><th>Nodo</th><th>Fuente</th><th>Métrica/Error</th><th>Valor</th><th>Detalle</th></tr></thead>
+        <tbody>
+        {% for ev in payload.eventos[:500] %}
+          <tr>
+            <td class="odl-mono">{{ ev.timestamp | hora }}</td>
+            <td>{{ ev.nodo or "--" }}</td>
+            <td>{{ ev.fuente }}</td>
+            <td class="odl-mono">{{ ev.metrica_o_error }}</td>
+            <td>{{ ev.valor if ev.valor is not none else "--" }}</td>
+            <td class="odl-mono">{{ (ev.detalles or "")[:160] }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if payload.eventos | length > 500 %}<div class="odl-panel-note" style="margin-top:6px">Mostrando las primeras 500 de {{ payload.eventos | length }} filas.</div>{% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="odl-footer">
+  <span>RAC Forensic Lab · informe generado offline, sin conexión a red</span>
+  <span>{{ payload.resumen.total_eventos }} eventos en la base</span>
+</div>
+{% endblock %}

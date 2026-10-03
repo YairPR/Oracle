@@ -1,0 +1,40 @@
+{# macros.html -- piezas reutilizables del template nuevo (Jinja2, Hito
+   "Oracle Diagnostic Lab"). `iconos` llega al contexto de CADA macro que
+   lo necesita -- Jinja2 no comparte el contexto global dentro de un
+   {% import %} salvo que se pida `with context`, asi que cada llamador
+   (dashboard.html) pasa `iconos=iconos` explicitamente. #}
+
+{% macro icono(iconos, id, clase="odl-icon") -%}
+<span class="{{ clase }}">{{ iconos.get(id, iconos.get("unknown_event", "")) | safe }}</span>
+{%- endmacro %}
+
+{% macro badge_severidad(iconos, sev, texto=None) -%}
+{% set mapa = {"critical": ("status_critical", "CRÍTICO"), "warning": ("status_warning", "ADVERTENCIA"), "info": ("status_ok", "INFO")} %}
+{% set icon_id, texto_default = mapa.get(sev, ("status_no_data", "SIN DATOS")) %}
+<span class="odl-badge {{ sev if sev in ('critical','warning') else ('ok' if sev=='info' else 'nodata') }}">
+  {{ icono(iconos, icon_id) }}{{ texto or texto_default }}
+</span>
+{%- endmacro %}
+
+{% macro badge_estado_hipotesis(iconos, estado) -%}
+{% if estado == "confirmada" %}
+  <span class="odl-badge ok">{{ icono(iconos, "status_ok") }}CONFIRMADA</span>
+{% elif estado == "en_estudio" %}
+  <span class="odl-badge warning">{{ icono(iconos, "status_warning") }}EN ESTUDIO</span>
+{% else %}
+  <span class="odl-badge nodata">{{ icono(iconos, "status_unconfirmed") }}SIN EVIDENCIA</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro nodo_dot(color) -%}
+<span class="odl-node-dot" style="background:{{ color }}"></span>
+{%- endmacro %}
+
+{% macro chart_box(spec, alto_clase="") -%}
+{# OJO: data-chart va entre COMILLAS SIMPLES a proposito -- tojson produce
+   un string con comillas DOBLES adentro (JSON valido), que cortarian el
+   atributo HTML a mitad de camino si el atributo tambien usara comillas
+   dobles. tojson ya escapa el caracter de comilla simple como ',
+   asi que esto es seguro. #}
+<div class="chart-box {{ alto_clase }}" data-chart='{{ spec | tojson }}'></div>
+{%- endmacro %}

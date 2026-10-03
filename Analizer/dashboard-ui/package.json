@@ -1,0 +1,22 @@
+{
+  "name": "dashboard-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && esbuild src/main.ts --bundle --minify --target=es2019 --outfile=dist/dashboard.bundle.js && node scripts/copy_to_templates.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "lucide-static": "^1.49.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "echarts": "^6.1.0"
+  }
+}

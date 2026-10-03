@@ -1,0 +1,13 @@
+duckdb>=1.0.0
+
+# Hito 5 -- solo necesaria para ai/engine.py: RootCauseEngine.generar_veredicto()
+# (sub-tarea 5.3, llama al modelo local via 'ollama serve'). El resto del motor
+# (extraer_hechos_telemetria / extraer_literatura_experta) funciona igual sin esto.
+ollama>=0.3.0
+
+# Hito "Oracle Diagnostic Lab" (2026-10-01) -- dashboard autogenerativo por
+# episodio: contratos de datos (core/component_catalog.py) y composicion
+# HTML real (templates/*.html via core/html_builder.py). Reemplazan el
+# dict suelto + el string.replace("__PAYLOAD_JSON__", ...) del Hito 6.
+pydantic>=2.0.0
+jinja2>=3.1.0

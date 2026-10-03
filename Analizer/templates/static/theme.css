@@ -1,0 +1,498 @@
+/*
+  templates/static/theme.css -- "Oracle Diagnostic Lab" (tema oscuro premium)
+
+  Rediseño 2026-10-02 sobre el tema claro original del Hito "Oracle
+  Diagnostic Lab" (2026-10-01): mismas clases/selectores (el HTML y
+  dashboard-ui/src/charts.ts no cambian de contrato), solo se reemplaza la
+  paleta y los efectos de superficie por un tema oscuro validado con el
+  metodo de la skill `dataviz` (ver dashboard-ui/src/colors.ts para el
+  espejo de estos mismos valores en los graficos ECharts).
+
+  Fuente de la paleta: referencia validada de la skill (categorica de 8
+  tonos + paleta de estado fija, pasos ya calibrados para superficie
+  oscura #1a1a19 -- contraste >=3:1 contra esa superficie en los 4
+  estados). Los nodos usan 6 de los 8 tonos categoricos en ORDEN FIJO
+  (nunca se generan ni se ciclan) evitando los 2 tonos mas cercanos a los
+  colores de severidad (verde/rojo) para que un color de nodo nunca se
+  confunda con "OK"/"CRITICO".
+
+  Reglas de layout que se mantienen sin cambios (pedidas por el usuario
+  el 2026-10-01):
+    - Maximo 2 graficos por fila -> 1 en pantallas estrechas (.panel-grid).
+    - Leyendas fuera del area de trazado (dashboard-ui/src/charts.ts).
+    - Colores estables por nodo en todas las vistas (.node-color-0..5).
+    - Severidad con texto + icono ADEMAS de color (nunca solo color).
+    - Huecos de muestreo visibles, nunca interpolados (connectNulls:false).
+*/
+
+:root {
+  /* Superficies -- plano de pagina mas oscuro que la tarjeta, como pide
+     un tema "premium" con profundidad real en vez de un solo gris plano. */
+  --color-bg: #0d0d0d;
+  --color-surface: #1a1a19;
+  --color-surface-raised: #222221;
+  --color-text: #ffffff;
+  --color-text-muted: #c3c2b7;
+  --color-text-faint: #898781;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-accent: #3987e5;
+  --color-accent-bg: rgba(57, 135, 229, 0.16);
+
+  /* Colores por nodo -- 6 de los 8 tonos categoricos validados (dataviz),
+     en orden fijo. Se saltan "verde" y "rojo" (tonos 6/8) a proposito:
+     son los mas cercanos en tono a --color-ok/--color-critical. */
+  --color-node-0: #3987e5; /* azul */
+  --color-node-1: #d95926; /* naranja */
+  --color-node-2: #199e70; /* aqua */
+  --color-node-3: #c98500; /* amarillo */
+  --color-node-4: #d55181; /* magenta */
+  --color-node-5: #9085e9; /* violeta */
+
+  /* Paleta de estado -- FIJA, nunca tematizada (misma regla que el tema
+     claro, y la misma que dashboard-ui/src/colors.ts): los 4 pasos
+     validados por la skill dataviz contra la superficie oscura #1a1a19,
+     todos >=3:1. Deliberadamente distinta de los 8 tonos categoricos de
+     arriba -- un color de estado nunca debe poder confundirse con un
+     color de nodo (ver nota de --color-node-* arriba). */
+  --color-critical: #d03b3b;
+  --color-critical-bg: rgba(208, 59, 59, 0.20);
+  --color-warning: #fab219;
+  --color-warning-bg: rgba(250, 178, 25, 0.14);
+  --color-ok: #0ca30c;
+  --color-ok-bg: rgba(12, 163, 12, 0.18);
+  --color-nodata: #898781;
+  --color-nodata-bg: rgba(137, 135, 129, 0.14);
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 28px rgba(0, 0, 0, 0.55);
+  --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.45;
+  color-scheme: dark;
+}
+
+a { color: var(--color-accent); }
+
+::selection { background: var(--color-accent-bg); color: var(--color-text); }
+
+/* Scrollbar discreto, a tono con el resto del tema (webkit + firefox). */
+* { scrollbar-color: var(--color-border-strong) transparent; scrollbar-width: thin; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ------------------------------------------------------------------ */
+/* Layout general: cabecera superior con pestañas + contenido          */
+/* ------------------------------------------------------------------ */
+/* *** HITO "rediseno AWR + tabs + LogRouter acotado" (2026-10-02) ***
+   Reemplaza el sidebar fijo (grid de 2 columnas + scroll-spy) por una
+   cabecera horizontal con pestañas reales de mostrar/ocultar, pedido
+   explicito del usuario ("rediseña el dasboard en pestañas ya no el
+   panel izquierdo"). [data-tab-panel] controla la visibilidad de cada
+   <section> (ver dashboard-ui/src/nav.ts, reescrito para esto) -- mismo
+   patron ya validado en este proyecto que [data-panel-group] mas abajo
+   (display:"" nunca "block", para no pisar layouts grid). */
+
+.odl-shell {
+  min-height: 100vh;
+}
+
+.odl-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.odl-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  font-weight: 700;
+  font-size: 15px;
+  flex: none;
+}
+.odl-brand .odl-icon { color: var(--color-accent); width: 1.3em; height: 1.3em; }
+
+.odl-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  overflow-x: auto;
+}
+.odl-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 13.5px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  white-space: nowrap;
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease;
+}
+.odl-tab-item:hover { background: var(--color-surface-raised); color: var(--color-text); }
+.odl-tab-item.active { color: #8fb9ef; font-weight: 600; border-bottom-color: var(--color-accent); }
+.odl-tab-item .odl-icon { width: 1.15em; height: 1.15em; flex: none; }
+
+.odl-main { padding: 18px 26px 60px; max-width: 1440px; margin: 0 auto; }
+
+/* Panel de pestaña: oculto salvo el activo (misma regla "display:none
+   por defecto" que [data-panel-group] mas abajo, nunca display:block a
+   mano en JS -- dashboard-ui/src/nav.ts usa display:"" para que esta
+   regla decida). */
+[data-tab-panel] { display: none; }
+[data-tab-panel].odl-tab-activo { display: block; }
+
+.odl-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.odl-title { font-size: 20px; font-weight: 700; margin: 0; color: var(--color-text); }
+.odl-subtitle { color: var(--color-text-muted); font-size: 13px; margin-top: 2px; }
+.odl-tag-generado {
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  text-align: right;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tarjetas KPI (ficha tecnica)                                        */
+/* ------------------------------------------------------------------ */
+
+.odl-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.odl-kpi {
+  background: linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 12px 14px;
+}
+.odl-kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.odl-kpi-label .odl-icon { width: 1.05em; height: 1.05em; }
+.odl-kpi-value { font-size: 16px; font-weight: 700; color: var(--color-text); }
+.odl-kpi-sub { font-size: 11.5px; color: var(--color-text-faint); margin-top: 2px; }
+.odl-kpi.sev-critical .odl-kpi-value { color: var(--color-critical); }
+.odl-kpi.sev-warning .odl-kpi-value { color: var(--color-warning); }
+.odl-kpi.sev-ok .odl-kpi-value { color: var(--color-ok); }
+
+/* ------------------------------------------------------------------ */
+/* Badges de severidad -- SIEMPRE icono + texto, nunca solo color      */
+/* ------------------------------------------------------------------ */
+
+.odl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.odl-badge .odl-icon { width: 1em; height: 1em; }
+.odl-badge.critical { background: var(--color-critical-bg); color: var(--color-critical); }
+.odl-badge.warning  { background: var(--color-warning-bg); color: var(--color-warning); }
+.odl-badge.ok       { background: var(--color-ok-bg); color: var(--color-ok); }
+.odl-badge.info     { background: var(--color-accent-bg); color: #8fb9ef; }
+.odl-badge.nodata   {
+  background: repeating-linear-gradient(45deg, var(--color-nodata-bg), var(--color-nodata-bg) 4px,
+              rgba(255, 255, 255, 0.05) 4px, rgba(255, 255, 255, 0.05) 8px);
+  color: var(--color-nodata);
+}
+
+/* ------------------------------------------------------------------ */
+/* Aviso / banda de hallazgo destacado                                 */
+/* ------------------------------------------------------------------ */
+
+.odl-callout {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border: 1px solid transparent;
+}
+.odl-callout .odl-icon { width: 1.2em; height: 1.2em; flex: none; margin-top: 1px; }
+.odl-callout-title { font-weight: 700; font-size: 13px; }
+.odl-callout-body { font-size: 12.5px; color: var(--color-text-muted); }
+.odl-callout.critical { background: var(--color-critical-bg); border-color: rgba(208, 59, 59, 0.35); color: var(--color-critical); }
+.odl-callout.warning  { background: var(--color-warning-bg); border-color: rgba(250, 178, 25, 0.35); color: var(--color-warning); }
+.odl-callout.ok       { background: var(--color-ok-bg); border-color: rgba(12, 163, 12, 0.35); color: var(--color-ok); }
+
+/* ------------------------------------------------------------------ */
+/* Paneles / tarjetas de contenido                                     */
+/* ------------------------------------------------------------------ */
+
+.odl-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.odl-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.odl-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.odl-panel-title .odl-icon { width: 1.1em; height: 1.1em; color: var(--color-accent); }
+.odl-panel-note { font-size: 11px; color: var(--color-text-muted); }
+
+/* Eyebrow de la metrica que realmente disparo el episodio -- rediseno
+   2026-10-02 (ver core/component_catalog.py::resolver_panel_disparador). */
+.odl-disparador-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--color-warning);
+  margin-top: 4px;
+}
+.odl-disparador-label .odl-icon { width: 1em; height: 1em; }
+
+/* Grilla de graficos -- maximo 2 por fila, 1 en pantalla angosta */
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (max-width: 860px) {
+  .panel-grid { grid-template-columns: 1fr; }
+  .odl-header { flex-wrap: wrap; padding: 0 12px; }
+  .odl-tabs { width: 100%; }
+}
+.chart-box {
+  height: 220px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.chart-box.chart-tall { height: 300px; }
+/* El panel disparador se destaca con un borde cálido (warning) además del
+   eyebrow -- nunca solo el borde, siempre acompañado de la etiqueta de
+   texto de arriba (misma regla de "nunca solo color" del resto del tema). */
+.chart-box.odl-chart-disparador {
+  border-color: rgba(250, 178, 25, 0.45);
+  box-shadow: 0 0 0 1px rgba(250, 178, 25, 0.12) inset;
+}
+
+/* ------------------------------------------------------------------ */
+/* Episodios -- tarjetas por componente activado                       */
+/* ------------------------------------------------------------------ */
+
+.odl-episode-card { border-left: 4px solid var(--color-border-strong); padding-left: 12px; }
+.odl-episode-card.sev-critical { border-left-color: var(--color-critical); }
+.odl-episode-card.sev-warning { border-left-color: var(--color-warning); }
+.odl-episode-card.sev-info { border-left-color: var(--color-accent); }
+
+.odl-episode-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin: 2px 0 8px;
+}
+
+.odl-coverage-note {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  background: var(--color-nodata-bg);
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 11.5px;
+  margin: 6px 0;
+}
+.odl-coverage-note .odl-icon { width: 1em; height: 1em; flex: none; margin-top: 1px; }
+
+.odl-hypothesis-list { display: flex; flex-direction: column; gap: 8px; }
+.odl-hypothesis-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+.odl-hypothesis-item-title { font-size: 12.5px; font-weight: 600; color: var(--color-text); }
+.odl-hypothesis-item-detail { font-size: 11.5px; color: var(--color-text-muted); }
+
+/* ------------------------------------------------------------------ */
+/* Tabla de evidencia / eventos                                        */
+/* ------------------------------------------------------------------ */
+
+table.odl-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.odl-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  padding: 7px 8px;
+  white-space: nowrap;
+}
+table.odl-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  color: var(--color-text);
+}
+table.odl-table tr:hover td { background: rgba(255, 255, 255, 0.025); }
+table.odl-table tr:last-child td { border-bottom: 0; }
+.odl-node-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.odl-mono { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 11.5px; color: var(--color-text-muted); }
+
+/* ------------------------------------------------------------------ */
+/* Controles de filtro de la topbar                                    */
+/* ------------------------------------------------------------------ */
+
+.odl-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.odl-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color .12s ease;
+}
+.odl-filter-btn .odl-icon { width: 1em; height: 1em; color: var(--color-text-muted); }
+.odl-filter-btn:hover { border-color: var(--color-accent); }
+.odl-filter-btn.odl-filter-activo {
+  border-color: var(--color-accent);
+  background: rgba(57, 135, 229, 0.14);
+  color: var(--color-text);
+  font-weight: 600;
+}
+.odl-filter-input {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--color-text);
+  min-width: 160px;
+}
+.odl-filter-input:focus { outline: none; border-color: var(--color-accent); }
+
+.odl-empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 30px 10px;
+  font-size: 13px;
+}
+
+.odl-footer {
+  margin-top: 18px;
+  font-size: 11px;
+  color: var(--color-text-faint);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ------------------------------------------------------------------ */
+/* Seccion OCLUMON (rediseno "meramente grafico", 2026-10-02) --       */
+/* subtitulos de bloque dentro de un odl-panel grande y paneles        */
+/* gateados por selector (Dispositivos/Filesystems/Procesos: el nombre */
+/* real varia por caso, asi que se eligen con un <select>, nunca se    */
+/* listan todos a la vez para no inundar la pantalla).                 */
+/* ------------------------------------------------------------------ */
+
+.odl-subsection-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 18px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+.odl-subsection-title:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+[data-panel-group] { display: none; }
+[data-panel-group].odl-panel-activo { display: block; }
+.panel-grid[data-panel-group] { display: none; }
+.panel-grid[data-panel-group].odl-panel-activo { display: grid; }
+
+.odl-proc-table-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (max-width: 860px) { .odl-proc-table-grid { grid-template-columns: 1fr; } }
+.odl-proc-table-grid h4 { font-size: 11.5px; color: var(--color-text-muted); margin: 0 0 6px; font-weight: 600; }

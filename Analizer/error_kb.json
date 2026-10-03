@@ -1,0 +1,84 @@
+{
+  "_readme": "Base de conocimiento de errores Oracle/Clusterware para el analizador de incidentes. 'codes' mapea codigos con prefijo (ORA-/CRS-/TNS-/etc) a su explicacion; 'patterns' es una lista de frases criticas en texto libre (sin codigo propio) que alert log/logs de Clusterware usan para reportar eventos relevantes de RAC. Editable a mano -- agregar una entrada aqui NO requiere tocar el motor Python, ese es el punto. severity: critical | warning | info. 'causa'/'accion' son opcionales: solo estan presentes cuando se verificaron por separado contra documentacion oficial (ver 'fuente'); si faltan, 'explica' sigue siendo el texto completo y el consumidor (p.ej. OerrEngine en rac-lab) debe tratarlos como no disponibles, nunca inventarlos.",
+  "codes": {
+    "ORA-00481": {
+      "label": "LMON terminado con error",
+      "severity": "critical",
+      "explica": "El proceso LMON (Global Enqueue Service Monitor) murio. Texto oficial Oracle: 'LMON process terminated with error'. Causa oficial: 'The global enqueue service monitor process died'. Accion oficial: 'warm start instance'. En RAC, LMON coordina la membresia del cluster a nivel de instancia (GES); su caida fuerza una terminacion/reinicio de la instancia -- es la causa inmediata tipica detras de un mensaje 'terminating the instance due to error 481' en el alert log durante una eviction.",
+      "causa": "El proceso LMON (Global Enqueue Service Monitor) murio ('LMON process terminated with error'). Causa oficial Oracle: 'The global enqueue service monitor process died'. En RAC, LMON coordina la membresia del cluster a nivel de instancia (GES); su caida fuerza una terminacion/reinicio de la instancia -- es la causa inmediata tipica detras de un mensaje 'terminating the instance due to error 481' en el alert log durante una eviction.",
+      "accion": "Accion oficial Oracle: 'warm start instance' (Clusterware normalmente ya reinicia la instancia solo). Revisar la causa raiz del timeout de IPC/interconnect que forzo la caida de LMON antes de cerrar el incidente -- el reinicio por si solo no evita que vuelva a pasar.",
+      "fuente": "https://docs.oracle.com/en/error-help/db/ora-00481/"
+    },
+    "ORA-08103": {
+      "label": "Objeto ya no existe",
+      "severity": "warning",
+      "explica": "Texto oficial: 'object no longer exists'. Causa oficial: el objeto fue eliminado por otra sesion mientras la operacion estaba en curso, o una recuperacion incompleta restauro la base de datos a un punto en el tiempo anterior a la eliminacion del objeto. Accion oficial: si es resultado de una recuperacion incompleta, eliminar el objeto. Si aparece de forma recurrente en procesos batch/particionado (qNNN), suele ser una condicion de carrera entre DDL (drop/truncate de particiones) y sesiones que aun referencian el objeto -- no necesariamente relacionado con una eviction de nodo.",
+      "causa": "Texto oficial: 'object no longer exists'. El objeto fue eliminado por otra sesion mientras la operacion estaba en curso, o una recuperacion incompleta restauro la base de datos a un punto en el tiempo anterior a la eliminacion del objeto. Si aparece de forma recurrente en procesos batch/particionado (qNNN), suele ser una condicion de carrera entre DDL (drop/truncate de particiones) y sesiones que aun referencian el objeto -- no necesariamente relacionado con una eviction de nodo.",
+      "accion": "Si es resultado de una recuperacion incompleta: eliminar el objeto. Si es la condicion de carrera batch/particionado: revisar el job especifico que dispara el drop/truncate -- no requiere accion sobre el cluster.",
+      "fuente": "https://docs.oracle.com/en/error-help/db/ora-08103/"
+    },
+    "CRS-2316": {
+      "label": "Fallo al inicializar GPnP",
+      "severity": "warning",
+      "explica": "Un proceso/utilidad no pudo inicializar el perfil GPnP (Grid Plug and Play) al arrancar (CLSGPNP_ERR, error generico de GPnP). Comun como ruido justo despues de un restart de instancia, cuando el entorno/red local aun no esta completamente listo -- revisar si coincide en tiempo con un arranque de instancia antes de tratarlo como causa independiente."
+    },
+    "TNS-00505": {
+      "label": "Operacion de red expirada (timeout)",
+      "severity": "warning",
+      "explica": "Timeout a nivel de la capa de transporte de Oracle Net ('nt main err code: 505'). Indica que una conexion de red no respondio dentro del tiempo esperado -- correlacionar con las metricas de red (oclumon NICS/latencia) en la misma ventana horaria."
+    },
+    "TNS-12535": {
+      "label": "TNS: operacion expirada (timeout)",
+      "severity": "warning",
+      "explica": "Texto oficial: 'TNS:operation timed out'. Timeout generico de la capa Oracle Net, normalmente acompanado de un codigo secundario (p.ej. 12560, TNS:protocol adapter error) y del mismo 'nt main err code: 505' que TNS-00505 -- ambos suelen aparecer juntos en el mismo bloque de error y apuntan al mismo problema de red/timeout subyacente."
+    },
+    "ORA-12170": {
+      "label": "Timeout de conexion Net (Fatal NI connect error)",
+      "severity": "warning",
+      "explica": "El cliente/listener no logro completar el connect dentro del tiempo limite (TNS: Connect timeout occurred). Frecuente por saturacion de red, del listener, o del propio host en el momento de la conexion."
+    },
+    "ORA-12012": {
+      "label": "Error en ejecucion automatica de job",
+      "severity": "info",
+      "explica": "Un job del Scheduler fallo en su ejecucion automatica. Normalmente independiente del estado del cluster -- revisar el job especifico, no suele ser sintoma de una eviction."
+    },
+    "ORA-20001": {
+      "label": "Excepcion de aplicacion (RAISE_APPLICATION_ERROR)",
+      "severity": "info",
+      "explica": "Codigo de error definido por la aplicacion (rango reservado 20000-20999 via RAISE_APPLICATION_ERROR). El significado depende enteramente del codigo PL/SQL que lo lanzo -- revisar el mensaje especifico de cada ocurrencia."
+    },
+    "ORA-06512": {
+      "label": "Traza de pila PL/SQL",
+      "severity": "info",
+      "explica": "No es un error en si mismo: es la linea de 'backtrace' que indica en que punto del codigo PL/SQL ocurrio el error reportado justo antes. Siempre acompana a otro error, no se evalua de forma aislada."
+    }
+  },
+  "patterns": [
+    {"match": "IPC Send timeout", "cat": "ipc_send_timeout", "label": "IPC Send timeout", "severity": "critical",
+      "explica": "Un proceso de Oracle (tipicamente LMSn/LMON/LMD0) no recibio respuesta de otra instancia dentro del timeout de IPC. Es el sintoma de alto nivel mas directo de un problema de interconnect -- correlacionar con las metricas de red PRIVATE de oclumon (latencia, errores, descartes) en la misma ventana."},
+    {"match": "Detected an inconsistent instance membership", "cat": "membership_inconsistent", "label": "Membresia de instancia inconsistente", "severity": "critical",
+      "explica": "El Global Cache/Enqueue Service detecto que las instancias del cluster no coinciden en quien pertenece al cluster. Paso intermedio clasico entre un IPC Send timeout y la expulsion/terminacion de una instancia."},
+    {"match": "Received an instance abort message", "cat": "instance_abort", "label": "Mensaje de abort recibido de otra instancia", "severity": "critical",
+      "explica": "Esta instancia recibio una orden de abort proveniente de otra instancia del cluster (normalmente emitida por LMON tras una reconfiguracion fallida) -- precede casi siempre a la terminacion de la instancia."},
+    {"match": "terminating the instance due to error", "cat": "instance_terminating", "label": "Terminacion de instancia solicitada", "severity": "critical",
+      "explica": "Un proceso critico (LMON/LMD0/LMSn) esta forzando la terminacion de la instancia para proteger la integridad del cluster. El numero de error que acompana al mensaje (p.ej. 481) suele estar en la tabla de codigos de esta misma base de conocimiento."},
+    {"match": "Instance terminated by", "cat": "instance_terminated", "label": "Instancia terminada", "severity": "critical",
+      "explica": "Confirmacion de que la instancia efectivamente se detuvo, y el proceso que lo forzo. Marca el fin de la ventana critica del incidente en este nodo."},
+    {"match": "Evicting instance", "cat": "instance_evicted", "label": "Instancia expulsada del cluster", "severity": "critical",
+      "explica": "CSS/GES esta expulsando activamente una instancia del cluster -- el evento textual mas directo de una eviction a nivel de base de datos."},
+    {"match": "System state dump requested", "cat": "systemstate_dump", "label": "Volcado de estado del sistema solicitado", "severity": "warning",
+      "explica": "Oracle genero un system state dump (trace pesado) como parte del manejo de una terminacion anormal -- util para analisis posterior pero no es la causa en si."},
+    {"match": "Reconfiguration started", "cat": "reconfiguration", "label": "Reconfiguracion de GES/GCS iniciada", "severity": "warning",
+      "explica": "El Global Enqueue/Cache Service esta recalculando la membresia del cluster (tras la salida o entrada de una instancia). Un numero de incarnacion (inc) que sube varias veces en poco tiempo indica reconfiguraciones sucesivas -- senal de inestabilidad, no un evento aislado."},
+    {"match": "Reconfiguration complete", "cat": "reconfiguration_done", "label": "Reconfiguracion de GES/GCS completada", "severity": "info",
+      "explica": "El cluster termino de recalcular su membresia y volvio a un estado estable con las instancias sobrevivientes."},
+    {"match": "Nested reconfiguration detected", "cat": "reconfiguration_nested", "label": "Reconfiguracion anidada detectada", "severity": "warning",
+      "explica": "Se disparo una nueva reconfiguracion antes de que la anterior terminara -- tipico durante un periodo de inestabilidad prolongado, no un evento unico."},
+    {"match": "Starting ORACLE instance", "cat": "instance_start", "label": "Arranque de instancia", "severity": "info",
+      "explica": "La instancia esta arrancando de nuevo -- marca el punto de recuperacion despues de una terminacion/eviction."},
+    {"match": "FAL archive failed", "cat": "fal_archive_failed", "label": "Fallo de archivado FAL (Data Guard)", "severity": "warning",
+      "explica": "El archivado remoto hacia el standby (Fetch Archive Log) fallo -- revisar conectividad/espacio hacia el destino de Data Guard. Generalmente independiente de una eviction de RAC, pero puede compartir la misma causa de red."},
+    {"match": "parallel recovery setup failed", "cat": "recovery_degraded", "label": "Recuperacion paralela fallida (modo serial)", "severity": "warning",
+      "explica": "La recuperacion de instancia (crash recovery tras una eviction) no pudo usar paralelismo y cayo a modo serial -- la recuperacion sera mas lenta de lo normal, alargando la ventana de indisponibilidad."}
+  ]
+}

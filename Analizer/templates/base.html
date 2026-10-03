@@ -1,0 +1,48 @@
+{% import "macros.html" as m %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ payload.caso }} -- Oracle Diagnostic Lab</title>
+<style>
+{{ css_inline | safe }}
+</style>
+</head>
+<body>
+<div class="odl-shell">
+  {# *** HITO "rediseno AWR + tabs + LogRouter acotado" (2026-10-02) ***
+     Rediseno pedido explicitamente por el usuario: "rediseña el dasboard
+     en pestañas ya no el panel izquierdo". La barra lateral fija (sidebar
+     + scroll-spy por IntersectionObserver, ver dashboard-ui/src/nav.ts
+     version vieja) se reemplaza por una cabecera superior con pestañas
+     reales de mostrar/ocultar -- un solo panel visible a la vez
+     (dashboard-ui/src/nav.ts, reescrito), nunca mas scroll largo. Orden y
+     nombres pedidos textualmente: "oclumon, awr, metricas so, evidencia"
+     -- se agrega "Línea de tiempo" como quinta pestaña (contenido propio,
+     la narracion cronologica agrupada por episodio, no se pidio quitarla
+     y se perderia funcionalidad real si se fusionara a la fuerza en otra
+     pestaña). "Sistema Operativo" -> "Métricas SO" y "Calidad de datos" ->
+     "Evidencia", renombres textuales del pedido. #}
+  <header class="odl-header">
+    <div class="odl-brand">{{ m.icono(iconos, "nav_cpu_mem", clase="odl-icon") }}<span>RAC Forensic Lab</span></div>
+    <nav class="odl-tabs">
+      <button class="odl-tab-item active" data-target="sec-oclumon">{{ m.icono(iconos, "nav_cpu_mem") }}<span>OCLUMON</span></button>
+      <button class="odl-tab-item" data-target="sec-almacenamiento">{{ m.icono(iconos, "nav_almacenamiento") }}<span>AWR</span></button>
+      <button class="odl-tab-item" data-target="sec-timeline">{{ m.icono(iconos, "nav_timeline") }}<span>Línea de tiempo</span></button>
+      <button class="odl-tab-item" data-target="sec-sar">{{ m.icono(iconos, "capas") }}<span>Métricas SO</span></button>
+      <button class="odl-tab-item" data-target="sec-calidad">{{ m.icono(iconos, "nav_evidencias") }}<span>Evidencia</span></button>
+    </nav>
+  </header>
+  <main class="odl-main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script>
+window.__PAYLOAD__ = {{ payload_json | safe }};
+</script>
+<script>
+{{ js_inline | safe }}
+</script>
+</body>
+</html>
