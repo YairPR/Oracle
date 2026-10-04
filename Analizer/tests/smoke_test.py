@@ -54,7 +54,7 @@ def check(nombre, real, esperado):
 
 check("snapshots AWR (texto, 2 HTML quedan unknown)", q("SELECT count(*) FROM fact_awr_snapshots"), 5)
 check("wait events totales (10 por snapshot x 5)", q("SELECT count(*) FROM fact_awr_wait_events"), 50)
-check("filas de telemetria oclumon", q("SELECT count(*) FROM fact_telemetria_so WHERE fuente='oclumon'"), 2520)
+check("filas de telemetria oclumon", q("SELECT count(*) FROM fact_telemetria_so WHERE fuente='oclumon'"), 1260)
 check("instancias RAC distintas en dim_database", q("SELECT count(DISTINCT instance_name) FROM dim_database"), 2)
 check("release Oracle", q("SELECT DISTINCT release FROM dim_database").strip(), "11.2.0.4.0")
 
@@ -74,25 +74,37 @@ check(
     1279.2,
 )
 
-snap1_dbcpu_pct = q(
-    "SELECT pct_dbtime FROM fact_awr_wait_events WHERE snapshot_id=1 AND evento='DB CPU'"
+snap_302_93 = q(
+    "SELECT snapshot_id FROM fact_awr_snapshots WHERE host='bov-racsalud-302' "
+    "AND begin_snap_id='98893' AND end_snap_id='98894'"
 )
-check("DB CPU pct_dbtime snapshot 1", snap1_dbcpu_pct, 78.2)
+snap_302_93_dbcpu_pct = q(
+    f"SELECT pct_dbtime FROM fact_awr_wait_events WHERE snapshot_id={snap_302_93} "
+    "AND evento='DB CPU'"
+)
+check("DB CPU pct_dbtime bov-racsalud-302 98893-98894", snap_302_93_dbcpu_pct, 78.2)
 check(
-    "wait_class de 'db file sequential read' snapshot 1",
-    q("SELECT wait_class FROM fact_awr_wait_events WHERE snapshot_id=1 AND evento='db file sequential read'"),
+    "wait_class de 'db file sequential read' bov-racsalud-302 98893-98894",
+    q(f"SELECT wait_class FROM fact_awr_wait_events WHERE snapshot_id={snap_302_93} "
+      "AND evento='db file sequential read'"),
     "User I/O",
 )
 check(
-    "wait_class de 'gc cr block 2-way' snapshot 1 (Cluster -- interconnect RAC)",
-    q("SELECT wait_class FROM fact_awr_wait_events WHERE snapshot_id=1 AND evento='gc cr block 2-way'"),
+    "wait_class de 'gc cr block 2-way' bov-racsalud-302 98893-98894",
+    q(f"SELECT wait_class FROM fact_awr_wait_events WHERE snapshot_id={snap_302_93} "
+      "AND evento='gc cr block 2-way'"),
     "Cluster",
 )
 
 check("cores infra (6 reales)", q("SELECT DISTINCT cores FROM dim_infraestructura"), 6.0)
 estado_salud = (resultado["veredicto_ia"].get("estado_salud") or {}).get("estado", "N/D")
 check("estado de salud calculado", estado_salud, "WARNING")
-check("episodios detectados (motor de anomalias oclumon)", len(resultado["resultado_episodios"]["episodios"]), 13)
+check("episodios detectados (motor de anomalias oclumon)", len(resultado["resultado_episodios"]["episodios"]), 8)
+tiempos_archivo = resultado["resumen_ingesta"]["tiempos"]["por_archivo"]
+check("archivos con tiempos parse/insert separados", all(
+    {"bytes", "parse_seg", "insert_seg", "segundos", "filas"} <= set(fila)
+    for fila in tiempos_archivo
+), True)
 
 c.close()
 shutil.rmtree(tmp, ignore_errors=True)

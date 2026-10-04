@@ -38,6 +38,7 @@ export function inicializarNav(): void {
     // renderiza todos de entrada) -- sin este resize diferido quedan con
     // tamano 0x0 hasta el proximo resize de ventana.
     window.setTimeout(reflowCharts, 60);
+    document.dispatchEvent(new CustomEvent("odl:panel-visible"));
   };
 
   for (const item of items) {

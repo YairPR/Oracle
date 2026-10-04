@@ -126,7 +126,13 @@ export interface Payload {
   };
   informe: InformeCompleto;
   veredicto: { texto: string | null; estado_salud: { estado: string; motivos: string[] } | null };
-  resumen: { total_eventos: number; fuentes: Record<string, number>; rango_tiempo: (string | null)[] };
+  resumen: {
+    total_eventos: number;
+    fuentes: Record<string, number>;
+    rango_tiempo: (string | null)[];
+    tabla_truncada: boolean;
+    limite_tabla: number;
+  };
   series_cpu: PuntoSerie[];
   series_aas: PuntoSerie[];
   // *** HITO "rediseno AWR + tabs + LogRouter acotado" (2026-10-02) ***
