@@ -1,0 +1,594 @@
+Skip to content
+Interior of a modern enterprise data centre with rows of server racks, cool blue lighting, polished concrete floor reflections and ceiling cable trays.
+Unknown's avatar
+flashdba
+
+Enterprise Cloud & Data, Under Pressure
+
+Hyperscaler GTM Playbook
+
+Storage for DBAs
+
+Databases in the Cloud
+
+Databases in the Age of AI
+
+About
+awr-parser.sh – Script for parsing Oracle AWR Reports
+The awr-parser.sh script (available here) is a tool for extracting data from Oracle AWR reports in order that it can be plotted in graphical form. The input is a set of AWR reports in TEXT format and the output is a CSV file. Once the CSV is generated, software such as Microsoft Excel can be used to create graphs like this:
+
+awr-averages-lie-work-vs-wait
+Background
+The Oracle Database is capable of many things, which is why so many of us have spent our whole careers getting paid just for persuading it to do the things our employers want. Since version 10g the database has also been able to record vast amounts of information about what it is doing, when it is doing it and how long it takes to get those things done. This information is stored in memory and written periodically to a place called the Automatic Workload Repository (or AWR). The period is configurable but by default it is every hour. At this point, the information is known as a snapshot.
+
+Snapshots are kept in the AWR for a predefined amount of time (seven days by default) after which they are purged. During this time, a standard report known as the AWR Report can be https://flashdba.com/database/useful-scripts/awr-generator/ covering the period between any two available snapshots.
+
+So what does this report tell us? Everything. Well, nearly everything – it’s something like one hundred pages long if you were crazy enough to try and print it out. Of course, all of the information can be retrieved independently by querying views within the database, but the beauty of AWR reports is that they are simple to generate and everybody knows what they contain. If you turn up somewhere new with your custom SQL, it’s likely the responsible DBA will not want to run it until they have inspected it, test it and possible made you sign off to say it won’t break anything.
+
+Disclaimer
+The tools and scripts found here are supplied for education purposes only and come with no warranty, either expressly or implied. Use at your own risk and please test thoroughly before use in a environment where you care about data and availability.
+
+Neither I nor my employer accept any responsibility for damage caused through the use of these scripts and tools.
+
+In addition, to take advantage of the information in the Automatic Workload Repository, you must obtain the relevant license(s) from Oracle Corporation. That includes licenses for Enterprise Edition as well as licenses for the Diagnostic Pack. Contact your local Oracle representative for details.
+
+Prerequisites
+The script is written using the BASH (Bourne-Again SHell) language and was designed to run on Linux-based systems such as Oracle Linux or Red Hat. It can however be run on Microsoft Windows systems with the use of the Cygwin Linux API (see later section for details). The bc (basic calculator) binary must be present in order for the script to execute successfully. Use a package manager tool such as yum to ensure that bc is present.
+
+Download
+You can download the script from my GitHub repository here:
+
+http://github.com/flashdba/scripts
+
+Input
+The input for the awr-parser.sh script is a set of AWR reports in TEXT format – not in the default HTML format, as this is too hard to parse. The more AWR reports you have, the better – and they should be consecutive reports (i.e. based on consecutive snapshots) if you want any subsequent graphs to be meaningful.
+
+I have a script for generating the relevant AWR reports in one single batch. You can find it here: AWR Generator.
+
+Output
+The output from awr-parser.sh is a CSV file, i.e. a file containing comma-separated values.
+
+The following information is captured in the output CSV file:
+
+Filename : The filename of the AWR Report
+Database Name : The name of the database
+Instance Number : The instance number (used in RAC)
+Instance Name : The name of the instance
+Database Version : The Oracle database software version
+Cluster : Y/N flag indicating if this is a RAC cluster
+Hostname : The hostname of the database server
+Host OS : The host operating system (only in 11g and above reports)
+Num CPUs : The number of CPU cores as determined by Oracle
+Server Memory (GB) : The amount of physical memory in the database server
+DB Block Size : The database block size (2k, 4k, 8k, 16k or 32k)
+Begin Snap : The starting snapshot ID
+Begin Time : The starting snapshot timestamp
+End Snap : The ending snapshot ID
+End Time : The ending snapshot timestamp
+Elapsed Time (mins) : The elapsed time of the AWR Report
+DB Time (mins) : The amount of CPU time spent on database user calls
+Average Active Sessions : The average number of active foreground Oracle sessions
+Busy Flag : Y/N flag to indicate if DB Time > Elapsed Time*NUM_CPUs
+Logical Reads/sec : The average number of logical reads per second
+Block Changes/sec : The average number of block changes per second
+Read IOPS : The average read IOPS for the AWR period
+Data Write IOPS : The average write IOPS for the AWR period (excluding redo)*
+Redo IOPS : The average redo IOPS for the AWR period (LGWR writes)
+All Write IOPS : The average data write IOPS for the AWR period (excluding redo)
+Total IOPS : The average total number of IOPS (Read IOPS + All Write IOPS)
+Read Throughput (MiB/sec) : The average read throughput for the AWR period
+Data Write Throughput (MiB/sec) : The average write throughput for the AWR period (excluding redo)*
+Redo Throughput (MiB/sec) : The average redo throughput for the AWR period (LGWR writes)
+All Write Throughput (MiB/sec) : The average write throughput for the AWR period (data + redo)
+Total Throughput (MiB/sec) : The average total throughput for the period (read + all write)
+DB CPU Time (s) : The amount of DB time spent on CPU in seconds
+DB CPU %DBTime : The amount of DB time spent on CPU as a % of total DB Time
+Wait Class User I/O Waits : The number of times users had to wait on I/O
+Wait Class User I/O Time (s) : The time spent by users waiting on I/O
+Wait Class User I/O Latency (ms) : The average latency experienced by users waiting on I/O
+Wait Class User I/O %DBTime : The % of total DB Time spent waiting on user I/O
+User Calls/sec : Average number of user calls e.g. login, parse, fetch, or execute
+Parses/sec : The average number of SQL parse calls per second
+Hard Parses/sec : The average number of hard parses per second
+Logons/sec : The average number of user logons per second
+Executes/sec : Average number of calls (user and recursive) that executed SQL
+Transactions/sec : The average number of transactions completing per second
+Buffer Hit Ratio (%) : The percentage of buffer gets that were satisfied from cache
+In-Memory Sort Ratio (%) : The percentage of sort operations performed only in memory
+Log Switches (Total) : The total number of redo log switches
+Log Switches (Per Hour) : The calculated number of log switches per hour
+The next section repeats the same format for each of the Top 5 Foreground Wait Events:
+
+Top5 EventN Name : Top 5 Timed Events: The name of the wait event
+Top5 EventN Class : Top 5 Timed Events: The class of the wait event
+Top5 EventN Waits : Top 5 Timed Events: The number of waits
+Top5 EventN Time (s) : Top 5 Timed Events: The time spent waiting
+Top5 EventN Average Time (ms) : Top 5 Timed Events: The average wait time
+Top5 EventN %DBTime : Top 5 Timed Events: Percentage of total DB time spent waiting
+The next section repeats the same format as the Top 5 events above, but for specific I/O events:
+
+db file sequential read Waits : I/O waits for random reads into the buffer cache
+db file scattered read Waits : I/O waits for sequential reads into the buffer cache
+direct path read Waits : I/O waits for asynchronous reads by a single session
+direct path write Waits : I/O waits for asynchronous writes by a single session
+direct path read temp Waits : Similar to direct path read but for temporary blocks (e.g. sorts)
+direct path write temp Waits : Similar to direct path write but for temporary blocks (e.g. sorts)
+log file sync Waits : Sessions waiting on commits as redo data flushed to storage
+db file parallel write Waits : The database writer writing changed blocks to storage
+log file parallel write Waits : Waits for I/O as the redo buffer is flushed to the redo logs
+log file sequential read Waits : Waits for reads from redo logs
+The next section contains information from the Operating System Statistics section – depending on the OS there may or may not be data present. All values are in hundredths of seconds:
+
+OS busy time : Time that a processor was busy executing user or kernel code
+OS idle time : Time that a processor has been idle
+OS iowait time : Time that a processor has been waiting for I/O to complete
+OS sys time : Time that a processor was busy executing kernel code
+OS user time : Time that a processor was busy executing user code
+OS cpu wait time : Time that processes have been ready and waiting for CPU
+OS resource mgr wait time : Time that processes have been waiting in Resource Manager
+The next section returns to showing individual metrics:
+
+Data Guard Flag : Y/N flag to indicate if evidence found that Data Guard is in use
+Exadata Flag : Y/N flag to indicate if evidence found of this being Exadata
+The next section repeats the same format for each of the following Foreground Wait Event Classes: Administrative, Application, Cluster, Commit, Concurrency, Configuration, Network, Other, Scheduler, System I/O. Note that the User I/O Wait Class is shown further up. Information for wait classes not in this list is not captured:
+
+Wait Class <name> Waits : The number of times background processes had to wait on I/O
+Wait Class <name>Time (s) : The time spent by background processes waiting on I/O
+Wait Class <name>Latency (ms) : The average latency experienced by background processes
+Wait Class <name>%DBTime : The % of total DB Time spent waiting on system I/O
+The next section repeats the same format for each of the following Wait Event Histogram entries: db file sequential read, log file parallel write. Information for wait event histograms not in this list is not captured:
+
+Histogram <name> <1ms : The percentage of waits for this event which completed in under 1 millisecond
+Histogram <name> <2ms : The percentage of waits for this event which completed in under 2 milliseconds
+Histogram <name> <4ms : The percentage of waits for this event which completed in under 4 milliseconds
+Histogram <name> <8ms : The percentage of waits for this event which completed in under 8 milliseconds
+Histogram <name> <16ms : The percentage of waits for this event which completed in under 16 milliseconds
+Histogram <name> <32ms : The percentage of waits for this event which completed in under 32 milliseconds
+Histogram <name> <1s : The percentage of waits for this event which completed in under 1 second
+Histogram <name> >1s : The percentage of waits for this event which completed in over 1 second
+* Pay attention to the values for write IOPS and throughput. The value of Data Write Throughput is the value for Total Write Throughput minus the value for Redo Write Throughput. However, I have recently discovered that this is incorrect, because I assumed (shame on me) that the statistics redo size showed the number of bytes written by redo. In fact, the number of bytes written by redo equals (redo size + redo wastage) * the number of multiplexed online redo logs. I need to fix this by taking the redo data either from the IOStat section of the report or the new IO Profile section in 11.2.0.4 and above reports. A similar story may apply for the corresponding IOPS values.
+
+In addition, the description of Data Write IOPS / Throughput is unsatisfactory because it also includes the values for I/O caused by the log archive process, I/O to control files and so on. Perhaps it would be better described as Non-Redo Write IOPS/Throughput. In general, the two values of most interest are therefore Read IOPS/Throughput and Total Write IOPS/Throughput, which added together, make Total IOPS/Throughput.
+
+Execution
+The script requires the bash environment and is called with the following options and parameters:
+
+$ ./awr-parser.sh
+
+Usage: ./awr-parser.sh [ -n | -H ] [ -s | -p | -v ]  (wildcards are accepted)
+
+ Version v1.02 (published on 05/01/2015)
+
+  Script for parsing multiple AWR reports and extracting useful information
+  Redirect stdout to a CSV file to import into Excel
+  Errors and info are printed to stderr
+
+  Options:
+    -h   Help        (print help and version information)
+    -H   Header      (print the header row only and then exit)
+    -n   NoHeader    (do not print the header row in the CSV file)
+    -p   Print       (print AWR report values to screen)
+    -s   Silent      (do not print AWR processing information)
+    -v   Verbose     (show extra AWR processing details)
+
+  Example usage:
+    ./awr-parser.sh awr*.txt > awr.csv
+So, for example, a simple run would look like this:
+
+$ ./awr-parser.sh SampleAWRs/*.txt > output.csv
+
+Info : Parsing file SampleAWRs/awr_09h00_09h30.txt at 2014-12-01 15:43:00
+Info : Parsing file SampleAWRs/awr_09h30_10h00.txt at 2014-12-01 15:43:58
+Info : Parsing file SampleAWRs/awr_10h00_10h30.txt at 2014-12-01 15:44:53
+Info : Parsing file SampleAWRs/awr_10h30_11h00.txt at 2014-12-01 15:45:51
+Info : Parsing file SampleAWRs/awr_11h00_11h30.txt at 2014-12-01 15:46:51
+Info : Parsing file SampleAWRs/awr_11h30_12h00.txt at 2014-12-01 15:47:45
+Info : Parsing file SampleAWRs/awr_12h00_12h30.txt at 2014-12-01 15:48:38
+Info : Parsing file SampleAWRs/awr_12h30_13h00.txt at 2014-12-01 15:49:35
+Info : Parsing file SampleAWRs/awr_13h00_13h30.txt at 2014-12-01 15:50:31
+Info : Parsing file SampleAWRs/awr_13h30_14h00.txt at 2014-12-01 15:51:26
+Info : Parsing file SampleAWRs/awr_14h00_14h30.txt at 2014-12-01 15:52:24
+Info : Parsing file SampleAWRs/awr_14h30_15h00.txt at 2014-12-01 15:53:47
+Info : Parsing file SampleAWRs/awr_15h00_15h30.txt at 2014-12-01 15:55:07
+Info : Parsing file SampleAWRs/awr_15h30_16h00.txt at 2014-12-01 15:56:12
+Info : Parsing file SampleAWRs/awr_16h00_16h30.txt at 2014-12-01 15:57:14
+Info : Parsing file SampleAWRs/awr_16h30_17h00.txt at 2014-12-01 15:58:14
+Info : Parsing file SampleAWRs/awr_17h00_17h30.txt at 2014-12-01 15:59:16
+Info : Parsing file SampleAWRs/awr_17h30_18h00.txt at 2014-12-01 16:00:20
+Info : No more files found
+Info :
+Info : ______SUMMARY______
+Info : Files found       : 18
+Info : Files processed   : 18
+Info : Processing errors : 0
+Info :
+Info : Completed successfully
+Running with Cygwin
+If you really must use Windows, you can try to run this using Cygwin. I got it working a long time ago but have not tested it for years. Here are the instructions I used to use – I make no promises that they still work:
+
+Download the Cygwin installer executable “setup.exe” from the URL http://cygwin.com/install.html
+Run the executable (Run as Administrator if using Windows 7 or Windows Vista)
+At the installation screen click Next
+Choose “Install from Internet” and click Next
+At “Select Root Directory” screen click Next
+At “Local Package Directory” screen click Next
+Unless you are using a proxy click Next
+Choose a download site or accept the default and then click Next
+Open the “Math” package and change entry for “bc” from “Skip” to “Keep”
+Click Next
+Click Finish
+Cygwin will now install. Run up the Cygwin terminal screen and use this to execute the script.
+
+Share this:
+ LinkedIn X Facebook
+
+41 thoughts on “awr-parser.sh – Script for parsing Oracle AWR Reports”
+Pingback: Random Links | It Was Like That When I Got Here
+Luis Santos's avatarLuis Santos
+December 10, 2014 at 12:43 pm
+Do you a .xls Excel file to act as as framework for a well know csv files generated for the script? I´m not a spreadsheet expert.
+
+Reply
+flashdba's avatarflashdba
+December 10, 2014 at 5:53 pm
+Nothing at the moment I’m afraid – at least nothing that I can share. We have stuff developed in house but it is the intellectual property of my employer.
+
+Reply
+Juras K2's avatarJuras K2
+January 10, 2015 at 10:50 pm
+I try to get “physical reads” “physical writes” values so I change the script to get those but in “case” statement of InstanceActivityStats I’ve got value from physical reads prefetch warmup. The script takes the longest value from the awr file but I want only ie. physical reads.
+Thanks for any help.
+
+Reply
+flashdba's avatarflashdba
+January 12, 2015 at 3:54 pm
+The case statement is using pattern matching so if you give it “physical reads” it will match everything which starts with “physical reads*”. To limit it specifically to physical reads you would need to put some whitespace after the two words, like this: “physical reads “
+
+Reply
+Juras K2's avatarJuras K2
+January 12, 2015 at 8:07 pm
+Yes. I’ve alreday resolve this issue by adding more whitespace. Thanks for your response. However, have you ever try to get any values by libre office base using jdbc driver and make a chart ?
+Currently I have some problems to make a chart from Libre Office Base.
+
+Reply
+flashdba's avatarflashdba
+January 13, 2015 at 4:22 pm
+I’m afraid not, I do not use Libre Office…
+
+Reply
+Gurwinder Singh's avatarGurwinder Singh
+July 20, 2015 at 4:15 pm
+Getting error
+:/opt/oracle/gg:>ls -ltr
+total 5208
+-rwxr-xr-x 1 oracle dba 77287 Jul 20 08:09 awr-generator.sql
+-rwxr-xr-x 1 oracle dba 727616 Jul 20 08:09 awr-parser.sh
+-rwxr-xr-x 1 oracle dba 106799 Jul 20 08:09 LICENSE.htm
+-rwxr-xr-x 1 oracle dba 27553 Jul 20 08:09 README.md
+-rwxr-xr-x 1 oracle dba 80246 Jul 20 08:09 setup-violin-mpath.sh
+-rwxr-xr-x 1 oracle dba 54795 Jul 20 08:09 show_physical_io.sql
+-rwxr-xr-x 1 oracle dba 215339 Jul 20 08:12 awrrpt_1_31622_31623_24JUN15-00-to-01.txt
+-rwxr-xr-x 1 oracle dba 201252 Jul 20 08:12 awrrpt_1_31623_31624_24JUN15-01-to-02.txt
+-rwxr-xr-x 1 oracle dba 210229 Jul 20 08:12 awrrpt_1_31624_31625_24JUN15-02-to-03.txt
+:/opt/oracle/gg:>./awr-parser.sh awrrpt* > awr.csv
+./awr-parser.sh[4]: syntax error at line 5 : `newline or ;’ unexpected
+:/opt/oracle/gg:>
+
+Reply
+flashdba's avatarflashdba
+July 20, 2015 at 4:31 pm
+I have no idea what your awr-parser.sh file contains, but at 727k it’s certainly not the one from my GitHub repository. The correct one is 117k:
+
+$ cksum awr-parser.sh
+3365720760 117167 awr-parser.sh
+
+The other files are the wrong sizes too.
+
+Reply
+Gurwinder Singh's avatarGurwinder Singh
+July 24, 2015 at 2:49 pm
+Kindly help to resolve issue .
+
+Reply
+flashdba's avatarflashdba
+July 27, 2015 at 10:52 am
+I have offered you assistance via your email address.
+
+Reply
+JK's avatarJK
+August 25, 2015 at 3:50 am
+Hi ,
+Thanks, this works like a charm for RAC as well but when AWR generated is at Instance level ..
+it doesn’t work on AWR reports generated at Cluster level ..
+E.g
+Info : Parsing file awrrpt_rac_9255_9256.txt at 2015-08-25 12:35:04
+Info : Filename = awrrpt_rac_9255_9256.txt
+Info : AWR Format = Unknown
+Info : Database Name =
+Info : Instance Number =
+Info : Instance Name =
+Info : Database Version =
+Info : Cluster Y/N =
+Info : Hostname =
+Info : Host OS =
+Info : Number of CPUs =
+Info : Server Memory =
+Info : DB Blocksize =
+Info : Begin Snap =
+
+it seems to not recognize the AWR format from cluster level .. is there any way I get it working at cluster level as well please ?
+Thanks in advance for your help !
+
+Reply
+flashdba's avatarflashdba
+August 25, 2015 at 12:50 pm
+Not easily, I’m afraid. Cluster level reports have a completely different format, which would require a whole lot of new code…
+
+Reply
+Anjul's avatarAnjul
+July 4, 2016 at 5:08 am
+Hi,
+
+I am getting following error.
+
+Info : Parsing file awrrpt_1_7725_7726.txt at %F 14:07:21
+awr-parser.sh: $COL_COUNTER + ${#HEADERROW_ARRAY[${AWRCOLNUM} – 1]} – 1: bad substitution
+Info : No more files found
+Info :
+Info : ______SUMMARY______
+Info : Files found : 1
+Info : Files processed : 1
+Info : Processing errors : 0
+Info :
+Info : Completed successfully
+
+Also, when I run from cygwin, it just hangs.
+
+Thanks
+Anjul
+
+Reply
+flashdba's avatarflashdba
+July 4, 2016 at 3:17 pm
+I can’t tell what the problem is from that I’m afraid, but it will almost definitely be an environment issue – something that isn’t installed which is required.
+
+You can try debugging it yourself by running with the hidden -X parameter.
+
+As for Cygwin, I’m afraid the issue will be something to do with your configuration of Cygwin itself. I can’t help with that other than to offer the solution which worked for me: stop using Windows.
+
+Reply
+flashdba's avatarflashdba
+July 4, 2016 at 3:26 pm
+Come to think of it, your error message is surprising in that it contains the various dollar and hash signs that I would expect the shell to interpret. I wonder if you have copied the file over in a manner which has corrupted it. If you run a cksum of the file as it is today, you should get:
+
+$ cksum awr-parser.sh
+3365720760 117167 awr-parser.sh
+
+Reply
+Anjul's avatarAnjul
+July 15, 2016 at 3:08 pm
+cksum is same as you have.
+
+I tested on centOS VM and it worked fine. On Solaris, didn’t work. So it my environment issue in cygwin. I am checking -X option to debug , thank you.
+
+Reply
+DBadmin's avatarDBadmin
+November 6, 2016 at 8:48 pm
+Hi, This is really nice. When I executed this in a 4 node RAC, I get the following error:
+
+Info : Parsing file awrrpt_1_206866_206867.txt at 2016-11-06 13:45:38
+Error: Post-process complete: unable to determine read IOPS values
+Info : Parsing file awrrpt_1_206867_206868.txt at 2016-11-06 13:45:44
+Error: Post-process complete: unable to determine read IOPS values
+Info : Parsing file awrrpt_1_206868_206869.txt at 2016-11-06 13:45:51
+
+Any help will be appreciated.
+
+Thank you
+
+Reply
+flashdba's avatarflashdba
+November 6, 2016 at 11:05 pm
+Run it with the hidden -X option to create a *lot* of debug info.
+
+Or just email me the AWR Report and I’ll look into it for you.
+
+Reply
+Cagil's avatarCagil
+November 29, 2016 at 8:38 am
+Hi, We get the following error.
+
+Info : Parsing file SampleAWRs/awr_fodb1_54280.txt at 2016-11-21 13:28:44
+Error: Post-process complete: unable to determine write throughput values
+Info : Parsing file SampleAWRs/awr_fodb1_54281.txt at 2016-11-21 13:28:47
+Error: Post-process complete: unable to determine write throughput values
+Info : Parsing file SampleAWRs/awr_fodb1_54282.txt at 2016-11-21 13:28:52
+Info : Parsing file SampleAWRs/awr_fodb1_54283.txt at 2016-11-21 13:28:56
+
+However, we get also minus values in the awr-parser.sh output for Write Throughput (MiB/sec)
+
+Write Throughput (MiB/sec) Redo Throughput (MiB/sec) All Write Throughput (MiB/sec)
+-0.02 0.02
+-0.03 0.03
+0.02 0.02
+-0.03 0.04 0.01
+
+Any help will be appreciated.
+
+Thanks in advance
+
+Reply
+flashdba's avatarflashdba
+November 29, 2016 at 7:53 pm
+Run it with the hidden -X option to create loads of debug info.
+
+Or just email me the AWR Report and I’ll look into it for you.
+
+Reply
+gstanden's avatargstanden
+June 29, 2017 at 8:11 pm
+Mobaxterm is a great way to run this from windows. No need to install Cygwin…Mobaxterm (free as well as paid version) comes with a Cygwin client and bc is already installed. Just drop the awr txt files into ~/MyDocuments/Folder-of-your-choice and you are ready to parse! http://mobaxterm.mobatek.net/ Cheers, G
+
+Reply
+Mr. Tho Nguyen's avatarMr. Tho Nguyen
+August 25, 2017 at 3:58 am
+it would be better if you have a new version with Physical Read, Physical Write for output. Or can you guide me how to add those output to your script. Many thanks
+
+Reply
+flashdba's avatarflashdba
+August 26, 2017 at 5:39 pm
+What do you mean by Physical Read and Physical Write? The number of IO requests (IOPS)? The volume of data read and written (MB/sec)?
+
+Reply
+Mr. Tho Nguyen's avatarMr. Tho Nguyen
+September 14, 2017 at 11:34 am
+yes, I want these metrics
+
+Reply
+flashdba's avatarflashdba
+September 14, 2017 at 12:20 pm
+Those metrics are already captured and outputted by the script:
+
+Read IOPS : The average read IOPS for the AWR period
+Data Write IOPS : The average write IOPS for the AWR period (excluding redo)*
+Redo IOPS : The average redo IOPS for the AWR period (LGWR writes)
+All Write IOPS : The average data write IOPS for the AWR period (excluding redo)
+Total IOPS : The average total number of IOPS (Read IOPS + All Write IOPS)
+Read Throughput (MiB/sec) : The average read throughput for the AWR period
+Data Write Throughput (MiB/sec) : The average write throughput for the AWR period (excluding redo)*
+Redo Throughput (MiB/sec) : The average redo throughput for the AWR period (LGWR writes)
+All Write Throughput (MiB/sec) : The average write throughput for the AWR period (data + redo)
+Total Throughput (MiB/sec) : The average total throughput for the period (read + all write)
+
+Reply
+Mr. Tho Nguyen's avatarMr. Tho Nguyen
+September 15, 2017 at 4:58 am
+many thanks for your wonderfull sharing. I still do not understand what metric will explain about physical read ? Is this Read IOPS ?
+
+Reply
+flashdba's avatarflashdba
+September 15, 2017 at 9:29 pm
+It depends, as there are different ways of measuring physical reads: IOPS (I/O Operations Per Second), Bandwidth – also called Throughput (measured in MB/sec) and Latency (typically measured in milliseconds).
+
+Read about them here:
+
+
+
+Reply
+Mr. Tho Nguyen's avatarMr. Tho Nguyen
+September 18, 2017 at 11:44 am
+I have read your explain in this link https://flashdba.com/2014/02/26/oracle-awr-reports-understanding-io-statistics/
+I see that you got the “Read IOPS” output from physical read total IO requests in awr section Other Instance Activity Stats. But how about the “Write IOPS” in your output ? I see it different with the “physical write total IO requests ” metric in awr. One more your output is All Write IOPS which I do not understand. I’m very interested in your post so I ask alot of question. Sorry if I disturb you
+
+Reply
+flashdba's avatarflashdba
+September 18, 2017 at 12:39 pm
+I can see why you are confused – unfortunately I made it confusing due to a mistake in my original interpretation of the data. Go to this page:
+
+awr-parser.sh – Script for parsing Oracle AWR Reports
+
+
+And then search down for the paragraph which begins with “Pay attention to the values for write IOPS and throughput…”
+
+In short, you should simply use the values below to get the data you need:
+
+Read IOPS = physical read total IO requests
+Total Write IOPS = physical write total IO requests
+
+Those two values are all you need to determine the IOPS profile of a database.
+
+Reply
+Abuzar Kamal's avatarAbuzar Kamal
+October 7, 2019 at 1:26 am
+Amazing script, However, I was doing bench marking for HP Superdome v/s Exadata, I do not see any of the Exadata related metrics are captured?
+
+Reply
+flashdba's avatarflashdba
+October 7, 2019 at 6:17 pm
+Thanks. I’m afraid that it doesn’t capture Exadata stats so would need to be modified accordingly.
+
+Reply
+Chuck Stoker's avatarChuck Stoker
+July 17, 2020 at 2:48 pm
+Great script – I’m trying to leverage this against an AWR Warehouse and it’s presenting issues depending upon the Oracle Version when parsing – specifically database role and instance name
+
+Reply
+flashdba's avatarflashdba
+July 22, 2020 at 11:29 pm
+What version of Oracle? I’m afraid I haven’t updated this script since 11.2.0.4 I think…
+
+Reply
+Anil's avatarAnil
+August 11, 2020 at 6:29 am
+How to draw graph. I just got the csv files. Not able to understand how to analyze the csv
+
+Reply
+flashdba's avatarflashdba
+August 14, 2020 at 8:55 am
+You need to plot a graph with the number of threads on the X axis and the number of IOPS on the Y axis. I typically only ploy the physical read IOPS.
+
+For added benefit, setup a secondary Y axis and plot the latency (again I typically only plot the physical read latency).
+
+The graph will allow you to see the behaviour of latency as IO volumes increase, so you can find the saturation point in terms of the number of threads.
+
+Here’s a great example of the creator of SLOB doing just that:
+
+
+
+On that graph, you will see that the IOPS reach a peak at 16 threads, after which the latency simply increases. We can infer from this that 30,000 IOPS is a hard limit (probably enforced by QoS) and so any requirement to have more than 16 active threads issuing this volume of IO would require a larger instance / host in order to avoid increased latencies.
+
+Reply
+Anil's avatarAnil
+August 20, 2020 at 2:03 am
+Thanks for the detailed explanation
+
+Reply
+MD's avatarMD
+July 12, 2022 at 10:27 am
+Sir,
+
+am getting this error on AIX operating system. I have executed in debug mode.
+
+running in bash mode.
+
+Info : Finished scanning file at line 2664|
+Info : Start post-processing section|
+Debug: Calling BC: echo ‘5.1 > 64′ | bc -l
+syntax error on line 1 stdin <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+./awr-parser.sh: line 1590: [: =: unary operator expected <<<<<<<<<<<<<<<<<<<<< $DB_NUM_CPUS’ | bc -l”
+if [ $(echo “$AWR_AAS > $DB_NUM_CPUS” | bc -l) = 1 ]; then <<<<<<<<<<line 1590
+AWR_BUSY_FLAG="Y"
+else
+AWR_BUSY_FLAG="N"
+fi
+fi
+
+Please help me.
+
+Thanks
+
+Reply
+flashdba's avatarflashdba
+July 12, 2022 at 3:47 pm
+I’ve never tested on AIX. It looks like the bc (basic calculator) binary isn’t installed or behaving as expected. Try it manually:
+
+echo ‘5.1 > 64′ | bc -l
+
+Reply
+Rainer's avatarRainer
+February 27, 2024 at 9:09 am
+Hi,
+can I use your scripts to parse statspack files too?
+
+or must I change some of the scripts to parse statspack files? if yes, does you did this already?
+
+Reply
+flashdba's avatarflashdba
+February 27, 2024 at 1:09 pm
+I’m afraid not… I never tried. But I would imagine it would be quicker to start from scratch or look for someone else who has already done it than to try and amend these (very old) AWR parsing scripts.
+
+Reply
+Leave a comment
+This site uses Akismet to reduce spam. Learn how your comment data is processed.
+
+Blog at WordPress.com.

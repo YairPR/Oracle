@@ -40,6 +40,13 @@
         {% endfor %}
       </select>
     </label>
+    <label>Nodos
+      <select id="odl-rango-nodos" class="odl-filter-input" multiple aria-label="Nodos incluidos">
+        {% set hosts_infra = payload.infraestructura | map(attribute='host') | reject('none') | list %}
+        {% set nodos_filtro = (payload.motor_episodios.node_list + payload.motor_episodios.nodos_sar + hosts_infra) | unique | list | sort %}
+        {% for nodo in nodos_filtro %}<option value="{{ nodo }}" selected>{{ nodo }}</option>{% endfor %}
+      </select>
+    </label>
     <label>Desde
       <input id="odl-rango-desde" class="odl-filter-input" type="datetime-local" step="1">
     </label>
@@ -50,6 +57,9 @@
     <button id="odl-rango-restaurar" class="odl-filter-btn" type="button">Restablecer</button>
   </div>
 </section>
+<div class="odl-panel-note odl-awr-filter-policy">
+  Política AWR: el selector ajusta las series por el inicio del snapshot; un AWR no se recalcula parcialmente. Las tablas conservan la ventana completa indicada en su cabecera.
+</div>
 
 {# Cabecera de infraestructura (Hito "rediseno AWR", 2026-10-02, pedido
    del audit externo): hosts/cores/RAM/version de BD, ahora que el modelo

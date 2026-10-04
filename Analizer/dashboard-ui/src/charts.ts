@@ -527,7 +527,7 @@ export function reflowCharts(): void {
  * Los gráficos categóricos de AWR quedan intactos: sus barras representan
  * snapshots discretos y no aceptan startValue/endValue en epoch. */
 export function aplicarRangoTemporalCharts(
-  desdeMs: number, hastaMs: number,
+  desdeMs: number, hastaMs: number, nodos: string[], seleccionados: Set<string>,
 ): void {
   const charts = (window as any).__odlCharts as any[] | undefined;
   if (!charts) return;
@@ -552,6 +552,9 @@ export function aplicarRangoTemporalCharts(
           }],
         });
       }
+      const seleccion: Record<string, boolean> = {};
+      for (const nodo of nodos) seleccion[nodo] = seleccionados.has(nodo);
+      chart.setOption({ legend: { selected: seleccion } });
     } catch { /* una instancia desmontada no debe romper el filtro global */ }
   }
 }

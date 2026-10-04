@@ -16,11 +16,13 @@ function epochMs(valor: string): number | null {
   return Number.isFinite(ms) ? ms : null;
 }
 
-function filtrarFilas(desde: number, hasta: number): number {
+function filtrarFilas(desde: number, hasta: number, nodos: Set<string>): number {
   let visibles = 0;
   document.querySelectorAll<HTMLElement>("[data-ts]").forEach((fila) => {
     const ts = epochMs(fila.dataset.ts || "");
-    const dentro = ts === null || (ts >= desde && ts <= hasta);
+    const nodo = fila.dataset.node || "";
+    const dentroNodo = !nodo || nodos.has(nodo);
+    const dentro = dentroNodo && (ts === null || (ts >= desde && ts <= hasta));
     fila.hidden = !dentro;
     if (dentro) visibles += 1;
   });
@@ -33,9 +35,12 @@ export function inicializarRangoTemporal(payload: Payload): void {
   const aplicar = document.getElementById("odl-rango-aplicar") as HTMLButtonElement | null;
   const restaurar = document.getElementById("odl-rango-restaurar") as HTMLButtonElement | null;
   const capturaInput = document.getElementById("odl-rango-captura") as HTMLSelectElement | null;
+  const nodosInput = document.getElementById("odl-rango-nodos") as HTMLSelectElement | null;
   const estado = document.getElementById("odl-rango-estado");
   const [minimo, maximo] = payload.resumen.rango_tiempo || [];
-  if (!desdeInput || !hastaInput || !aplicar || !restaurar || !capturaInput || !minimo || !maximo) return;
+  if (!desdeInput || !hastaInput || !aplicar || !restaurar || !capturaInput || !nodosInput || !minimo || !maximo) return;
+
+  const nodosDisponibles = Array.from(nodosInput.options).map((opcion) => opcion.value);
 
   const reiniciarInputs = (): void => {
     desdeInput.value = valorInput(minimo);
@@ -45,6 +50,7 @@ export function inicializarRangoTemporal(payload: Payload): void {
     hastaInput.min = valorInput(minimo);
     hastaInput.max = valorInput(maximo);
     capturaInput.value = "";
+    for (const opcion of Array.from(nodosInput.options)) opcion.selected = true;
   };
 
   const ejecutar = (): void => {
@@ -58,8 +64,9 @@ export function inicializarRangoTemporal(payload: Payload): void {
     }
     desdeInput.removeAttribute("aria-invalid");
     hastaInput.removeAttribute("aria-invalid");
-    aplicarRangoTemporalCharts(desde, hasta);
-    const visibles = filtrarFilas(desde, hasta);
+    const nodos = new Set(Array.from(nodosInput.selectedOptions).map((opcion) => opcion.value));
+    aplicarRangoTemporalCharts(desde, hasta, nodosDisponibles, nodos);
+    const visibles = filtrarFilas(desde, hasta, nodos);
     if (estado) estado.textContent = `${visibles} evidencias visibles en la ventana seleccionada.`;
   };
 
