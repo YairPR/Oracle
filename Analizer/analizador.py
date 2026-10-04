@@ -85,15 +85,32 @@ PARSERS = {
 }
 
 NOMBRE_INFORME_SALIDA = "informe_incidente.html"
-LIMITE_EVENTOS_TABLA = 50000  # tope defensivo para la tabla cruda de Evidencias -- ver construir_payload()
+# La plantilla solo presenta 500 filas en el explorador de evidencia. Llevar
+# decenas de miles de filas adicionales dentro de window.__PAYLOAD__ aumentaba
+# mucho el peso del HTML y el tiempo de parseo del navegador sin hacerlas
+# visibles ni consultables.
+LIMITE_EVENTOS_TABLA = 500
+
+_DIRECTORIOS_IGNORADOS = {".git", "__pycache__", "node_modules", "venv", ".venv"}
+_ARCHIVOS_IGNORADOS = {NOMBRE_INFORME_SALIDA}
 
 
 def clasificar_carpeta(carpeta: str, router: LogRouter) -> dict:
-    """Recorre la carpeta (recursivo) y devuelve {LogType: [paths]}."""
+    """Recorre entradas de evidencia en orden estable.
+
+    No vuelve a clasificar productos generados por el propio analizador ni
+    dependencias del proyecto. El orden determinista hace reproducibles los
+    IDs tecnicos asignados durante una corrida y, sobre todo, sus pruebas.
+    """
     por_tipo = {}
-    for root, _dirs, files in os.walk(carpeta):
-        for name in files:
+    for root, dirs, files in os.walk(carpeta):
+        dirs[:] = sorted(d for d in dirs if d not in _DIRECTORIOS_IGNORADOS and not d.startswith("."))
+        for name in sorted(files):
+            if name in _ARCHIVOS_IGNORADOS or name.startswith(".") or name.lower().endswith(".duckdb"):
+                continue
             path = os.path.join(root, name)
+            if not os.path.isfile(path) or os.path.islink(path):
+                continue
             tipo = router.detect_file_type(path)
             por_tipo.setdefault(tipo, []).append(path)
     return por_tipo
@@ -109,14 +126,15 @@ def _caso_id_de_carpeta(carpeta: str) -> str:
 
 
 def _ingerir_awr(storage: ForensicStorage, caso_id: str, parser: AwrParser,
-                  path: str, log_cb) -> int:
+                  path: str, log_cb) -> tuple[int, float, float]:
     """Camino de ingesta especifico de AWR (Hito 'Modelo de datos
     dimensional', 2026-10-02): a diferencia de oclumon/sar (filas planas
     genericas -> bulk_insert_telemetria), un AWR se parsea con
     parse_estructurado() y reparte su contenido en 4 tablas dimensionales
     (dim_infraestructura/dim_database/fact_awr_snapshots/
     fact_awr_wait_events) -- ver core/storage.py y parsers/awr.py para el
-    contrato completo. Devuelve una cuenta de "filas equivalentes"
+    contrato completo. Devuelve una cuenta de "filas equivalentes" y los
+    tiempos separados de parseo/insercion
     (infraestructura + database + snapshot + wait events) solo para que
     el resumen/instrumentacion de tiempos de ingerir_carpeta() siga
     teniendo un numero que reportar por archivo, igual que antes.
@@ -124,7 +142,9 @@ def _ingerir_awr(storage: ForensicStorage, caso_id: str, parser: AwrParser,
     Si el archivo no se pudo ni abrir (host/db_name/wait_events todos
     vacios), no inserta nada -- mismo criterio de "nunca fabricar una
     fila sin datos reales" que ya aplicaba el camino plano viejo."""
+    t_parse = time.monotonic()
     estructura = parser.parse_estructurado(path)
+    parse_seg = time.monotonic() - t_parse
     infra = estructura["infraestructura"]
     base = estructura["database"]
     snap = estructura["snapshot"]
@@ -137,8 +157,9 @@ def _ingerir_awr(storage: ForensicStorage, caso_id: str, parser: AwrParser,
     if not algo_util:
         log_cb(f"[awr] {path}: 0 datos extraidos "
                f"(diagnostico: {estructura.get('diagnostico')})")
-        return 0
+        return 0, parse_seg, 0.0
 
+    t_insert = time.monotonic()
     n = 0
     if infra.get("host") is not None or any(
         infra.get(k) is not None for k in
@@ -155,7 +176,7 @@ def _ingerir_awr(storage: ForensicStorage, caso_id: str, parser: AwrParser,
         n += storage.bulk_insert_wait_events(
             caso_id=caso_id, snapshot_id=snapshot_id, host=snap.get("host"), eventos=wait_events,
         )
-    return n
+    return n, parse_seg, time.monotonic() - t_insert
 
 
 def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
@@ -192,7 +213,7 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
     total_insertadas = 0
     con_parser = 0
     sin_parser = 0
-    tiempos_por_archivo = []  # [{"path", "tipo", "segundos", "filas"}, ...] -- para diagnostico de performance
+    tiempos_por_archivo = []
     with ForensicStorage(db_path) as storage:
         if storage.filas_eliminadas_al_conectar:
             # Ver nota de idempotencia en core/storage.py -- se reporta
@@ -218,6 +239,8 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
             parser = ParserCls()
             for path in paths:
                 t_archivo_inicio = time.monotonic()
+                parse_seg = 0.0
+                insert_seg = 0.0
                 try:
                     # AWR tiene su propio camino de ingesta (Hito "Modelo
                     # de datos dimensional", 2026-10-02): reparte su
@@ -228,10 +251,14 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                     # (mismo rol que la vieja eventos_forenses, solo con
                     # caso_id agregado al estampar).
                     if tipo == LogType.AWR:
-                        n = _ingerir_awr(storage, caso_id, parser, path, log_cb)
+                        n, parse_seg, insert_seg = _ingerir_awr(
+                            storage, caso_id, parser, path, log_cb
+                        )
                         filas = None  # no aplica el log generico de "0 filas" de abajo
                     else:
+                        t_parse = time.monotonic()
                         filas = parser.parse(path)
+                        parse_seg = time.monotonic() - t_parse
                         n = 0
                 except Exception as e:
                     # Un parser no deberia lanzar (ver contrato en
@@ -242,7 +269,9 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                     continue
                 if filas is not None:
                     if filas:
+                        t_insert = time.monotonic()
                         n = storage.bulk_insert_telemetria(caso_id, filas)
+                        insert_seg = time.monotonic() - t_insert
                     else:
                         log_cb(f"[{tipo.value}] {path}: 0 filas extraidas "
                                f"(diagnostico: {getattr(parser, 'ultimo_diagnostico', None)})")
@@ -250,12 +279,16 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                 con_parser += 1
                 t_archivo = time.monotonic() - t_archivo_inicio
                 tiempos_por_archivo.append({
-                    "path": path, "tipo": tipo.value, "segundos": round(t_archivo, 3), "filas": n,
+                    "path": path, "tipo": tipo.value, "segundos": round(t_archivo, 3),
+                    "parse_seg": round(parse_seg, 3), "insert_seg": round(insert_seg, 3),
+                    "bytes": os.path.getsize(path) if os.path.isfile(path) else None, "filas": n,
                 })
                 if n:
                     tabla = "fact_telemetria_so" if tipo != LogType.AWR else "tablas dimensionales de AWR"
-                    log_cb(f"[{tipo.value}] {path}: {n} filas insertadas en {tabla} "
-                           f"({t_archivo:.2f}s)")
+                    log_cb(
+                        f"[{tipo.value}] {path}: {n} filas insertadas en {tabla} "
+                        f"(parse {parse_seg:.2f}s, insert {insert_seg:.2f}s, total {t_archivo:.2f}s)"
+                    )
 
     t_total = time.monotonic() - t_inicio_total
     log_cb(f"Total: {total_insertadas} filas insertadas en {db_path} ({t_total:.2f}s de ingesta)")
@@ -265,7 +298,11 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
     if tiempos_por_archivo:
         log_cb("  Archivos mas lentos de esta ingesta:")
         for d in tiempos_por_archivo[:5]:
-            log_cb(f"    {d['segundos']:.2f}s  [{d['tipo']}]  {d['path']}  ({d['filas']} filas)")
+            log_cb(
+                f"    {d['segundos']:.2f}s  [{d['tipo']}]  {d['path']}  "
+                f"({d['bytes']} bytes, parse {d['parse_seg']:.2f}s, "
+                f"insert {d['insert_seg']:.2f}s, {d['filas']} filas)"
+            )
 
     return {
         "por_tipo": {t.value: len(p) for t, p in por_tipo.items()},

@@ -93,15 +93,14 @@ function baseOption(titulo: string | null) {
         return html;
       },
     },
-    // zoomOnMouseWheel:false + moveOnMouseWheel:true -- la rueda del mouse
-    // sobre un grafico desplaza la pagina normalmente (scroll), NO hace
-    // zoom; el zoom temporal queda disponible arrastrando el slider o con
-    // gesto de pellizco (trackpad) -- corrige el "secuestro" de scroll
-    // reportado en la auditoria externa (sec. 3.2). Slider 14->20px para
-    // evitar colision de etiquetas (mismo informe, misma seccion).
+    // El rango temporal se controla exclusivamente desde la barra global.
+    // No se muestra slider por gráfico y ningún gesto de rueda/arrastre
+    // modifica el dominio: la rueda queda siempre libre para la página.
     dataZoom: [
-      { type: "inside", zoomOnMouseWheel: false, moveOnMouseWheel: true, moveOnMouseMove: true },
-      { type: "slider", height: 20, bottom: 4, fillerColor: "rgba(57,135,229,0.12)", borderColor: BORDE, handleStyle: { color: INK_MUTED } },
+      {
+        type: "inside", zoomOnMouseWheel: false, moveOnMouseWheel: false,
+        moveOnMouseMove: false, preventDefaultMouseMove: false,
+      },
     ],
     // formatter por granularidad (nativo de ECharts, en vez de calcular
     // espaciado de ticks a mano): a nivel dia/mes muestra "DD/MM", a nivel
@@ -518,22 +517,44 @@ export function reflowCharts(): void {
   const charts = (window as any).__odlCharts as any[] | undefined;
   if (!charts) return;
   for (const c of charts) {
-    try { c.resize(); } catch { /* panel oculto/desmontado -- se ignora */ }
+    try {
+      const dom = c.getDom?.() as HTMLElement | undefined;
+      if (dom?.offsetParent !== null) c.resize();
+    } catch { /* panel desmontado -- se ignora */ }
   }
 }
 
-/**
- * Sincroniza dataZoom + crosshair/tooltip (axisPointer) entre TODOS los
- * charts montados -- "linea de tiempo maestra": arrastrar el slider o
- * pasar el mouse sobre cualquier grafico mueve/resalta el mismo instante
- * en todos los demas (pedido explicito del usuario, mejora de UX de mayor
- * impacto visible segun la auditoria externa, sec. 3.2/4). Se llama UNA
- * sola vez al final de main(), despues de montar todos los charts -- si
- * se llama antes de que existan, echarts.connect no tiene nada que
- * conectar todavia.
- */
-export function conectarCharts(): void {
+/** Aplica la misma ventana a todos los charts cuyo eje X es temporal.
+ * Los gráficos categóricos de AWR quedan intactos: sus barras representan
+ * snapshots discretos y no aceptan startValue/endValue en epoch. */
+export function aplicarRangoTemporalCharts(
+  desdeMs: number, hastaMs: number, nodos: string[], seleccionados: Set<string>,
+): void {
   const charts = (window as any).__odlCharts as any[] | undefined;
-  if (!charts || charts.length < 2) return; // nada que sincronizar con 0-1 grafico
-  echarts.connect(charts);
+  if (!charts) return;
+  for (const chart of charts) {
+    try {
+      const opcion = chart.getOption();
+      const eje = opcion?.xAxis?.[0];
+      if (eje?.type === "time") {
+        chart.dispatchAction({ type: "dataZoom", startValue: desdeMs, endValue: hastaMs });
+        const hayDatos = (opcion.series || []).some((serie: any) =>
+          (serie.data || []).some((punto: any) => {
+            const t = Array.isArray(punto) ? Number(punto[0]) : Number(punto?.value?.[0]);
+            return Number.isFinite(t) && t >= desdeMs && t <= hastaMs;
+          })
+        );
+        chart.setOption({
+          graphic: [{
+            id: "odl-sin-datos-rango", type: "text", left: "center", top: "middle",
+            invisible: hayDatos,
+            style: { text: "Sin datos en este intervalo", fill: INK_SECONDARY, fontSize: 12 },
+          }],
+        });
+      }
+      const seleccion: Record<string, boolean> = {};
+      for (const nodo of nodos) seleccion[nodo] = seleccionados.has(nodo);
+      chart.setOption({ legend: { selected: seleccion } });
+    } catch { /* una instancia desmontada no debe romper el filtro global */ }
+  }
 }

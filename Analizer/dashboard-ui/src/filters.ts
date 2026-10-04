@@ -39,6 +39,7 @@ export function inicializarSelectorPanel(selectorId: string, grupo: string): voi
       p.classList.toggle("odl-panel-activo", clave === valor);
     }
     window.setTimeout(reflowCharts, 60);
+    document.dispatchEvent(new CustomEvent("odl:panel-visible"));
   };
 
   selector.addEventListener("change", () => aplicar(selector.value));
