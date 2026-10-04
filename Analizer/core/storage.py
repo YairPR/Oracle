@@ -515,9 +515,14 @@ class ForensicStorage:
         try:
             for start in range(0, len(rows), _CHUNK_SIZE):
                 chunk = rows[start:start + _CHUNK_SIZE]
-                placeholders = ",".join([f"({','.join('?' * len(_COLUMNS_TELEMETRIA))})"] * len(chunk))
-                flat_params = [v for row in chunk for v in row]
-                self._con.execute(f"INSERT INTO fact_telemetria_so VALUES {placeholders}", flat_params)
+                # DuckDB vectoriza UNNEST sobre listas columnares. El patrón
+                # anterior construía 35.000 placeholders y parámetros por
+                # lote de 5.000 filas, coste dominante en CHM grandes.
+                columnas = [list(col) for col in zip(*chunk)]
+                selectores = ", ".join("unnest(?)" for _ in _COLUMNS_TELEMETRIA)
+                self._con.execute(
+                    f"INSERT INTO fact_telemetria_so SELECT {selectores}", columnas
+                )
             self._con.execute("COMMIT")
         except Exception:
             self._con.execute("ROLLBACK")
@@ -610,9 +615,11 @@ class ForensicStorage:
         try:
             for start in range(0, len(rows), _CHUNK_SIZE):
                 chunk = rows[start:start + _CHUNK_SIZE]
-                placeholders = ",".join([f"({','.join('?' * len(_COLUMNS_WAIT_EVENTS))})"] * len(chunk))
-                flat_params = [v for row in chunk for v in row]
-                self._con.execute(f"INSERT INTO fact_awr_wait_events VALUES {placeholders}", flat_params)
+                columnas = [list(col) for col in zip(*chunk)]
+                selectores = ", ".join("unnest(?)" for _ in _COLUMNS_WAIT_EVENTS)
+                self._con.execute(
+                    f"INSERT INTO fact_awr_wait_events SELECT {selectores}", columnas
+                )
             self._con.execute("COMMIT")
         except Exception:
             self._con.execute("ROLLBACK")

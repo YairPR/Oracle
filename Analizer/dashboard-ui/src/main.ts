@@ -11,11 +11,12 @@
 import { registrarNodos } from "./colors";
 import {
   renderSerieChart, renderSerieMultiNodo, renderCronologia, renderSerieCruda,
-  renderSerieCrudaMulti, renderBarraApiladaDbTime, reflowCharts, conectarCharts,
+  renderSerieCrudaMulti, renderBarraApiladaDbTime, reflowCharts,
 } from "./charts";
 import { inicializarNav } from "./nav";
 import { inicializarSelectorPanel, inicializarExpandirEvidencia, inicializarFiltrosTimeline } from "./filters";
 import type { Payload } from "./types";
+import { inicializarRangoTemporal } from "./time-range";
 
 interface ChartSpec {
   kind: "serie" | "multi-nodo" | "cronologia" | "serie-cruda" | "serie-cruda-multi" | "barra-apilada-dbtime";
@@ -27,14 +28,15 @@ interface ChartSpec {
   serie?: string;
   title?: string;
   unit?: string;
+  yMin?: number;
+  yMax?: number;
   fuente?: "series_cpu" | "series_aas";
   fuentes?: string[];
   clave?: string;
 }
 
-function montarCharts(payload: Payload): void {
-  const nodos = document.querySelectorAll<HTMLElement>("[data-chart]");
-  nodos.forEach((el) => {
+function montarChart(el: HTMLElement, payload: Payload): void {
+    if (el.dataset.chartMounted === "true" || el.offsetParent === null) return;
     const raw = el.getAttribute("data-chart");
     if (!raw) return;
     let spec: ChartSpec;
@@ -44,12 +46,13 @@ function montarCharts(payload: Payload): void {
       el.innerHTML = '<div class="odl-empty-state">Especificacion de grafico invalida.</div>';
       return;
     }
+    el.dataset.chartMounted = "true";
     if (spec.kind === "cronologia") {
       renderCronologia(el, payload);
     } else if (spec.kind === "multi-nodo" && spec.serie) {
       renderSerieMultiNodo(el, payload, {
         serie: spec.serie, nodos: spec.nodos || payload.motor_episodios.node_list,
-        title: spec.title, unit: spec.unit,
+        title: spec.title, unit: spec.unit, yMin: spec.yMin, yMax: spec.yMax,
       });
     } else if (spec.kind === "serie" && spec.node && spec.series) {
       renderSerieChart(el, payload, {
@@ -63,7 +66,37 @@ function montarCharts(payload: Payload): void {
     } else if (spec.kind === "barra-apilada-dbtime") {
       renderBarraApiladaDbTime(el, payload);
     }
+}
+
+/** Observa únicamente charts de paneles visibles. rootMargin prepara el
+ * siguiente bloque antes de entrar al viewport sin montar toda la pestaña. */
+function crearGestorCharts(payload: Payload): () => void {
+  const observados = new WeakSet<HTMLElement>();
+  let resizeFrame: number | undefined;
+  const resizeObserver = new ResizeObserver(() => {
+    if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
+    resizeFrame = window.requestAnimationFrame(reflowCharts);
   });
+  const observer = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      const el = entrada.target as HTMLElement;
+      montarChart(el, payload);
+      if (el.dataset.chartMounted === "true") {
+        resizeObserver.observe(el);
+        document.dispatchEvent(new CustomEvent("odl:chart-mounted"));
+      }
+      observer.unobserve(el);
+    }
+  }, { rootMargin: "500px 0px", threshold: 0.01 });
+
+  return (): void => {
+    document.querySelectorAll<HTMLElement>("[data-chart]").forEach((el) => {
+      if (el.dataset.chartMounted === "true" || el.offsetParent === null || observados.has(el)) return;
+      observados.add(el);
+      observer.observe(el);
+    });
+  };
 }
 
 function main(): void {
@@ -74,10 +107,11 @@ function main(): void {
     return;
   }
   registrarNodos(payload.motor_episodios.node_list || []);
-  montarCharts(payload);
-  // Linea de tiempo maestra (echarts.connect) -- DESPUES de montar todos
-  // los charts, nunca antes (ver conectarCharts() en charts.ts).
-  conectarCharts();
+  const prepararChartsVisibles = crearGestorCharts(payload);
+  prepararChartsVisibles();
+  document.addEventListener("odl:panel-visible", () => {
+    prepararChartsVisibles();
+  });
   inicializarNav();
   // Selectores de la seccion OCLUMON (rediseno "meramente grafico",
   // 2026-10-02) -- cada uno controla su propio grupo de paneles
@@ -87,7 +121,12 @@ function main(): void {
   inicializarSelectorPanel("odl-selector-proc-nodo", "proc-nodo");
   inicializarExpandirEvidencia();
   inicializarFiltrosTimeline();
-  window.addEventListener("resize", () => window.setTimeout(reflowCharts, 80));
+  inicializarRangoTemporal(payload);
+  let resizeFrame: number | undefined;
+  window.addEventListener("resize", () => {
+    if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
+    resizeFrame = window.requestAnimationFrame(reflowCharts);
+  });
 }
 
 if (document.readyState === "loading") {

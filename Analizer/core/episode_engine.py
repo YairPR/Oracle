@@ -42,12 +42,84 @@ tumbar el analisis completo.
 
 import re
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+from statistics import median
 
 log = logging.getLogger("rac_forensic_lab.core.episode_engine")
 
 MAX_UNPARSED_SAMPLES = 40
 MAX_ERROR_SAMPLES = 40
+
+
+def _epoch_hora_origen(valor) -> int:
+    """Convierte una hora local *sin zona* en un eje estable.
+
+    CHM no declara zona horaria. Se usa UTC como contenedor neutro para que
+    02:35 siga siendo 02:35 al abrir el HTML en cualquier equipo; no significa
+    que la captura ocurriera realmente en UTC.
+    """
+    dt = valor if isinstance(valor, datetime) else datetime.fromisoformat(valor)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return int(dt.timestamp())
+
+
+def _insertar_huecos(puntos):
+    """Inserta un null cuando falta más de tres intervalos de muestreo.
+
+    `connectNulls:false` sólo corta una línea si el dataset contiene el hueco;
+    timestamps distantes sin un null se conectan con una diagonal engañosa.
+    """
+    if len(puntos) < 3:
+        return puntos
+    diffs = [b["t"] - a["t"] for a, b in zip(puntos, puntos[1:]) if b["t"] > a["t"]]
+    if not diffs:
+        return puntos
+    # La mediana global incluiría el propio hueco en series pequeñas; usar
+    # la mitad inferior estima la cadencia real sin dejar que días sin datos
+    # eleven artificialmente el umbral.
+    rapidos = sorted(diffs)[:max(1, len(diffs) // 2)]
+    paso = max(1, int(median(rapidos)))
+    umbral = max(60, paso * 3)
+    out = [puntos[0]]
+    for anterior, actual in zip(puntos, puntos[1:]):
+        if actual["t"] - anterior["t"] > umbral:
+            out.append({"t": anterior["t"] + paso, "v": None})
+        out.append(actual)
+    return out
+
+
+def _a_gib(puntos):
+    return [{**p, "v": (p["v"] / 1024.0 if p.get("v") is not None else None)} for p in puntos]
+
+
+def _detectar_ventanas_captura(nodes):
+    """Agrupa timestamps reales en ventanas separadas por huecos de captura."""
+    tiempos = sorted({
+        _epoch_hora_origen(row["t"])
+        for rows in nodes.values() for row in rows if row.get("t")
+    })
+    if not tiempos:
+        return []
+    diffs = [b - a for a, b in zip(tiempos, tiempos[1:]) if b > a]
+    rapidos = sorted(diffs)[:max(1, len(diffs) // 2)] if diffs else [1]
+    paso = max(1, int(median(rapidos)))
+    umbral = max(60, paso * 3)
+    grupos, actual = [], [tiempos[0]]
+    for anterior, t in zip(tiempos, tiempos[1:]):
+        if t - anterior > umbral:
+            grupos.append(actual)
+            actual = []
+        actual.append(t)
+    grupos.append(actual)
+    return [
+        {
+            "inicio": datetime.fromtimestamp(g[0], timezone.utc).replace(tzinfo=None).isoformat(),
+            "fin": datetime.fromtimestamp(g[-1], timezone.utc).replace(tzinfo=None).isoformat(),
+            "muestras": len(g),
+        }
+        for g in grupos
+    ]
 
 # ---------------------------------------------------------------------
 # Parser de oclumon (CHM) -- tokenizador generico, tolerante a version de
@@ -244,6 +316,7 @@ def parse_oclumon_file(path):
                             "cpuq": _as_int(toks, "cpuq"),
                             "memfree_mb": _as_int(toks, "physmemfree") // 1024,
                             "memtotal_mb": _as_int(toks, "physmemtotal") // 1024,
+                            "mcache_mb": _as_int(toks, "mcache") // 1024,
                             "swapfree_mb": _as_int(toks, "swapfree") // 1024,
                             "swaptotal_mb": _as_int(toks, "swaptotal") // 1024,
                             "swpin": _as_int(toks, "swpin"),
@@ -280,6 +353,7 @@ def parse_oclumon_file(path):
                         first_tok = parts[0] if parts else ""
                         name = first_tok.split(":", 1)[0] if first_tok else "?"
                         cur["nics"].append({
+                            "name": line.strip().split(":", 1)[0].split()[0],
                             "name": name, "netrr": _as_float(toks, "netrr"), "netwr": _as_float(toks, "netwr"),
                             "neteff": _as_float(toks, "neteff", default=None) if "neteff" in toks else None,
                             "nicerrors": _as_int(toks, "nicerrors"),
@@ -287,6 +361,7 @@ def parse_oclumon_file(path):
                             "errsin": _as_int(toks, "errsin"), "errsout": _as_int(toks, "errsout"),
                             "indiscarded": _as_int(toks, "indiscarded"), "outdiscarded": _as_int(toks, "outdiscarded"),
                             "latency_ms": _parse_latency_ms(toks.get("latency")),
+                            "latency_lt": str(toks.get("latency", "")).strip().startswith("<"),
                             "type": toks.get("type", "unknown"),
                         })
                         diag["sections"]["nics"]["matched"] += 1
@@ -443,6 +518,7 @@ def build_dataset(all_samples):
                     "pktsin": 0, "pktsout": 0, "errsin": 0, "errsout": 0,
                     "_neteff_sum": 0.0, "_neteff_n": 0,
                     "_lat_sum": 0.0, "_lat_n": 0, "_lat_max": 0.0,
+                    "_lat_max_lt": False,
                 })
                 d["netrr"] += n["netrr"]
                 d["netwr"] += n["netwr"]
@@ -459,7 +535,9 @@ def build_dataset(all_samples):
                 if n.get("latency_ms") is not None:
                     d["_lat_sum"] += n["latency_ms"]
                     d["_lat_n"] += 1
-                    d["_lat_max"] = max(d["_lat_max"], n["latency_ms"])
+                    if n["latency_ms"] >= d["_lat_max"]:
+                        d["_lat_max"] = n["latency_ms"]
+                        d["_lat_max_lt"] = n.get("latency_lt", False)
 
             row_by_type = {}
             for t, d in by_type.items():
@@ -471,6 +549,7 @@ def build_dataset(all_samples):
                     "neteff_avg": (d["_neteff_sum"] / d["_neteff_n"]) if d["_neteff_n"] else None,
                     "latency_ms_avg": (d["_lat_sum"] / d["_lat_n"]) if d["_lat_n"] else None,
                     "latency_ms_max": d["_lat_max"] if d["_lat_n"] else None,
+                    "latency_ms_max_lt": d["_lat_max_lt"] if d["_lat_n"] else False,
                 }
             row["nics_by_type"] = row_by_type
             row["devices"] = s.get("devices", [])
@@ -841,7 +920,7 @@ def _series_puntos_nodo(rows, campo_sys=None, campo_nic=None, tipo_nic="PRIVATE"
     out = []
     for row in rows:
         try:
-            t = int(datetime.fromisoformat(row["t"]).timestamp())
+            t = _epoch_hora_origen(row["t"])
         except Exception:
             continue
         v = None
@@ -853,7 +932,10 @@ def _series_puntos_nodo(rows, campo_sys=None, campo_nic=None, tipo_nic="PRIVATE"
                 v = nic.get(campo_nic)
         if v is None:
             continue
-        out.append({"t": t, "v": v})
+        punto = {"t": t, "v": v}
+        if campo_nic == "latency_ms_max" and nic.get("latency_ms_max_lt"):
+            punto["lt"] = True
+        out.append(punto)
     return out
 
 
@@ -877,17 +959,25 @@ def _series_proto_delta_nodo(rows):
     -N)."""
     out = {nombre: [] for nombre in PROTO_COUNTERS}
     prev = None
+    prev_t = None
     for row in rows:
         try:
-            t = int(datetime.fromisoformat(row["t"]).timestamp())
+            t = _epoch_hora_origen(row["t"])
         except Exception:
             continue
         pd = row.get("proto_delta")
+        if prev_t is not None and t - prev_t > 60:
+            prev = None
         if pd and prev:
             for nombre in PROTO_COUNTERS:
-                out[nombre].append({"t": t, "v": max(0, pd[nombre] - prev[nombre])})
+                delta = pd[nombre] - prev[nombre]
+                # Un contador menor indica reinicio; esa primera muestra no
+                # representa errores nuevos y no debe convertirse en cero.
+                if delta >= 0:
+                    out[nombre].append({"t": t, "v": delta})
         if pd:
             prev = pd
+            prev_t = t
     return out
 
 
@@ -900,7 +990,7 @@ def _series_nic_tipo(rows, tipo, metrica):
     out = []
     for row in rows:
         try:
-            t = int(datetime.fromisoformat(row["t"]).timestamp())
+            t = _epoch_hora_origen(row["t"])
         except Exception:
             continue
         nic = (row.get("nics_by_type") or {}).get(tipo)
@@ -924,7 +1014,10 @@ def _series_nic_tipo(rows, tipo, metrica):
             v = nic.get("nicerrors")
         if v is None:
             continue
-        out.append({"t": t, "v": v})
+        punto = {"t": t, "v": v}
+        if metrica == "latency_ms" and nic.get("latency_ms_max_lt"):
+            punto["lt"] = True
+        out.append(punto)
     return out
 
 
@@ -937,7 +1030,7 @@ def _series_dispositivo_nodo(rows, device_name, campo):
     out = []
     for row in rows:
         try:
-            t = int(datetime.fromisoformat(row["t"]).timestamp())
+            t = _epoch_hora_origen(row["t"])
         except Exception:
             continue
         v = None
@@ -959,7 +1052,7 @@ def _series_filesystem_nodo(rows, mount, campo):
     out = []
     for row in rows:
         try:
-            t = int(datetime.fromisoformat(row["t"]).timestamp())
+            t = _epoch_hora_origen(row["t"])
         except Exception:
             continue
         v = None
@@ -1011,6 +1104,7 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
             log_cb(f"[episodios] ERROR parseando {path}: {e}")
 
     nodes = build_dataset(all_samples) if all_samples else {}
+    ventanas_captura = _detectar_ventanas_captura(nodes) if nodes else []
     events = detect_anomalias(nodes) if nodes else []
     episodios = build_episodios(events) if events else []
     proc_rankings = build_proc_rankings(all_proc_rank) if all_proc_rank else {}
@@ -1018,6 +1112,13 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
     timeline = build_timeline(episodios)
 
     tipos_nic = nic_types(all_samples)
+    nic_names_by_type = {
+        tipo: sorted({
+            n.get("name") for muestra in all_samples for n in muestra.get("nics", [])
+            if n.get("type") == tipo and n.get("name")
+        })
+        for tipo in tipos_nic
+    }
 
     # Union global de nombres de device/punto de montaje vistos en
     # CUALQUIER nodo -- alimenta el selector del panel "Dispositivos"/
@@ -1075,7 +1176,8 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
     for node, rows in nodes.items():
         series_por_nodo[node] = {
             "cpu_pct": _series_puntos_nodo(rows, campo_sys="cpu"),
-            "memfree_mb": _series_puntos_nodo(rows, campo_sys="memfree_mb"),
+            "memfree_gib": _a_gib(_series_puntos_nodo(rows, campo_sys="memfree_mb")),
+            "mcache_gib": _a_gib(_series_puntos_nodo(rows, campo_sys="mcache_mb")),
             "swapfree_mb": _series_puntos_nodo(rows, campo_sys="swapfree_mb"),
             "cpuq": _series_puntos_nodo(rows, campo_sys="cpuq"),
             "interconnect_latency_ms": _series_puntos_nodo(rows, campo_nic="latency_ms_max", tipo_nic="PRIVATE"),
@@ -1084,9 +1186,10 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
         kbps, discards, link_errors = [], [], []
         ip_reasfail, udp_rcverr = [], []
         prev_proto = None
+        prev_proto_t = None
         for row in rows:
             try:
-                t = int(datetime.fromisoformat(row["t"]).timestamp())
+                t = _epoch_hora_origen(row["t"])
             except Exception:
                 continue
             priv = (row.get("nics_by_type") or {}).get("PRIVATE")
@@ -1100,11 +1203,18 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
                 discards.append({"t": t, "v": priv["indiscarded"] + priv["outdiscarded"]})
                 link_errors.append({"t": t, "v": priv["errsin"] + priv["errsout"]})
             pd = row.get("proto_delta")
+            if prev_proto_t is not None and t - prev_proto_t > 60:
+                prev_proto = None
             if pd and prev_proto:
-                ip_reasfail.append({"t": t, "v": max(0, pd["ipreasfail"] - prev_proto["ipreasfail"])})
-                udp_rcverr.append({"t": t, "v": max(0, pd["udprcverr"] - prev_proto["udprcverr"])})
+                ip_delta = pd["ipreasfail"] - prev_proto["ipreasfail"]
+                udp_delta = pd["udprcverr"] - prev_proto["udprcverr"]
+                if ip_delta >= 0:
+                    ip_reasfail.append({"t": t, "v": ip_delta})
+                if udp_delta >= 0:
+                    udp_rcverr.append({"t": t, "v": udp_delta})
             if pd:
                 prev_proto = pd
+                prev_proto_t = t
 
         series_por_nodo[node]["interconnect_kbps"] = kbps
         series_por_nodo[node]["interconnect_nic_discards"] = discards
@@ -1170,6 +1280,12 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
                     rows, mount, campo,
                 )
 
+    # Cortar visualmente periodos sin captura en TODAS las series. Se hace
+    # al final para cubrir sistema, NIC, dispositivos y filesystems por igual.
+    for datos_nodo in series_por_nodo.values():
+        for clave, puntos in datos_nodo.items():
+            datos_nodo[clave] = _insertar_huecos(puntos)
+
     # series_max: valor maximo real visto en CUALQUIER nodo para cada
     # serie -- a diferencia de series_relevantes (core/dashboard_engine.py,
     # "¿esta serie tiene al menos 1 punto?"), esto responde "¿ese punto
@@ -1185,7 +1301,10 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
         for clave, puntos in datos_nodo.items():
             if not puntos:
                 continue
-            pico = max(p["v"] for p in puntos)
+            valores = [p["v"] for p in puntos if p["v"] is not None]
+            if not valores:
+                continue
+            pico = max(valores)
             if clave not in series_max or pico > series_max[clave]:
                 series_max[clave] = pico
 
@@ -1195,6 +1314,7 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
     return {
         "node_list": sorted(nodes.keys()),
         "nic_types": tipos_nic,
+        "nic_names_by_type": nic_names_by_type,
         "episodios": episodios,
         # Eventos discretos (uno por muestra que disparo una regla, antes
         # de agrupar en episodios) -- se exponen tal cual para que
@@ -1207,6 +1327,7 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
         "oclumon_diagnostics": diagnostics,
         "series_por_nodo": series_por_nodo,
         "series_max": series_max,
+        "ventanas_captura": ventanas_captura,
         # Union global de nombres de device/filesystem -- alimenta los
         # selectores del panel OCLUMON "Dispositivos"/"Filesystems" (ver
         # templates/dashboard.html, seccion sec-oclumon). device_names ya

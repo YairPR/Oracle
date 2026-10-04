@@ -7,10 +7,12 @@
 
 export type Severidad = "critical" | "warning" | "info";
 
-export interface PuntoSerie {
+export interface PuntoSerieObjeto {
   t: number; // epoch segundos
-  v: number;
+  v: number | null; // null separa ventanas sin muestras
+  lt?: boolean;
 }
+export type PuntoSerie = PuntoSerieObjeto | [number, number | null, number?];
 
 export interface SeriesPorNodo {
   [nodo: string]: {
@@ -106,11 +108,13 @@ export interface Payload {
   motor_episodios: {
     node_list: string[];
     nic_types: string[];
+    nic_names_by_type: Record<string, string[]>;
     series_por_nodo: SeriesPorNodo;
     series_max: Record<string, number>;
     device_names: string[];
     device_names_vistos_total: number;
     filesystem_mounts: string[];
+    ventanas_captura: { inicio: string; fin: string; muestras: number }[];
     nodos_sar: string[];
     proc_rankings: Record<string, ProcRankingsNodo>;
     alert_events: { t: string; node: string | null; sev: Severidad; label: string }[];
@@ -126,7 +130,13 @@ export interface Payload {
   };
   informe: InformeCompleto;
   veredicto: { texto: string | null; estado_salud: { estado: string; motivos: string[] } | null };
-  resumen: { total_eventos: number; fuentes: Record<string, number>; rango_tiempo: (string | null)[] };
+  resumen: {
+    total_eventos: number;
+    fuentes: Record<string, number>;
+    rango_tiempo: (string | null)[];
+    tabla_truncada: boolean;
+    limite_tabla: number;
+  };
   series_cpu: PuntoSerie[];
   series_aas: PuntoSerie[];
   // *** HITO "rediseno AWR + tabs + LogRouter acotado" (2026-10-02) ***

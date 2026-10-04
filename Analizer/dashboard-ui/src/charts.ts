@@ -56,6 +56,7 @@ function aFechaLegible(epochSeg: number): string {
   const d = new Date(epochSeg * 1000);
   return d.toLocaleString("es-ES", {
     day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    timeZone: "UTC",
   });
 }
 
@@ -88,20 +89,20 @@ function baseOption(titulo: string | null) {
         let html = `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:${INK_PRIMARY}">${escapeHtml(t)}</div>`;
         for (const p of params) {
           if (p.value == null || p.value[1] == null) continue;
-          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(String(p.value[1]))}</b></div>`;
+          const valor = p.value[2] ? `<${p.value[1]}` : String(p.value[1]);
+          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(valor)}</b></div>`;
         }
         return html;
       },
     },
-    // zoomOnMouseWheel:false + moveOnMouseWheel:true -- la rueda del mouse
-    // sobre un grafico desplaza la pagina normalmente (scroll), NO hace
-    // zoom; el zoom temporal queda disponible arrastrando el slider o con
-    // gesto de pellizco (trackpad) -- corrige el "secuestro" de scroll
-    // reportado en la auditoria externa (sec. 3.2). Slider 14->20px para
-    // evitar colision de etiquetas (mismo informe, misma seccion).
+    // El rango temporal se controla exclusivamente desde la barra global.
+    // No se muestra slider por gráfico y ningún gesto de rueda/arrastre
+    // modifica el dominio: la rueda queda siempre libre para la página.
     dataZoom: [
-      { type: "inside", zoomOnMouseWheel: false, moveOnMouseWheel: true, moveOnMouseMove: true },
-      { type: "slider", height: 20, bottom: 4, fillerColor: "rgba(57,135,229,0.12)", borderColor: BORDE, handleStyle: { color: INK_MUTED } },
+      {
+        type: "inside", zoomOnMouseWheel: false, moveOnMouseWheel: false,
+        moveOnMouseMove: false, preventDefaultMouseMove: false,
+      },
     ],
     // formatter por granularidad (nativo de ECharts, en vez de calcular
     // espaciado de ticks a mano): a nivel dia/mes muestra "DD/MM", a nivel
@@ -113,16 +114,7 @@ function baseOption(titulo: string | null) {
       axisLabel: {
         fontSize: 10,
         color: INK_MUTED,
-        formatter: {
-          year: "{yyyy}",
-          month: "{d}/{M}",
-          day: "{d}/{M}",
-          hour: "{d}/{M}\n{HH}:{mm}",
-          minute: "{d}/{M}\n{HH}:{mm}",
-          second: "{HH}:{mm}:{ss}",
-          millisecond: "{HH}:{mm}:{ss}",
-          none: "{d}/{M} {HH}:{mm}",
-        },
+        formatter: (valor: number) => aFechaLegible(valor / 1000).replace(", ", "\n"),
       },
       axisLine: { lineStyle: { color: GRIDLINE } },
       splitLine: { show: false },
@@ -142,9 +134,11 @@ function tituloConUnidad(title: string | undefined, unit: string | undefined): s
   return unit ? `${title} (${unit})` : title;
 }
 
-function puntosADataset(puntos: PuntoSerie[] | null | undefined): number[][] {
+function puntosADataset(puntos: PuntoSerie[] | null | undefined): (number | null)[][] {
   if (!puntos) return [];
-  return puntos.map((p) => [p.t * 1000, p.v]);
+  return puntos.map((p) => Array.isArray(p)
+    ? [p[0] * 1000, p[1], p[2] || 0]
+    : [p.t * 1000, p.v, p.lt ? 1 : 0]);
 }
 
 /** Un nodo, 1+ series de metrica superpuestas (p.ej. interconnect_latency_ms
@@ -195,7 +189,8 @@ export function renderSerieChart(
  * nodo (ver colors.ts), la vista "CPU y cola de ejecucion" / "Errores UDP"
  * / "Latencia de disco" de la maqueta del usuario. */
 export function renderSerieMultiNodo(
-  el: HTMLElement, payload: Payload, spec: { serie: string; nodos: string[]; title?: string; unit?: string },
+  el: HTMLElement, payload: Payload,
+  spec: { serie: string; nodos: string[]; title?: string; unit?: string; yMin?: number; yMax?: number },
 ): void {
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
   const series = spec.nodos.map((nodo) => {
@@ -221,6 +216,9 @@ export function renderSerieMultiNodo(
     ...baseOption(tituloConUnidad(spec.title, spec.unit)),
     series,
   });
+  if (spec.yMin !== undefined || spec.yMax !== undefined) {
+    chart.setOption({ yAxis: { min: spec.yMin, max: spec.yMax } });
+  }
   (window as any).__odlCharts = (window as any).__odlCharts || [];
   (window as any).__odlCharts.push(chart);
 }
@@ -518,22 +516,42 @@ export function reflowCharts(): void {
   const charts = (window as any).__odlCharts as any[] | undefined;
   if (!charts) return;
   for (const c of charts) {
-    try { c.resize(); } catch { /* panel oculto/desmontado -- se ignora */ }
+    try {
+      const dom = c.getDom?.() as HTMLElement | undefined;
+      if (dom?.offsetParent !== null) c.resize();
+    } catch { /* panel desmontado -- se ignora */ }
   }
 }
 
-/**
- * Sincroniza dataZoom + crosshair/tooltip (axisPointer) entre TODOS los
- * charts montados -- "linea de tiempo maestra": arrastrar el slider o
- * pasar el mouse sobre cualquier grafico mueve/resalta el mismo instante
- * en todos los demas (pedido explicito del usuario, mejora de UX de mayor
- * impacto visible segun la auditoria externa, sec. 3.2/4). Se llama UNA
- * sola vez al final de main(), despues de montar todos los charts -- si
- * se llama antes de que existan, echarts.connect no tiene nada que
- * conectar todavia.
- */
-export function conectarCharts(): void {
+/** Aplica la misma ventana a todos los charts cuyo eje X es temporal.
+ * Los gráficos categóricos de AWR quedan intactos: sus barras representan
+ * snapshots discretos y no aceptan startValue/endValue en epoch. */
+export function aplicarRangoTemporalCharts(
+  desdeMs: number, hastaMs: number,
+): void {
   const charts = (window as any).__odlCharts as any[] | undefined;
-  if (!charts || charts.length < 2) return; // nada que sincronizar con 0-1 grafico
-  echarts.connect(charts);
+  if (!charts) return;
+  for (const chart of charts) {
+    try {
+      const opcion = chart.getOption();
+      const eje = opcion?.xAxis?.[0];
+      if (eje?.type === "time") {
+        chart.dispatchAction({ type: "dataZoom", startValue: desdeMs, endValue: hastaMs });
+        chart.setOption({ xAxis: { min: desdeMs, max: hastaMs } });
+        const hayDatos = (opcion.series || []).some((serie: any) =>
+          (serie.data || []).some((punto: any) => {
+            const t = Array.isArray(punto) ? Number(punto[0]) : Number(punto?.value?.[0]);
+            return Number.isFinite(t) && t >= desdeMs && t <= hastaMs;
+          })
+        );
+        chart.setOption({
+          graphic: [{
+            id: "odl-sin-datos-rango", type: "text", left: "center", top: "middle",
+            invisible: hayDatos,
+            style: { text: "Sin datos en este intervalo", fill: INK_SECONDARY, fontSize: 12 },
+          }],
+        });
+      }
+    } catch { /* una instancia desmontada no debe romper el filtro global */ }
+  }
 }

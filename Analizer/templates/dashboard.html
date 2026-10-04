@@ -18,11 +18,38 @@
 
 <div class="odl-topbar">
   <div>
-    <h1 class="odl-title">{{ payload.caso }}</h1>
-    <div class="odl-subtitle">RAC · Análisis de incidente · {{ payload.resumen.rango_tiempo[0] | fecha_hora }} — {{ payload.resumen.rango_tiempo[1] | hora }}</div>
+    {% set cab_host = payload.infraestructura[0] if payload.infraestructura else {} %}
+    <h1 class="odl-title">{{ payload.caso }}{% if cab_host.release %} · Oracle {{ cab_host.release }}{% endif %}{% if cab_host.rac %} · RAC{% endif %} · {{ payload.motor_episodios.node_list | length }} nodos observados</h1>
+    <div class="odl-subtitle">Métricas del host completo · {{ payload.resumen.rango_tiempo[0] | fecha_hora }} — {{ payload.resumen.rango_tiempo[1] | fecha_hora }}</div>
   </div>
   <div class="odl-tag-generado">Generado {{ payload.generado_en | fecha_hora }}</div>
 </div>
+
+<section class="odl-timebar" aria-labelledby="odl-rango-titulo">
+  <div class="odl-timebar-heading">
+    <strong id="odl-rango-titulo">Ventana de análisis</strong>
+    <span class="odl-timezone">Zona horaria: no declarada por la fuente; se conserva la hora local del archivo.</span>
+    <span id="odl-rango-estado" class="odl-panel-note" aria-live="polite"></span>
+  </div>
+  <div class="odl-timebar-controls">
+    <label>Captura
+      <select id="odl-rango-captura" class="odl-filter-input" aria-label="Ventana de captura">
+        <option value="">Todo</option>
+        {% for ventana in payload.motor_episodios.ventanas_captura %}
+        <option value="{{ loop.index0 }}">{{ ventana.inicio | fecha_hora }} — {{ ventana.fin | hora }} · {{ ventana.muestras }} muestras</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Desde
+      <input id="odl-rango-desde" class="odl-filter-input" type="datetime-local" step="1">
+    </label>
+    <label>Hasta
+      <input id="odl-rango-hasta" class="odl-filter-input" type="datetime-local" step="1">
+    </label>
+    <button id="odl-rango-aplicar" class="odl-filter-btn" type="button">Aplicar</button>
+    <button id="odl-rango-restaurar" class="odl-filter-btn" type="button">Restablecer</button>
+  </div>
+</section>
 
 {# Cabecera de infraestructura (Hito "rediseno AWR", 2026-10-02, pedido
    del audit externo): hosts/cores/RAM/version de BD, ahora que el modelo
@@ -31,29 +58,23 @@
    la ficha de KPIs del motor narrativo, retirada de la UI, nunca se
    borraron del CSS) en vez de inventar un componente nuevo. #}
 {% if payload.infraestructura %}
-<div class="odl-kpi-row">
+<div class="odl-host-strip">
   {% for host in payload.infraestructura %}
-  <div class="odl-kpi">
-    <div class="odl-kpi-label">{{ m.icono(iconos, "nav_cpu_mem") }}{{ host.host or "host desconocido" }}</div>
-    <div class="odl-kpi-value">{{ host.db_name or "--" }}{% if host.instance_name %} / {{ host.instance_name }}{% endif %}</div>
-    <div class="odl-kpi-sub">
-      {% if host.release %}Oracle {{ host.release }}{% endif %}{% if host.rac %} · RAC {{ host.rac }}{% endif %}
-      {% if host.cores %} · {{ host.cores | int }} cores{% endif %}{% if host.sockets %} ({{ host.sockets | int }} socket{{ "s" if host.sockets != 1 }}){% endif %}
-      {% if host.mem_gb %} · {{ host.mem_gb | round(1) }} GB RAM{% endif %}
-    </div>
+  <div class="odl-host-item">
+    {{ m.icono(iconos, "node_down") }}
+    <strong>{{ host.host or "host desconocido" }}</strong>
+    {% if host.instance_name %}<span>{{ host.instance_name }}</span>{% endif %}
+    {% if host.cores %}<span>{{ host.cores | int }} CPU</span>{% endif %}
+    {% if host.mem_gb %}<span>{{ host.mem_gb | round(1) }} GiB</span>{% endif %}
   </div>
   {% endfor %}
 </div>
 {% endif %}
 
-<section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
+  <section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
   {% set rel = payload.informe.presentacion.series_relevantes %}
   {% set me = payload.motor_episodios %}
   <div class="odl-panel">
-    <div class="odl-panel-header">
-      <div class="odl-panel-title">{{ m.icono(iconos, "nav_cpu_mem") }}OCLUMON -- telemetría de sistema y red</div>
-      <div class="odl-panel-note">{{ me.node_list | length }} nodo(s) · comparación con color estable por nodo</div>
-    </div>
 
     {# ---- Sistema ------------------------------------------------- #}
     <div class="odl-subsection-title">{{ m.icono(iconos, "cpu_saturation") }}Sistema</div>
@@ -69,8 +90,9 @@
          un solo chart de Trafico total Rx/Tx con area sombreada, uno por
          nodo -- ver bloque mas abajo. #}
     {% set sistema_series = [
-      ("cpu_pct", "CPU", "%"), ("cpuq", "Cola de CPU", "procesos en cola"),
-      ("memfree_mb", "Memoria libre", "MB"), ("swapfree_mb", "Swap libre", "MB"),
+      ("cpu_pct", "Utilización de CPU", "%"), ("cpuq", "Procesos en espera de CPU", "procesos"),
+      ("memfree_gib", "Memoria física libre", "GiB"), ("mcache_gib", "Buffers y caché", "GiB"),
+      ("swapfree_mb", "Swap libre", "MB"),
       ("procs", "Procesos activos", "procesos"),
     ] %}
     {% set sistema_series_condicionales = [
@@ -82,7 +104,7 @@
       {% for clave, titulo, unidad in sistema_series %}
         {% if rel.get(clave) %}
           {% set ns_sistema.alguno = true %}
-          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad}) }}
+          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad, "yMin": 0, "yMax": 100} if clave == "cpu_pct" else {"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad}) }}
         {% endif %}
       {% endfor %}
       {% for clave, titulo, unidad in sistema_series_condicionales %}
@@ -103,16 +125,19 @@
     {% endif %}
 
     {# ---- Red (NICs) ------------------------------------------------ #}
-    <div class="odl-subsection-title">{{ m.icono(iconos, "interconnect") }}Red (NICs)</div>
+    <div class="odl-subsection-title">{{ m.icono(iconos, "interconnect") }}Interconexión RAC y redes del host</div>
     {% set nic_metricas = [
-      ("latency_ms", "Latencia", "ms"), ("kbps", "Tráfico", "KB/s"),
+      ("latency_ms", "Latencia estimada", "ms"), ("kbps", "Tráfico promedio por interfaz", "KB/s"),
       ("discards", "Descartes", "paquetes/muestra"), ("link_errors", "Errores de enlace", "errores/muestra"),
       ("pktsin", "Paquetes recibidos", "paquetes"), ("pktsout", "Paquetes enviados", "paquetes"),
       ("nicerrors", "nicErrors", "errores"),
     ] %}
     {% set ns_red = namespace(alguno=false) %}
     {% for tipo in me.nic_types %}
-    <div class="odl-panel-note" style="margin:10px 0 6px; font-weight:600; color:var(--color-text)">{{ tipo }}</div>
+    <div class="odl-panel-note" style="margin:10px 0 6px; font-weight:600; color:var(--color-text)">
+      {{ "Interconexión RAC — interfaces privadas" if tipo == "PRIVATE" else tipo }}
+      {% if me.nic_names_by_type.get(tipo) %} · {{ me.nic_names_by_type[tipo] | join(", ") }}{% endif %}
+    </div>
     <div class="panel-grid">
       {% for sufijo, titulo, unidad in nic_metricas %}
         {% set clave = "nic_" ~ tipo ~ "_" ~ sufijo %}
@@ -293,11 +318,11 @@
       <input type="text" id="odl-timeline-buscar" class="odl-filter-input" placeholder="Buscar...">
     </div>
     <table class="odl-table">
-      <thead><tr><th>Hora</th><th>Nodo</th><th>Fuente</th><th>Severidad</th><th>Evento</th></tr></thead>
+      <thead><tr><th>Fecha y hora</th><th>Nodo</th><th>Fuente</th><th>Severidad</th><th>Evento</th></tr></thead>
       <tbody>
       {% for item in linea[:300] %}
-        <tr data-sev="{{ item.sev }}" data-node="{{ item.node or '' }}">
-          <td class="odl-mono">{{ item.t | hora }}</td>
+        <tr data-sev="{{ item.sev }}" data-node="{{ item.node or '' }}" data-ts="{{ item.t }}">
+          <td class="odl-mono">{{ item.t | fecha_hora }}</td>
           <td>{{ item.node or "--" }}</td>
           <td>{{ item.source }}</td>
           <td>{{ m.badge_severidad(iconos, item.sev) }}</td>
@@ -471,11 +496,11 @@
     <div id="evidencias-curadas" style="display:none">
       <div class="odl-panel-note" style="margin-bottom:8px">Detalle sin agrupar, una fila por muestra que disparó una regla (antes de agruparse en episodios) -- ver la Línea de tiempo para la versión narrada y agrupada de estos mismos datos.</div>
       <table class="odl-table">
-        <thead><tr><th>Hora</th><th>Nodo</th><th>Fuente</th><th>Código</th><th>Hallazgo</th></tr></thead>
+        <thead><tr><th>Fecha y hora</th><th>Nodo</th><th>Fuente</th><th>Código</th><th>Hallazgo</th></tr></thead>
         <tbody>
         {% for ev in hechos.eventos[:400] %}
-          <tr>
-            <td class="odl-mono">{{ ev.timestamp | hora }}</td>
+          <tr data-ts="{{ ev.timestamp }}" data-node="{{ ev.nodo or '' }}">
+            <td class="odl-mono">{{ ev.timestamp | fecha_hora }}</td>
             <td>{{ ev.nodo or "--" }}</td>
             <td>{{ ev.fuente }}</td>
             <td class="odl-mono">{{ ev.codigo or "--" }}</td>
@@ -498,11 +523,11 @@
     <div id="tabla-cruda" style="display:none">
       <div class="odl-panel-note" style="margin-bottom:8px">Volcado unificado de fact_telemetria_so (OCLUMON/SAR) + fact_awr_snapshots/fact_awr_wait_events aplanadas (ver <code>_sql_eventos_unificados()</code> en analizador.py) -- para auditar lo que el pipeline extrajo, no para lectura diaria.</div>
       <table class="odl-table">
-        <thead><tr><th>Hora</th><th>Nodo</th><th>Fuente</th><th>Métrica/Error</th><th>Valor</th><th>Detalle</th></tr></thead>
+        <thead><tr><th>Fecha y hora</th><th>Nodo</th><th>Fuente</th><th>Métrica/Error</th><th>Valor</th><th>Detalle</th></tr></thead>
         <tbody>
         {% for ev in payload.eventos[:500] %}
-          <tr>
-            <td class="odl-mono">{{ ev.timestamp | hora }}</td>
+          <tr data-ts="{{ ev.timestamp }}" data-node="{{ ev.nodo or '' }}">
+            <td class="odl-mono">{{ ev.timestamp | fecha_hora }}</td>
             <td>{{ ev.nodo or "--" }}</td>
             <td>{{ ev.fuente }}</td>
             <td class="odl-mono">{{ ev.metrica_o_error }}</td>
