@@ -6,13 +6,13 @@ flashdba
 Enterprise Cloud & Data, Under Pressure
 
 Hyperscaler GTM Playbook
- 
+
 Storage for DBAs
- 
+
 Databases in the Cloud
- 
+
 Databases in the Age of AI
- 
+
 About
 awr-parser.sh – Script for parsing Oracle AWR Reports
 The awr-parser.sh script (available here) is a tool for extracting data from Oracle AWR reports in order that it can be plotted in graphical form. The input is a set of AWR reports in TEXT format and the output is a CSV file. Once the CSV is generated, software such as Microsoft Excel can be used to create graphs like this:
@@ -588,7 +588,7 @@ February 27, 2024 at 1:09 pm
 I’m afraid not… I never tried. But I would imagine it would be quicker to start from scratch or look for someone else who has already done it than to try and amend these (very old) AWR parsing scripts.
 
 Reply
-Leave a comment 
+Leave a comment
 This site uses Akismet to reduce spam. Learn how your comment data is processed.
 
 Blog at WordPress.com.

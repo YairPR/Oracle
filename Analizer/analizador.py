@@ -57,7 +57,7 @@ import sys
 import time
 import argparse
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import duckdb
 
@@ -342,10 +342,10 @@ def ejecutar_motor_episodios(oclumon_paths: list, log_cb=print) -> dict:
     ya tiene su propio manejo de excepciones por archivo, ver su
     docstring), se captura aca como ultima red de seguridad."""
     vacio = {
-        "node_list": [], "nic_types": [], "episodios": [], "eventos_discretos": [],
+        "node_list": [], "nic_types": [], "nic_names_by_type": {}, "episodios": [], "eventos_discretos": [],
         "linea_tiempo": [], "proc_rankings": {}, "oclumon_diagnostics": [],
         "series_por_nodo": {}, "series_max": {}, "device_names": [],
-        "device_names_vistos_total": 0, "filesystem_mounts": [],
+        "device_names_vistos_total": 0, "filesystem_mounts": [], "ventanas_captura": [],
     }
     if not oclumon_paths:
         log_cb("[episodios] sin archivos oclumon en este caso -- "
@@ -367,6 +367,8 @@ def _epoch_seg(dt) -> int:
     """datetime -> segundos epoch (int), formato que espera el eje de
     tiempo de uPlot. Nunca lanza -- si dt no es un datetime real, se
     omite el punto en el llamador (ver _serie_puntos)."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
     return int(dt.timestamp())
 
 
@@ -488,6 +490,24 @@ def _serie_puntos(filas):
         puntos.append({"t": t, "v": valor})
     puntos.sort(key=lambda p: p["t"])
     return puntos
+
+
+def _compactar_series_frontend(resultado_episodios: dict) -> None:
+    """Convierte {t,v,lt} a arrays compactos después del análisis.
+
+    El HTML offline puede contener millones de puntos; repetir las claves
+    JSON `t` y `v` en cada uno consumía decenas de MB. Las capas Python ya
+    terminaron sus cálculos cuando se llama esta función, por lo que el
+    contrato compacto queda limitado a la frontera del frontend.
+    """
+    for series in (resultado_episodios.get("series_por_nodo") or {}).values():
+        for nombre, puntos in list(series.items()):
+            if not puntos:
+                continue
+            series[nombre] = [
+                [p["t"], p.get("v"), 1] if p.get("lt") else [p["t"], p.get("v")]
+                for p in puntos
+            ]
 
 
 def construir_payload(db_path: str, veredicto_ia: dict, carpeta_caso: str,
@@ -716,10 +736,11 @@ def construir_payload(db_path: str, veredicto_ia: dict, carpeta_caso: str,
 
     if resultado_episodios is None:
         resultado_episodios = {
-            "node_list": [], "nic_types": [], "episodios": [], "eventos_discretos": [],
+            "node_list": [], "nic_types": [], "nic_names_by_type": {}, "episodios": [], "eventos_discretos": [],
             "linea_tiempo": [], "proc_rankings": {}, "oclumon_diagnostics": [],
             "series_por_nodo": {}, "series_max": {}, "device_names": [],
             "device_names_vistos_total": 0, "filesystem_mounts": [],
+            "ventanas_captura": [],
         }
     # Series de SAR (Hito "Sistema Operativo (SAR)", 2026-10-02) -- se
     # inyectan ANTES de cerrar `con` (las lee directo de fact_telemetria_so)
@@ -743,6 +764,7 @@ def construir_payload(db_path: str, veredicto_ia: dict, carpeta_caso: str,
         estado_salud=veredicto_ia.get("estado_salud"),
         cobertura_por_fuente=cobertura_por_fuente,
     )
+    _compactar_series_frontend(resultado_episodios)
 
     return {
         "generado_en": datetime.now().isoformat(timespec="seconds"),

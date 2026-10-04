@@ -10,7 +10,9 @@ function valorInput(iso: string | null | undefined): string {
 
 function epochMs(valor: string): number | null {
   if (!valor) return null;
-  const ms = new Date(valor).getTime();
+  const partes = valor.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!partes) return null;
+  const ms = Date.UTC(+partes[1], +partes[2] - 1, +partes[3], +partes[4], +partes[5], +(partes[6] || 0));
   return Number.isFinite(ms) ? ms : null;
 }
 
@@ -32,10 +34,11 @@ export function inicializarRangoTemporal(payload: Payload): void {
   const hastaInput = document.getElementById("odl-rango-hasta") as HTMLInputElement | null;
   const aplicar = document.getElementById("odl-rango-aplicar") as HTMLButtonElement | null;
   const restaurar = document.getElementById("odl-rango-restaurar") as HTMLButtonElement | null;
+  const capturaInput = document.getElementById("odl-rango-captura") as HTMLSelectElement | null;
   const nodosInput = document.getElementById("odl-rango-nodos") as HTMLSelectElement | null;
   const estado = document.getElementById("odl-rango-estado");
   const [minimo, maximo] = payload.resumen.rango_tiempo || [];
-  if (!desdeInput || !hastaInput || !aplicar || !restaurar || !nodosInput || !minimo || !maximo) return;
+  if (!desdeInput || !hastaInput || !aplicar || !restaurar || !capturaInput || !nodosInput || !minimo || !maximo) return;
 
   const nodosDisponibles = Array.from(nodosInput.options).map((opcion) => opcion.value);
 
@@ -46,6 +49,7 @@ export function inicializarRangoTemporal(payload: Payload): void {
     desdeInput.max = valorInput(maximo);
     hastaInput.min = valorInput(minimo);
     hastaInput.max = valorInput(maximo);
+    capturaInput.value = "";
     for (const opcion of Array.from(nodosInput.options)) opcion.selected = true;
   };
 
@@ -68,6 +72,18 @@ export function inicializarRangoTemporal(payload: Payload): void {
 
   reiniciarInputs();
   aplicar.addEventListener("click", ejecutar);
+  capturaInput.addEventListener("change", () => {
+    if (capturaInput.value === "") {
+      desdeInput.value = valorInput(minimo);
+      hastaInput.value = valorInput(maximo);
+      return;
+    }
+    const ventana = payload.motor_episodios.ventanas_captura[Number(capturaInput.value)];
+    if (ventana) {
+      desdeInput.value = valorInput(ventana.inicio);
+      hastaInput.value = valorInput(ventana.fin);
+    }
+  });
   restaurar.addEventListener("click", () => {
     reiniciarInputs();
     ejecutar();

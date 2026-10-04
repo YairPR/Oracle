@@ -28,6 +28,8 @@ interface ChartSpec {
   serie?: string;
   title?: string;
   unit?: string;
+  yMin?: number;
+  yMax?: number;
   fuente?: "series_cpu" | "series_aas";
   fuentes?: string[];
   clave?: string;
@@ -50,7 +52,7 @@ function montarChart(el: HTMLElement, payload: Payload): void {
     } else if (spec.kind === "multi-nodo" && spec.serie) {
       renderSerieMultiNodo(el, payload, {
         serie: spec.serie, nodos: spec.nodos || payload.motor_episodios.node_list,
-        title: spec.title, unit: spec.unit,
+        title: spec.title, unit: spec.unit, yMin: spec.yMin, yMax: spec.yMax,
       });
     } else if (spec.kind === "serie" && spec.node && spec.series) {
       renderSerieChart(el, payload, {

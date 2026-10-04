@@ -1594,7 +1594,7 @@ process_awr_report() {
 			fi
 		fi
 
-		# Calculate total and data write IOPS values 
+		# Calculate total and data write IOPS values
 		TOTAL_IOPS=0
 		DATA_WRITE_IOPS=0
 		if [ -n "$READ_IOPS" ]; then
@@ -1994,7 +1994,7 @@ done
 if [ "$DEBUG" = 1 ]; then
 	VERBOSE=1
 	SILENT=0
-	# Add an field terminator for use with debugging the contents of variables 
+	# Add an field terminator for use with debugging the contents of variables
 	ENDCHAR="|"
 	echodbg "Script called with parameters: $*"
 fi

@@ -56,6 +56,7 @@ function aFechaLegible(epochSeg: number): string {
   const d = new Date(epochSeg * 1000);
   return d.toLocaleString("es-ES", {
     day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    timeZone: "UTC",
   });
 }
 
@@ -88,7 +89,8 @@ function baseOption(titulo: string | null) {
         let html = `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:${INK_PRIMARY}">${escapeHtml(t)}</div>`;
         for (const p of params) {
           if (p.value == null || p.value[1] == null) continue;
-          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(String(p.value[1]))}</b></div>`;
+          const valor = p.value[2] ? `<${p.value[1]}` : String(p.value[1]);
+          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(valor)}</b></div>`;
         }
         return html;
       },
@@ -112,16 +114,7 @@ function baseOption(titulo: string | null) {
       axisLabel: {
         fontSize: 10,
         color: INK_MUTED,
-        formatter: {
-          year: "{yyyy}",
-          month: "{d}/{M}",
-          day: "{d}/{M}",
-          hour: "{d}/{M}\n{HH}:{mm}",
-          minute: "{d}/{M}\n{HH}:{mm}",
-          second: "{HH}:{mm}:{ss}",
-          millisecond: "{HH}:{mm}:{ss}",
-          none: "{d}/{M} {HH}:{mm}",
-        },
+        formatter: (valor: number) => aFechaLegible(valor / 1000).replace(", ", "\n"),
       },
       axisLine: { lineStyle: { color: GRIDLINE } },
       splitLine: { show: false },
@@ -141,9 +134,11 @@ function tituloConUnidad(title: string | undefined, unit: string | undefined): s
   return unit ? `${title} (${unit})` : title;
 }
 
-function puntosADataset(puntos: PuntoSerie[] | null | undefined): number[][] {
+function puntosADataset(puntos: PuntoSerie[] | null | undefined): (number | null)[][] {
   if (!puntos) return [];
-  return puntos.map((p) => [p.t * 1000, p.v]);
+  return puntos.map((p) => Array.isArray(p)
+    ? [p[0] * 1000, p[1], p[2] || 0]
+    : [p.t * 1000, p.v, p.lt ? 1 : 0]);
 }
 
 /** Un nodo, 1+ series de metrica superpuestas (p.ej. interconnect_latency_ms
@@ -194,7 +189,8 @@ export function renderSerieChart(
  * nodo (ver colors.ts), la vista "CPU y cola de ejecucion" / "Errores UDP"
  * / "Latencia de disco" de la maqueta del usuario. */
 export function renderSerieMultiNodo(
-  el: HTMLElement, payload: Payload, spec: { serie: string; nodos: string[]; title?: string; unit?: string },
+  el: HTMLElement, payload: Payload,
+  spec: { serie: string; nodos: string[]; title?: string; unit?: string; yMin?: number; yMax?: number },
 ): void {
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
   const series = spec.nodos.map((nodo) => {
@@ -220,6 +216,9 @@ export function renderSerieMultiNodo(
     ...baseOption(tituloConUnidad(spec.title, spec.unit)),
     series,
   });
+  if (spec.yMin !== undefined || spec.yMax !== undefined) {
+    chart.setOption({ yAxis: { min: spec.yMin, max: spec.yMax } });
+  }
   (window as any).__odlCharts = (window as any).__odlCharts || [];
   (window as any).__odlCharts.push(chart);
 }
@@ -538,6 +537,7 @@ export function aplicarRangoTemporalCharts(
       const eje = opcion?.xAxis?.[0];
       if (eje?.type === "time") {
         chart.dispatchAction({ type: "dataZoom", startValue: desdeMs, endValue: hastaMs });
+        chart.setOption({ xAxis: { min: desdeMs, max: hastaMs } });
         const hayDatos = (opcion.series || []).some((serie: any) =>
           (serie.data || []).some((punto: any) => {
             const t = Array.isArray(punto) ? Number(punto[0]) : Number(punto?.value?.[0]);

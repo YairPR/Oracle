@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import duckdb  # noqa: E402
 
 from analizador import ejecutar_caso_completo  # noqa: E402
+from core.episode_engine import _epoch_hora_origen, _insertar_huecos  # noqa: E402
 
 carpeta = Path(sys.argv[1])
 tmp = Path(tempfile.mkdtemp(prefix="raclab_test_"))
@@ -105,6 +106,23 @@ check("archivos con tiempos parse/insert separados", all(
     {"bytes", "parse_seg", "insert_seg", "segundos", "filas"} <= set(fila)
     for fila in tiempos_archivo
 ), True)
+check("hueco de captura inserta un punto null", _insertar_huecos([
+    {"t": 0, "v": 1.0}, {"t": 5, "v": 2.0}, {"t": 3600, "v": 3.0},
+]), [
+    {"t": 0, "v": 1.0}, {"t": 5, "v": 2.0}, {"t": 10, "v": None},
+    {"t": 3600, "v": 3.0},
+])
+check("ventanas de captura detectadas", len(
+    resultado["resultado_episodios"]["ventanas_captura"]
+), 1)
+check("hora CHM estable en contenedor UTC", _epoch_hora_origen(
+    "2026-09-30T02:35:04"
+), 1790735704)
+primera_serie = next(
+    puntos for series in resultado["resultado_episodios"]["series_por_nodo"].values()
+    for puntos in series.values() if puntos
+)
+check("series compactadas para HTML", isinstance(primera_serie[0], list), True)
 
 c.close()
 shutil.rmtree(tmp, ignore_errors=True)
