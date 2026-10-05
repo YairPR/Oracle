@@ -73,17 +73,13 @@ with sync_playwright() as pw:
             # Collector provenance must not become the database title.
             if all(v == "19c" for v in me["collectors"]):
                 assert "19c" not in page.locator(".odl-title").text_content()
-                assert (
-                    "recolector/Grid: 19c"
-                    in page.locator("#sec-oclumon").text_content()
-                )
         full = page.evaluate("window.__odlTemporalState")
         assert full["from"] < full["to"]
         cap = me["ventanas_captura"][0]
         page.locator("#odl-rango-captura").select_option("0")
         applied = page.evaluate("window.__odlTemporalState")
         date = lambda ms: page.evaluate(
-            "ms=>new Date(ms).toISOString().slice(0,19)", ms
+            "ms=>new Date(ms+(window.__PAYLOAD__.display_clock?.offset_minutes||0)*60000).toISOString().slice(0,19)", ms
         )
 
         def draft(a, b):
@@ -107,27 +103,24 @@ with sync_playwright() as pw:
         assert page.locator("#odl-rango-captura").input_value() == "custom"
         current = page.evaluate("window.__odlTemporalState")
         assert current["from"] == lo
-        # A and B use original-resolution statistics, even when charts are not mounted.
-        page.locator("#odl-analysis > summary").click()
-        page.wait_for_function(
-            "document.getElementById('odl-analysis-output').textContent.includes('muestras')"
-        )
-        assert "muestras" in page.locator("#odl-analysis-output").text_content()
-        page.locator("#odl-analysis-save").click()
-        assert (
-            "referencia fijada" in page.locator("#odl-analysis-output").text_content()
-        )
+        assert page.locator('#odl-analysis').count() == 0
+        assert 'Calidad, fuentes, cobertura' not in page.locator('#sec-oclumon').text_content()
         # Pending input edits cannot alter the applied state during tab/lazy changes.
         draft(date(full["from"]), date(full["to"]))
         page.locator('[data-target="sec-timeline"]').click()
         assert page.evaluate("window.__odlTemporalState") == current
         page.locator('[data-target="sec-oclumon"]').click()
-        page.locator("#odl-analysis > summary").click()
         canvas = page.locator("canvas").first
         canvas.scroll_into_view_if_needed()
         box = canvas.bounding_box()
         before_scroll = page.evaluate("scrollY")
         page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+        page.wait_for_timeout(300)
+        assert page.locator('canvas').first.bounding_box() == box
+        tooltip_count = page.evaluate("""() => [...document.querySelectorAll('.odl-chart-tooltip')].filter(e=>e.textContent.trim() && getComputedStyle(e).visibility!=='hidden' && +getComputedStyle(e).opacity>0).length""")
+        assert tooltip_count == 1, tooltip_count
+        assert page.locator('.odl-chart-tooltip').first.text_content().find('C:\\Users') == -1
+        page.screenshot(path=str(out / f"hover-{zone.replace('/', '-')}.png"))
         page.mouse.wheel(0, 600)
         page.wait_for_function("before=>window.scrollY>before", arg=before_scroll)
         page.evaluate("window.scrollTo(0,0)")
@@ -135,7 +128,9 @@ with sync_playwright() as pw:
         page.screenshot(path=str(out / f"header-{zone.replace('/', '-')}.png"))
         # A source offset is preserved; chosen display is UTC, invariant to browser zone.
         if me.get("time_domains") == ["+0200"]:
-            assert "UTC" in page.locator(".odl-time-help").text_content()
+            assert 'UTC+02:00' in page.locator('.odl-clock-label').text_content()
+            assert page.locator('#odl-rango-desde').input_value().startswith('2026-10-05T10:30')
+            assert page.locator('#odl-rango-hasta').input_value().startswith('2026-10-05T11:30')
             assert "pCPU 9" in page.locator(".odl-host-item").first.text_content()
             assert "cores 18" in page.locator(".odl-host-item").first.text_content()
             assert "vCPU 18" in page.locator(".odl-host-item").first.text_content()

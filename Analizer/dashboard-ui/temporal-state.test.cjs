@@ -16,3 +16,9 @@ console.log("Temporal edge cases OK");
 
 assert.equal(epochMs("2026-10-05T10:30:00+02:00"), epochMs("2026-10-05T08:30:00"));
 assert.equal(epochMs("2026-02-30T10:30:00+02:00"), null);
+
+const clock = require("./dist/temporal-state.cjs");
+const instant = clock.epochMs("2026-10-05T10:30:00+0200");
+assert.equal(clock.isoInput(instant, 120), "2026-10-05T10:30:00");
+assert.equal(clock.inputEpochMs("2026-10-05T10:30:00", 120), instant);
+assert.equal(clock.inputEpochMs("2026-02-30T10:30:00", 120), null);

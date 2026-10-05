@@ -54,7 +54,7 @@ const BORDE = "rgba(255,255,255,0.12)";
 // instantes de dias diferentes podian mostrar la MISMA hora, destruyendo
 // la trazabilidad del incidente. Se agrega dia+mes siempre.
 function aFechaLegible(epochSeg: number): string {
-  const d = new Date(epochSeg * 1000);
+  const d = new Date(epochSeg * 1000 + (window.__PAYLOAD__.display_clock?.offset_minutes || 0) * 60000);
   return d.toLocaleString("es-ES", {
     day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
     timeZone: "UTC",
@@ -78,11 +78,12 @@ function baseOption(titulo: string | null, metric?: string, node?: string) {
     },
     tooltip: {
       trigger: "axis",
+      className: "odl-chart-tooltip",
       confine: true,
       backgroundColor: SURFACE,
       borderColor: BORDE,
       borderWidth: 1,
-      extraCssText: "box-shadow: 0 6px 20px rgba(0,0,0,.5);",
+      extraCssText: "max-width:280px;white-space:normal;font-size:11px;box-shadow:0 6px 20px rgba(0,0,0,.5);",
       formatter: (params: any[]) => {
         if (!params || !params.length) return "";
         // params[0].value[0] ya viene en epoch-ms (puntosADataset multiplica
@@ -90,20 +91,14 @@ function baseOption(titulo: string | null, metric?: string, node?: string) {
         // de ahi la division: sin ella la hora mostrada queda multiplicada por
         // 1000 una segunda vez (bug reportado en la auditoria externa, sec. 3.1).
         const t = aFechaLegible(params[0].value[0] / 1000);
-        const domains=window.__PAYLOAD__.motor_episodios.time_domains || ['unknown'];
-        const zone=domains.length===1 && domains[0]==='unknown'?'zona desconocida':'UTC (offset original conservado)';
-        let html = `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:${INK_PRIMARY}">${escapeHtml(t)}${info?' · '+escapeHtml(zone):''}</div>`;
+        const zone=window.__PAYLOAD__.display_clock?.label || 'zona no declarada';
+        let html = `<div style="font-weight:600;margin-bottom:4px">${escapeHtml(t)} · ${escapeHtml(zone)}</div>`;
         for (const p of params) {
           if (p.value == null || p.value[1] == null) continue;
-          const valor = p.value[2] ? `<${p.value[1]}` : String(p.value[1]);
-          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(node || p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(valor)} ${escapeHtml(info?.unit || '')}</b>${metric?.endsWith('::wait_ms') && p.value[1]>1000000?' · extremo observado, validez pendiente':''}</div>`;
-          if(info) {
-            const me=window.__PAYLOAD__.motor_episodios;
-            const source=me.trace_blocks?.[node || p.seriesName]?.find(r=>r[0]*1000===p.value[0]);
-            if(source) html+=`<div style="font-size:10px">${escapeHtml(me.source_files?.[source[1]] || '')} · bloque línea ${source[2]}</div>`;
-          }
+          const valor = (p.value[2] ? '<' : '') + new Intl.NumberFormat('es-ES', {maximumFractionDigits:3}).format(p.value[1]);
+          html += `<div><span style="color:${p.color}">●</span> ${escapeHtml(node || p.seriesName)}: <b>${escapeHtml(valor)} ${escapeHtml(info?.unit || '')}</b></div>`;
+          if(metric?.endsWith('::wait_ms') && p.value[1]>1000000) html += '<div>Extremo observado; validez pendiente.</div>';
         }
-        if(info) html+=`<div style="font-size:10px;max-width:320px">${escapeHtml(metric || '')} · ${escapeHtml(info.transformation)}<br>Fuente CHM: campo y unidad en contrato; originales y ubicación por entidad en DuckDB.</div>`;
         return html;
       },
     },
@@ -290,7 +285,7 @@ export function renderCronologia(el: HTMLElement, payload: Payload): void {
       backgroundColor: SURFACE,
       borderColor: BORDE,
       borderWidth: 1,
-      extraCssText: "box-shadow: 0 6px 20px rgba(0,0,0,.5);",
+      extraCssText: "max-width:280px;white-space:normal;font-size:11px;box-shadow:0 6px 20px rgba(0,0,0,.5);",
       formatter: (p: any) => {
         if (!p || !p.value) return "";
         const [t, , resumen] = p.value;
@@ -467,11 +462,12 @@ export function renderBarraApiladaDbTime(
     },
     tooltip: {
       trigger: "axis",
+      className: "odl-chart-tooltip",
       confine: true,
       backgroundColor: SURFACE,
       borderColor: BORDE,
       borderWidth: 1,
-      extraCssText: "box-shadow: 0 6px 20px rgba(0,0,0,.5);",
+      extraCssText: "max-width:280px;white-space:normal;font-size:11px;box-shadow:0 6px 20px rgba(0,0,0,.5);",
       formatter: (params: any[]) => {
         if (!params || !params.length) return "";
         let html = `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:${INK_PRIMARY}">${escapeHtml(params[0].axisValue)}</div>`;
@@ -518,13 +514,27 @@ export function reflowCharts(): void {
 
 interface TemporalChart { chart: any; series: any[]; times: number[][]; symbols: boolean[]; names: string[]; applied?: string }
 const temporalCharts: TemporalChart[] = [];
+let cursorFrame: number | undefined;
 export function syncVisibleCursors(): void {
-  for(const {chart} of temporalCharts) {
-    const box=chart.getDom().getBoundingClientRect();
-    chart.group=box.height>0 && box.bottom>0 && box.top<window.innerHeight?'odl-visible-time':'';
-  }
+  for (const {chart} of temporalCharts) chart.getDom().querySelector('.odl-shared-cursor')?.remove();
 }
-echarts.connect('odl-visible-time');
+function synchronizeCursor(active: any, value: number): void {
+  if (cursorFrame !== undefined) cancelAnimationFrame(cursorFrame);
+  cursorFrame = requestAnimationFrame(() => {
+    cursorFrame = undefined;
+    syncVisibleCursors();
+    for (const {chart} of temporalCharts) {
+      const dom = chart.getDom() as HTMLElement, box = dom.getBoundingClientRect();
+      if (chart === active || !box.height || box.bottom <= 0 || box.top >= innerHeight) continue;
+      const x = chart.convertToPixel({xAxisIndex:0}, value);
+      if (!Number.isFinite(x) || x < 42 || x > box.width - 16) continue;
+      const line = document.createElement('div');
+      line.className = 'odl-shared-cursor';
+      line.style.left = `${x}px`;
+      dom.appendChild(line);
+    }
+  });
+}
 function registrarChart(chart: any): void {
   (window as any).__odlCharts = (window as any).__odlCharts || [];
   (window as any).__odlCharts.push(chart);
@@ -534,10 +544,19 @@ function registrarChart(chart: any): void {
     const timeOf=(p:any)=>Number(Array.isArray(p)?p[0]:p.value?.[0]);
     const series=(option.series || []).map((s:any)=>[...(s.data || [])].sort((a,b)=>timeOf(a)-timeOf(b)));
     temporalCharts.push({chart,series,names:(option.series || []).map((s:any)=>s.name),symbols:(option.series || []).map((s:any)=>s.showSymbol),times:series.map((points:any[])=>points.map(p=>Number(Array.isArray(p)?p[0]:p.value?.[0])))});
-    syncVisibleCursors();
+    chart.on('updateAxisPointer', (event: any) => {
+      const axis = event.axesInfo?.find((a: any) => a.axisDim === 'x');
+      if (axis && Number.isFinite(axis.value)) synchronizeCursor(chart, axis.value);
+    });
+    chart.getZr().on('globalout', () => {
+      if (cursorFrame !== undefined) cancelAnimationFrame(cursorFrame);
+      cursorFrame = undefined;
+      syncVisibleCursors();
+    });
   }
 }
 export function aplicarRangoTemporalCharts(from: number, to: number): void {
+  syncVisibleCursors();
   const axis=axisRange({from,to});
   const key=`${from}:${to}`;
   for (const entry of temporalCharts) {

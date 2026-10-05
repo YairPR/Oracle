@@ -1,6 +1,6 @@
 /** One applied range shared by all tabs; input edits remain a separate draft. */
 import { aplicarRangoTemporalCharts } from "./charts";
-import { epochMs, isoInput, validRange, fitWithin, sameRange, type Range } from "./temporal-state";
+import { epochMs, inputEpochMs, isoInput, validRange, fitWithin, sameRange, type Range } from "./temporal-state";
 import type { Payload, PuntoSerie } from "./types";
 
 export function inicializarRangoTemporal(payload: Payload): void {
@@ -30,7 +30,8 @@ export function inicializarRangoTemporal(payload: Payload): void {
   if (!clocks.size) { add(payload.series_cpu); add(payload.series_aas); }
   const times = Array.from(clocks).sort((a,b)=>a-b);
   const captures = payload.motor_episodios.ventanas_captura.map(c => validRange(epochMs(c.inicio), epochMs(c.fin)));
-  const write = (): void => { from.value=isoInput(applied.from); to.value=isoInput(applied.to); };
+  const offset = payload.display_clock?.offset_minutes || 0;
+  const write = (): void => { from.value=isoInput(applied.from, offset); to.value=isoInput(applied.to, offset); };
   const identify = (): void => {
     const index=captures.findIndex(c=>c && sameRange(c,applied));
     capture.value = scope && sameRange(scope,applied) && index>=0 ? String(index) : sameRange(applied, full) && !scope ? "" : "custom";
@@ -46,11 +47,11 @@ export function inicializarRangoTemporal(payload: Payload): void {
   };
   const apply = (range: Range): void => {
     applied={...range}; write(); identify(); refresh();
-    selected.textContent=`Seleccionado: ${isoInput(applied.from).replace('T',' ')} — ${isoInput(applied.to).replace('T',' ')}${scope?' · Dentro de captura seleccionada':''}`;
+    selected.textContent=`Seleccionado: ${isoInput(applied.from, offset).replace('T',' ')} — ${isoInput(applied.to, offset).replace('T',' ')}${scope?' · Dentro de captura seleccionada':''}`;
     from.removeAttribute("aria-invalid"); to.removeAttribute("aria-invalid");
     note.textContent=fitWithin(times,applied) ? (applied.from===applied.to ? "Una muestra: eje con margen de ±1 segundo." : "") : "Sin muestras en este intervalo.";
   };
-  const draft = (): Range | null => validRange(epochMs(from.value),epochMs(to.value));
+  const draft = (): Range | null => validRange(inputEpochMs(from.value, offset),inputEpochMs(to.value, offset));
   for (const input of [from,to]) input.addEventListener("input", ()=> { note.textContent="Fechas editadas pendientes de Aplicar."; });
   document.getElementById("odl-rango-aplicar")!.addEventListener("click",()=> {
     const range=draft();

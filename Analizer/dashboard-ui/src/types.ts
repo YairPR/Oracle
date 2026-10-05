@@ -106,6 +106,7 @@ export interface ProcRankingsNodo {
 }
 
 export interface Payload {
+  display_clock?: { offset_minutes: number; label: string };
   caso: string;
   generado_en: string;
   motor_episodios: {

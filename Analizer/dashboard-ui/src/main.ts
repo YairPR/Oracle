@@ -16,7 +16,7 @@ import {
 import { inicializarNav } from "./nav";
 import { inicializarSelectorPanel, inicializarExpandirEvidencia, inicializarFiltrosTimeline } from "./filters";
 import type { Payload } from "./types";
-import { initializeAnalysis, initializeProcessSummaries } from "./analysis";
+import { initializeProcessSummaries } from "./analysis";
 import { inicializarRangoTemporal } from "./time-range";
 
 interface ChartSpec {
@@ -123,7 +123,6 @@ function main(): void {
   inicializarExpandirEvidencia();
   inicializarFiltrosTimeline();
   inicializarRangoTemporal(payload);
-  initializeAnalysis(payload);
   initializeProcessSummaries(payload);
   let cursorFrame: number | undefined;
   window.addEventListener('scroll',()=> {

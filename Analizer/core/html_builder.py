@@ -19,7 +19,7 @@ llama con el mismo payload que ya arma construir_payload() (mas
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -290,6 +290,31 @@ def compactar_payload_wire(payload):
     return wire
 
 
+def display_clock(payload: dict) -> dict:
+    """Present a single documented capture offset; keep stored instants unchanged."""
+    motor = payload.get("motor_episodios") or {}
+    domains = motor.get("time_domains") or ["unknown"]
+    if len(domains) == 1 and domains[0] != "unknown" and not payload.get("infraestructura") and not motor.get("nodos_sar"):
+        domain = domains[0].replace(":", "")
+        if len(domain) == 5 and domain[0] in "+-" and domain[1:].isdigit():
+            minutes = (int(domain[1:3]) * 60 + int(domain[3:5])) * (-1 if domain[0] == "-" else 1)
+            if abs(minutes) < 1440 and int(domain[3:5]) < 60:
+                return {"offset_minutes": minutes, "label": f"UTC{domain[:3]}:{domain[3:]} · hora de captura"}
+    return {"offset_minutes": 0, "label": "Hora de captura · zona no declarada" if domains == ["unknown"] else "UTC · referencia común entre fuentes"}
+
+
+def _capture_date(value, offset, pattern):
+    try:
+        dt = datetime.fromisoformat(value)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(timezone(timedelta(minutes=offset)))
+        else:
+            dt += timedelta(minutes=offset)
+        return dt.strftime(pattern)
+    except (ValueError, TypeError):
+        return str(value) if value else "sin dato"
+
+
 def render_dashboard(payload: dict) -> str:
     """Arma el HTML final: lee templates/base.html + templates/dashboard.html
     via Jinja2 (autoescape activado), con el CSS de templates/static/theme.css
@@ -315,9 +340,13 @@ def render_dashboard(payload: dict) -> str:
     # cortar el bloque <script> del JSON embebido a mitad de camino.
     js_inline = js_inline.replace("</script", "<\\/script")
 
+    payload = {**payload, "display_clock": display_clock(payload)}
     payload_json = json.dumps(compactar_payload_wire(payload), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
     env = _crear_entorno()
+    offset = payload["display_clock"]["offset_minutes"]
+    env.filters["fecha_captura"] = lambda value: _capture_date(value, offset, "%d %b %Y, %H:%M:%S")
+    env.filters["hora_captura"] = lambda value: _capture_date(value, offset, "%H:%M:%S")
     template = env.get_template("dashboard.html")
     informe = payload.get("informe") or {
         "diagnostico": {"episodios": [], "estado_global": "OK", "motivos_estado_global": []},

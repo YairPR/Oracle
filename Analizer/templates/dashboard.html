@@ -22,7 +22,8 @@
   <div class="odl-topbar">
     <div>
       <h1 class="odl-title">{{ cab_host.db_name if cab_host.db_name else "Caso " ~ payload.caso }}{% if cab_host.release %} · Oracle {{ cab_host.release }}{% endif %}{% if payload.infraestructura | selectattr('rac', 'in', ['YES', 'Yes', 'yes', 'TRUE', 'true', 'RAC', true]) | list %} · RAC{% endif %} · {{ hosts | length }} nodo{{ 's' if hosts | length != 1 else '' }} observado{{ 's' if hosts | length != 1 else '' }}</h1>
-      <div class="odl-subtitle">Disponible: {{ payload.resumen.rango_tiempo[0] | fecha_hora }} — {{ payload.resumen.rango_tiempo[1] | fecha_hora }}</div>
+      <div class="odl-clock-label">{{ payload.display_clock.label }}</div>
+      <div class="odl-subtitle">Disponible: {{ payload.resumen.rango_tiempo[0] | fecha_captura }} — {{ payload.resumen.rango_tiempo[1] | fecha_captura }}</div>
     </div>
     <details class="odl-report-details"><summary>Detalles del informe</summary>
       <div>Generado {{ payload.generado_en | fecha_hora }}</div>
@@ -51,7 +52,7 @@
       <select id="odl-rango-captura" class="odl-filter-input" aria-label="Ventana de captura">
         <option value="">Todo</option>
         {% for ventana in payload.motor_episodios.ventanas_captura %}
-        <option value="{{ loop.index0 }}" title="{{ ventana.muestras_definicion }}; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}">{{ ventana.inicio | fecha_hora }} — {{ ventana.fin | hora }} · {{ ventana.muestras }} timestamps únicos</option>
+        <option value="{{ loop.index0 }}" title="{{ ventana.muestras_definicion }}; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}">{{ ventana.inicio | fecha_captura }} — {{ ventana.fin | hora_captura }} · {{ ventana.muestras }} timestamps únicos</option>
         {% endfor %}
         <option value="custom" disabled>Personalizado</option>
       </select>
@@ -62,8 +63,8 @@
     <button id="odl-rango-ajustar" class="odl-filter-btn" type="button">Ajustar a datos</button>
     <button id="odl-rango-restaurar" class="odl-filter-btn" type="button">Restablecer</button>
     <details class="odl-time-help"><summary aria-label="Ayuda de fechas y capturas">Ayuda</summary>
-      <div>{% if not payload.motor_episodios.time_domains or payload.motor_episodios.time_domains == ['unknown'] %}Hora original legacy; zona desconocida.{% else %}Eje y fechas del filtro en UTC. Offset original conservado: {{ payload.motor_episodios.time_domains | join(', ') }}. Las fuentes legacy de zona desconocida no se suponen alineadas con UTC.{% endif %}</div>
-      <ul>{% for ventana in payload.motor_episodios.ventanas_captura %}<li>{{ ventana.inicio | fecha_hora }}: {{ ventana.muestras }} timestamps; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endfor %}</ul>
+      <div>{{ payload.display_clock.label }}. Las fechas usan esta misma referencia en filtros y gráficos. Las fuentes sin zona declarada no se alinean por suposición.</div>
+      <ul>{% for ventana in payload.motor_episodios.ventanas_captura %}<li>{{ ventana.inicio | fecha_captura }}: {{ ventana.muestras }} timestamps; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endfor %}</ul>
       <div>Las muestras son timestamps únicos. Consulte cada captura para ver el desglose por nodo.</div>
       <div>Una muestra se dibuja como punto, con margen de ±1 segundo en el eje. Los huecos interiores se conservan.</div>
     </details>
@@ -72,20 +73,7 @@
 </section>
 
   <section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
-  <details class="odl-panel" id="odl-analysis"><summary>Resumen del periodo y comparación A/B</summary>
-    <div class="odl-timebar-controls"><label>Host <select id="odl-analysis-host" class="odl-filter-input"></select></label><label>Métrica / recurso <select id="odl-analysis-metric" class="odl-filter-input"></select></label>
-    <button id="odl-analysis-save" class="odl-filter-btn">Fijar periodo aplicado como A</button><button id="odl-analysis-clear" class="odl-filter-btn">Quitar referencia A</button></div>
-    <p class="odl-panel-note">B sigue el periodo de la cabecera. Fije A, cambie Desde/Hasta y aplique B. Cambios de MTU solo se anotan si los indica el usuario; asociación temporal no demuestra causalidad.</p>
-    <div id="odl-analysis-output"></div>
-  </details>
-  <details class="odl-panel"><summary>Calidad, fuentes, cobertura y contrato de métricas</summary>
-    {% for d in payload.motor_episodios.oclumon_diagnostics %}<p>{{ d.path }} · estado {{ d.processing_status }} · formato detectado por contenido {{ d.formats | join(', ') }} · recolector/Grid: {{ (d.source_metadata | default({})).get("collector_version") or "No documentado" }} · evidencia de procedencia: {{ (d.source_metadata | default({})).get("collector_evidence") or "No disponible" }} · {{ d.accepted }} / {{ d.samples }} bloques aceptados · {{ d.rejected }} rechazados · {{ d.first_clock }} — {{ d.last_clock }}<br>Secciones omitidas: {{ d.omitted_sections }} · Calidad: {{ d.quality_counts }} · Errores: {{ d.errors | length }}</p>{% endfor %}
-    {% for node,c in payload.motor_episodios.coverage.items() %}<p>{{ node }}: {{ c.samples }} muestras, cadencia {{ c.cadence_seconds }} s, {{ c.segments }} tramos. Ausencia no demuestra caída.</p>{% endfor %}
-    <p>Solapamientos: {{ payload.motor_episodios.duplicates.overlapping_blocks }}; conflictos: {{ payload.motor_episodios.duplicates.conflicts | length }} (primera observación retenida). Los campos originales y la trazabilidad por entidad permanecen en DuckDB, tabla oclumon_sources.</p>
-    <p>Las tasas NIC no se vuelven a diferenciar. Los protocolos del host se convierten una sola vez a incrementos válidos, con null en primera muestra, reinicio y hueco. No atribuirlos a PUBLIC/PRIVATE. No sumar bonds, interfaces y loopback como carga independiente.</p>
-    <p>Heurísticas de episodios configuradas por el proyecto; no son límites oficiales de Oracle. Un extremo observado no demuestra corrupción. Memoria libre baja por sí sola no demuestra presión, ni buffer/cache pertenece íntegramente a Oracle.</p>
-  </details>
-  <p class="odl-panel-note">Métricas del host completo · Cobertura OCLUMON: {% for c in payload.motor_episodios.ventanas_captura %}{{ c.inicio | fecha_hora }} — {{ c.fin | fecha_hora }}{% if not loop.last %}; {% endif %}{% else %}sin muestras{% endfor %}.</p>
+  <p class="odl-panel-note">Métricas del host completo · Cobertura OCLUMON: {% for c in payload.motor_episodios.ventanas_captura %}{{ c.inicio | fecha_captura }} — {{ c.fin | fecha_captura }}{% if not loop.last %}; {% endif %}{% else %}sin muestras{% endfor %}.</p>
   {% set rel = payload.informe.presentacion.series_relevantes %}
   {% set me = payload.motor_episodios %}
   <div class="odl-panel">
@@ -317,11 +305,11 @@
       <tbody>
       {% for item in linea[:300] %}
         <tr data-sev="{{ item.sev }}" data-node="{{ item.node or '' }}" data-ts="{{ item.t }}" data-end="{{ item.end or item.t }}">
-          <td class="odl-mono">{{ item.t | fecha_hora }}</td>
+          <td class="odl-mono">{{ item.t | fecha_captura }}</td>
           <td>{{ item.node or "--" }}</td>
           <td>{{ item.source }}</td>
           <td>{{ m.badge_severidad(iconos, item.sev) }}</td>
-          <td>{{ item.label }}{% if item.entity %} · {{ item.entity }}{% endif %}{% if item.peak_time %}<br><span class="odl-panel-note">Inicio {{ item.t }} · Fin {{ item.end }} · Máximo {{ item.peak_value }} a {{ item.peak_time }} · calidad {{ item.quality }} · línea {{ item.peak_line }}</span>{% endif %}{% if item.msg %}<br><span class="odl-panel-note">{{ item.msg }}</span>{% endif %}</td>
+          <td>{{ item.label }}{% if item.entity %} · {{ item.entity }}{% endif %}{% if item.peak_time %}<br><span class="odl-panel-note">Inicio {{ item.t | fecha_captura }} · Fin {{ item.end | fecha_captura }} · Máximo {{ item.peak_value }} a {{ item.peak_time | fecha_captura }} · calidad {{ item.quality }} · línea {{ item.peak_line }}</span>{% endif %}{% if item.msg %}<br><span class="odl-panel-note">{{ item.msg }}</span>{% endif %}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -391,7 +379,7 @@
          distintos, dos snapshots de dias diferentes podian mostrar la
          MISMA hora. Se usa `fecha_hora` (incluye dia+mes) en ambos
          extremos. #}
-      <div class="odl-panel-title">{{ m.icono(iconos, "trend") }}Top Wait Events -- {{ snap.host or "host desconocido" }} ({{ snap.begin_ts | fecha_hora }} -- {{ snap.end_ts | fecha_hora }})</div>
+      <div class="odl-panel-title">{{ m.icono(iconos, "trend") }}Top Wait Events -- {{ snap.host or "host desconocido" }} ({{ snap.begin_ts | fecha_captura }} -- {{ snap.end_ts | fecha_captura }})</div>
     </div>
     <div class="odl-panel-note" style="margin-bottom:8px">
       DB CPU {{ "%.2f" | format(snap.db_cpu_per_sec) if snap.db_cpu_per_sec is not none else "--" }} seg/seg ·
@@ -498,7 +486,7 @@
         <tbody>
         {% for ev in hechos.eventos[:400] %}
           <tr data-ts="{{ ev.timestamp }}" data-node="{{ ev.nodo or '' }}">
-            <td class="odl-mono">{{ ev.timestamp | fecha_hora }}</td>
+            <td class="odl-mono">{{ ev.timestamp | fecha_captura }}</td>
             <td>{{ ev.nodo or "--" }}</td>
             <td>{{ ev.fuente }}</td>
             <td class="odl-mono">{{ ev.codigo or "--" }}</td>
@@ -525,7 +513,7 @@
         <tbody>
         {% for ev in payload.eventos[:500] %}
           <tr data-ts="{{ ev.timestamp }}" data-node="{{ ev.nodo or '' }}">
-            <td class="odl-mono">{{ ev.timestamp | fecha_hora }}</td>
+            <td class="odl-mono">{{ ev.timestamp | fecha_captura }}</td>
             <td>{{ ev.nodo or "--" }}</td>
             <td>{{ ev.fuente }}</td>
             <td class="odl-mono">{{ ev.metrica_o_error }}</td>

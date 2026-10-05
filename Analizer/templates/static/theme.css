@@ -543,3 +543,6 @@ table.odl-table tr:last-child td { border-bottom: 0; }
 
 #odl-analysis select { min-width: 0; width: 100%; }
 .odl-panel p { overflow-wrap: anywhere; }
+
+.chart-box { position: relative; }
+.odl-shared-cursor { position:absolute; top:46px; bottom:38px; border-left:1px dashed #898781; pointer-events:none; z-index:2; }
