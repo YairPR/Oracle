@@ -20,9 +20,10 @@ import {
   DatasetComponent, MarkLineComponent, TitleComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
-import type { Payload, PuntoSerie } from "./types";
+import type { Payload, DatosSerie } from "./types";
 import { colorDeNodo, colorDeSeveridad } from "./colors";
 import { escapeHtml } from "./util";
+import { epochMs, lowerBound, axisRange } from "./temporal-state";
 
 echarts.use([
   LineChart, ScatterChart, CustomChart, BarChart,
@@ -62,6 +63,8 @@ function aFechaLegible(epochSeg: number): string {
 
 function baseOption(titulo: string | null) {
   return {
+    useUTC: true,
+    animation: false,
     title: titulo ? { text: titulo, left: 0, top: 0, textStyle: { fontSize: 11, color: INK_SECONDARY, fontWeight: 400 } } : undefined,
     // bottom:38 (antes 28) -- el formatter de xAxis ahora puede emitir
     // etiquetas de 2 lineas ("DD/MM\nHH:mm", ver axisLabel.formatter mas
@@ -96,14 +99,9 @@ function baseOption(titulo: string | null) {
       },
     },
     // El rango temporal se controla exclusivamente desde la barra global.
-    // No se muestra slider por gráfico y ningún gesto de rueda/arrastre
-    // modifica el dominio: la rueda queda siempre libre para la página.
-    dataZoom: [
-      {
-        type: "inside", zoomOnMouseWheel: false, moveOnMouseWheel: false,
-        moveOnMouseMove: false, preventDefaultMouseMove: false,
-      },
-    ],
+    // No se muestra slider por grÃ¡fico y ningÃºn gesto de rueda/arrastre
+    // modifica el dominio: la rueda queda siempre libre para la pÃ¡gina.
+    dataZoom: [],
     // formatter por granularidad (nativo de ECharts, en vez de calcular
     // espaciado de ticks a mano): a nivel dia/mes muestra "DD/MM", a nivel
     // hora/minuto antepone "DD/MM\n" a la hora -- asi la fecha SIEMPRE es
@@ -127,18 +125,27 @@ function baseOption(titulo: string | null) {
 // proposito -- el nombre de eje de ECharts se posiciona por fuera del
 // grid, en la misma franja vertical que el titulo/leyenda reservados por
 // baseOption(), y con poco margen (franjas de ~45px) terminaba pisando la
-// leyenda. Un titulo "Tráfico interconnect (KB/s)" es ademas mas legible
+// leyenda. Un titulo "TrÃ¡fico interconnect (KB/s)" es ademas mas legible
 // de un vistazo que un eje con una etiqueta de 2 caracteres.
 function tituloConUnidad(title: string | undefined, unit: string | undefined): string | null {
   if (!title) return null;
   return unit ? `${title} (${unit})` : title;
 }
 
-function puntosADataset(puntos: PuntoSerie[] | null | undefined): (number | null)[][] {
+const datasetCache = new WeakMap<object, (number | null)[][]>();
+function puntosADataset(puntos: DatosSerie | null | undefined): (number | null)[][] {
   if (!puntos) return [];
-  return puntos.map((p) => Array.isArray(p)
-    ? [p[0] * 1000, p[1], p[2] || 0]
-    : [p.t * 1000, p.v, p.lt ? 1 : 0]);
+  const cached=datasetCache.get(puntos);
+  if (cached) return cached;
+  let result: (number | null)[][];
+  if (Array.isArray(puntos)) result=puntos.map(p=>Array.isArray(p)?[p[0]*1000,p[1],p[2]||0]:[p.t*1000,p.v,p.lt?1:0]);
+  else {
+    const times=window.__PAYLOAD__.motor_episodios.series_timestamps?.[puntos.clock] || [];
+    const nulls=new Set(puntos.nulls), lt=new Set(puntos.lt);
+    result=times.map((t,i)=>[t*1000, nulls.has(i)?null:(puntos.values?puntos.values[i]:puntos.constant ?? null),lt.has(i)?1:0]);
+  }
+  datasetCache.set(puntos,result);
+  return result;
 }
 
 /** Un nodo, 1+ series de metrica superpuestas (p.ej. interconnect_latency_ms
@@ -154,7 +161,7 @@ export function renderSerieChart(
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
   const datosNodo = payload.motor_episodios.series_por_nodo?.[spec.node] || {};
   const series = spec.series.map((nombreSerie, i) => {
-    const puntos = puntosADataset(datosNodo[nombreSerie] as PuntoSerie[] | undefined);
+    const puntos = puntosADataset(datosNodo[nombreSerie] as DatosSerie | undefined);
     const color = PALETA_METRICA[i % PALETA_METRICA.length];
     return {
       name: spec.nombres?.[i] || nombreSerie,
@@ -181,8 +188,7 @@ export function renderSerieChart(
     ...baseOption(tituloConUnidad(spec.title, spec.unit)),
     series,
   });
-  (window as any).__odlCharts = (window as any).__odlCharts || [];
-  (window as any).__odlCharts.push(chart);
+  registrarChart(chart);
 }
 
 /** Comparacion de la MISMA serie entre varios nodos -- color estable por
@@ -194,7 +200,7 @@ export function renderSerieMultiNodo(
 ): void {
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
   const series = spec.nodos.map((nodo) => {
-    const puntos = puntosADataset(payload.motor_episodios.series_por_nodo?.[nodo]?.[spec.serie] as PuntoSerie[] | undefined);
+    const puntos = puntosADataset(payload.motor_episodios.series_por_nodo?.[nodo]?.[spec.serie] as DatosSerie | undefined);
     const color = colorDeNodo(nodo);
     return {
       name: nodo,
@@ -219,8 +225,7 @@ export function renderSerieMultiNodo(
   if (spec.yMin !== undefined || spec.yMax !== undefined) {
     chart.setOption({ yAxis: { min: spec.yMin, max: spec.yMax } });
   }
-  (window as any).__odlCharts = (window as any).__odlCharts || [];
-  (window as any).__odlCharts.push(chart);
+  registrarChart(chart);
 }
 
 /**
@@ -247,31 +252,12 @@ export function renderCronologia(el: HTMLElement, payload: Payload): void {
   const FILA_OTROS = nodeList.length;
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
 
-  // Cobertura real por nodo: primer/ultimo timestamp visto en los
-  // diagnosticos de oclumon (core/episode_engine.py ya calcula
-  // first_clock/last_clock por archivo) -- se usa el minimo/maximo global
-  // como aproximacion de "donde hay telemetria" (una aproximacion honesta:
-  // no reconstruye huecos INTERNOS de muestreo, que ya se ven en los
-  // graficos de series individuales con connectNulls:false).
-  const diags = payload.motor_episodios.oclumon_diagnostics || [];
-  let coberturaIni: number | null = null;
-  let coberturaFin: number | null = null;
-  for (const d of diags) {
-    if (d.first_clock) {
-      const t = new Date(d.first_clock).getTime();
-      if (coberturaIni === null || t < coberturaIni) coberturaIni = t;
-    }
-    if (d.last_clock) {
-      const t = new Date(d.last_clock).getTime();
-      if (coberturaFin === null || t > coberturaFin) coberturaFin = t;
-    }
-  }
-
+  // Each capture is a separate band; nulls preserve the internal gaps.
   const episodios = payload.informe.diagnostico.episodios;
   const puntos: any[] = [];
   const lineasVerticales: any[] = [];
   for (const ep of episodios) {
-    const tIni = new Date(ep.inicio).getTime();
+    const tIni = (epochMs(ep.inicio) ?? NaN);
     const filaIdx = ep.nodo && nodeList.includes(ep.nodo) ? nodeList.indexOf(ep.nodo) : FILA_OTROS;
     puntos.push({
       value: [tIni, filas[filaIdx], ep.resumen, ep.severidad],
@@ -282,11 +268,13 @@ export function renderCronologia(el: HTMLElement, payload: Payload): void {
     }
   }
 
-  const dataBanda = coberturaIni !== null && coberturaFin !== null
-    ? [[coberturaIni, "Cobertura OCLUMON"], [coberturaFin, "Cobertura OCLUMON"]]
-    : [];
+  const dataBanda = payload.motor_episodios.ventanas_captura.flatMap((c, i) => [
+    ...(i ? [[(epochMs(c.inicio) || 0)-1, null]] : []),
+    [epochMs(c.inicio), "Cobertura OCLUMON"], [epochMs(c.fin), "Cobertura OCLUMON"],
+  ]);
 
   chart.setOption({
+    useUTC: true, animation: false,
     grid: { left: 140, right: 20, top: 10, bottom: 30 },
     tooltip: {
       confine: true,
@@ -300,14 +288,14 @@ export function renderCronologia(el: HTMLElement, payload: Payload): void {
         return `<div style="font-size:11px;max-width:260px;color:${INK_SECONDARY}">${escapeHtml(aFechaLegible(t / 1000))}<br/><b style="color:${INK_PRIMARY}">${escapeHtml(resumen || "")}</b></div>`;
       },
     },
-    xAxis: { type: "time", axisLabel: { fontSize: 10, color: INK_MUTED }, axisLine: { lineStyle: { color: GRIDLINE } }, splitLine: { show: false } },
+    xAxis: { type: "time", axisLabel: { fontSize: 10, color: INK_MUTED, formatter: (ms: number) => aFechaLegible(ms/1000) }, axisLine: { lineStyle: { color: GRIDLINE } }, splitLine: { show: false } },
     yAxis: {
       type: "category",
       data: filas,
       axisLabel: {
         fontSize: 11,
         color: INK_SECONDARY,
-        formatter: (v: string) => (v.length > 18 ? v.slice(0, 17) + "…" : v),
+        formatter: (v: string) => (v.length > 18 ? v.slice(0, 17) + "â€¦" : v),
       },
       axisLine: { lineStyle: { color: GRIDLINE } },
       splitLine: { lineStyle: { color: GRIDLINE } },
@@ -338,8 +326,7 @@ export function renderCronologia(el: HTMLElement, payload: Payload): void {
       },
     ],
   });
-  (window as any).__odlCharts = (window as any).__odlCharts || [];
-  (window as any).__odlCharts.push(chart);
+  registrarChart(chart);
 }
 
 /** Series globales que ya armaba analizador.py desde antes (AWR
@@ -354,7 +341,7 @@ export function renderSerieCruda(
 ): void {
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
   const puntos = spec.fuente === "series_cpu" ? payload.series_cpu : payload.series_aas;
-  const dataset = puntosADataset(puntos as PuntoSerie[] | undefined);
+  const dataset = puntosADataset(puntos as DatosSerie | undefined);
   if (!dataset.length) {
     el.innerHTML = '<div class="odl-empty-state">Sin datos.</div>';
     return;
@@ -372,8 +359,7 @@ export function renderSerieCruda(
       data: dataset,
     }],
   });
-  (window as any).__odlCharts = (window as any).__odlCharts || [];
-  (window as any).__odlCharts.push(chart);
+  registrarChart(chart);
 }
 
 /** Variante de renderSerieCruda para 2+ series globales de la MISMA unidad
@@ -387,7 +373,7 @@ export function renderSerieCrudaMulti(
 ): void {
   const chart = echarts.init(el, undefined, { renderer: "canvas" });
   const series = spec.fuentes.map((fuente, i) => {
-    const dataset = puntosADataset((payload as any)[fuente] as PuntoSerie[] | undefined);
+    const dataset = puntosADataset((payload as any)[fuente] as DatosSerie | undefined);
     const color = PALETA_METRICA[i % PALETA_METRICA.length];
     return {
       name: spec.nombres?.[i] || fuente,
@@ -409,8 +395,7 @@ export function renderSerieCrudaMulti(
     ...baseOption(tituloConUnidad(spec.title, spec.unit)),
     series,
   });
-  (window as any).__odlCharts = (window as any).__odlCharts || [];
-  (window as any).__odlCharts.push(chart);
+  registrarChart(chart);
 }
 
 /**
@@ -508,8 +493,7 @@ export function renderBarraApiladaDbTime(
     },
     series,
   });
-  (window as any).__odlCharts = (window as any).__odlCharts || [];
-  (window as any).__odlCharts.push(chart);
+  registrarChart(chart);
 }
 
 export function reflowCharts(): void {
@@ -523,38 +507,54 @@ export function reflowCharts(): void {
   }
 }
 
-/** Aplica la misma ventana a todos los charts cuyo eje X es temporal.
- * Los gráficos categóricos de AWR quedan intactos: sus barras representan
- * snapshots discretos y no aceptan startValue/endValue en epoch. */
-export function aplicarRangoTemporalCharts(
-  desdeMs: number, hastaMs: number, nodos: string[], seleccionados: Set<string>,
-): void {
-  const charts = (window as any).__odlCharts as any[] | undefined;
-  if (!charts) return;
-  for (const chart of charts) {
-    try {
-      const opcion = chart.getOption();
-      const eje = opcion?.xAxis?.[0];
-      if (eje?.type === "time") {
-        chart.dispatchAction({ type: "dataZoom", startValue: desdeMs, endValue: hastaMs });
-        chart.setOption({ xAxis: { min: desdeMs, max: hastaMs } });
-        const hayDatos = (opcion.series || []).some((serie: any) =>
-          (serie.data || []).some((punto: any) => {
-            const t = Array.isArray(punto) ? Number(punto[0]) : Number(punto?.value?.[0]);
-            return Number.isFinite(t) && t >= desdeMs && t <= hastaMs;
-          })
-        );
-        chart.setOption({
-          graphic: [{
-            id: "odl-sin-datos-rango", type: "text", left: "center", top: "middle",
-            invisible: hayDatos,
-            style: { text: "Sin datos en este intervalo", fill: INK_SECONDARY, fontSize: 12 },
-          }],
-        });
+interface TemporalChart { chart: any; series: any[]; times: number[][]; symbols: boolean[]; names: string[]; applied?: string }
+const temporalCharts: TemporalChart[] = [];
+function registrarChart(chart: any): void {
+  (window as any).__odlCharts = (window as any).__odlCharts || [];
+  (window as any).__odlCharts.push(chart);
+  // Read options once at registration, never on each global filter.
+  const option=chart.getOption();
+  if (option.xAxis?.[0]?.type === "time") {
+    const timeOf=(p:any)=>Number(Array.isArray(p)?p[0]:p.value?.[0]);
+    const series=(option.series || []).map((s:any)=>[...(s.data || [])].sort((a,b)=>timeOf(a)-timeOf(b)));
+    temporalCharts.push({chart,series,names:(option.series || []).map((s:any)=>s.name),symbols:(option.series || []).map((s:any)=>s.showSymbol),times:series.map((points:any[])=>points.map(p=>Number(Array.isArray(p)?p[0]:p.value?.[0])))});
+  }
+}
+export function aplicarRangoTemporalCharts(from: number, to: number): void {
+  const axis=axisRange({from,to});
+  const key=`${from}:${to}`;
+  for (const entry of temporalCharts) {
+    const {chart,series,times,symbols,names}=entry;
+    if (chart.getDom().offsetParent === null || entry.applied === key) continue;
+    let hasData=false;
+    const filtered=series.map((points:any[],i:number)=> {
+      const lo=lowerBound(times[i],from), hi=lowerBound(times[i],to+1);
+      let data=points.slice(lo,hi);
+      if (names[i] === "Cobertura OCLUMON") {
+        // Clip each real capture band, never bridge the null-separated gaps.
+        data=[];
+        let start:number|undefined, end:number|undefined;
+        const flush=():void=> {
+          if (start===undefined || end===undefined) return;
+          const a=Math.max(from,start), b=Math.min(to,end);
+          if (a<=b) {
+            if (data.length) data.push([a-1,null]);
+            data.push([a,"Cobertura OCLUMON"],[b,"Cobertura OCLUMON"]);
+          }
+          start=end=undefined;
+        };
+        for (const point of points) {
+          if (point[1]===null) flush();
+          else { if (start===undefined) start=point[0]; end=point[0]; }
+        }
+        flush();
       }
-      const seleccion: Record<string, boolean> = {};
-      for (const nodo of nodos) seleccion[nodo] = seleccionados.has(nodo);
-      chart.setOption({ legend: { selected: seleccion } });
-    } catch { /* una instancia desmontada no debe romper el filtro global */ }
+      if (data.some(p=>(Array.isArray(p)?p[1]:p.value?.[1]) != null)) hasData=true;
+      return {data,showSymbol:from===to && data.length>0 ? true : symbols[i]};
+    });
+    chart.setOption({xAxis:{min:axis.from,max:axis.to},series:filtered,
+      graphic:[{id:"odl-sin-datos-rango",type:"text",left:"center",top:"middle",invisible:hasData,
+                style:{text:"Sin datos en este intervalo",fill:INK_SECONDARY,fontSize:12}}]});
+    entry.applied=key;
   }
 }

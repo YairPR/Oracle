@@ -44,6 +44,7 @@ import re
 import logging
 from datetime import datetime, timezone
 from statistics import median
+from core.io_profile import TimedText
 
 log = logging.getLogger("rac_forensic_lab.core.episode_engine")
 
@@ -117,6 +118,10 @@ def _detectar_ventanas_captura(nodes):
             "inicio": datetime.fromtimestamp(g[0], timezone.utc).replace(tzinfo=None).isoformat(),
             "fin": datetime.fromtimestamp(g[-1], timezone.utc).replace(tzinfo=None).isoformat(),
             "muestras": len(g),
+            "muestras_definicion": "timestamps únicos (no suma de registros por nodo)",
+            "por_nodo": {node: len({_epoch_hora_origen(row["t"]) for row in rows
+                                    if g[0] <= _epoch_hora_origen(row["t"]) <= g[-1]})
+                         for node, rows in nodes.items()},
         }
         for g in grupos
     ]
@@ -130,12 +135,12 @@ TOKEN_RE = re.compile(r"([#A-Za-z][\w#%]*)\s*:\s*('[^']*'|-?\d+\.\d+|-?\d+|\S+)"
 
 
 def _tokenize(line):
-    out = []
+    out = {}
     for m in TOKEN_RE.finditer(line):
         key, val = m.group(1), m.group(2)
         if len(val) >= 2 and val.startswith("'") and val.endswith("'"):
             val = val[1:-1]
-        out.append((key, val))
+        out[key] = val
     return out
 
 
@@ -265,14 +270,18 @@ def parse_oclumon_file(path):
     diag = _new_diag(path)
     proc_rank = {}
 
-    with open(path, errors="replace") as f:
+    with TimedText(path, diag, encoding="utf-8", errors="replace") as f:
         for lineno, raw in enumerate(f, start=1):
             line = raw.rstrip("\n")
             diag["total_lines"] += 1
             if not line.strip():
                 continue
             try:
-                toks = dict(_tokenize(line))
+                header = SECTION_HEADERS.get(line.partition(":")[0] + ":")
+                if header and cur is not None:
+                    section = header
+                    continue
+                toks = _tokenize(line)
 
                 if "Node" in toks and "Clock" in toks:
                     if cur is not None:
@@ -281,7 +290,8 @@ def parse_oclumon_file(path):
                     clock = _parse_clock(toks["Clock"])
                     cur = {
                         "node": node, "clock": clock, "serial": toks.get("SerialNo"),
-                        "sys": None, "top": None, "nics": [], "proto": None,
+                        "sys": None, "top": None, "nics": [], "proto": None, "telemetria": [],
+                        "source": str(path),
                         "devices": [], "filesystems": [],
                     }
                     section = None
@@ -297,20 +307,21 @@ def parse_oclumon_file(path):
                 if cur is None:
                     continue
 
-                header_hit = False
-                for prefix, sec in SECTION_HEADERS.items():
-                    if line.startswith(prefix):
-                        section = sec
-                        header_hit = True
-                        break
-                if header_hit:
-                    continue
                 if section is None:
                     continue
 
                 if section == "system":
                     diag["sections"]["system"]["lines"] += 1
                     if toks:
+                        for key, metric in [("cpu", "CPU_USAGE_PCT"), ("ior", "IO_READ_RATE_KBPS"),
+                                            ("iow", "IO_WRITE_RATE_KBPS"), ("ios", "IO_OPS_PER_SEC")]:
+                            value = _as_float(toks, key, default=None)
+                            if value is not None:
+                                cur["telemetria"].append((metric, value))
+                        free = _as_float(toks, "swapfree", default=None)
+                        total = _as_float(toks, "swaptotal", default=None)
+                        if free is not None and total is not None:
+                            cur["telemetria"].append(("SWAP_USED_MB", (total - free) / 1024.0))
                         cur["sys"] = {
                             "cpu": _as_float(toks, "cpu"),
                             "cpuq": _as_int(toks, "cpuq"),
@@ -353,7 +364,6 @@ def parse_oclumon_file(path):
                         first_tok = parts[0] if parts else ""
                         name = first_tok.split(":", 1)[0] if first_tok else "?"
                         cur["nics"].append({
-                            "name": line.strip().split(":", 1)[0].split()[0],
                             "name": name, "netrr": _as_float(toks, "netrr"), "netwr": _as_float(toks, "netwr"),
                             "neteff": _as_float(toks, "neteff", default=None) if "neteff" in toks else None,
                             "nicerrors": _as_int(toks, "nicerrors"),
@@ -372,6 +382,10 @@ def parse_oclumon_file(path):
                 elif section == "proto":
                     diag["sections"]["proto"]["lines"] += 1
                     if toks:
+                        for key, metric in [("IPReasFail", "NET_IP_REASM_FAIL"), ("TCPRetraSeg", "NET_TCP_RETRA_SEG")]:
+                            value = _as_float(toks, key, default=None)
+                            if value is not None:
+                                cur["telemetria"].append((metric, value))
                         cur["proto"] = {
                             "iphdrerr": _as_int(toks, "IPHdrErr"), "ipaddrerr": _as_int(toks, "IPAddrErr"),
                             "ipreasfail": _as_int(toks, "IPReasFail"), "ipfragfail": _as_int(toks, "IPFragFail"),
@@ -1073,7 +1087,7 @@ def _series_filesystem_nodo(rows, mount, campo):
     return out
 
 
-def analizar_caso(oclumon_paths, log_cb=lambda s: None):
+def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
     """Orquestacion de punta a punta de este motor: parsea TODOS los
     archivos de oclumon de un caso, detecta anomalias, arma episodios +
     linea de tiempo + ranking de procesos + series de graficos. Nunca
@@ -1095,7 +1109,8 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None):
 
     for path in oclumon_paths:
         try:
-            samples, diag, prank = parse_oclumon_file(path)
+            samples, diag, prank = (normalizados[path] if normalizados is not None
+                                    else parse_oclumon_file(path))
             all_samples.extend(samples)
             diagnostics.append(serialize_diag(diag))
             merge_proc_rank(all_proc_rank, prank)

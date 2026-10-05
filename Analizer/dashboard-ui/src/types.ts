@@ -14,9 +14,12 @@ export interface PuntoSerieObjeto {
 }
 export type PuntoSerie = PuntoSerieObjeto | [number, number | null, number?];
 
+export interface SerieCompacta { clock: string; values?: (number | null)[]; constant?: number; nulls?: number[]; lt?: number[] }
+export type DatosSerie = PuntoSerie[] | SerieCompacta;
+
 export interface SeriesPorNodo {
   [nodo: string]: {
-    [serie: string]: PuntoSerie[] | null;
+    [serie: string]: DatosSerie | null;
   };
 }
 
@@ -110,6 +113,8 @@ export interface Payload {
     nic_types: string[];
     nic_names_by_type: Record<string, string[]>;
     series_por_nodo: SeriesPorNodo;
+    series_timestamps?: Record<string, number[]>;
+    timestamps_muestras?: number[];
     series_max: Record<string, number>;
     device_names: string[];
     device_names_vistos_total: number;

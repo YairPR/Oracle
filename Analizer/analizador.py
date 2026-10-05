@@ -71,6 +71,7 @@ from ai.engine import RootCauseEngine
 from core.episode_engine import analizar_caso as analizar_episodios
 from core.dashboard_engine import construir_informe
 from core.html_builder import render_dashboard
+from core.report_state import runtime_metadata, save_report_state, load_report_state
 
 log = logging.getLogger("rac_forensic_lab.analizador")
 
@@ -103,6 +104,7 @@ def clasificar_carpeta(carpeta: str, router: LogRouter) -> dict:
     IDs tecnicos asignados durante una corrida y, sobre todo, sus pruebas.
     """
     por_tipo = {}
+    router.perfil_archivos = {}
     for root, dirs, files in os.walk(carpeta):
         dirs[:] = sorted(d for d in dirs if d not in _DIRECTORIOS_IGNORADOS and not d.startswith("."))
         for name in sorted(files):
@@ -111,7 +113,9 @@ def clasificar_carpeta(carpeta: str, router: LogRouter) -> dict:
             path = os.path.join(root, name)
             if not os.path.isfile(path) or os.path.islink(path):
                 continue
+            t = time.perf_counter()
             tipo = router.detect_file_type(path)
+            router.perfil_archivos[path] = time.perf_counter() - t
             por_tipo.setdefault(tipo, []).append(path)
     return por_tipo
 
@@ -214,7 +218,11 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
     con_parser = 0
     sin_parser = 0
     tiempos_por_archivo = []
+    normalizados = {}
+    errores_ingesta = []
+    t_storage = time.perf_counter()
     with ForensicStorage(db_path) as storage:
+        preparacion_storage_seg = time.perf_counter() - t_storage
         if storage.filas_eliminadas_al_conectar:
             # Ver nota de idempotencia en core/storage.py -- se reporta
             # tambien por log_cb (no solo por logging.warning) porque es
@@ -238,6 +246,7 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                 continue
             parser = ParserCls()
             for path in paths:
+                perfil_inicio = dict(storage.perfil_acumulado)
                 t_archivo_inicio = time.monotonic()
                 parse_seg = 0.0
                 insert_seg = 0.0
@@ -258,6 +267,8 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                     else:
                         t_parse = time.monotonic()
                         filas = parser.parse(path)
+                        if tipo == LogType.OCLUMON:
+                            normalizados[path] = parser.ultimo_normalizado
                         parse_seg = time.monotonic() - t_parse
                         n = 0
                 except Exception as e:
@@ -265,6 +276,7 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                     # BaseParser.parse) pero esto es la ultima red de
                     # seguridad: un archivo problematico no debe tumbar
                     # el resto del caso.
+                    errores_ingesta.append({"path": path, "error": str(e)})
                     log_cb(f"[{tipo.value}] ERROR inesperado parseando {path}: {e}")
                     continue
                 if filas is not None:
@@ -278,7 +290,16 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                 total_insertadas += n
                 con_parser += 1
                 t_archivo = time.monotonic() - t_archivo_inicio
+                perfil = {key: value - perfil_inicio[key] for key, value in storage.perfil_acumulado.items()}
+                perfil.update({"metodo": (storage.ultimo_perfil.get("metodo", "sin filas") if filas else "sin filas") if tipo != LogType.AWR else "AWR dimensional + UNNEST waits", "lote": 20000,
+                               "filas_seg": n / max(insert_seg, 1e-9)})
+                lectura_seg = getattr(parser, "lectura_perfil", {}).get("lectura_seg", 0.0)
                 tiempos_por_archivo.append({
+                    "lectura_seg": lectura_seg,
+                    "parse_exclusivo_seg": max(0.0, parse_seg - lectura_seg),
+                    "lectura_clasificacion_seg": router.perfil_archivos.get(path, 0.0),
+                    "almacenamiento": perfil,
+                    "bytes_seg": os.path.getsize(path) / max(t_archivo, 1e-9),
                     "path": path, "tipo": tipo.value, "segundos": round(t_archivo, 3),
                     "parse_seg": round(parse_seg, 3), "insert_seg": round(insert_seg, 3),
                     "bytes": os.path.getsize(path) if os.path.isfile(path) else None, "filas": n,
@@ -287,7 +308,7 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                     tabla = "fact_telemetria_so" if tipo != LogType.AWR else "tablas dimensionales de AWR"
                     log_cb(
                         f"[{tipo.value}] {path}: {n} filas insertadas en {tabla} "
-                        f"(parse {parse_seg:.2f}s, insert {insert_seg:.2f}s, total {t_archivo:.2f}s)"
+                        f"(parse {parse_seg:.2f}s, insert {insert_seg:.2f}s, total {t_archivo:.2f}s, método {perfil['metodo']})"
                     )
 
     t_total = time.monotonic() - t_inicio_total
@@ -305,11 +326,14 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
             )
 
     return {
+        "_normalizados": normalizados,
+        "errores": errores_ingesta,
         "por_tipo": {t.value: len(p) for t, p in por_tipo.items()},
         "total_insertadas": total_insertadas,
         "archivos_con_parser": con_parser,
         "archivos_sin_parser": sin_parser,
         "tiempos": {
+            "preparacion_storage_seg": preparacion_storage_seg,
             "clasificacion_seg": round(t_clasificacion, 3),
             "total_seg": round(t_total, 3),
             "por_archivo": tiempos_por_archivo,
@@ -332,7 +356,7 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
 # docstring del modulo).
 # ---------------------------------------------------------------------
 
-def ejecutar_motor_episodios(oclumon_paths: list, log_cb=print) -> dict:
+def ejecutar_motor_episodios(oclumon_paths: list, log_cb=print, normalizados=None) -> dict:
     """Envoltorio de analizar_caso() (core/episode_engine.py) con la misma
     red de seguridad que el resto del pipeline: NUNCA lanza. Si no hay
     archivos oclumon en el caso (p.ej. un caso que solo trae AWR),
@@ -352,8 +376,9 @@ def ejecutar_motor_episodios(oclumon_paths: list, log_cb=print) -> dict:
                "motor de episodios omitido (nada que analizar).")
         return vacio
     try:
-        return analizar_episodios(oclumon_paths=oclumon_paths, log_cb=log_cb)
+        return analizar_episodios(oclumon_paths=oclumon_paths, log_cb=log_cb, normalizados=normalizados)
     except Exception as e:
+        vacio["error_motor"] = str(e)
         log_cb(f"[episodios] ERROR inesperado en el motor de episodios: {e} "
                f"-- el resto del informe se genera igual, sin episodios/linea de tiempo narrada.")
         return vacio
@@ -502,7 +527,7 @@ def _compactar_series_frontend(resultado_episodios: dict) -> None:
     """
     for series in (resultado_episodios.get("series_por_nodo") or {}).values():
         for nombre, puntos in list(series.items()):
-            if not puntos:
+            if not puntos or isinstance(puntos, dict) or isinstance(puntos[0], list):
                 continue
             series[nombre] = [
                 [p["t"], p.get("v"), 1] if p.get("lt") else [p["t"], p.get("v")]
@@ -767,6 +792,7 @@ def construir_payload(db_path: str, veredicto_ia: dict, carpeta_caso: str,
     _compactar_series_frontend(resultado_episodios)
 
     return {
+        "version_ejecucion": runtime_metadata(),
         "generado_en": datetime.now().isoformat(timespec="seconds"),
         "caso": os.path.basename(os.path.normpath(carpeta_caso)) or carpeta_caso,
         "motor_episodios": resultado_episodios,
@@ -801,7 +827,7 @@ def construir_payload(db_path: str, veredicto_ia: dict, carpeta_caso: str,
 
 
 def generar_reporte_html(db_path: str, veredicto_ia: dict, carpeta_caso: str,
-                          ruta_template: str = None, resultado_episodios: dict = None) -> str:
+                          ruta_template: str = None, resultado_episodios: dict = None, salida: str = None) -> str:
     """Arma el payload (ver construir_payload) y lo renderiza con Jinja2
     real (core/html_builder.py, Hito "Oracle Diagnostic Lab" 2026-10-01 --
     reemplaza el `html.replace("__PAYLOAD_JSON__", ...)` de texto plano
@@ -817,7 +843,7 @@ def generar_reporte_html(db_path: str, veredicto_ia: dict, carpeta_caso: str,
     payload = construir_payload(db_path, veredicto_ia, carpeta_caso, resultado_episodios)
     html = render_dashboard(payload)
 
-    ruta_salida = os.path.join(carpeta_caso, NOMBRE_INFORME_SALIDA)
+    ruta_salida = salida or os.path.join(carpeta_caso, NOMBRE_INFORME_SALIDA)
     with open(ruta_salida, "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -826,7 +852,7 @@ def generar_reporte_html(db_path: str, veredicto_ia: dict, carpeta_caso: str,
     return ruta_salida
 
 
-def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print) -> dict:
+def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print, solo_reporte=False, salida=None) -> dict:
     """Orquestacion de punta a punta: ingiere la carpeta, calcula el
     contexto rapido de IA (SOLO SQL, ver ai/engine.py) y escribe el
     dashboard. Devuelve un dict con las rutas/resultados clave. Cada fase
@@ -845,15 +871,19 @@ def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print) -> dict:
 
     log_cb(f"== Evaluando caso: {carpeta} ==")
     t_ingesta_inicio = time.monotonic()
-    resumen_ingesta = ingerir_carpeta(carpeta, db_path, log_cb=log_cb)
+    persistido = load_report_state(db_path) if solo_reporte else None
+    resumen_ingesta = persistido["ingestion"] if persistido else ingerir_carpeta(carpeta, db_path, log_cb=log_cb)
     t_ingesta = time.monotonic() - t_ingesta_inicio
 
     log_cb("")
     log_cb("== Calculando contexto de IA (SOLO SQL, sin Ollama) ==")
     t_ia_inicio = time.monotonic()
     try:
-        with RootCauseEngine(db_path=db_path) as engine:
-            resultado_ia = engine.calcular_contexto_caso()
+        if persistido:
+            resultado_ia = persistido["context"]
+        else:
+            with RootCauseEngine(db_path=db_path) as engine:
+                resultado_ia = engine.calcular_contexto_caso()
         estado = (resultado_ia.get("estado_salud") or {}).get("estado", "N/D")
         log_cb(f"Estado de salud calculado: {estado}")
     except Exception as e:
@@ -873,10 +903,15 @@ def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print) -> dict:
     log_cb("== Motor de episodios (deteccion de anomalias oclumon) ==")
     t_episodios_inicio = time.monotonic()
     rutas_por_tipo = resumen_ingesta.get("rutas_por_tipo", {})
-    resultado_episodios = ejecutar_motor_episodios(
-        oclumon_paths=rutas_por_tipo.get("oclumon", []),
-        log_cb=log_cb,
+    resultado_episodios = persistido["episodes"] if persistido else ejecutar_motor_episodios(
+        oclumon_paths=rutas_por_tipo.get("oclumon", []), log_cb=log_cb,
+        normalizados=resumen_ingesta.pop("_normalizados", {}),
     )
+    persistir_seg = 0.0
+    if not solo_reporte:
+        t_persistir = time.perf_counter()
+        resultado_episodios = save_report_state(db_path, resultado_episodios, resumen_ingesta, resultado_ia)
+        persistir_seg = time.perf_counter() - t_persistir
     t_episodios = time.monotonic() - t_episodios_inicio
     log_cb(f"(motor de episodios: {t_episodios:.2f}s -- "
            f"{len(resultado_episodios['episodios'])} episodio(s), "
@@ -886,7 +921,7 @@ def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print) -> dict:
     log_cb("== Generando dashboard HTML ==")
     t_dashboard_inicio = time.monotonic()
     ruta_informe = generar_reporte_html(db_path, resultado_ia, carpeta,
-                                         resultado_episodios=resultado_episodios)
+                                         resultado_episodios=resultado_episodios, salida=salida)
     t_dashboard = time.monotonic() - t_dashboard_inicio
     log_cb(f"Informe generado: {ruta_informe} ({t_dashboard:.2f}s)")
 
@@ -913,6 +948,7 @@ def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print) -> dict:
             "ingesta_seg": round(t_ingesta, 3),
             "ia_seg": round(t_ia, 3),
             "episodios_seg": round(t_episodios, 3),
+            "persistir_seg": round(persistir_seg, 3),
             "dashboard_seg": round(t_dashboard, 3),
             "total_seg": round(t_total_fases, 3),
         },
@@ -999,6 +1035,8 @@ def main():
                     "vuelca en DuckDB y escribe el dashboard HTML del incidente")
     ap.add_argument("carpeta", help="Carpeta del caso (se recorre recursivamente)")
     ap.add_argument("--db", default="caso_analisis.duckdb", help="Ruta del .duckdb de salida")
+    ap.add_argument("--solo-reporte", action="store_true", help="Generar desde datos y episodios persistidos, sin releer CHM ni borrar tablas")
+    ap.add_argument("--salida", help="Ruta del HTML de salida (por defecto en la carpeta del caso)")
     ap.add_argument("--servir", nargs="?", const=8787, type=int, metavar="PUERTO", default=None,
                      help="Despues de generar el informe, levanta un servidor HTTP local "
                           "(puerto por defecto 8787) para habilitar el panel de consulta a la "
@@ -1010,7 +1048,7 @@ def main():
         sys.exit(1)
 
     print()  # separa el log de nivel INFO del resto de la salida
-    resultado = ejecutar_caso_completo(args.carpeta, args.db, log_cb=print)
+    resultado = ejecutar_caso_completo(args.carpeta, args.db, log_cb=print, solo_reporte=args.solo_reporte, salida=args.salida)
     print(f"\nListo. Dashboard: {resultado['ruta_informe']}")
 
     if args.servir is not None:

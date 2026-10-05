@@ -1,0 +1,18 @@
+{
+  "version_ejecucion": 788,
+  "generado_en": 21,
+  "caso": 9,
+  "motor_episodios": 13032752,
+  "informe": 1473214,
+  "veredicto": 3495,
+  "resumen": 163,
+  "series_cpu": 126,
+  "series_aas": 157,
+  "series_parses": 132,
+  "series_executes": 133,
+  "awr_dbtime_breakdown": 2118,
+  "infraestructura": 333,
+  "awr": 8614,
+  "eventos": 77255,
+  "errores_payload": 2
+}

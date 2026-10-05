@@ -122,6 +122,7 @@ reevaluar sumar pyarrow para un camino mas vectorizado.
 """
 
 import logging
+import time
 from datetime import datetime
 
 import duckdb
@@ -320,7 +321,7 @@ DDL_INDICES = [
 
 _COLUMNS_TELEMETRIA = ("caso_id", "timestamp", "nodo", "fuente", "metrica_o_error", "valor", "detalles")
 _COLUMNS_WAIT_EVENTS = ("event_id", "caso_id", "snapshot_id", "host", "evento", "wait_class", "waits", "tiempo_s", "pct_dbtime")
-_CHUNK_SIZE = 5000  # filas por sentencia INSERT -- acota memoria/tamano de SQL por lote
+_CHUNK_SIZE = 20000  # filas por sentencia INSERT -- acota memoria/tamano de SQL por lote
 
 
 def _normalizar_timestamp(ts, contexto: str):
@@ -355,13 +356,15 @@ class ForensicStorage:
     """
 
     def __init__(self, db_path: str = "caso_analisis.duckdb", limpiar_al_conectar: bool = True):
+        self.ultimo_perfil = {}
+        self.perfil_acumulado = {"ejecutar_seg": 0.0, "commit_seg": 0.0, "normalizar_seg": 0.0, "columnas_seg": 0.0, "dependencia_seg": 0.0}
         self.db_path = db_path
         self.filas_eliminadas_al_conectar = 0
         self._con = duckdb.connect(db_path)
         for ddl in _DDL_TABLAS:
-            self._con.execute(ddl)
+            self._execute(ddl)
         for ddl in DDL_INDICES:
-            self._con.execute(ddl)
+            self._execute(ddl)
 
         # Contadores de ID en memoria -- ver nota "IDs en memoria" en el
         # docstring del modulo sobre por que NO son una SEQUENCE de
@@ -374,8 +377,17 @@ class ForensicStorage:
         self._next_event_id = 1
 
         if limpiar_al_conectar:
+            self._execute("DROP TABLE IF EXISTS report_state")
             self._limpiar_datos_previos()
         log.info("ForensicStorage conectado a %s (esquema dimensional de 8 tablas listo)", db_path)
+
+    def _execute(self, sql, *args):
+        start = time.perf_counter()
+        try:
+            return self._con.execute(sql, *args)
+        finally:
+            key = "commit_seg" if sql.strip().upper() == "COMMIT" else "ejecutar_seg"
+            self.perfil_acumulado[key] += time.perf_counter() - start
 
     def _limpiar_datos_previos(self):
         """Vacia las 8 tablas si alguna ya tenia filas de una corrida
@@ -392,7 +404,7 @@ class ForensicStorage:
         try:
             total = 0
             for tabla in _TODAS_LAS_TABLAS:
-                (n,) = self._con.execute(f"SELECT count(*) FROM {tabla}").fetchone()
+                (n,) = self._execute(f"SELECT count(*) FROM {tabla}").fetchone()
                 total += n
         except Exception as e:
             log.warning("ForensicStorage: no se pudo contar filas previas en %s (%s) -- "
@@ -402,7 +414,7 @@ class ForensicStorage:
             return
         try:
             for tabla in _TODAS_LAS_TABLAS:
-                self._con.execute(f"DELETE FROM {tabla}")
+                self._execute(f"DELETE FROM {tabla}")
             self.filas_eliminadas_al_conectar = total
             self._next_infra_id = 1
             self._next_db_id = 1
@@ -441,7 +453,7 @@ class ForensicStorage:
         veces con el mismo caso_id nunca duplica la fila ni lanza, solo
         actualiza los campos (idempotente por diseno, igual que el resto
         de esta clase)."""
-        self._con.execute(
+        self._execute(
             "INSERT INTO dim_caso VALUES (?, ?, ?) "
             "ON CONFLICT (caso_id) DO UPDATE SET nombre = excluded.nombre, "
             "creado_en = excluded.creado_en",
@@ -458,7 +470,7 @@ class ForensicStorage:
         infra_id asignado (el contador en memoria, incrementado despues
         de insertar)."""
         infra_id = self._next_infra_id
-        self._con.execute(
+        self._execute(
             "INSERT INTO dim_infraestructura VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (infra_id, caso_id, host, cpus, cores, sockets, mem_gb, kernel, num_cpus,
              busy_time, idle_time, iowait_time, datetime.now()),
@@ -472,7 +484,7 @@ class ForensicStorage:
         (tipicamente extraida de la cabecera de un reporte AWR). Devuelve
         el db_id asignado."""
         db_id = self._next_db_id
-        self._con.execute(
+        self._execute(
             "INSERT INTO dim_database VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (db_id, caso_id, host, db_name, instance_name, release, rac, datetime.now()),
         )
@@ -503,6 +515,7 @@ class ForensicStorage:
         if not filas:
             return 0
 
+        t_total = time.perf_counter()
         rows = []
         for i, fila in enumerate(filas):
             ts = _normalizar_timestamp(fila.get("timestamp"), f"fila {i}")
@@ -511,23 +524,68 @@ class ForensicStorage:
                 fila.get("metrica_o_error"), fila.get("valor"), fila.get("detalles"),
             ))
 
-        self._con.execute("BEGIN TRANSACTION")
+        # Preserve the permissive DuckDB binding behavior for unusual input
+        # types (aware timestamps, numeric strings, Decimal, etc.). Real CHM
+        # rows use naive datetime + numeric values + strings and take Arrow.
+        compatible_arrow = all(
+            (row[1] is None or row[1].tzinfo is None)
+            and (row[5] is None or isinstance(row[5], (int, float)))
+            and all(row[i] is None or isinstance(row[i], str) for i in (0, 2, 3, 4, 6))
+            for row in rows
+        )
+        normalizar_seg = time.perf_counter() - t_total
+        t = time.perf_counter()
+        pa = None
+        if compatible_arrow:
+            try:
+                import pyarrow as pa
+            except ImportError:
+                pass
+        dependencia_seg = time.perf_counter() - t
+        schema = None
+        if pa is not None:
+            schema = pa.schema(zip(_COLUMNS_TELEMETRIA, [pa.string(), pa.timestamp("us"),
+                                pa.string(), pa.string(), pa.string(), pa.float64(), pa.string()]))
+        metodo = "Arrow INSERT SELECT" if schema is not None else "UNNEST"
+        columnas_seg = ejecutar_seg = commit_seg = 0.0
+        self._execute("BEGIN TRANSACTION")
         try:
             for start in range(0, len(rows), _CHUNK_SIZE):
                 chunk = rows[start:start + _CHUNK_SIZE]
-                # DuckDB vectoriza UNNEST sobre listas columnares. El patrón
-                # anterior construía 35.000 placeholders y parámetros por
-                # lote de 5.000 filas, coste dominante en CHM grandes.
+                t = time.perf_counter()
                 columnas = [list(col) for col in zip(*chunk)]
-                selectores = ", ".join("unnest(?)" for _ in _COLUMNS_TELEMETRIA)
-                self._con.execute(
-                    f"INSERT INTO fact_telemetria_so SELECT {selectores}", columnas
-                )
-            self._con.execute("COMMIT")
+                if schema is not None:
+                    table = pa.Table.from_arrays(
+                        [pa.array(col, type=field.type) for col, field in zip(columnas, schema)], schema=schema
+                    )
+                    self._con.register("_telemetry_batch", table)
+                columnas_seg += time.perf_counter() - t
+                t = time.perf_counter()
+                if schema is not None:
+                    try:
+                        self._execute("INSERT INTO fact_telemetria_so SELECT * FROM _telemetry_batch")
+                    finally:
+                        self._con.unregister("_telemetry_batch")
+                else:
+                    selectores = ", ".join("unnest(?)" for _ in _COLUMNS_TELEMETRIA)
+                    self._execute(f"INSERT INTO fact_telemetria_so SELECT {selectores}", columnas)
+                ejecutar_seg += time.perf_counter() - t
+            t = time.perf_counter()
+            self._execute("COMMIT")
+            commit_seg = time.perf_counter() - t
         except Exception:
-            self._con.execute("ROLLBACK")
+            self._execute("ROLLBACK")
             raise
 
+        total_seg = time.perf_counter() - t_total
+        self.perfil_acumulado["normalizar_seg"] += normalizar_seg
+        self.perfil_acumulado["columnas_seg"] += columnas_seg
+        self.perfil_acumulado["dependencia_seg"] += dependencia_seg
+        self.ultimo_perfil = {"metodo": metodo, "lote": _CHUNK_SIZE,
+                              "normalizar_seg": normalizar_seg, "columnas_seg": columnas_seg,
+                              "ejecutar_seg": ejecutar_seg, "commit_seg": commit_seg,
+                              "dependencia_seg": dependencia_seg, "total_seg": total_seg,
+                              "filas_seg": len(rows) / max(total_seg, 1e-9)}
         log.info("bulk_insert_telemetria: %d filas insertadas en fact_telemetria_so (caso %s)",
                   len(rows), caso_id)
         return len(rows)
@@ -565,7 +623,7 @@ class ForensicStorage:
             db_time_seg = db_time_per_sec * elapsed_seg
 
         snapshot_id = self._next_snapshot_id
-        self._con.execute(
+        self._execute(
             "INSERT INTO fact_awr_snapshots ("
             "snapshot_id, caso_id, host, awr_file, begin_snap_id, end_snap_id, begin_ts, end_ts, "
             "elapsed_seg, db_cpu_per_sec, db_time_per_sec, logical_reads_per_sec, "
@@ -611,18 +669,18 @@ class ForensicStorage:
             ))
             self._next_event_id += 1
 
-        self._con.execute("BEGIN TRANSACTION")
+        self._execute("BEGIN TRANSACTION")
         try:
             for start in range(0, len(rows), _CHUNK_SIZE):
                 chunk = rows[start:start + _CHUNK_SIZE]
                 columnas = [list(col) for col in zip(*chunk)]
                 selectores = ", ".join("unnest(?)" for _ in _COLUMNS_WAIT_EVENTS)
-                self._con.execute(
+                self._execute(
                     f"INSERT INTO fact_awr_wait_events SELECT {selectores}", columnas
                 )
-            self._con.execute("COMMIT")
+            self._execute("COMMIT")
         except Exception:
-            self._con.execute("ROLLBACK")
+            self._execute("ROLLBACK")
             raise
 
         log.info("bulk_insert_wait_events: %d filas insertadas en fact_awr_wait_events "

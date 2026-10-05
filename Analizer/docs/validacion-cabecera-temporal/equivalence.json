@@ -1,0 +1,30 @@
+{
+  "all_values_equal": true,
+  "series": 868,
+  "points_including_gaps": 2791869,
+  "null_gaps": 1712,
+  "less_than_flags": 19410,
+  "episodes": 170,
+  "tables": {
+    "fact_telemetria_so": {
+      "count": 45290,
+      "sha256": "a63e8913757f643b4d422b97055d5d74064ddf3cf03aa7f2d3377903839f7699"
+    },
+    "fact_awr_snapshots": {
+      "count": 5,
+      "sha256": "f5bc63ba856bb4795427d62e65034490b6f89999867c5bcb13114528f00d21cc"
+    },
+    "fact_awr_wait_events": {
+      "count": 50,
+      "sha256": "e2f824e9f93b1d433fba3dc55b4bd3e99e0c87f80b47bdddaf00aec7fdca2218"
+    },
+    "dim_database": {
+      "count": 5,
+      "sha256": "e4376bc686851581494368c4b1dca0ffe495e4dfa2d23e7fd85c76fbb6122149"
+    },
+    "dim_infraestructura": {
+      "count": 5,
+      "sha256": "92d8e886ca0f20bdebef3ad0948066d2ab526b46708ea9a5a0c7d05cb8fc814b"
+    }
+  }
+}

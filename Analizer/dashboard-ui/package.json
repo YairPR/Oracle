@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "esbuild src/temporal-state.ts --bundle --platform=node --format=cjs --outfile=dist/temporal-state.cjs && node temporal-state.test.cjs",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && esbuild src/main.ts --bundle --minify --target=es2019 --outfile=dist/dashboard.bundle.js && node scripts/copy_to_templates.js"
   },

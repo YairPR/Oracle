@@ -1,0 +1,126 @@
+{
+  "python": "3.13.15 (tags/v3.13.15:4061bc4, Aug  5 2026, 13:05:39) [MSC v.1944 64 bit (AMD64)]",
+  "duckdb": "1.5.6",
+  "analizador": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\.work-pr4/baseline-source/Analizer\\analizador.py",
+  "storage": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\.work-pr4/baseline-source/Analizer\\core\\storage.py",
+  "wall_seg": 130.14683760004118,
+  "peak_rss_bytes": 1262178304,
+  "html_bytes": 59115003,
+  "phases": {
+    "ingesta_seg": 53.912,
+    "ia_seg": 0.202,
+    "episodios_seg": 61.934,
+    "dashboard_seg": 13.041,
+    "total_seg": 129.089
+  },
+  "ingestion": {
+    "clasificacion_seg": 0.22,
+    "total_seg": 53.908,
+    "por_archivo": [
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo2_20261002_0530_1030_mtu.txt",
+        "tipo": "oclumon",
+        "segundos": 24.786,
+        "parse_seg": 23.775,
+        "insert_seg": 1.011,
+        "bytes": 74796728,
+        "filas": 21392
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo1_20261002_0530_1030_mtu.txt",
+        "tipo": "oclumon",
+        "segundos": 19.996,
+        "parse_seg": 19.455,
+        "insert_seg": 0.541,
+        "bytes": 75109805,
+        "filas": 21378
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo2_3009.txt",
+        "tipo": "oclumon",
+        "segundos": 1.312,
+        "parse_seg": 1.218,
+        "insert_seg": 0.094,
+        "bytes": 4382837,
+        "filas": 1260
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo1_3009.txt",
+        "tipo": "oclumon",
+        "segundos": 0.68,
+        "parse_seg": 0.644,
+        "insert_seg": 0.036,
+        "bytes": 4377523,
+        "filas": 1260
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_1_98889_98890.txt",
+        "tipo": "awr",
+        "segundos": 0.078,
+        "parse_seg": 0.054,
+        "insert_seg": 0.025,
+        "bytes": 292333,
+        "filas": 13
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_2_98893_98894.txt",
+        "tipo": "awr",
+        "segundos": 0.065,
+        "parse_seg": 0.039,
+        "insert_seg": 0.027,
+        "bytes": 300366,
+        "filas": 13
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_2_98889_98890.txt",
+        "tipo": "awr",
+        "segundos": 0.061,
+        "parse_seg": 0.038,
+        "insert_seg": 0.023,
+        "bytes": 361245,
+        "filas": 13
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_1_98893_98894.txt",
+        "tipo": "awr",
+        "segundos": 0.056,
+        "parse_seg": 0.028,
+        "insert_seg": 0.028,
+        "bytes": 282756,
+        "filas": 13
+      },
+      {
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_2_98892_98893.txt",
+        "tipo": "awr",
+        "segundos": 0.054,
+        "parse_seg": 0.034,
+        "insert_seg": 0.02,
+        "bytes": 290446,
+        "filas": 13
+      }
+    ]
+  },
+  "tables": {
+    "fact_telemetria_so": {
+      "count": 45290,
+      "sha256": "a63e8913757f643b4d422b97055d5d74064ddf3cf03aa7f2d3377903839f7699"
+    },
+    "fact_awr_snapshots": {
+      "count": 5,
+      "sha256": "f5bc63ba856bb4795427d62e65034490b6f89999867c5bcb13114528f00d21cc"
+    },
+    "fact_awr_wait_events": {
+      "count": 50,
+      "sha256": "e2f824e9f93b1d433fba3dc55b4bd3e99e0c87f80b47bdddaf00aec7fdca2218"
+    },
+    "dim_database": {
+      "count": 5,
+      "sha256": "e4376bc686851581494368c4b1dca0ffe495e4dfa2d23e7fd85c76fbb6122149"
+    },
+    "dim_infraestructura": {
+      "count": 5,
+      "sha256": "92d8e886ca0f20bdebef3ad0948066d2ab526b46708ea9a5a0c7d05cb8fc814b"
+    }
+  },
+  "episodes": 170
+}

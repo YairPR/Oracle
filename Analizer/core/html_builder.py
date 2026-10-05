@@ -248,6 +248,48 @@ def construir_chart_specs(informe: dict) -> dict:
     return out
 
 
+def compactar_payload_wire(payload):
+    """Shared clocks and constants, lossless; templates still see original arrays."""
+    wire = dict(payload)
+    motor = dict(payload["motor_episodios"])
+    clocks = dict(motor.get("series_timestamps", {}))
+    clock_ids = {tuple(times): clock for clock, times in clocks.items()}
+    series = {}
+    sample_times = set(motor.get("timestamps_muestras", []))
+    for node, metrics in motor.get("series_por_nodo", {}).items():
+        series[node] = {}
+        for name, points in metrics.items():
+            if not points or isinstance(points, dict) and "clock" in points:
+                series[node][name] = points
+                continue
+            times = tuple(p[0] if isinstance(p, list) else p["t"] for p in points)
+            values = [p[1] if isinstance(p, list) else p.get("v") for p in points]
+            flags = [i for i,p in enumerate(points) if (isinstance(p, list) and len(p)>2 and p[2]) or (isinstance(p, dict) and p.get("lt"))]
+            for t,v in zip(times,values):
+                if v is not None:
+                    sample_times.add(t)
+            clock = clock_ids.get(times)
+            if clock is None:
+                clock = str(len(clocks))
+                clock_ids[times] = clock
+                clocks[clock] = list(times)
+            nonnull = {v for v in values if v is not None}
+            encoded = {"clock": clock}
+            if len(nonnull) == 1:
+                encoded["constant"] = next(iter(nonnull))
+                nulls = [i for i,v in enumerate(values) if v is None]
+                if nulls: encoded["nulls"] = nulls
+            else:
+                encoded["values"] = values
+            if flags: encoded["lt"] = flags
+            series[node][name] = encoded
+    motor["series_por_nodo"] = series
+    motor["series_timestamps"] = clocks
+    motor["timestamps_muestras"] = sorted(sample_times)
+    wire["motor_episodios"] = motor
+    return wire
+
+
 def render_dashboard(payload: dict) -> str:
     """Arma el HTML final: lee templates/base.html + templates/dashboard.html
     via Jinja2 (autoescape activado), con el CSS de templates/static/theme.css
@@ -273,7 +315,7 @@ def render_dashboard(payload: dict) -> str:
     # cortar el bloque <script> del JSON embebido a mitad de camino.
     js_inline = js_inline.replace("</script", "<\\/script")
 
-    payload_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
+    payload_json = json.dumps(compactar_payload_wire(payload), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
     env = _crear_entorno()
     template = env.get_template("dashboard.html")

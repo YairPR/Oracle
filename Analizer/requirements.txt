@@ -1,4 +1,5 @@
 duckdb>=1.0.0
+pyarrow>=25.0.1  # carga columnar validada contra UNNEST; DuckDB sigue siendo el motor
 
 # Hito 5 -- solo necesaria para ai/engine.py: RootCauseEngine.generar_veredicto()
 # (sub-tarea 5.3, llama al modelo local via 'ollama serve'). El resto del motor

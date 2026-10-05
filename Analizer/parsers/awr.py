@@ -62,6 +62,7 @@ en vez de lanzar.
 
 from __future__ import annotations
 
+from core.io_profile import TimedText
 import re
 import logging
 from datetime import datetime
@@ -274,7 +275,8 @@ class AwrSectionParser:
         time_model/os_stat/wait_class/wait_event/histograma/servicio/actividad/
         thread/iostat/ic_ping/ic_device/diagnostico) -- ver AwrParser.parse_estructurado()
         mas abajo para la capa de compatibilidad que el resto del pipeline consume hoy."""
-        with open(ruta, encoding="utf-8", errors="replace") as fh:
+        self.lectura_perfil = {}
+        with TimedText(ruta, self.lectura_perfil, encoding="utf-8", errors="replace") as fh:
             texto = fh.read().replace("\r", "")
         lineas = texto.split("\n")
         r = {"archivo": str(ruta)}
@@ -458,7 +460,9 @@ class AwrParser(BaseParser):
 
     # -- forma rica (nueva) ----------------------------------------------
     def parse_completo(self, file_path: str) -> dict:
-        r = AwrSectionParser().parse(file_path)
+        motor = AwrSectionParser()
+        r = motor.parse(file_path)
+        self.lectura_perfil = motor.lectura_perfil
         self.ultima_estructura_completa = r
         self.ultimo_diagnostico = r["diagnostico"]
         return r

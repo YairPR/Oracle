@@ -122,7 +122,7 @@ primera_serie = next(
     puntos for series in resultado["resultado_episodios"]["series_por_nodo"].values()
     for puntos in series.values() if puntos
 )
-check("series compactadas para HTML", isinstance(primera_serie[0], list), True)
+check("series columnares para HTML y persistencia", isinstance(primera_serie, dict) and "clock" in primera_serie, True)
 
 c.close()
 shutil.rmtree(tmp, ignore_errors=True)

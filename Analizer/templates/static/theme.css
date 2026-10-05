@@ -185,32 +185,22 @@ a { color: var(--color-accent); }
   text-align: right;
 }
 
-.odl-timebar {
-  position: sticky;
-  top: 48px;
-  z-index: 8;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius);
-  background: rgba(26, 26, 25, 0.96);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(10px);
-}
-.odl-timebar-heading { display: grid; gap: 2px; min-width: 190px; }
-.odl-timezone { color: var(--color-warning); font-size: 10.5px; max-width: 360px; }
-.odl-timebar-controls { display: flex; align-items: end; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-.odl-timebar-controls label { display: grid; gap: 3px; color: var(--color-text-muted); font-size: 11px; }
-.odl-timebar .odl-filter-input { min-width: 190px; }
-.odl-timebar select[multiple] { min-width: 150px; height: 52px; padding: 3px 8px; }
-.odl-awr-filter-policy { margin: -8px 0 14px; padding-left: 4px; }
+.odl-universal-header { margin-bottom: 16px; padding: 14px 16px; border: 1px solid var(--color-border-strong); border-radius: var(--radius); background: var(--color-surface); }
+.odl-universal-header .odl-topbar { margin-bottom: 12px; }
+.odl-timebar-controls { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+.odl-timebar-controls label { display: grid; gap: 4px; color: var(--color-text-muted); font-size: 11px; }
+.odl-timebar-controls input { min-width: 190px; }
+.odl-timebar-controls select { max-width: 440px; }
+.odl-selection-line { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; color: var(--color-text-muted); font-size: 11px; }
+#odl-rango-nota { color: var(--color-warning); }
+.odl-report-details, .odl-time-help { position: relative; color: var(--color-text-muted); font-size: 11px; }
+.odl-report-details summary, .odl-time-help summary { cursor: pointer; padding: 6px; }
+.odl-report-details[open], .odl-time-help[open] { max-width: 500px; padding: 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.odl-source-path { overflow-wrap: anywhere; margin-top: 4px; }
+.odl-awr-filter-policy { margin-bottom: 14px; }
 .odl-host-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .odl-host-item {
-  display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px;
+  display: inline-flex; flex-wrap: wrap; max-width: 100%; align-items: center; gap: 7px; padding: 7px 10px;
   border: 1px solid var(--color-border); border-radius: var(--radius-sm);
   background: var(--color-surface); color: var(--color-text-muted); font-size: 12px;
 }
@@ -232,7 +222,7 @@ a { color: var(--color-accent); }
   .odl-main { padding: 12px 10px 40px; }
   .odl-timebar-controls { display: grid; grid-template-columns: 1fr 1fr; }
   .odl-timebar-controls label { grid-column: 1 / -1; }
-  .odl-timebar .odl-filter-input { min-width: 0; width: 100%; }
+  .odl-timebar-controls .odl-filter-input { min-width: 0; width: 100%; }
   .odl-kpi-row, .panel-grid { grid-template-columns: 1fr; }
   .odl-table { display: block; overflow-x: auto; }
 }

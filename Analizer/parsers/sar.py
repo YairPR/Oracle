@@ -61,6 +61,7 @@ Por pedido explicito: ninguna linea/seccion mal formada debe tumbar el
 parseo completo.
 """
 
+from core.io_profile import TimedText
 import re
 import logging
 from datetime import datetime, timedelta
@@ -121,8 +122,9 @@ class SarParser(BaseParser):
             "errors": [],
         }
 
+        self.lectura_perfil = {}
         try:
-            with open(file_path, encoding="utf-8", errors="replace") as f:
+            with TimedText(file_path, self.lectura_perfil, encoding="utf-8", errors="replace") as f:
                 lineas = [ln.rstrip("\n") for ln in f]
         except OSError as e:
             diag["errors"].append(f"no se pudo abrir el archivo: {e}")

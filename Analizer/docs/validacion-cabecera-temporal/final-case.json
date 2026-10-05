@@ -1,0 +1,254 @@
+{
+  "python": "3.13.15 (tags/v3.13.15:4061bc4, Aug  5 2026, 13:05:39) [MSC v.1944 64 bit (AMD64)]",
+  "duckdb": "1.5.6",
+  "analizador": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\Analizer\\analizador.py",
+  "storage": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\Analizer\\core\\storage.py",
+  "wall_seg": 83.53984920005314,
+  "peak_rss_bytes": 1142370304,
+  "html_bytes": 16068791,
+  "phases": {
+    "ingesta_seg": 38.919,
+    "ia_seg": 0.202,
+    "episodios_seg": 38.002,
+    "persistir_seg": 8.031,
+    "dashboard_seg": 5.755,
+    "total_seg": 82.878
+  },
+  "ingestion": {
+    "preparacion_storage_seg": 0.05892769992351532,
+    "clasificacion_seg": 0.036,
+    "total_seg": 38.918,
+    "por_archivo": [
+      {
+        "lectura_seg": 0.8959051035344601,
+        "parse_exclusivo_seg": 17.63018469628878,
+        "lectura_clasificacion_seg": 0.0011829999275505543,
+        "almacenamiento": {
+          "ejecutar_seg": 0.02328739990480244,
+          "commit_seg": 0.06385749997571111,
+          "normalizar_seg": 0.0619438998401165,
+          "columnas_seg": 0.030979600036516786,
+          "dependencia_seg": 4.299916326999664e-06,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 116474.06782078245
+        },
+        "bytes_seg": 3997738.9338798085,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo2_20261002_0530_1030_mtu.txt",
+        "tipo": "oclumon",
+        "segundos": 18.71,
+        "parse_seg": 18.526,
+        "insert_seg": 0.184,
+        "bytes": 74796728,
+        "filas": 21392
+      },
+      {
+        "lectura_seg": 0.7897939782124013,
+        "parse_exclusivo_seg": 15.718910121824592,
+        "lectura_clasificacion_seg": 0.0011726000811904669,
+        "almacenamiento": {
+          "ejecutar_seg": 0.052086699986830354,
+          "commit_seg": 0.04056330001913011,
+          "normalizar_seg": 0.03264439990743995,
+          "columnas_seg": 0.10291399993002415,
+          "dependencia_seg": 6.00004568696022e-06,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 92560.92149492347
+        },
+        "bytes_seg": 4486934.039231047,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo1_20261002_0530_1030_mtu.txt",
+        "tipo": "oclumon",
+        "segundos": 16.74,
+        "parse_seg": 16.509,
+        "insert_seg": 0.231,
+        "bytes": 75109805,
+        "filas": 21378
+      },
+      {
+        "lectura_seg": 0.05374269699677825,
+        "parse_exclusivo_seg": 1.0428172028623521,
+        "lectura_clasificacion_seg": 0.0023540998809039593,
+        "almacenamiento": {
+          "ejecutar_seg": 0.004603300243616104,
+          "commit_seg": 0.01005320018157363,
+          "normalizar_seg": 0.0042727000545710325,
+          "columnas_seg": 0.004376700147986412,
+          "dependencia_seg": 6.300164386630058e-06,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 52392.81303576651
+        },
+        "bytes_seg": 3911102.849716197,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo2_3009.txt",
+        "tipo": "oclumon",
+        "segundos": 1.121,
+        "parse_seg": 1.097,
+        "insert_seg": 0.024,
+        "bytes": 4382837,
+        "filas": 1260
+      },
+      {
+        "lectura_seg": 0.03190821618773043,
+        "parse_exclusivo_seg": 0.6592701838817447,
+        "lectura_clasificacion_seg": 0.002344900043681264,
+        "almacenamiento": {
+          "ejecutar_seg": 0.0031014997512102127,
+          "commit_seg": 0.005288799991831183,
+          "normalizar_seg": 0.0020993000362068415,
+          "columnas_seg": 0.001460700063034892,
+          "dependencia_seg": 4.999805241823196e-06,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 100460.84385412367
+        },
+        "bytes_seg": 6220500.557730618,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\chm_nodo1_3009.txt",
+        "tipo": "oclumon",
+        "segundos": 0.704,
+        "parse_seg": 0.691,
+        "insert_seg": 0.013,
+        "bytes": 4377523,
+        "filas": 1260
+      },
+      {
+        "lectura_seg": 0.0018483998719602823,
+        "parse_exclusivo_seg": 0.017946400213986635,
+        "lectura_clasificacion_seg": 0.002346200169995427,
+        "almacenamiento": {
+          "ejecutar_seg": 0.026245900196954608,
+          "commit_seg": 0.0017129001207649708,
+          "normalizar_seg": 0.0,
+          "columnas_seg": 0.0,
+          "dependencia_seg": 0.0,
+          "metodo": "AWR dimensional + UNNEST waits",
+          "lote": 20000,
+          "filas_seg": 462.65485423224237
+        },
+        "bytes_seg": 6063261.71346284,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_2_98892_98893.txt",
+        "tipo": "awr",
+        "segundos": 0.048,
+        "parse_seg": 0.02,
+        "insert_seg": 0.028,
+        "bytes": 290446,
+        "filas": 13
+      },
+      {
+        "lectura_seg": 0.006715399911627173,
+        "parse_exclusivo_seg": 0.018943200120702386,
+        "lectura_clasificacion_seg": 0.002535399980843067,
+        "almacenamiento": {
+          "ejecutar_seg": 0.016362800262868404,
+          "commit_seg": 0.0017627999186515808,
+          "normalizar_seg": 0.0,
+          "columnas_seg": 0.0,
+          "dependencia_seg": 0.0,
+          "metodo": "AWR dimensional + UNNEST waits",
+          "lote": 20000,
+          "filas_seg": 711.4165981184235
+        },
+        "bytes_seg": 6835805.999010064,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_2_98893_98894.txt",
+        "tipo": "awr",
+        "segundos": 0.044,
+        "parse_seg": 0.026,
+        "insert_seg": 0.018,
+        "bytes": 300366,
+        "filas": 13
+      },
+      {
+        "lectura_seg": 0.002365299966186285,
+        "parse_exclusivo_seg": 0.014119200175628066,
+        "lectura_clasificacion_seg": 0.0022193999029695988,
+        "almacenamiento": {
+          "ejecutar_seg": 0.009648999897763133,
+          "commit_seg": 0.0015945998020470142,
+          "normalizar_seg": 0.0,
+          "columnas_seg": 0.0,
+          "dependencia_seg": 0.0,
+          "metodo": "AWR dimensional + UNNEST waits",
+          "lote": 20000,
+          "filas_seg": 1143.4804070661503
+        },
+        "bytes_seg": 10147790.301074944,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_1_98893_98894.txt",
+        "tipo": "awr",
+        "segundos": 0.028,
+        "parse_seg": 0.016,
+        "insert_seg": 0.011,
+        "bytes": 282756,
+        "filas": 13
+      },
+      {
+        "lectura_seg": 0.002221300033852458,
+        "parse_exclusivo_seg": 0.011977799935266376,
+        "lectura_clasificacion_seg": 0.00274979998357594,
+        "almacenamiento": {
+          "ejecutar_seg": 0.010434700176119804,
+          "commit_seg": 0.001979599939659238,
+          "normalizar_seg": 0.0,
+          "columnas_seg": 0.0,
+          "dependencia_seg": 0.0,
+          "metodo": "AWR dimensional + UNNEST waits",
+          "lote": 20000,
+          "filas_seg": 1033.337053535447
+        },
+        "bytes_seg": 10909901.744043326,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_1_98889_98890.txt",
+        "tipo": "awr",
+        "segundos": 0.027,
+        "parse_seg": 0.014,
+        "insert_seg": 0.013,
+        "bytes": 292333,
+        "filas": 13
+      },
+      {
+        "lectura_seg": 0.00201039994135499,
+        "parse_exclusivo_seg": 0.011671500047668815,
+        "lectura_clasificacion_seg": 0.0022736999671906233,
+        "almacenamiento": {
+          "ejecutar_seg": 0.010132100200280547,
+          "commit_seg": 0.00167859997600317,
+          "normalizar_seg": 0.0,
+          "columnas_seg": 0.0,
+          "dependencia_seg": 0.0,
+          "metodo": "AWR dimensional + UNNEST waits",
+          "lote": 20000,
+          "filas_seg": 1088.3579267776606
+        },
+        "bytes_seg": 14091371.878485253,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\dept300\\awrrpt_2_98889_98890.txt",
+        "tipo": "awr",
+        "segundos": 0.026,
+        "parse_seg": 0.014,
+        "insert_seg": 0.012,
+        "bytes": 361245,
+        "filas": 13
+      }
+    ]
+  },
+  "tables": {
+    "fact_telemetria_so": {
+      "count": 45290,
+      "sha256": "a63e8913757f643b4d422b97055d5d74064ddf3cf03aa7f2d3377903839f7699"
+    },
+    "fact_awr_snapshots": {
+      "count": 5,
+      "sha256": "f5bc63ba856bb4795427d62e65034490b6f89999867c5bcb13114528f00d21cc"
+    },
+    "fact_awr_wait_events": {
+      "count": 50,
+      "sha256": "e2f824e9f93b1d433fba3dc55b4bd3e99e0c87f80b47bdddaf00aec7fdca2218"
+    },
+    "dim_database": {
+      "count": 5,
+      "sha256": "e4376bc686851581494368c4b1dca0ffe495e4dfa2d23e7fd85c76fbb6122149"
+    },
+    "dim_infraestructura": {
+      "count": 5,
+      "sha256": "92d8e886ca0f20bdebef3ad0948066d2ab526b46708ea9a5a0c7d05cb8fc814b"
+    }
+  },
+  "episodes": 170
+}

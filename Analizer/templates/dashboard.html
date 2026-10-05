@@ -16,72 +16,62 @@
   "motivo_profundidad": "Detección de anomalías sobre series de tiempo (oclumon) + AWR, sin IA automática.",
 } %}
 
-<div class="odl-topbar">
-  <div>
-    {% set cab_host = payload.infraestructura[0] if payload.infraestructura else {} %}
-    <h1 class="odl-title">{{ payload.caso }}{% if cab_host.release %} · Oracle {{ cab_host.release }}{% endif %}{% if cab_host.rac %} · RAC{% endif %} · {{ payload.motor_episodios.node_list | length }} nodos observados</h1>
-    <div class="odl-subtitle">Métricas del host completo · {{ payload.resumen.rango_tiempo[0] | fecha_hora }} — {{ payload.resumen.rango_tiempo[1] | fecha_hora }}</div>
+<section class="odl-universal-header" aria-label="Identidad, infraestructura y filtros compartidos">
+  {% set cab_host = payload.infraestructura[0] if payload.infraestructura else {} %}
+  {% set hosts = (payload.motor_episodios.node_list + payload.motor_episodios.nodos_sar + (payload.infraestructura | map(attribute='host') | reject('none') | list)) | unique | list | sort %}
+  <div class="odl-topbar">
+    <div>
+      <h1 class="odl-title">{{ payload.caso | upper }}{% if cab_host.release %} · Oracle {{ cab_host.release }}{% endif %}{% if payload.infraestructura | selectattr('rac', 'in', ['YES', 'Yes', 'yes', 'TRUE', 'true', 'RAC', true]) | list %} · RAC{% endif %} · {{ hosts | length }} nodo{{ 's' if hosts | length != 1 else '' }} observado{{ 's' if hosts | length != 1 else '' }}</h1>
+      <div class="odl-subtitle">Disponible: {{ payload.resumen.rango_tiempo[0] | fecha_hora }} — {{ payload.resumen.rango_tiempo[1] | fecha_hora }}</div>
+    </div>
+    <details class="odl-report-details"><summary>Detalles del informe</summary>
+      <div>Generado {{ payload.generado_en | fecha_hora }}</div>
+      <div>Versión {{ payload.version_ejecucion.commit[:12] }}{{ ' · cambios locales' if payload.version_ejecucion.dirty else '' }}</div>
+      <div>Código SHA256 {{ payload.version_ejecucion.codigo_sha256 }}</div>
+      {% if payload.motor_episodios.version_ingesta %}<div>Datos: commit {{ payload.motor_episodios.version_ingesta.commit[:12] }} · SHA256 {{ payload.motor_episodios.version_ingesta.codigo_sha256 }}</div>{% endif %}
+      <div>Python {{ payload.version_ejecucion.python }} · DuckDB {{ payload.version_ejecucion.duckdb }}</div>
+      <div>{{ payload.version_ejecucion.zona_horaria }}</div>
+      {% for fuente in payload.version_ejecucion.fuentes %}<div class="odl-source-path">{{ fuente.ruta }} · SHA256 {{ fuente.sha256 }}</div>{% endfor %}
+    </details>
   </div>
-  <div class="odl-tag-generado">Generado {{ payload.generado_en | fecha_hora }}</div>
-</div>
-
-<section class="odl-timebar" aria-labelledby="odl-rango-titulo">
-  <div class="odl-timebar-heading">
-    <strong id="odl-rango-titulo">Ventana de análisis</strong>
-    <span class="odl-timezone">Zona horaria: no declarada por la fuente; se conserva la hora local del archivo.</span>
-    <span id="odl-rango-estado" class="odl-panel-note" aria-live="polite"></span>
+  <div class="odl-host-strip">
+    {% for node in hosts %}
+    {% set host = payload.infraestructura | selectattr('host', 'equalto', node) | first | default({}) %}
+    <div class="odl-host-item">
+      {{ m.icono(iconos, "node_down") }}<strong>{{ node }}</strong>
+      <span>Instancia {{ host.instance_name or 'no disponible' }}</span>
+      <span>CPU {{ (host.cores | int) if host.cores else 'no disponible' }}</span>
+      <span>RAM {{ (host.mem_gb | round(1) ~ ' GiB') if host.mem_gb else 'no disponible' }}</span>
+    </div>
+    {% else %}<div class="odl-panel-note">Sin hosts identificados en las fuentes.</div>{% endfor %}
   </div>
   <div class="odl-timebar-controls">
     <label>Captura
       <select id="odl-rango-captura" class="odl-filter-input" aria-label="Ventana de captura">
         <option value="">Todo</option>
         {% for ventana in payload.motor_episodios.ventanas_captura %}
-        <option value="{{ loop.index0 }}">{{ ventana.inicio | fecha_hora }} — {{ ventana.fin | hora }} · {{ ventana.muestras }} muestras</option>
+        <option value="{{ loop.index0 }}" title="{{ ventana.muestras_definicion }}; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}">{{ ventana.inicio | fecha_hora }} — {{ ventana.fin | hora }} · {{ ventana.muestras }} timestamps únicos</option>
         {% endfor %}
+        <option value="custom" disabled>Personalizado</option>
       </select>
     </label>
-    <label>Nodos
-      <select id="odl-rango-nodos" class="odl-filter-input" multiple aria-label="Nodos incluidos">
-        {% set hosts_infra = payload.infraestructura | map(attribute='host') | reject('none') | list %}
-        {% set nodos_filtro = (payload.motor_episodios.node_list + payload.motor_episodios.nodos_sar + hosts_infra) | unique | list | sort %}
-        {% for nodo in nodos_filtro %}<option value="{{ nodo }}" selected>{{ nodo }}</option>{% endfor %}
-      </select>
-    </label>
-    <label>Desde
-      <input id="odl-rango-desde" class="odl-filter-input" type="datetime-local" step="1">
-    </label>
-    <label>Hasta
-      <input id="odl-rango-hasta" class="odl-filter-input" type="datetime-local" step="1">
-    </label>
+    <label>Desde<input id="odl-rango-desde" class="odl-filter-input" type="datetime-local" step="1"></label>
+    <label>Hasta<input id="odl-rango-hasta" class="odl-filter-input" type="datetime-local" step="1"></label>
     <button id="odl-rango-aplicar" class="odl-filter-btn" type="button">Aplicar</button>
+    <button id="odl-rango-ajustar" class="odl-filter-btn" type="button">Ajustar a datos</button>
     <button id="odl-rango-restaurar" class="odl-filter-btn" type="button">Restablecer</button>
+    <details class="odl-time-help"><summary aria-label="Ayuda de fechas y capturas">Ayuda</summary>
+      <div>Se conserva la hora local del archivo; la fuente no declara zona horaria.</div>
+      <ul>{% for ventana in payload.motor_episodios.ventanas_captura %}<li>{{ ventana.inicio | fecha_hora }}: {{ ventana.muestras }} timestamps; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endfor %}</ul>
+      <div>Las muestras son timestamps únicos. Consulte cada captura para ver el desglose por nodo.</div>
+      <div>Una muestra se dibuja como punto, con margen de ±1 segundo en el eje. Los huecos interiores se conservan.</div>
+    </details>
   </div>
+  <div class="odl-selection-line"><span id="odl-periodo-seleccionado"></span><span id="odl-rango-nota" role="status" aria-live="polite"></span></div>
 </section>
-<div class="odl-panel-note odl-awr-filter-policy">
-  Política AWR: el selector ajusta las series por el inicio del snapshot; un AWR no se recalcula parcialmente. Las tablas conservan la ventana completa indicada en su cabecera.
-</div>
-
-{# Cabecera de infraestructura (Hito "rediseno AWR", 2026-10-02, pedido
-   del audit externo): hosts/cores/RAM/version de BD, ahora que el modelo
-   dimensional (dim_infraestructura/dim_database) los tiene tipados --
-   reusa las clases .odl-kpi-row/.odl-kpi ya validadas (antes servian a
-   la ficha de KPIs del motor narrativo, retirada de la UI, nunca se
-   borraron del CSS) en vez de inventar un componente nuevo. #}
-{% if payload.infraestructura %}
-<div class="odl-host-strip">
-  {% for host in payload.infraestructura %}
-  <div class="odl-host-item">
-    {{ m.icono(iconos, "node_down") }}
-    <strong>{{ host.host or "host desconocido" }}</strong>
-    {% if host.instance_name %}<span>{{ host.instance_name }}</span>{% endif %}
-    {% if host.cores %}<span>{{ host.cores | int }} CPU</span>{% endif %}
-    {% if host.mem_gb %}<span>{{ host.mem_gb | round(1) }} GiB</span>{% endif %}
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
 
   <section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
+  <p class="odl-panel-note">Métricas del host completo · Cobertura OCLUMON: {% for c in payload.motor_episodios.ventanas_captura %}{{ c.inicio | fecha_hora }} — {{ c.fin | fecha_hora }}{% if not loop.last %}; {% endif %}{% else %}sin muestras{% endfor %}.</p>
   {% set rel = payload.informe.presentacion.series_relevantes %}
   {% set me = payload.motor_episodios %}
   <div class="odl-panel">
@@ -309,6 +299,7 @@
 </section>
 
 <section id="sec-timeline" data-tab-panel>
+  <p class="odl-panel-note">Cobertura: episodios detectados sobre OCLUMON; bandas limitadas a las capturas disponibles.</p>
   <div class="odl-panel">
     <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "nav_timeline") }}Línea de tiempo consolidada</div></div>
     {% set linea = payload.motor_episodios.linea_tiempo %}
@@ -349,6 +340,7 @@
 </section>
 
 <section id="sec-almacenamiento" data-tab-panel>
+  <p class="odl-panel-note odl-awr-filter-policy">Cobertura AWR: snapshots completos indicados en las tablas. El filtro recorta las series por el inicio del snapshot; los valores agregados y las tablas no se recalculan parcialmente.</p>
   {# Rediseno AWR (Hito "Modelo de datos dimensional" + "rediseno AWR",
      2026-10-02, pedido de la segunda auditoria externa -- AAS segun
      metodologia oficial de Oracle, Top Wait Events por snapshot
@@ -444,6 +436,7 @@
 </section>
 
 <section id="sec-sar" data-tab-panel>
+  <p class="odl-panel-note">Métricas del host completo · Cobertura SAR: {{ payload.motor_episodios.nodos_sar | join(", ") or "sin muestras" }}. El filtro temporal se aplica a las muestras disponibles.</p>
   {# Sistema Operativo (SAR) -- Hito "rediseno AWR + SAR" (2026-10-02),
      instruccion explicita del usuario de ocupar aca el lugar que tenia
      "Evidencias" en el nav. Mismo patron que sec-oclumon: chart
@@ -471,6 +464,7 @@
 </section>
 
 <section id="sec-calidad" data-tab-panel>
+  <p class="odl-panel-note">Cobertura: evidencia de las fuentes cargadas. El filtro temporal limita las filas; los recuentos de calidad describen el periodo completo disponible.</p>
   <div class="odl-panel">
     <div class="odl-panel-header"><div class="odl-panel-title">{{ m.icono(iconos, "nav_calidad") }}Calidad de datos y alcance del análisis</div></div>
     <table class="odl-table">

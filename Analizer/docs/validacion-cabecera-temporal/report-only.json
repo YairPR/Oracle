@@ -1,0 +1,15 @@
+{
+  "wall_seg": 16.826692699920386,
+  "phases": {
+    "ingesta_seg": 1.0,
+    "ia_seg": 0.0,
+    "episodios_seg": 0.0,
+    "persistir_seg": 0.0,
+    "dashboard_seg": 15.794,
+    "total_seg": 16.794
+  },
+  "database_unchanged": true,
+  "database_sha256": "31ea6fd026aae0bbf14a212efc9ad12966c79a0099508e9f8dbad6bc55eeeba6",
+  "episodes": 170,
+  "html_bytes": 16068638
+}
