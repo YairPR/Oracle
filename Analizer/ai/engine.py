@@ -87,6 +87,24 @@ UMBRAL_PCT_DBTIME = 5.0  # "mas del 5% de impacto" -- pedido explicito del hito
 # ver mas abajo). UMBRAL_GIPCD_AVGMS_CRITICO se retiro (dependia de
 # Clusterware/gipcd, fuente fuera de alcance desde el Hito de
 # simplificacion).
+# Counter increments require a compatible domain and observed cadence. No reset/gap delta.
+VALID_PROTO_DELTAS_SQL = """
+WITH tagged AS (
+ SELECT *, coalesce(try(json_extract_string(detalles,'$.zone')), 'unknown') AS domain
+ FROM fact_telemetria_so WHERE metrica_o_error IN ('NET_IP_REASM_FAIL','NET_TCP_RETRA_SEG')
+), previous AS (
+ SELECT *, lag(valor) OVER w AS prior, lag(timestamp) OVER w AS prior_ts
+ FROM tagged WINDOW w AS (PARTITION BY metrica_o_error,nodo,domain ORDER BY timestamp)
+), periods AS (
+ SELECT *, date_diff('millisecond',prior_ts,timestamp)/1000.0 AS seconds FROM previous
+), timed AS (
+ SELECT *, quantile_cont(seconds,0.25) OVER (PARTITION BY metrica_o_error,nodo,domain) AS cadence
+ FROM periods WHERE seconds>0
+)
+SELECT metrica_o_error,nodo,valor-prior AS delta FROM timed
+WHERE seconds<=cadence*3 AND valor>=prior
+"""
+
 UMBRAL_CPU_WARNING_PCT = 80.0  # % -- pedido explicito del hito
 # IPReasFail/TCPRetraSeg son contadores ACUMULATIVOS (ver
 # parsers/oclumon.py) -- un "salto vertical brusco" se mide como el delta
@@ -297,15 +315,8 @@ class RootCauseEngine:
             bloque.append("- (sin datos de oclumon en la base)")
 
         saltos = self._query(
-            """
-            SELECT metrica_o_error, nodo, max(delta) FROM (
-                SELECT metrica_o_error, nodo,
-                       valor - lag(valor) OVER (
-                           PARTITION BY metrica_o_error, nodo ORDER BY timestamp
-                       ) AS delta
-                FROM fact_telemetria_so
-                WHERE metrica_o_error IN ('NET_IP_REASM_FAIL', 'NET_TCP_RETRA_SEG')
-            ) sub
+            f"""
+            SELECT metrica_o_error, nodo, max(delta) FROM ({VALID_PROTO_DELTAS_SQL}) sub
             WHERE delta IS NOT NULL AND delta > 0
             GROUP BY metrica_o_error, nodo
             ORDER BY max(delta) DESC
@@ -369,7 +380,7 @@ class RootCauseEngine:
         WARNING (solo si NINGUN CRITICAL de arriba aplico):
           a) CPU promedio (CPU_USAGE_PCT) por encima de
              UMBRAL_CPU_WARNING_PCT.
-          b) Uso activo de SWAP (SWAP_USED_MB > 0) en cualquier muestra.
+          b) Tráfico de swap (SWAP_IN_KBPS / SWAP_OUT_KBPS > 0) en cualquier muestra.
 
         OK: ninguna de las anteriores -- todas las metricas en rango
         normal.
@@ -383,15 +394,8 @@ class RootCauseEngine:
 
         # -- a) saltos bruscos en contadores de PROTOCOL ERRORS ---------
         filas = self._query(
-            """
-            SELECT metrica_o_error, nodo, max(delta) FROM (
-                SELECT metrica_o_error, nodo,
-                       valor - lag(valor) OVER (
-                           PARTITION BY metrica_o_error, nodo ORDER BY timestamp
-                       ) AS delta
-                FROM fact_telemetria_so
-                WHERE metrica_o_error IN ('NET_IP_REASM_FAIL', 'NET_TCP_RETRA_SEG')
-            ) sub
+            f"""
+            SELECT metrica_o_error, nodo, max(delta) FROM ({VALID_PROTO_DELTAS_SQL}) sub
             WHERE delta IS NOT NULL
             GROUP BY metrica_o_error, nodo
             """,
@@ -419,18 +423,18 @@ class RootCauseEngine:
 
         # -- WARNING b) uso activo de SWAP --------------------------------
         filas = self._query(
-            "SELECT max(valor) FROM fact_telemetria_so WHERE metrica_o_error = 'SWAP_USED_MB'",
+            "SELECT max(valor) FROM fact_telemetria_so WHERE metrica_o_error IN ('SWAP_IN_KBPS','SWAP_OUT_KBPS')",
             etiqueta="salud_swap_activo",
         )
         if filas and filas[0][0] is not None and filas[0][0] > 0:
-            motivos_warning.append(f"uso activo de SWAP detectado (hasta {filas[0][0]:.0f} MB)")
+            motivos_warning.append(f"tráfico swap observado (hasta {filas[0][0]:.0f} KB/s); heurística, no diagnóstico de presión")
 
         if motivos_warning:
             return {"estado": "WARNING", "motivos": motivos_warning}
 
         return {
             "estado": "OK",
-            "motivos": ["todas las metricas en rango normal"],
+            "motivos": ["sin alertas en las heurísticas evaluadas; no demuestra salud fuera de la cobertura"],
         }
 
     # -- Contexto rapido (automatico, SIEMPRE SQL) ----------------------

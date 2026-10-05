@@ -1,0 +1,20 @@
+[
+  {
+    "zone": "Europe/Madrid",
+    "startup_ms": 313.46910004504025,
+    "heap_bytes": 2848196,
+    "errors": []
+  },
+  {
+    "zone": "America/Los_Angeles",
+    "startup_ms": 245.77039992436767,
+    "heap_bytes": 2848212,
+    "errors": []
+  },
+  {
+    "zone": "Asia/Tokyo",
+    "startup_ms": 238.16339997574687,
+    "heap_bytes": 2848212,
+    "errors": []
+  }
+]

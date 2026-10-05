@@ -136,6 +136,13 @@ class Contracts(unittest.TestCase):
                     ).fetchone()[0],
                     1,
                 )
+                def fail_originals(con):
+                    con.execute('CREATE TABLE temporary_originals(value INTEGER)')
+                    raise RuntimeError('cannot persist originals')
+                with self.assertRaisesRegex(RuntimeError,'persist originals'):
+                    storage.bulk_insert_telemetria('case',[good],observation_callback=fail_originals)
+                self.assertEqual(storage.con.execute('SELECT count(*) FROM fact_telemetria_so').fetchone()[0],1)
+                self.assertEqual(storage.con.execute("SELECT count(*) FROM duckdb_tables() WHERE table_name='temporary_originals'").fetchone()[0],0)
 
 
 if __name__ == "__main__":

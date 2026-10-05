@@ -1,0 +1,6 @@
+{
+  "fact_awr_snapshots": true,
+  "fact_awr_wait_events": true,
+  "dim_database": true,
+  "dim_infraestructura": true
+}

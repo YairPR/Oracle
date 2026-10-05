@@ -1,0 +1,9 @@
+{
+  "parse_seconds": 1.4908555999863893,
+  "series_seconds": 0.5131328999996185,
+  "samples": 180,
+  "series": 1577,
+  "source_sha256": "cadae53f903b85468d9043fa52ab3f7bd63650a42bb261b2a547cdeb97212ddc",
+  "valid_points_sha256": "9a1300dae9bfded71e49c30116021cf0666d7ef6e306c32eb6018a0909917746",
+  "represented_points": 146354
+}

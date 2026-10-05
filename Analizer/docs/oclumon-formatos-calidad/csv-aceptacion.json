@@ -1,0 +1,72 @@
+{
+  "hosts": 3,
+  "node_samples": 2163,
+  "shared_instants": 721,
+  "sources": [
+    {
+      "node": "bov-wdrac-03",
+      "samples": 721,
+      "first_clock": "2026-10-05T10:30:00+02:00",
+      "last_clock": "2026-10-05T11:30:00+02:00",
+      "first_cpu": 12.59,
+      "inventory": {
+        "pcpus": 9.0,
+        "cores": 18.0,
+        "vcpus": 18.0,
+        "ram_gib": 196.23583984375
+      },
+      "raw_records_first_block": 208,
+      "processing_status": "partial",
+      "omitted_sections": {
+        "process_aggregate": "recognized; domain adapter not implemented",
+        "nfs": "recognized; domain adapter not implemented",
+        "advm": "recognized; domain adapter not implemented",
+        "asminst_db": "recognized; domain adapter not implemented"
+      }
+    },
+    {
+      "node": "bov-wdrac-04",
+      "samples": 721,
+      "first_clock": "2026-10-05T10:30:00+02:00",
+      "last_clock": "2026-10-05T11:30:00+02:00",
+      "first_cpu": 15.37,
+      "inventory": {
+        "pcpus": 9.0,
+        "cores": 18.0,
+        "vcpus": 18.0,
+        "ram_gib": 196.23583984375
+      },
+      "raw_records_first_block": 201,
+      "processing_status": "partial",
+      "omitted_sections": {
+        "process_aggregate": "recognized; domain adapter not implemented",
+        "nfs": "recognized; domain adapter not implemented",
+        "advm": "recognized; domain adapter not implemented",
+        "asminst_db": "recognized; domain adapter not implemented"
+      }
+    },
+    {
+      "node": "bov-wdrac-07",
+      "samples": 721,
+      "first_clock": "2026-10-05T10:30:00+02:00",
+      "last_clock": "2026-10-05T11:30:00+02:00",
+      "first_cpu": 37.05,
+      "inventory": {
+        "pcpus": 9.0,
+        "cores": 18.0,
+        "vcpus": 18.0,
+        "ram_gib": 196.23583984375
+      },
+      "raw_records_first_block": 205,
+      "processing_status": "partial",
+      "omitted_sections": {
+        "process_aggregate": "recognized; domain adapter not implemented",
+        "nfs": "recognized; domain adapter not implemented",
+        "advm": "recognized; domain adapter not implemented",
+        "asminst_db": "recognized; domain adapter not implemented"
+      }
+    }
+  ],
+  "raw_fields_persisted": true,
+  "sql_rows": 19467
+}

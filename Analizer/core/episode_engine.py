@@ -1,50 +1,11 @@
-"""
-core/episode_engine.py
+"""Common OCLUMON samples, discontinuity-aware derived series and evidence-based episodes."""
 
-Motor de episodios + linea de tiempo narrada -- el "cerebro de senal" que le
-faltaba a rac-lab. Hasta este hito, rac-lab volcaba CADA fila cruda (una por
-muestra de oclumon, una por linea de Clusterware, un bloque por cada *** de
-un trace) directo a la tabla Tabulator del dashboard: miles de filas, cero
-agrupacion, cero interpretacion -- el usuario lo describio con precision el
-2026-10-01: "hay data en bruto demasiada no hay senales de ningun evento
-puntual".
-
-Mientras tanto, la herramienta de campo (`oclumon_analyzer.py`, en la raiz
-de `dept300/`) SI resuelve esto bien, y lo viene resolviendo desde antes de
-que existiera rac-lab: agrupa eventos discretos en EPISODIOS contiguos (una
-rafaga de 131 muestras casi identicas se convierte en 1 tarjeta, no en 131
-filas), les agrega una interpretacion tecnica en lenguaje natural desde una
-base de conocimiento fija (determinista, sin LLM), y arma una LINEA DE
-TIEMPO consolidada cruzando esos episodios con los eventos del alert log.
-
-Este modulo es un PORT deliberado de esa logica ya probada (el usuario la
-calificio directamente de "el analizador de ayer construia bien") --
-`parse_file`, `build_dataset`, `nic_types`, `detect_anomalias`,
-`INTERP_KB`, `build_episodios`, `parse_alert_log`, `build_timeline` y
-`build_proc_rankings` son el mismo algoritmo, con las mismas reglas,
-umbrales y textos de interpretacion que ya se verificaron contra datos
-reales de DEPT300 (incluyendo los archivos CHM de 4+ MB subidos el
-2026-10-01) -- no una reescritura desde cero. Se renombraron un par de
-identificadores al castellano para mantener consistencia con el resto de
-`rac-lab`, pero la logica interna (umbrales, EPISODE_GAP_SECONDS=120,
-agrupacion por (nodo, categoria), orden por severidad) es identica.
-
-Deliberadamente NO vive en DuckDB: opera directo sobre los archivos de
-oclumon/alert ya clasificados por `core/router.py`, igual que hace
-`oclumon_analyzer.py` -- csrc/eventos_forenses sigue siendo la fuente para
-AWR/Clusterware/trace/sar y para `ai.engine.calcular_estado_salud()`, pero
-la narrativa de "que paso puntualmente" sale de aca, no de un SELECT sobre
-filas crudas.
-
-Por pedido explicito del proyecto: ninguna linea/archivo mal formado debe
-tumbar el analisis completo.
-"""
-
-import re
 import logging
 from datetime import datetime, timezone
 from statistics import median
-from core.io_profile import TimedText
+from functools import lru_cache
+from core.metric_contract import sum_known, contract
+from core.oclumon_dataset import deduplicate
 
 log = logging.getLogger("rac_forensic_lab.core.episode_engine")
 
@@ -52,6 +13,7 @@ MAX_UNPARSED_SAMPLES = 40
 MAX_ERROR_SAMPLES = 40
 
 
+@lru_cache(maxsize=65536)
 def _epoch_hora_origen(valor) -> int:
     """Convierte una hora local *sin zona* en un eje estable.
 
@@ -65,7 +27,7 @@ def _epoch_hora_origen(valor) -> int:
     return int(dt.timestamp())
 
 
-def _insertar_huecos(puntos):
+def _insertar_huecos(puntos, cadence_seconds=None):
     """Inserta un null cuando falta más de tres intervalos de muestreo.
 
     `connectNulls:false` sólo corta una línea si el dataset contiene el hueco;
@@ -80,8 +42,8 @@ def _insertar_huecos(puntos):
     # la mitad inferior estima la cadencia real sin dejar que días sin datos
     # eleven artificialmente el umbral.
     rapidos = sorted(diffs)[:max(1, len(diffs) // 2)]
-    paso = max(1, int(median(rapidos)))
-    umbral = max(60, paso * 3)
+    paso = max(1, int(cadence_seconds if cadence_seconds is not None else median(rapidos)))
+    umbral = paso * 3
     out = [puntos[0]]
     for anterior, actual in zip(puntos, puntos[1:]):
         if actual["t"] - anterior["t"] > umbral:
@@ -105,7 +67,7 @@ def _detectar_ventanas_captura(nodes):
     diffs = [b - a for a, b in zip(tiempos, tiempos[1:]) if b > a]
     rapidos = sorted(diffs)[:max(1, len(diffs) // 2)] if diffs else [1]
     paso = max(1, int(median(rapidos)))
-    umbral = max(60, paso * 3)
+    umbral = paso * 3
     grupos, actual = [], [tiempos[0]]
     for anterior, t in zip(tiempos, tiempos[1:]):
         if t - anterior > umbral:
@@ -131,336 +93,9 @@ def _detectar_ventanas_captura(nodes):
 # GI (11g..19c), identico al de oclumon_analyzer.py. Ver docstring del
 # modulo para por que NO se asume un orden/conjunto fijo de campos.
 # ---------------------------------------------------------------------
-TOKEN_RE = re.compile(r"([#A-Za-z][\w#%]*)\s*:\s*('[^']*'|-?\d+\.\d+|-?\d+|\S+)")
-
-
-def _tokenize(line):
-    out = {}
-    for m in TOKEN_RE.finditer(line):
-        key, val = m.group(1), m.group(2)
-        if len(val) >= 2 and val.startswith("'") and val.endswith("'"):
-            val = val[1:-1]
-        out[key] = val
-    return out
-
-
-def _as_float(d, key, default=0.0):
-    v = d.get(key)
-    if v is None or v == "":
-        return default
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return default
-
-
-def _as_int(d, key, default=0):
-    v = d.get(key)
-    if v is None or v == "":
-        return default
-    try:
-        return int(float(v))
-    except (TypeError, ValueError):
-        return default
-
-
-SYS_KNOWN = {
-    "cpu", "cpuq", "physmemfree", "physmemtotal", "mcache", "swapfree",
-    "swaptotal", "ior", "iow", "ios", "swpin", "swpout", "pgin", "pgout",
-    "netr", "netw", "procs", "rtprocs", "#fds", "#sysfdlimit", "#disks",
-    "#nics", "nicErrors", "#pcpus", "#vcpus", "chipname", "cpuht",
-}
-TOP_KNOWN = {"topcpu", "topprivmem", "topshm", "topfd", "topthread"}
-NIC_KNOWN = {
-    "netrr", "netwr", "neteff", "nicerrors", "pktsin", "pktsout",
-    "errsin", "errsout", "indiscarded", "outdiscarded", "inunicast",
-    "innonunicast", "type", "latency",
-}
-PROTO_KNOWN = {
-    "IPHdrErr", "IPAddrErr", "IPUnkProto", "IPReasFail", "IPFragFail",
-    "TCPFailedConn", "TCPEstRst", "TCPRetraSeg", "UDPUnkPort", "UDPRcvErr",
-}
-DEV_KNOWN = {"ior", "iow", "ios", "qlen", "wait", "type"}
-FS_KNOWN = {"mount", "type", "total", "used", "available", "used%", "ifree%"}
-PROC_KNOWN = {
-    "name", "pid", "#procfdlimit", "cpuusage", "privmem", "shm", "#fd",
-    "#threads", "priority", "nice",
-}
-STRUCTURED_SECTIONS = {
-    "system": SYS_KNOWN, "top": TOP_KNOWN, "nics": NIC_KNOWN, "proto": PROTO_KNOWN,
-    "devices": DEV_KNOWN, "filesystems": FS_KNOWN, "processes": PROC_KNOWN,
-}
-SECTION_HEADERS = {
-    "SYSTEM:": "system", "TOP CONSUMERS:": "top", "PROCESSES:": "processes",
-    "DEVICES:": "devices", "FILESYSTEMS:": "filesystems", "NICS:": "nics",
-    "PROTOCOL ERRORS:": "proto",
-}
-
-LATENCY_TOKEN_RE = re.compile(r"[<>]?\s*(-?\d+(?:\.\d+)?)")
-
-
-def _parse_latency_ms(raw):
-    if raw is None or raw == "":
-        return None
-    m = LATENCY_TOKEN_RE.search(str(raw))
-    if not m:
-        return None
-    try:
-        return float(m.group(1))
-    except ValueError:
-        return None
-
-
-def _parse_clock(s):
-    m = re.match(r"(\d\d)-(\d\d)-(\d\d)\s+(\d\d)\.(\d\d)\.(\d\d)", s.strip())
-    if not m:
-        return None
-    mo, d, y, h, mi, se = map(int, m.groups())
-    y += 2000
-    try:
-        return datetime(y, mo, d, h, mi, se)
-    except ValueError:
-        return None
-
-
-def _new_diag(path):
-    return {
-        "path": path, "total_lines": 0, "samples": 0, "node_names": set(),
-        "first_clock": None, "last_clock": None,
-        "sections": {
-            k: {"lines": 0, "matched": 0, "unmatched": 0, "unknown_keys": set(),
-                "unknown_key_samples": {}}
-            for k in STRUCTURED_SECTIONS
-        },
-        "unparsed_samples": [], "errors": [],
-    }
-
-
-def _note_unknown_keys(diag, section, toks, known):
-    unk = set(toks.keys()) - known
-    if unk:
-        sec = diag["sections"][section]
-        sec["unknown_keys"].update(unk)
-        for k in unk:
-            sec["unknown_key_samples"].setdefault(k, toks[k])
-
-
-def _note_unparsed(diag, lineno, section, line):
-    diag["sections"][section]["unmatched"] += 1
-    if len(diag["unparsed_samples"]) < MAX_UNPARSED_SAMPLES:
-        diag["unparsed_samples"].append({"line_no": lineno, "section": section, "text": line[:200]})
-
-
-def _new_proc_rank_entry(name):
-    return {
-        "name": name, "pid": None, "n": 0,
-        "max_cpuusage": 0.0, "max_privmem_kb": 0, "max_shm_kb": 0,
-        "max_fd": 0, "max_threads": 0, "last_t": None,
-    }
-
-
 def parse_oclumon_file(path):
-    """Parsea un dump de `oclumon dumpnodeview -v`. Devuelve
-    (samples, diag, proc_rank) -- ver docstring del modulo: port directo
-    de oclumon_analyzer.parse_file(), mismo algoritmo, nunca tumba el
-    archivo completo por una linea mal formada."""
-    samples = []
-    cur = None
-    section = None
-    diag = _new_diag(path)
-    proc_rank = {}
-
-    with TimedText(path, diag, encoding="utf-8", errors="replace") as f:
-        for lineno, raw in enumerate(f, start=1):
-            line = raw.rstrip("\n")
-            diag["total_lines"] += 1
-            if not line.strip():
-                continue
-            try:
-                header = SECTION_HEADERS.get(line.partition(":")[0] + ":")
-                if header and cur is not None:
-                    section = header
-                    continue
-                toks = _tokenize(line)
-
-                if "Node" in toks and "Clock" in toks:
-                    if cur is not None:
-                        samples.append(cur)
-                    node = toks["Node"]
-                    clock = _parse_clock(toks["Clock"])
-                    cur = {
-                        "node": node, "clock": clock, "serial": toks.get("SerialNo"),
-                        "sys": None, "top": None, "nics": [], "proto": None, "telemetria": [],
-                        "source": str(path),
-                        "devices": [], "filesystems": [],
-                    }
-                    section = None
-                    diag["samples"] += 1
-                    diag["node_names"].add(node)
-                    if clock is not None:
-                        if diag["first_clock"] is None or clock < diag["first_clock"]:
-                            diag["first_clock"] = clock
-                        if diag["last_clock"] is None or clock > diag["last_clock"]:
-                            diag["last_clock"] = clock
-                    continue
-
-                if cur is None:
-                    continue
-
-                if section is None:
-                    continue
-
-                if section == "system":
-                    diag["sections"]["system"]["lines"] += 1
-                    if toks:
-                        for key, metric in [("cpu", "CPU_USAGE_PCT"), ("ior", "IO_READ_RATE_KBPS"),
-                                            ("iow", "IO_WRITE_RATE_KBPS"), ("ios", "IO_OPS_PER_SEC")]:
-                            value = _as_float(toks, key, default=None)
-                            if value is not None:
-                                cur["telemetria"].append((metric, value))
-                        free = _as_float(toks, "swapfree", default=None)
-                        total = _as_float(toks, "swaptotal", default=None)
-                        if free is not None and total is not None:
-                            cur["telemetria"].append(("SWAP_USED_MB", (total - free) / 1024.0))
-                        cur["sys"] = {
-                            "cpu": _as_float(toks, "cpu"),
-                            "cpuq": _as_int(toks, "cpuq"),
-                            "memfree_mb": _as_int(toks, "physmemfree") // 1024,
-                            "memtotal_mb": _as_int(toks, "physmemtotal") // 1024,
-                            "mcache_mb": _as_int(toks, "mcache") // 1024,
-                            "swapfree_mb": _as_int(toks, "swapfree") // 1024,
-                            "swaptotal_mb": _as_int(toks, "swaptotal") // 1024,
-                            "swpin": _as_int(toks, "swpin"),
-                            "swpout": _as_int(toks, "swpout"),
-                            "netr": _as_float(toks, "netr"),
-                            "netw": _as_float(toks, "netw"),
-                            "procs": _as_int(toks, "procs"),
-                            "nicerrors": _as_int(toks, "nicErrors"),
-                        }
-                        diag["sections"]["system"]["matched"] += 1
-                        _note_unknown_keys(diag, "system", toks, SYS_KNOWN)
-                    else:
-                        _note_unparsed(diag, lineno, "system", line)
-                    section = None
-
-                elif section == "top":
-                    diag["sections"]["top"]["lines"] += 1
-                    if toks:
-                        cur["top"] = {
-                            "topcpu": toks.get("topcpu", ""), "topprivmem": toks.get("topprivmem", ""),
-                            "topshm": toks.get("topshm", ""), "topfd": toks.get("topfd", ""),
-                            "topthread": toks.get("topthread", ""),
-                        }
-                        diag["sections"]["top"]["matched"] += 1
-                        _note_unknown_keys(diag, "top", toks, TOP_KNOWN)
-                    else:
-                        _note_unparsed(diag, lineno, "top", line)
-                    section = None
-
-                elif section == "nics":
-                    diag["sections"]["nics"]["lines"] += 1
-                    if toks:
-                        parts = line.strip().split(None, 1)
-                        first_tok = parts[0] if parts else ""
-                        name = first_tok.split(":", 1)[0] if first_tok else "?"
-                        cur["nics"].append({
-                            "name": name, "netrr": _as_float(toks, "netrr"), "netwr": _as_float(toks, "netwr"),
-                            "neteff": _as_float(toks, "neteff", default=None) if "neteff" in toks else None,
-                            "nicerrors": _as_int(toks, "nicerrors"),
-                            "pktsin": _as_int(toks, "pktsin"), "pktsout": _as_int(toks, "pktsout"),
-                            "errsin": _as_int(toks, "errsin"), "errsout": _as_int(toks, "errsout"),
-                            "indiscarded": _as_int(toks, "indiscarded"), "outdiscarded": _as_int(toks, "outdiscarded"),
-                            "latency_ms": _parse_latency_ms(toks.get("latency")),
-                            "latency_lt": str(toks.get("latency", "")).strip().startswith("<"),
-                            "type": toks.get("type", "unknown"),
-                        })
-                        diag["sections"]["nics"]["matched"] += 1
-                        _note_unknown_keys(diag, "nics", toks, NIC_KNOWN)
-                    else:
-                        _note_unparsed(diag, lineno, "nics", line)
-
-                elif section == "proto":
-                    diag["sections"]["proto"]["lines"] += 1
-                    if toks:
-                        for key, metric in [("IPReasFail", "NET_IP_REASM_FAIL"), ("TCPRetraSeg", "NET_TCP_RETRA_SEG")]:
-                            value = _as_float(toks, key, default=None)
-                            if value is not None:
-                                cur["telemetria"].append((metric, value))
-                        cur["proto"] = {
-                            "iphdrerr": _as_int(toks, "IPHdrErr"), "ipaddrerr": _as_int(toks, "IPAddrErr"),
-                            "ipreasfail": _as_int(toks, "IPReasFail"), "ipfragfail": _as_int(toks, "IPFragFail"),
-                            "tcpfailedconn": _as_int(toks, "TCPFailedConn"), "tcpestrst": _as_int(toks, "TCPEstRst"),
-                            "tcpretraseg": _as_int(toks, "TCPRetraSeg"), "udpunkport": _as_int(toks, "UDPUnkPort"),
-                            "udprcverr": _as_int(toks, "UDPRcvErr"),
-                        }
-                        diag["sections"]["proto"]["matched"] += 1
-                        _note_unknown_keys(diag, "proto", toks, PROTO_KNOWN)
-                    else:
-                        _note_unparsed(diag, lineno, "proto", line)
-                    section = None
-
-                elif section == "devices":
-                    diag["sections"]["devices"]["lines"] += 1
-                    if toks:
-                        parts = line.strip().split(None, 1)
-                        first_tok = parts[0] if parts else ""
-                        name = first_tok.split(":", 1)[0] if first_tok else "?"
-                        cur["devices"].append({
-                            "name": name, "ior": _as_float(toks, "ior"), "iow": _as_float(toks, "iow"),
-                            "ios": _as_float(toks, "ios"), "qlen": _as_float(toks, "qlen"),
-                            "wait_ms": _as_float(toks, "wait"), "type": toks.get("type", ""),
-                        })
-                        diag["sections"]["devices"]["matched"] += 1
-                        _note_unknown_keys(diag, "devices", toks, DEV_KNOWN)
-                    else:
-                        _note_unparsed(diag, lineno, "devices", line)
-
-                elif section == "filesystems":
-                    diag["sections"]["filesystems"]["lines"] += 1
-                    if toks and "mount" in toks:
-                        cur["filesystems"].append({
-                            "mount": toks.get("mount", "?"), "fstype": toks.get("type", ""),
-                            "total_kb": _as_int(toks, "total"), "used_kb": _as_int(toks, "used"),
-                            "avail_kb": _as_int(toks, "available"),
-                            "used_pct": _as_float(toks, "used%", default=None) if "used%" in toks else None,
-                            "ifree_pct": _as_float(toks, "ifree%", default=None) if "ifree%" in toks else None,
-                        })
-                        diag["sections"]["filesystems"]["matched"] += 1
-                        _note_unknown_keys(diag, "filesystems", toks, FS_KNOWN)
-                    else:
-                        _note_unparsed(diag, lineno, "filesystems", line)
-
-                elif section == "processes":
-                    diag["sections"]["processes"]["lines"] += 1
-                    if toks and "name" in toks and cur is not None:
-                        diag["sections"]["processes"]["matched"] += 1
-                        _note_unknown_keys(diag, "processes", toks, PROC_KNOWN)
-                        node_procs = proc_rank.setdefault(cur["node"], {})
-                        name = toks["name"]
-                        rec = node_procs.setdefault(name, _new_proc_rank_entry(name))
-                        pid = _as_int(toks, "pid", default=0)
-                        if pid:
-                            rec["pid"] = pid
-                        rec["n"] += 1
-                        rec["max_cpuusage"] = max(rec["max_cpuusage"], _as_float(toks, "cpuusage"))
-                        rec["max_privmem_kb"] = max(rec["max_privmem_kb"], _as_int(toks, "privmem"))
-                        rec["max_shm_kb"] = max(rec["max_shm_kb"], _as_int(toks, "shm"))
-                        rec["max_fd"] = max(rec["max_fd"], _as_int(toks, "#fd"))
-                        rec["max_threads"] = max(rec["max_threads"], _as_int(toks, "#threads"))
-                        if cur["clock"] is not None:
-                            t_iso = cur["clock"].isoformat()
-                            if rec["last_t"] is None or t_iso > rec["last_t"]:
-                                rec["last_t"] = t_iso
-                    else:
-                        _note_unparsed(diag, lineno, "processes", line)
-            except Exception as e:
-                if len(diag["errors"]) < MAX_ERROR_SAMPLES:
-                    diag["errors"].append({"line_no": lineno, "msg": str(e)})
-                continue
-
-    if cur is not None:
-        samples.append(cur)
-    return [s for s in samples if s["clock"] is not None], diag, proc_rank
+    from core.oclumon_model import parse
+    return parse(path)
 
 
 def merge_proc_rank(dst, src):
@@ -509,77 +144,8 @@ def nic_types(samples):
 
 
 def build_dataset(all_samples):
-    """Agrupa por nodo, ordena por tiempo, calcula deltas de PROTOCOL
-    ERRORS, agrega NICS por tipo (PRIVATE/PUBLIC). Devuelve {nodo: [filas]}
-    -- cada fila es un punto en el tiempo listo para graficar o para
-    alimentar detect_anomalias()."""
-    by_node = {}
-    for s in all_samples:
-        by_node.setdefault(s["node"], []).append(s)
-
-    nodes = {}
-    for node, samples in by_node.items():
-        samples.sort(key=lambda s: s["clock"])
-        base_proto = None
-        rows = []
-        for s in samples:
-            row = {"t": s["clock"].isoformat(), "sys": s["sys"], "top": s["top"]}
-            by_type = {}
-            for n in s["nics"]:
-                d = by_type.setdefault(n["type"], {
-                    "netrr": 0.0, "netwr": 0.0, "nicerrors": 0,
-                    "indiscarded": 0, "outdiscarded": 0,
-                    "pktsin": 0, "pktsout": 0, "errsin": 0, "errsout": 0,
-                    "_neteff_sum": 0.0, "_neteff_n": 0,
-                    "_lat_sum": 0.0, "_lat_n": 0, "_lat_max": 0.0,
-                    "_lat_max_lt": False,
-                })
-                d["netrr"] += n["netrr"]
-                d["netwr"] += n["netwr"]
-                d["nicerrors"] += n["nicerrors"]
-                d["indiscarded"] += n["indiscarded"]
-                d["outdiscarded"] += n["outdiscarded"]
-                d["pktsin"] += n.get("pktsin", 0)
-                d["pktsout"] += n.get("pktsout", 0)
-                d["errsin"] += n.get("errsin", 0)
-                d["errsout"] += n.get("errsout", 0)
-                if n.get("neteff") is not None:
-                    d["_neteff_sum"] += n["neteff"]
-                    d["_neteff_n"] += 1
-                if n.get("latency_ms") is not None:
-                    d["_lat_sum"] += n["latency_ms"]
-                    d["_lat_n"] += 1
-                    if n["latency_ms"] >= d["_lat_max"]:
-                        d["_lat_max"] = n["latency_ms"]
-                        d["_lat_max_lt"] = n.get("latency_lt", False)
-
-            row_by_type = {}
-            for t, d in by_type.items():
-                row_by_type[t] = {
-                    "netrr": d["netrr"], "netwr": d["netwr"], "nicerrors": d["nicerrors"],
-                    "indiscarded": d["indiscarded"], "outdiscarded": d["outdiscarded"],
-                    "pktsin": d["pktsin"], "pktsout": d["pktsout"],
-                    "errsin": d["errsin"], "errsout": d["errsout"],
-                    "neteff_avg": (d["_neteff_sum"] / d["_neteff_n"]) if d["_neteff_n"] else None,
-                    "latency_ms_avg": (d["_lat_sum"] / d["_lat_n"]) if d["_lat_n"] else None,
-                    "latency_ms_max": d["_lat_max"] if d["_lat_n"] else None,
-                    "latency_ms_max_lt": d["_lat_max_lt"] if d["_lat_n"] else False,
-                }
-            row["nics_by_type"] = row_by_type
-            row["devices"] = s.get("devices", [])
-            row["filesystems"] = s.get("filesystems", [])
-
-            if s["proto"]:
-                if base_proto is None:
-                    base_proto = s["proto"]
-                row["proto_delta"] = {k: s["proto"][k] - base_proto[k] for k in s["proto"]}
-                row["proto_raw"] = s["proto"]
-            else:
-                row["proto_delta"] = None
-                row["proto_raw"] = None
-            rows.append(row)
-        nodes[node] = rows
-    return nodes
+    from core.oclumon_dataset import build
+    return build(all_samples)
 
 
 # ---------------------------------------------------------------------
@@ -757,91 +323,44 @@ def _narrative_sentence(ep):
 
 
 def detect_anomalias(nodes):
-    """Reglas simples de deteccion, pensadas para saltar a la vista, no
-    para sustituir el analisis fino. Cada regla produce eventos discretos
-    para que build_episodios() los agrupe y agregue despues."""
-    events = []
-    for node, rows in nodes.items():
-        prev_proto = None
-        netrr_hist = []
+    events=[]
+    for node,rows in nodes.items():
         for row in rows:
-            t = row["t"]
-            sys_ = row["sys"]
-            if sys_:
-                if sys_["swpin"] > 0 or sys_["swpout"] > 0:
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "swap",
-                                    "value": sys_["swpin"] + sys_["swpout"],
-                                    "msg": f"Swap activo (swpin={sys_['swpin']}, swpout={sys_['swpout']})"})
-                if sys_["cpuq"] >= 6:
-                    events.append({"t": t, "node": node, "sev": "warning", "cat": "cpu_queue",
-                                    "value": sys_["cpuq"],
-                                    "msg": f"Cola de CPU alta (cpuq={sys_['cpuq']})"})
-                if sys_["nicerrors"] > 0:
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "nic_errors_hw",
-                                    "value": sys_["nicerrors"],
-                                    "msg": f"nicErrors={sys_['nicerrors']} a nivel de tarjeta"})
-            priv = row["nics_by_type"].get("PRIVATE")
-            if priv:
-                total = priv["netrr"] + priv["netwr"]
-                netrr_hist.append(total)
-                if len(netrr_hist) > 6:
-                    window = netrr_hist[-7:-1]
-                    med = sorted(window)[len(window) // 2] if window else 0
-                    if med > 5 and total > med * 4:
-                        events.append({"t": t, "node": node, "sev": "info", "cat": "interconnect_burst",
-                                        "value": total,
-                                        "msg": f"Rafaga de trafico interconnect privado ({total:.0f} KB/s, "
-                                               f">4x la mediana reciente de {med:.0f})"})
-                if priv["indiscarded"] > 0 or priv["outdiscarded"] > 0:
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "nic_discards",
-                                    "value": priv["indiscarded"] + priv["outdiscarded"],
-                                    "msg": f"Paquetes descartados en NIC privada (in={priv['indiscarded']}, "
-                                           f"out={priv['outdiscarded']})"})
-                if priv["errsin"] > 0 or priv["errsout"] > 0:
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "nic_link_errors",
-                                    "value": priv["errsin"] + priv["errsout"],
-                                    "msg": f"Errores de capa NIC en interfaz privada (errsin={priv['errsin']}, "
-                                           f"errsout={priv['errsout']})"})
-                if priv.get("latency_ms_max") is not None and priv["latency_ms_max"] >= 5:
-                    events.append({"t": t, "node": node, "sev": "warning", "cat": "nic_latency",
-                                    "value": priv["latency_ms_max"],
-                                    "msg": f"Latencia elevada en NIC privada ({priv['latency_ms_max']:.1f} ms)"})
-            if row["proto_delta"] and prev_proto:
-                d_reas = row["proto_delta"]["ipreasfail"] - prev_proto["ipreasfail"]
-                d_udp = row["proto_delta"]["udprcverr"] - prev_proto["udprcverr"]
-                if d_reas > 0:
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "ip_reasfail",
-                                    "value": d_reas,
-                                    "msg": f"IPReasFail +{d_reas} (fallo de reensamblado IP en el kernel)"})
-                if d_udp > 0:
-                    events.append({"t": t, "node": node, "sev": "warning", "cat": "udp_rcverr",
-                                    "value": d_udp, "msg": f"UDPRcvErr +{d_udp}"})
-            if row["proto_delta"]:
-                prev_proto = row["proto_delta"]
-
-            for dev in row.get("devices", []):
-                dtype = (dev.get("type") or "").upper()
-                if dtype and "ONLINE" not in dtype and dtype not in ("SYS", "SWAP"):
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "device_state",
-                                    "value": 1,
-                                    "msg": f"Dispositivo {dev['name']} reporta estado anomalo: {dev['type']}"})
-                if dev.get("wait_ms", 0) >= 20:
-                    events.append({"t": t, "node": node, "sev": "warning", "cat": "device_wait",
-                                    "value": dev["wait_ms"],
-                                    "msg": f"Espera de I/O elevada en {dev['name']} ({dev['wait_ms']:.0f} ms)"})
-
-            for fs in row.get("filesystems", []):
-                pct = fs.get("used_pct")
-                if pct is None:
-                    continue
-                if pct >= 95:
-                    events.append({"t": t, "node": node, "sev": "critical", "cat": "fs_full",
-                                    "value": pct, "msg": f"Filesystem {fs['mount']} al {pct:.0f}% de uso"})
-                elif pct >= 90:
-                    events.append({"t": t, "node": node, "sev": "warning", "cat": "fs_full",
-                                    "value": pct, "msg": f"Filesystem {fs['mount']} al {pct:.0f}% de uso"})
-    events.sort(key=lambda e: e["t"])
-    return events
+            def add(cat,value,msg,entity=None,quality='observed',sev='warning'):
+                events.append({'t':row['t'],'node':node,'sev':sev,'cat':cat,'value':value,
+                    'msg':msg,'entity':entity,'quality':quality,'source': next((r.get('source') for r in row.get('devices',[])+row.get('nics',[])+row.get('filesystems',[]) if r.get('name',r.get('mount'))==entity),row.get('source')),
+                    'line': next((r.get('line') for r in row.get('devices',[])+row.get('nics',[])+row.get('filesystems',[]) if r.get('name',r.get('mount'))==entity),row.get('line')),'segment':row.get('segment'),
+                    'threshold_origin':'project heuristic; not an official Oracle limit'})
+            sys=row.get('sys') or {}
+            swap=sum_known(sys.get('swpin'),sys.get('swpout'))
+            if swap is not None and swap>0:
+                add('swap',swap,f"Swap activo: {swap:g} KB/s",sev='critical')
+            if sys.get('cpuq') is not None and sys['cpuq']>=6:
+                add('cpu_queue',sys['cpuq'],f"cpuq={sys['cpuq']:g}; heuristic threshold 6")
+            if sys.get('nicerrors') is not None and sys['nicerrors']>0:
+                add('nic_errors_hw',sys['nicerrors'],f"nicErrors={sys['nicerrors']:g}/s",sev='critical')
+            for key,cat in [('ipreasfail','ip_reasfail'),('udprcverr','udp_rcverr')]:
+                value=(row.get('proto_delta') or {}).get(key)
+                if value is not None and value>0:
+                    add(cat,value,f"{key} +{value:g}: host protocol counter",sev='warning')
+            for nic in row.get('nics',[]):
+                for fields,cat in [(('errsin','errsout'),'nic_link_errors'),(('indiscarded','outdiscarded'),'nic_discards')]:
+                    value=sum_known(*(nic.get(k) for k in fields))
+                    if value is not None and value>0:
+                        add(cat,value,f"{nic['name']}: {cat} {value:g}/s",entity=nic['name'])
+                if nic.get('latency_ms') is not None and nic['latency_ms']>=5:
+                    add('nic_latency',nic['latency_ms'],f"{nic['name']}: observed NIC latency",entity=nic['name'])
+            for dev in row.get('devices',[]):
+                if 'OFFLINE' in (dev.get('type') or '').upper():
+                    add('device_state',1,f"{dev['name']}: {dev['type']}",entity=dev['name'],sev='critical')
+                if dev.get('wait_ms') is not None and dev['wait_ms']>=20:
+                    add('device_wait',dev['wait_ms'],f"{dev['name']}: {dev['wait_ms']:g} ms observed interval mean",
+                        entity=dev['name'],quality=dev.get('quality','observed'))
+            for fs in row.get('filesystems',[]):
+                value=fs.get('used_pct')
+                if value is not None and value>=90:
+                    add('fs_full',value,f"{fs['mount']}: {value:g}% source usage",entity=fs['mount'],sev='critical' if value>=95 else 'warning')
+    return sorted(events,key=lambda e:_epoch_hora_origen(e['t']))
 
 
 def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
@@ -850,10 +369,10 @@ def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
     narrativa con los numeros reales agregados."""
     by_key = {}
     for e in events:
-        by_key.setdefault((e["node"], e["cat"]), []).append(e)
+        by_key.setdefault((e["node"], e["cat"], e.get("entity"), e.get("segment")), []).append(e)
 
     episodes = []
-    for (node, cat), evs in by_key.items():
+    for (node, cat, entity, segment), evs in by_key.items():
         evs.sort(key=lambda e: e["t"])
         cur = None
         last_t = None
@@ -863,7 +382,8 @@ def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
                 if cur is not None:
                     episodes.append(cur)
                 cur = {
-                    "node": node, "cat": cat, "sev": e["sev"],
+                    "node": node, "cat": cat, "sev": e["sev"], "entity": entity,
+                    "quality": e.get("quality", "observed"), "threshold_origin": e.get("threshold_origin"),
                     "start": e["t"], "end": e["t"],
                     "n_samples": 0, "peak_value": 0.0, "total_value": 0.0,
                     "sample_msgs": [],
@@ -871,7 +391,9 @@ def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
             v = e.get("value", 0) or 0
             cur["end"] = e["t"]
             cur["n_samples"] += 1
-            cur["peak_value"] = max(cur["peak_value"], v)
+            if v >= cur["peak_value"]:
+                cur.update(peak_value=v, peak_time=e["t"], peak_source=e.get("source"), peak_line=e.get("line"))
+            if e.get("quality") == "suspect": cur["quality"] = "suspect"
             cur["total_value"] += v
             if SEV_RANK.get(e["sev"], 0) > SEV_RANK.get(cur["sev"], 0):
                 cur["sev"] = e["sev"]
@@ -889,6 +411,8 @@ def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
         ep["label"] = kb["label"]
         ep["interpretacion"] = kb["explica"]
         ep["narrativa"] = _narrative_sentence(ep)
+        if ep.get("quality") == "suspect":
+            ep["interpretacion"] = "Valor extremo observado; causa y validez pendientes. No demuestra timeout ni corrupción."
 
     episodes.sort(key=lambda e: (-SEV_RANK.get(e["sev"], 0), e["start"]))
     return episodes
@@ -904,6 +428,7 @@ def build_timeline(episodios):
         items.append({
             "t": ep["start"], "node": ep["node"], "sev": ep["sev"], "source": "oclumon",
             "label": ep["label"], "msg": ep["narrativa"], "interpretacion": ep.get("interpretacion", ""),
+            **{key:ep.get(key) for key in ("end","entity","peak_time","peak_value","quality","peak_line")},
         })
     items.sort(key=lambda x: x["t"])
     return items
@@ -917,13 +442,12 @@ def serialize_diag(diag):
             "unknown_keys": sorted(d["unknown_keys"]),
             "unknown_key_samples": d.get("unknown_key_samples", {}),
         }
-    return {
-        "path": diag["path"], "total_lines": diag["total_lines"], "samples": diag["samples"],
-        "node_names": sorted(diag["node_names"]),
-        "first_clock": diag["first_clock"].isoformat() if diag["first_clock"] else None,
-        "last_clock": diag["last_clock"].isoformat() if diag["last_clock"] else None,
-        "sections": sections, "unparsed_samples": diag["unparsed_samples"], "errors": diag["errors"],
-    }
+    return {**{k:v for k,v in diag.items() if k not in ('sections','node_names','first_clock','last_clock','formats')},
+        'sections': sections, 'node_names': sorted(diag['node_names']),
+        'formats': sorted(diag.get('formats', [])),
+        'first_clock': diag['first_clock'].isoformat() if diag['first_clock'] else None,
+        'last_clock': diag['last_clock'].isoformat() if diag['last_clock'] else None}
+
 
 
 def _series_puntos_nodo(rows, campo_sys=None, campo_nic=None, tipo_nic="PRIVATE"):
@@ -944,10 +468,8 @@ def _series_puntos_nodo(rows, campo_sys=None, campo_nic=None, tipo_nic="PRIVATE"
             nic = (row.get("nics_by_type") or {}).get(tipo_nic)
             if nic:
                 v = nic.get(campo_nic)
-        if v is None:
-            continue
         punto = {"t": t, "v": v}
-        if campo_nic == "latency_ms_max" and nic.get("latency_ms_max_lt"):
+        if campo_nic == "latency_ms_max" and nic and nic.get("latency_ms_max_lt"):
             punto["lt"] = True
         out.append(punto)
     return out
@@ -965,34 +487,9 @@ PROTO_COUNTERS = [
 
 
 def _series_proto_delta_nodo(rows):
-    """{contador: [{"t":..,"v":..}, ...]} para los 9 contadores de
-    PROTOCOL ERRORS -- delta POR MUESTRA (nunca cumulativo desde el
-    arranque), mismo criterio que ya usaba ip_reasfail/udp_rcverr: cada
-    punto es cuantos errores NUEVOS aparecieron desde la muestra
-    anterior, nunca negativo (un reinicio de contador no se muestra como
-    -N)."""
-    out = {nombre: [] for nombre in PROTO_COUNTERS}
-    prev = None
-    prev_t = None
-    for row in rows:
-        try:
-            t = _epoch_hora_origen(row["t"])
-        except Exception:
-            continue
-        pd = row.get("proto_delta")
-        if prev_t is not None and t - prev_t > 60:
-            prev = None
-        if pd and prev:
-            for nombre in PROTO_COUNTERS:
-                delta = pd[nombre] - prev[nombre]
-                # Un contador menor indica reinicio; esa primera muestra no
-                # representa errores nuevos y no debe convertirse en cero.
-                if delta >= 0:
-                    out[nombre].append({"t": t, "v": delta})
-        if pd:
-            prev = pd
-            prev_t = t
-    return out
+    # Delta was calculated once over the full source, before visual filtering.
+    return {key:[{'t':_epoch_hora_origen(row['t']), 'v':(row.get('proto_delta') or {}).get(key)}
+                 for row in rows] for key in PROTO_COUNTERS}
 
 
 def _series_nic_tipo(rows, tipo, metrica):
@@ -1013,21 +510,19 @@ def _series_nic_tipo(rows, tipo, metrica):
         v = None
         if metrica == "kbps":
             eff = nic.get("neteff_avg")
-            v = eff if eff is not None else (nic["netrr"] + nic["netwr"])
+            v = eff if eff is not None else sum_known(nic["netrr"], nic["netwr"])
         elif metrica == "latency_ms":
             v = nic.get("latency_ms_max")
         elif metrica == "discards":
-            v = nic["indiscarded"] + nic["outdiscarded"]
+            v = sum_known(nic["indiscarded"], nic["outdiscarded"])
         elif metrica == "link_errors":
-            v = nic["errsin"] + nic["errsout"]
+            v = sum_known(nic["errsin"], nic["errsout"])
         elif metrica == "pktsin":
             v = nic.get("pktsin")
         elif metrica == "pktsout":
             v = nic.get("pktsout")
         elif metrica == "nicerrors":
             v = nic.get("nicerrors")
-        if v is None:
-            continue
         punto = {"t": t, "v": v}
         if metrica == "latency_ms" and nic.get("latency_ms_max_lt"):
             punto["lt"] = True
@@ -1047,14 +542,41 @@ def _series_dispositivo_nodo(rows, device_name, campo):
             t = _epoch_hora_origen(row["t"])
         except Exception:
             continue
-        v = None
-        for d in (row.get("devices") or []):
-            if d.get("name") == device_name:
-                v = d.get(campo)
-                break
-        if v is None:
-            continue
+        index = row.get('_device_index')
+        if index is None:
+            index = {}
+            for device in row.get('devices') or []:
+                index.setdefault(device.get('name'), device)
+            row['_device_index'] = index
+        v = index.get(device_name, {}).get(campo)
         out.append({"t": t, "v": v})
+    return out
+
+
+def _process_series(rows, timestamps, name, field):
+    """All observed values; a null run keeps both boundaries, never becomes zero.
+
+    Interior absent points carry no analytical value. Keeping the first/last
+    absence preserves gaps and complete valid intervals for every window.
+    Cadence is supplied from the original host clock, not this sparse series.
+    """
+    out = []
+    last_null = None
+    null_run = False
+    for row, timestamp in zip(rows, timestamps):
+        value = row.get('process_metrics', {}).get(name, {}).get(field)
+        if value is None:
+            if not null_run:
+                out.append({'t': timestamp, 'v': None})
+            last_null = timestamp
+            null_run = True
+            continue
+        if null_run and last_null != out[-1]['t']:
+            out.append({'t': last_null, 'v': None})
+        out.append({'t': timestamp, 'v': value})
+        null_run = False
+    if null_run and last_null != out[-1]['t']:
+        out.append({'t': last_null, 'v': None})
     return out
 
 
@@ -1072,6 +594,8 @@ def _series_filesystem_nodo(rows, mount, campo):
         v = None
         for f in (row.get("filesystems") or []):
             if f.get("mount") == mount:
+                if f.get('total_kb') is None or f['total_kb']<=0:
+                    break
                 if campo == "avail_mb":
                     raw = f.get("avail_kb")
                     v = (raw / 1024.0) if raw is not None else None
@@ -1081,8 +605,6 @@ def _series_filesystem_nodo(rows, mount, campo):
                 else:
                     v = f.get(campo)
                 break
-        if v is None:
-            continue
         out.append({"t": t, "v": v})
     return out
 
@@ -1118,6 +640,7 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
         except Exception as e:
             log_cb(f"[episodios] ERROR parseando {path}: {e}")
 
+    all_samples, duplicates = deduplicate(all_samples)
     nodes = build_dataset(all_samples) if all_samples else {}
     ventanas_captura = _detectar_ventanas_captura(nodes) if nodes else []
     events = detect_anomalias(nodes) if nodes else []
@@ -1198,45 +721,29 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
             "interconnect_latency_ms": _series_puntos_nodo(rows, campo_nic="latency_ms_max", tipo_nic="PRIVATE"),
         }
 
-        kbps, discards, link_errors = [], [], []
-        ip_reasfail, udp_rcverr = [], []
-        prev_proto = None
-        prev_proto_t = None
-        for row in rows:
-            try:
-                t = _epoch_hora_origen(row["t"])
-            except Exception:
-                continue
-            priv = (row.get("nics_by_type") or {}).get("PRIVATE")
-            if priv:
-                # neteff ya viene calculado por oclumon (netrr+netwr); se
-                # usa el promedio agregado del propio oclumon en vez de
-                # volver a sumar netrr+netwr a mano (verificado contra
-                # chm_nodo2.txt: neteff == netrr+netwr siempre).
-                eff = priv.get("neteff_avg")
-                kbps.append({"t": t, "v": eff if eff is not None else (priv["netrr"] + priv["netwr"])})
-                discards.append({"t": t, "v": priv["indiscarded"] + priv["outdiscarded"]})
-                link_errors.append({"t": t, "v": priv["errsin"] + priv["errsout"]})
-            pd = row.get("proto_delta")
-            if prev_proto_t is not None and t - prev_proto_t > 60:
-                prev_proto = None
-            if pd and prev_proto:
-                ip_delta = pd["ipreasfail"] - prev_proto["ipreasfail"]
-                udp_delta = pd["udprcverr"] - prev_proto["udprcverr"]
-                if ip_delta >= 0:
-                    ip_reasfail.append({"t": t, "v": ip_delta})
-                if udp_delta >= 0:
-                    udp_rcverr.append({"t": t, "v": udp_delta})
-            if pd:
-                prev_proto = pd
-                prev_proto_t = t
-
-        series_por_nodo[node]["interconnect_kbps"] = kbps
-        series_por_nodo[node]["interconnect_nic_discards"] = discards
-        series_por_nodo[node]["interconnect_nic_link_errors"] = link_errors
-        series_por_nodo[node]["ip_reasfail"] = ip_reasfail
-        series_por_nodo[node]["udp_rcverr"] = udp_rcverr
-
+        proto_series = _series_proto_delta_nodo(rows)
+        for target,metric in [('interconnect_kbps','kbps'),('interconnect_nic_discards','discards'),('interconnect_nic_link_errors','link_errors')]:
+            series_por_nodo[node][target]=_series_nic_tipo(rows,'PRIVATE',metric)
+        series_por_nodo[node]['ip_reasfail']=proto_series['ipreasfail']
+        series_por_nodo[node]['udp_rcverr']=proto_series['udprcverr']
+        for key in ('ior','iow','ios'):
+            series_por_nodo[node][key]=_series_puntos_nodo(rows,campo_sys=key)
+        series_por_nodo[node]['memavl_gib']=_a_gib(_series_puntos_nodo(rows,campo_sys='memavl_mb'))
+        for nicname in sorted({n['name'] for r in rows for n in r.get('nics',[]) if n.get('name')}):
+            for field in ('netrr','netwr','pktsin','pktsout','errsin','errsout','indiscarded','outdiscarded','latency_ms'):
+                points=[]
+                for r in rows:
+                    n=next((n for n in r.get('nics',[]) if n['name']==nicname),{})
+                    point={'t':_epoch_hora_origen(r['t']),'v':n.get(field)}
+                    if field=='latency_ms' and n.get('latency_lt'): point['lt']=True
+                    points.append(point)
+                series_por_nodo[node][f'nic::{nicname}::{field}']=points
+        for cpu in sorted({str(c['id']) for r in rows for c in r.get('cpus',[]) if c.get('id')!='Total'}):
+            series_por_nodo[node][f'cpu::{cpu}::usage']=[{'t':_epoch_hora_origen(r['t']),'v':next((c['usage'] for c in r.get('cpus',[]) if str(c['id'])==cpu),None)} for r in rows]
+        timestamps = [_epoch_hora_origen(row['t']) for row in rows]
+        for name in sorted({name for row in rows for name in row.get('process_metrics',{})}):
+            for field in ('max_cpuusage','max_privmem_kb','max_shm_kb','max_fd','max_threads'):
+                series_por_nodo[node][f'proc::{name}::{field}'] = _process_series(rows, timestamps, name, field)
         # --- Rediseno OCLUMON 2026-10-02: "todo lo que podamos explotar
         # de la data que se tenga" (pedido explicito del usuario) -- lo
         # de arriba queda INTACTO (lo sigue usando el motor de episodios/
@@ -1297,9 +804,9 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
 
     # Cortar visualmente periodos sin captura en TODAS las series. Se hace
     # al final para cubrir sistema, NIC, dispositivos y filesystems por igual.
-    for datos_nodo in series_por_nodo.values():
+    for node, datos_nodo in series_por_nodo.items():
         for clave, puntos in datos_nodo.items():
-            datos_nodo[clave] = _insertar_huecos(puntos)
+            datos_nodo[clave] = _insertar_huecos(puntos, nodes[node][0]['cadence'] if clave.startswith('proc::') else None)
 
     # series_max: valor maximo real visto en CUALQUIER nodo para cada
     # serie -- a diferencia de series_relevantes (core/dashboard_engine.py,
@@ -1323,11 +830,21 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
             if clave not in series_max or pico > series_max[clave]:
                 series_max[clave] = pico
 
+    source_files=sorted({s["source"] for s in all_samples})
+    source_ids={path:i for i,path in enumerate(source_files)}
     log_cb(f"[episodios] {len(events)} eventos -> {len(episodios)} episodios narrados, "
            f"linea de tiempo con {len(timeline)} items")
 
     return {
         "node_list": sorted(nodes.keys()),
+        "duplicates": duplicates,
+        "host_inventory": {n:next((s.get("inventory",{}) for s in reversed(all_samples) if s["node"]==n),{}) for n in nodes},
+        "time_domains": sorted({s["clock"].strftime("%z") if s["clock"].tzinfo else "unknown" for s in all_samples}),
+        "source_files": source_files,
+        "trace_blocks": {n:[[_epoch_hora_origen(s["clock"]),source_ids[s["source"]],s["line"]] for s in all_samples if s["node"]==n] for n in nodes},
+        "metric_contracts": {key:contract(key) for data in series_por_nodo.values() for key,points in data.items() if any(p.get("v") is not None for p in points)},
+        "coverage": {n:{"samples":len(rows),"cadence_seconds":rows[0]["cadence"],"segments":max(r["segment"] for r in rows)} for n,rows in nodes.items()},
+        "filesystem_quality": {n:sorted({f['mount'] for r in rows for f in r.get('filesystems',[]) if f.get('quality')=='capacity_unavailable'}) for n,rows in nodes.items()},
         "nic_types": tipos_nic,
         "nic_names_by_type": nic_names_by_type,
         "episodios": episodios,

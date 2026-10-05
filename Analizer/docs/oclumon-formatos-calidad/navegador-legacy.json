@@ -1,0 +1,26 @@
+[
+  {
+    "zone": "Europe/Madrid",
+    "hosts": 2,
+    "startup_ms": 5848.370000021532,
+    "filter_ms": 315.10749994777143,
+    "heap_bytes": 113873840,
+    "errors": []
+  },
+  {
+    "zone": "America/Los_Angeles",
+    "hosts": 2,
+    "startup_ms": 4300.957500003278,
+    "filter_ms": 281.7701001185924,
+    "heap_bytes": 118939856,
+    "errors": []
+  },
+  {
+    "zone": "Asia/Tokyo",
+    "hosts": 2,
+    "startup_ms": 4794.776499969885,
+    "filter_ms": 251.40579999424517,
+    "heap_bytes": 118255836,
+    "errors": []
+  }
+]

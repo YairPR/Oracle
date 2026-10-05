@@ -13,12 +13,14 @@ ap = argparse.ArgumentParser()
 ap.add_argument("case")
 ap.add_argument("out")
 ap.add_argument("--source", default=str(Path(__file__).resolve().parents[1]))
+ap.add_argument("--provenance", help="Explicit collector metadata manifest")
 args = ap.parse_args()
 sys.path.insert(0, args.source)
 import duckdb
 import psutil
 import analizador as a
 from core.storage import ForensicStorage
+from core.source_provenance import load_manifest
 
 out = Path(args.out).resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -55,7 +57,8 @@ a.generar_reporte_html = render
 start = time.perf_counter()
 try:
     result = a.ejecutar_caso_completo(
-        args.case, str(out / "case.duckdb"), log_cb=lambda s: print(s, flush=True)
+        args.case, str(out / "case.duckdb"), log_cb=lambda s: print(s, flush=True),
+        source_provenance=load_manifest(args.provenance, args.case) if args.provenance else None,
     )
 finally:
     stop.set()

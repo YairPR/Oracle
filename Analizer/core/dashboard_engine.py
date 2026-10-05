@@ -100,6 +100,12 @@ _PANELES_SIN_FUENTE_HOY = {
 }
 
 
+def _has_observed(points):
+    if isinstance(points, dict):
+        return points.get('constant') is not None or any(v is not None for v in points.get('values', []))
+    return bool(points) and any(p.get('v') is not None if isinstance(p, dict) else p[1] is not None for p in points)
+
+
 def _tiene_cobertura(series_por_nodo: dict, node: Optional[str], nombres_series: list) -> bool:
     """True si AL MENOS UNA de las series nombradas tiene al menos 1 punto
     real para ese nodo -- nunca asume cobertura por la sola presencia del
@@ -110,7 +116,7 @@ def _tiene_cobertura(series_por_nodo: dict, node: Optional[str], nombres_series:
     datos_nodo = series_por_nodo[node]
     for nombre in nombres_series:
         puntos = datos_nodo.get(nombre)
-        if puntos:
+        if _has_observed(puntos):
             return True
     return False
 
@@ -147,7 +153,8 @@ def _construir_eventos_hechos(eventos_discretos: list) -> list[Evento]:
             etiqueta=ev.get("cat", "evento"),
             detalle=ev.get("msg"), severidad=ev.get("sev", "info"),
         ))
-    eventos.sort(key=lambda e: e.timestamp)
+    from core.oclumon_dataset import epoch
+    eventos.sort(key=lambda e: epoch(e.timestamp))
     return eventos
 
 
@@ -165,7 +172,7 @@ def _evidencia_para_episodio(eventos: list[Evento], node: Optional[str],
     hasta = fin + timedelta(seconds=ventana_seg)
     indices = [
         i for i, ev in enumerate(eventos)
-        if desde <= ev.timestamp <= hasta and (not node or not ev.nodo or ev.nodo == node)
+        if (bool(ev.timestamp.tzinfo)==bool(inicio.tzinfo)) and desde <= ev.timestamp <= hasta and (not node or not ev.nodo or ev.nodo == node)
     ]
     return indices[:25]  # tope defensivo -- un episodio con cientos de eventos superpuestos
     # no debe inflar evidencia_ids sin limite; la tabla de evidencia igual
@@ -279,7 +286,7 @@ def _construir_informe_interno(resultado_episodios: dict,
 
         evidencia_ids = _evidencia_para_episodio(eventos_hechos, node, inicio, fin)
 
-        episodio_id = f"oclumon:{node}:{cat}:{inicio.isoformat()}"
+        episodio_id = f"oclumon:{node}:{cat}:{ep_crudo.get('entity','')}:{inicio.isoformat()}"
         episodios_diag.append(EpisodioDiagnostico(
             id=episodio_id, finding_type=finding_type, nodo=node,
             inicio=inicio, fin=fin,
@@ -321,7 +328,7 @@ def _construir_informe_interno(resultado_episodios: dict,
     series_relevantes = {}
     for datos_nodo in series_por_nodo.values():
         for serie, puntos in datos_nodo.items():
-            if puntos:
+            if _has_observed(puntos):
                 series_relevantes[serie] = True
             else:
                 series_relevantes.setdefault(serie, False)

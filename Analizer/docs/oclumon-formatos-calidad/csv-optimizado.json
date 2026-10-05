@@ -1,0 +1,125 @@
+{
+  "python": "3.13.15 (tags/v3.13.15:4061bc4, Aug  5 2026, 13:05:39) [MSC v.1944 64 bit (AMD64)]",
+  "duckdb": "1.5.6",
+  "analizador": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\Analizer\\analizador.py",
+  "storage": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\Analizer\\core\\storage.py",
+  "wall_seg": 58.3557434999384,
+  "peak_rss_bytes": 852553728,
+  "html_bytes": 12400982,
+  "phases": {
+    "ingesta_seg": 40.75,
+    "ia_seg": 0.124,
+    "episodios_seg": 14.111,
+    "persistir_seg": 5.533,
+    "dashboard_seg": 2.802,
+    "total_seg": 57.788
+  },
+  "ingestion": {
+    "preparacion_storage_seg": 0.06555020017549396,
+    "clasificacion_seg": 0.006,
+    "total_seg": 40.747,
+    "por_archivo": [
+      {
+        "lectura_seg": 0.41211773292161524,
+        "parse_exclusivo_seg": 10.105453066993505,
+        "lectura_clasificacion_seg": 0.001617700094357133,
+        "almacenamiento": {
+          "ejecutar_seg": 0.02839670004323125,
+          "commit_seg": 0.05937050003558397,
+          "normalizar_seg": 0.02978370012715459,
+          "columnas_seg": 2.6419716000091285,
+          "dependencia_seg": 5.19980676472187e-06,
+          "persistir_fuente_seg": 2.925711200106889,
+          "serializar_fuente_seg": 2.3840113000478595,
+          "sql_fuente_seg": 0.45144489989615977,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 1140.1994637637472
+        },
+        "bytes_seg": 793602.8534624039,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\bov-wdrac030407\\chm_nodo1_wdrac03.csv",
+        "tipo": "oclumon",
+        "segundos": 16.209,
+        "parse_seg": 10.518,
+        "insert_seg": 5.691,
+        "bytes": 12863262,
+        "filas": 6489
+      },
+      {
+        "lectura_seg": 0.32147498265840113,
+        "parse_exclusivo_seg": 8.159245017450303,
+        "lectura_clasificacion_seg": 0.0014569000340998173,
+        "almacenamiento": {
+          "ejecutar_seg": 0.011249399976804852,
+          "commit_seg": 0.05762259988114238,
+          "normalizar_seg": 0.022778599988669157,
+          "columnas_seg": 0.019538199994713068,
+          "dependencia_seg": 7.899943739175797e-06,
+          "persistir_fuente_seg": 3.8104469999670982,
+          "serializar_fuente_seg": 3.246196100022644,
+          "sql_fuente_seg": 0.4654726998414844,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 1653.9206367869576
+        },
+        "bytes_seg": 1037524.893012803,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\bov-wdrac030407\\chm_nodo1_wdrac04.csv",
+        "tipo": "oclumon",
+        "segundos": 12.404,
+        "parse_seg": 8.481,
+        "insert_seg": 3.923,
+        "bytes": 12869595,
+        "filas": 6489
+      },
+      {
+        "lectura_seg": 0.28195977956056595,
+        "parse_exclusivo_seg": 7.884710720507428,
+        "lectura_clasificacion_seg": 0.0020061000250279903,
+        "almacenamiento": {
+          "ejecutar_seg": 0.00927899987436831,
+          "commit_seg": 0.26428140001371503,
+          "normalizar_seg": 0.025972000090405345,
+          "columnas_seg": 0.009724900126457214,
+          "dependencia_seg": 5.700159817934036e-06,
+          "persistir_fuente_seg": 2.788373199990019,
+          "serializar_fuente_seg": 2.161318700062111,
+          "sql_fuente_seg": 0.508550199912861,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 2093.42947679636
+        },
+        "bytes_seg": 1129106.057457745,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\bov-wdrac030407\\chm_nodo1_wdrac07.csv",
+        "tipo": "oclumon",
+        "segundos": 11.266,
+        "parse_seg": 8.167,
+        "insert_seg": 3.1,
+        "bytes": 12720930,
+        "filas": 6489
+      }
+    ]
+  },
+  "tables": {
+    "fact_telemetria_so": {
+      "count": 19467,
+      "sha256": "e2eb895cd20a6ad098abb9b80023b2d6a9750e986b77063cf6047b621f5668e3"
+    },
+    "fact_awr_snapshots": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "fact_awr_wait_events": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "dim_database": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "dim_infraestructura": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "episodes": 9
+}

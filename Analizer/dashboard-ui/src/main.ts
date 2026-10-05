@@ -11,11 +11,12 @@
 import { registrarNodos } from "./colors";
 import {
   renderSerieChart, renderSerieMultiNodo, renderCronologia, renderSerieCruda,
-  renderSerieCrudaMulti, renderBarraApiladaDbTime, reflowCharts,
+  renderSerieCrudaMulti, renderBarraApiladaDbTime, reflowCharts, syncVisibleCursors,
 } from "./charts";
 import { inicializarNav } from "./nav";
 import { inicializarSelectorPanel, inicializarExpandirEvidencia, inicializarFiltrosTimeline } from "./filters";
 import type { Payload } from "./types";
+import { initializeAnalysis, initializeProcessSummaries } from "./analysis";
 import { inicializarRangoTemporal } from "./time-range";
 
 interface ChartSpec {
@@ -122,6 +123,13 @@ function main(): void {
   inicializarExpandirEvidencia();
   inicializarFiltrosTimeline();
   inicializarRangoTemporal(payload);
+  initializeAnalysis(payload);
+  initializeProcessSummaries(payload);
+  let cursorFrame: number | undefined;
+  window.addEventListener('scroll',()=> {
+    if(cursorFrame!==undefined) return;
+    cursorFrame=window.requestAnimationFrame(()=>{syncVisibleCursors();cursorFrame=undefined;});
+  },{passive:true});
   let resizeFrame: number | undefined;
   window.addEventListener("resize", () => {
     if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);

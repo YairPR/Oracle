@@ -1,0 +1,128 @@
+[
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 231,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.03' SerialNo:14089305",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 467,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.08' SerialNo:14089306",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 703,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.13' SerialNo:14089307",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 939,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.18' SerialNo:14089308",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 1175,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.23' SerialNo:14089309",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 1411,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.28' SerialNo:14089310",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 1647,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.33' SerialNo:14089311",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 1883,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.38' SerialNo:14089312",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 2119,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.43' SerialNo:14089313",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 2355,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.48' SerialNo:14089314",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 2591,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.53' SerialNo:14089315",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 2827,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.30.58' SerialNo:14089316",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 3063,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.03' SerialNo:14089317",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 3299,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.08' SerialNo:14089318",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 3535,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.13' SerialNo:14089319",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 3771,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.18' SerialNo:14089320",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 4007,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.23' SerialNo:14089321",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 4243,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.28' SerialNo:14089322",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 4479,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.33' SerialNo:14089323",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo1_20261002_0530_1030_mtu.txt",
+    "line": 4715,
+    "block": "Node: bov-racsalud-301 Clock: '10-02-26 05.31.38' SerialNo:14089324",
+    "raw": "mount: / type: rootfs total: 0 used: 0 available: 0 used%: 0 ifree%: -1 [OMIP3001]"
+  },
+  {
+    "file": "chm_nodo2_20261002_0530_1030_mtu.txt",
+    "line": 617683,
+    "block": "Node: bov-racsalud-302 Clock: '10-02-26 09.54.16' SerialNo:1440",
+    "raw": "xvdct ior: 362839.086 iow: 778237.625 ios: 4819030 qlen:  -  wait: 764641210;';3:Time=10-02-26 09.54.16, Disk xvdct spent too much time (764641210 msecs) waiting for I/O (> 100 msecs)' type: SYS"
+  }
+]

@@ -2,6 +2,10 @@
 export interface Range { from: number; to: number }
 export interface Capture { inicio: string; fin: string }
 export function epochMs(value: string): number | null {
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:?\d{2})$/.test(value)) {
+    if(epochMs(value.slice(0,19))===null) return null;
+    const n=Date.parse(value); return Number.isFinite(n) ? n : null;
+  }
   const m = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
   if (!m) return null;
   const ms = Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +(m[6] || 0));

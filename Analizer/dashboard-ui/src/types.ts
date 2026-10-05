@@ -109,6 +109,11 @@ export interface Payload {
   caso: string;
   generado_en: string;
   motor_episodios: {
+    metric_contracts?: Record<string, {section: string; unit: string; kind: string; scope: string; transformation: string; missing: string}>;
+    coverage?: Record<string, {cadence_seconds: number; samples: number}>;
+    time_domains?: string[];
+    source_files?: string[];
+    trace_blocks?: Record<string, number[][]>;
     node_list: string[];
     nic_types: string[];
     nic_names_by_type: Record<string, string[]>;

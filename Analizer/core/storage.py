@@ -357,7 +357,7 @@ class ForensicStorage:
 
     def __init__(self, db_path: str = "caso_analisis.duckdb", limpiar_al_conectar: bool = True):
         self.ultimo_perfil = {}
-        self.perfil_acumulado = {"ejecutar_seg": 0.0, "commit_seg": 0.0, "normalizar_seg": 0.0, "columnas_seg": 0.0, "dependencia_seg": 0.0}
+        self.perfil_acumulado = {"ejecutar_seg": 0.0, "commit_seg": 0.0, "normalizar_seg": 0.0, "columnas_seg": 0.0, "dependencia_seg": 0.0, "persistir_fuente_seg":0.0, "serializar_fuente_seg":0.0, "sql_fuente_seg":0.0}
         self.db_path = db_path
         self.filas_eliminadas_al_conectar = 0
         self._con = duckdb.connect(db_path)
@@ -378,6 +378,7 @@ class ForensicStorage:
 
         if limpiar_al_conectar:
             self._execute("DROP TABLE IF EXISTS report_state")
+            self._execute("DROP TABLE IF EXISTS oclumon_sources")
             self._limpiar_datos_previos()
         log.info("ForensicStorage conectado a %s (esquema dimensional de 8 tablas listo)", db_path)
 
@@ -493,7 +494,7 @@ class ForensicStorage:
 
     # -- fact_telemetria_so ---------------------------------------------
 
-    def bulk_insert_telemetria(self, caso_id: str, filas: list) -> int:
+    def bulk_insert_telemetria(self, caso_id: str, filas: list, observation_callback=None) -> int:
         """Inserta una lista de diccionarios en fact_telemetria_so, cada
         uno con claves timestamp/nodo/fuente/metrica_o_error/valor/
         detalles (SIN caso_id -- parsers/oclumon.py y parsers/sar.py no
@@ -570,6 +571,13 @@ class ForensicStorage:
                     selectores = ", ".join("unnest(?)" for _ in _COLUMNS_TELEMETRIA)
                     self._execute(f"INSERT INTO fact_telemetria_so SELECT {selectores}", columnas)
                 ejecutar_seg += time.perf_counter() - t
+            if observation_callback is not None:
+                t=time.perf_counter()
+                source_profile = observation_callback(self._con)
+                if isinstance(source_profile, dict):
+                    for key in ('serializar_fuente_seg', 'sql_fuente_seg'):
+                        self.perfil_acumulado[key] = self.perfil_acumulado.get(key, 0) + source_profile.get(key, 0)
+                self.perfil_acumulado['persistir_fuente_seg']+=time.perf_counter()-t
             t = time.perf_counter()
             self._execute("COMMIT")
             commit_seg = time.perf_counter() - t

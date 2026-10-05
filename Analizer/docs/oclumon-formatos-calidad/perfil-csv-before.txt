@@ -1,0 +1,31 @@
+         8927089 function calls in 18.879 seconds
+
+   Ordered by: cumulative time
+   List reduced from 140 to 25 due to restriction <25>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.001    0.001   18.879   18.879 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\tests\profile_oclumon.py:34(run)
+        1    1.288    1.288   12.810   12.810 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\oclumon_model.py:164(parse)
+    36855    2.738    0.000   10.267    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\oclumon_model.py:186(emit)
+        1    1.051    1.051    6.069    6.069 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\episode_engine.py:581(analizar_caso)
+   481545    3.441    0.000    4.455    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\oclumon_model.py:101(field_name)
+   285841    0.728    0.000    2.060    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\episode_engine.py:15(_epoch_hora_origen)
+   185850    0.333    0.000    2.049    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\oclumon_model.py:228(n)
+  3005528    1.800    0.000    1.800    0.000 {method 'get' of 'dict' objects}
+      220    0.724    0.003    1.600    0.007 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\episode_engine.py:531(_series_dispositivo_nodo)
+   185850    1.075    0.000    1.594    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\oclumon_model.py:138(number)
+   287456    0.936    0.000    0.936    0.000 {method 'timestamp' of 'datetime.datetime' objects}
+     1577    0.401    0.000    0.549    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\episode_engine.py:28(_insertar_huecos)
+   481865    0.418    0.000    0.418    0.000 {method 'split' of 'str' objects}
+    95136    0.369    0.000    0.415    0.000 {built-in method builtins.next}
+   702632    0.385    0.000    0.385    0.000 {method 'strip' of 'str' objects}
+    39375    0.291    0.000    0.291    0.000 {built-in method _csv.reader}
+    44418    0.128    0.000    0.287    0.000 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\io_profile.py:24(__next__)
+   285665    0.278    0.000    0.278    0.000 {built-in method fromisoformat}
+   341102    0.262    0.000    0.262    0.000 {method 'setdefault' of 'dict' objects}
+   419244    0.232    0.000    0.232    0.000 {method 'append' of 'list' objects}
+       48    0.093    0.002    0.223    0.005 C:\Users\yair.purisaca\Documents\DBA_KnowledgeBase\ASTDGA\Oracle\Inicidentes\eviction_rac\dept300\rac-lab\Oracle\Analizer\core\episode_engine.py:552(_series_filesystem_nodo)
+   292455    0.220    0.000    0.220    0.000 {method 'add' of 'set' objects}
+    17239    0.200    0.000    0.200    0.000 {method 'isoformat' of 'datetime.datetime' objects}
+   296280    0.145    0.000    0.145    0.000 {built-in method builtins.isinstance}
+   191430    0.133    0.000    0.133    0.000 {method 'upper' of 'str' objects}

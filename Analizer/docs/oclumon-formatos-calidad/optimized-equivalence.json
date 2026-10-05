@@ -1,0 +1,30 @@
+{
+  "csv": {
+    "facts_and_awr_identical": true,
+    "episode_count_identical": true,
+    "original_observation_blobs_identical": true,
+    "seconds_before": 109.5748775000684,
+    "seconds_after": 58.3557434999384,
+    "rss_before": 1474269184,
+    "rss_after": 852553728,
+    "html_before": 22098420,
+    "html_after": 12400982,
+    "source_serialization_seconds": 7.791526100132614,
+    "source_sql_seconds": 1.4254677996505052,
+    "telemetry_sql_seconds": 0.4301995998248458
+  },
+  "legacy": {
+    "facts_and_awr_identical": true,
+    "episode_count_identical": true,
+    "original_observation_blobs_identical": true,
+    "seconds_before": 347.3101358001586,
+    "seconds_after": 256.6985991001129,
+    "rss_before": 4720242688,
+    "rss_after": 2483908608,
+    "html_before": 80580490,
+    "html_after": 40893331,
+    "source_serialization_seconds": 27.400410999776796,
+    "source_sql_seconds": 4.605661100475118,
+    "telemetry_sql_seconds": 6.180414900183678
+  }
+}

@@ -7,3 +7,5 @@ __pycache__/
 Analizer/dashboard-ui/node_modules/
 Analizer/dashboard-ui/dist/
 Analizer/tests/informe_incidente.html
+
+.work-oclumon/

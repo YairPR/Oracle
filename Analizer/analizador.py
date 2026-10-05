@@ -110,6 +110,9 @@ def clasificar_carpeta(carpeta: str, router: LogRouter) -> dict:
         for name in sorted(files):
             if name in _ARCHIVOS_IGNORADOS or name.startswith(".") or name.lower().endswith(".duckdb"):
                 continue
+            # Source code may contain CHM fixtures/signatures; it is not evidence.
+            if name.lower().endswith(('.py','.pyc','.ts','.js','.css','.png','.jpg')) or (name.lower().startswith('informe_incidente') and name.lower().endswith('.html')):
+                continue
             path = os.path.join(root, name)
             if not os.path.isfile(path) or os.path.islink(path):
                 continue
@@ -183,7 +186,7 @@ def _ingerir_awr(storage: ForensicStorage, caso_id: str, parser: AwrParser,
     return n, parse_seg, time.monotonic() - t_insert
 
 
-def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
+def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print, source_provenance=None) -> dict:
     """Clasifica + parsea + inserta en DuckDB. log_cb recibe cada linea de
     progreso (print por defecto en CLI; gui.py le pasa un callback propio
     para volcar todo a su consola en pantalla). Devuelve un resumen dict
@@ -269,6 +272,12 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                         filas = parser.parse(path)
                         if tipo == LogType.OCLUMON:
                             normalizados[path] = parser.ultimo_normalizado
+                            samples, diagnostic, _ = parser.ultimo_normalizado
+                            from core.source_provenance import source_key
+                            diagnostic['source_metadata'] = dict((source_provenance or {}).get(source_key(path), {}))
+                            log_cb(f"[oclumon] formato={sorted(diagnostic.get('formats',[]))}; hosts={sorted(diagnostic['node_names'])}; bloques={diagnostic['samples']}; aceptados={diagnostic.get('accepted',0)}; rechazados={diagnostic.get('rejected',0)}; omitidas={diagnostic.get('omitted_sections',{})}")
+                            if diagnostic.get('rejected') or diagnostic.get('errors') or diagnostic.get('conflicts'):
+                                errores_ingesta.append({'path':path,'error':'partial OCLUMON coverage; see parser diagnostic'})
                         parse_seg = time.monotonic() - t_parse
                         n = 0
                 except Exception as e:
@@ -282,7 +291,16 @@ def ingerir_carpeta(carpeta: str, db_path: str, log_cb=print) -> dict:
                 if filas is not None:
                     if filas:
                         t_insert = time.monotonic()
-                        n = storage.bulk_insert_telemetria(caso_id, filas)
+                        try:
+                            callback=None
+                            if tipo == LogType.OCLUMON:
+                                from core.observation_store import save as save_observations
+                                callback=lambda con:save_observations(con,path,samples,diagnostic)
+                            n = storage.bulk_insert_telemetria(caso_id, filas,observation_callback=callback)
+                        except Exception as exc:
+                            errores_ingesta.append({'path':path,'error':f'storage failed: {exc}'})
+                            log_cb(f'[{tipo.value}] ERROR almacenando {path}: {exc}; se conservan los otros archivos')
+                            continue
                         insert_seg = time.monotonic() - t_insert
                     else:
                         log_cb(f"[{tipo.value}] {path}: 0 filas extraidas "
@@ -370,6 +388,9 @@ def ejecutar_motor_episodios(oclumon_paths: list, log_cb=print, normalizados=Non
         "linea_tiempo": [], "proc_rankings": {}, "oclumon_diagnostics": [],
         "series_por_nodo": {}, "series_max": {}, "device_names": [],
         "device_names_vistos_total": 0, "filesystem_mounts": [], "ventanas_captura": [],
+        "host_inventory":{}, "coverage":{}, "filesystem_quality":{}, "metric_contracts":{},
+        "time_domains":[],"source_files":[],"trace_blocks":{},
+        "duplicates":{"overlapping_blocks":0,"conflicts":[]},
     }
     if not oclumon_paths:
         log_cb("[episodios] sin archivos oclumon en este caso -- "
@@ -792,7 +813,7 @@ def construir_payload(db_path: str, veredicto_ia: dict, carpeta_caso: str,
     _compactar_series_frontend(resultado_episodios)
 
     return {
-        "version_ejecucion": runtime_metadata(),
+        "version_ejecucion": {**runtime_metadata(), "zona_horaria": ("Hora original legacy; zona desconocida" if not resultado_episodios.get("time_domains") or resultado_episodios.get("time_domains") == ["unknown"] else "Eje UTC para offsets explícitos; legacy sin zona permanece desconocido")},
         "generado_en": datetime.now().isoformat(timespec="seconds"),
         "caso": os.path.basename(os.path.normpath(carpeta_caso)) or carpeta_caso,
         "motor_episodios": resultado_episodios,
@@ -852,7 +873,7 @@ def generar_reporte_html(db_path: str, veredicto_ia: dict, carpeta_caso: str,
     return ruta_salida
 
 
-def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print, solo_reporte=False, salida=None) -> dict:
+def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print, solo_reporte=False, salida=None, source_provenance=None) -> dict:
     """Orquestacion de punta a punta: ingiere la carpeta, calcula el
     contexto rapido de IA (SOLO SQL, ver ai/engine.py) y escribe el
     dashboard. Devuelve un dict con las rutas/resultados clave. Cada fase
@@ -872,7 +893,7 @@ def ejecutar_caso_completo(carpeta: str, db_path: str, log_cb=print, solo_report
     log_cb(f"== Evaluando caso: {carpeta} ==")
     t_ingesta_inicio = time.monotonic()
     persistido = load_report_state(db_path) if solo_reporte else None
-    resumen_ingesta = persistido["ingestion"] if persistido else ingerir_carpeta(carpeta, db_path, log_cb=log_cb)
+    resumen_ingesta = persistido["ingestion"] if persistido else ingerir_carpeta(carpeta, db_path, log_cb=log_cb, source_provenance=source_provenance)
     t_ingesta = time.monotonic() - t_ingesta_inicio
 
     log_cb("")
@@ -1037,6 +1058,7 @@ def main():
     ap.add_argument("--db", default="caso_analisis.duckdb", help="Ruta del .duckdb de salida")
     ap.add_argument("--solo-reporte", action="store_true", help="Generar desde datos y episodios persistidos, sin releer CHM ni borrar tablas")
     ap.add_argument("--salida", help="Ruta del HTML de salida (por defecto en la carpeta del caso)")
+    ap.add_argument("--procedencia", help="Manifest JSON explícito de versión del recolector y su evidencia; no infiere versión de Database")
     ap.add_argument("--servir", nargs="?", const=8787, type=int, metavar="PUERTO", default=None,
                      help="Despues de generar el informe, levanta un servidor HTTP local "
                           "(puerto por defecto 8787) para habilitar el panel de consulta a la "
@@ -1048,7 +1070,11 @@ def main():
         sys.exit(1)
 
     print()  # separa el log de nivel INFO del resto de la salida
-    resultado = ejecutar_caso_completo(args.carpeta, args.db, log_cb=print, solo_reporte=args.solo_reporte, salida=args.salida)
+    from core.source_provenance import load_manifest
+    provenance = load_manifest(args.procedencia, args.carpeta) if args.procedencia else None
+    if args.solo_reporte and provenance is not None:
+        ap.error("--procedencia requiere ingesta completa; solo-reporte conserva la procedencia persistida")
+    resultado = ejecutar_caso_completo(args.carpeta, args.db, log_cb=print, solo_reporte=args.solo_reporte, salida=args.salida, source_provenance=provenance)
     print(f"\nListo. Dashboard: {resultado['ruta_informe']}")
 
     if args.servir is not None:

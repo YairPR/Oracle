@@ -1,0 +1,119 @@
+{
+  "python": "3.13.15 (tags/v3.13.15:4061bc4, Aug  5 2026, 13:05:39) [MSC v.1944 64 bit (AMD64)]",
+  "duckdb": "1.5.6",
+  "analizador": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\Analizer\\analizador.py",
+  "storage": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\rac-lab\\Oracle\\Analizer\\core\\storage.py",
+  "wall_seg": 109.5748775000684,
+  "peak_rss_bytes": 1474269184,
+  "html_bytes": 22098420,
+  "phases": {
+    "ingesta_seg": 73.197,
+    "ia_seg": 0.098,
+    "episodios_seg": 31.842,
+    "persistir_seg": 5.903,
+    "dashboard_seg": 3.939,
+    "total_seg": 109.076
+  },
+  "ingestion": {
+    "preparacion_storage_seg": 0.1704335999675095,
+    "clasificacion_seg": 0.031,
+    "total_seg": 73.196,
+    "por_archivo": [
+      {
+        "lectura_seg": 0.3584821771364659,
+        "parse_exclusivo_seg": 13.796596322907135,
+        "lectura_clasificacion_seg": 0.00864629982970655,
+        "almacenamiento": {
+          "ejecutar_seg": 0.010735500371083617,
+          "commit_seg": 0.0703834998421371,
+          "normalizar_seg": 0.014725299784913659,
+          "columnas_seg": 1.9961410001851618,
+          "dependencia_seg": 5.400041118264198e-06,
+          "persistir_fuente_seg": 3.336161500075832,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 1194.5571052220773
+        },
+        "bytes_seg": 656716.9933691126,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\bov-wdrac030407\\chm_nodo1_wdrac03.csv",
+        "tipo": "oclumon",
+        "segundos": 19.587,
+        "parse_seg": 14.155,
+        "insert_seg": 5.432,
+        "bytes": 12863262,
+        "filas": 6489
+      },
+      {
+        "lectura_seg": 0.3319533218163997,
+        "parse_exclusivo_seg": 13.779792878311127,
+        "lectura_clasificacion_seg": 0.012167300097644329,
+        "almacenamiento": {
+          "ejecutar_seg": 0.016595799941569567,
+          "commit_seg": 0.1955513001885265,
+          "normalizar_seg": 0.02900639991275966,
+          "columnas_seg": 0.012065500020980835,
+          "dependencia_seg": 6.6999346017837524e-06,
+          "persistir_fuente_seg": 4.074226299999282,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 1498.8567319626382
+        },
+        "bytes_seg": 689815.9643732479,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\bov-wdrac030407\\chm_nodo1_wdrac07.csv",
+        "tipo": "oclumon",
+        "segundos": 18.441,
+        "parse_seg": 14.112,
+        "insert_seg": 4.329,
+        "bytes": 12720930,
+        "filas": 6489
+      },
+      {
+        "lectura_seg": 0.35241642454639077,
+        "parse_exclusivo_seg": 13.461715575307608,
+        "lectura_clasificacion_seg": 0.004448199877515435,
+        "almacenamiento": {
+          "ejecutar_seg": 0.008499199990183115,
+          "commit_seg": 0.08162359986454248,
+          "normalizar_seg": 0.009780099848285317,
+          "columnas_seg": 0.007869299966841936,
+          "dependencia_seg": 3.90014611184597e-06,
+          "persistir_fuente_seg": 3.2507501000072807,
+          "metodo": "Arrow INSERT SELECT",
+          "lote": 20000,
+          "filas_seg": 1931.4133079400954
+        },
+        "bytes_seg": 749371.4558276618,
+        "path": "C:\\Users\\yair.purisaca\\Documents\\DBA_KnowledgeBase\\ASTDGA\\Oracle\\Inicidentes\\eviction_rac\\dept300\\Caso\\bov-wdrac030407\\chm_nodo1_wdrac04.csv",
+        "tipo": "oclumon",
+        "segundos": 17.174,
+        "parse_seg": 13.814,
+        "insert_seg": 3.36,
+        "bytes": 12869595,
+        "filas": 6489
+      }
+    ]
+  },
+  "tables": {
+    "fact_telemetria_so": {
+      "count": 19467,
+      "sha256": "e2eb895cd20a6ad098abb9b80023b2d6a9750e986b77063cf6047b621f5668e3"
+    },
+    "fact_awr_snapshots": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "fact_awr_wait_events": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "dim_database": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "dim_infraestructura": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "episodes": 9
+}

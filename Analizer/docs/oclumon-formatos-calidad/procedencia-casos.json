@@ -1,0 +1,32 @@
+{
+  "sources": {
+    "chm_nodo1_3009.txt": {
+      "collector_version": "11.2.0.4",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    },
+    "chm_nodo2_3009.txt": {
+      "collector_version": "11.2.0.4",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    },
+    "chm_nodo1_20261002_0530_1030_mtu.txt": {
+      "collector_version": "11.2.0.4",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    },
+    "chm_nodo2_20261002_0530_1030_mtu.txt": {
+      "collector_version": "11.2.0.4",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    },
+    "chm_nodo1_wdrac03.csv": {
+      "collector_version": "19c",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    },
+    "chm_nodo1_wdrac04.csv": {
+      "collector_version": "19c",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    },
+    "chm_nodo1_wdrac07.csv": {
+      "collector_version": "19c",
+      "collector_evidence": "Procedencia declarada por el usuario el 2026-10-05; no inferida del formato ni de Oracle Database."
+    }
+  }
+}

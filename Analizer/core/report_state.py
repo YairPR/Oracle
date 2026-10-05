@@ -8,7 +8,7 @@ import subprocess
 import sys
 import duckdb
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def runtime_metadata():
@@ -81,6 +81,8 @@ def dataset_signature(con):
             f"SELECT count(*), bit_xor(hash({', '.join(columns)})) FROM {table}"
         ).fetchone()
         result[table] = [count, checksum]
+    if con.execute("SELECT count(*) FROM duckdb_tables() WHERE table_name='oclumon_sources'").fetchone()[0]:
+        result['oclumon_sources']=list(con.execute('SELECT count(*), bit_xor(hash(source, diagnostic, observations)) FROM oclumon_sources').fetchone())
     return result
 
 

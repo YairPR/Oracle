@@ -1,0 +1,6 @@
+{
+  "equal": true,
+  "series_count": 4800,
+  "every_observed_value_time_and_bound_preserved": true,
+  "episodes_timeline_captures_equal": true
+}

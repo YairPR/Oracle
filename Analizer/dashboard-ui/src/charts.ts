@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { Payload, DatosSerie } from "./types";
-import { colorDeNodo, colorDeSeveridad } from "./colors";
+import { colorDeNodo, colorDeSeveridad, lineTypeDeNodo } from "./colors";
 import { escapeHtml } from "./util";
 import { epochMs, lowerBound, axisRange } from "./temporal-state";
 
@@ -61,7 +61,8 @@ function aFechaLegible(epochSeg: number): string {
   });
 }
 
-function baseOption(titulo: string | null) {
+function baseOption(titulo: string | null, metric?: string, node?: string) {
+  const info=metric ? window.__PAYLOAD__.motor_episodios.metric_contracts?.[metric] : undefined;
   return {
     useUTC: true,
     animation: false,
@@ -89,12 +90,20 @@ function baseOption(titulo: string | null) {
         // de ahi la division: sin ella la hora mostrada queda multiplicada por
         // 1000 una segunda vez (bug reportado en la auditoria externa, sec. 3.1).
         const t = aFechaLegible(params[0].value[0] / 1000);
-        let html = `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:${INK_PRIMARY}">${escapeHtml(t)}</div>`;
+        const domains=window.__PAYLOAD__.motor_episodios.time_domains || ['unknown'];
+        const zone=domains.length===1 && domains[0]==='unknown'?'zona desconocida':'UTC (offset original conservado)';
+        let html = `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:${INK_PRIMARY}">${escapeHtml(t)}${info?' · '+escapeHtml(zone):''}</div>`;
         for (const p of params) {
           if (p.value == null || p.value[1] == null) continue;
           const valor = p.value[2] ? `<${p.value[1]}` : String(p.value[1]);
-          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(valor)}</b></div>`;
+          html += `<div style="font-size:11px;color:${INK_SECONDARY}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:5px"></span>${escapeHtml(node || p.seriesName)}: <b style="color:${INK_PRIMARY}">${escapeHtml(valor)} ${escapeHtml(info?.unit || '')}</b>${metric?.endsWith('::wait_ms') && p.value[1]>1000000?' · extremo observado, validez pendiente':''}</div>`;
+          if(info) {
+            const me=window.__PAYLOAD__.motor_episodios;
+            const source=me.trace_blocks?.[node || p.seriesName]?.find(r=>r[0]*1000===p.value[0]);
+            if(source) html+=`<div style="font-size:10px">${escapeHtml(me.source_files?.[source[1]] || '')} · bloque línea ${source[2]}</div>`;
+          }
         }
+        if(info) html+=`<div style="font-size:10px;max-width:320px">${escapeHtml(metric || '')} · ${escapeHtml(info.transformation)}<br>Fuente CHM: campo y unidad en contrato; originales y ubicación por entidad en DuckDB.</div>`;
         return html;
       },
     },
@@ -133,7 +142,7 @@ function tituloConUnidad(title: string | undefined, unit: string | undefined): s
 }
 
 const datasetCache = new WeakMap<object, (number | null)[][]>();
-function puntosADataset(puntos: DatosSerie | null | undefined): (number | null)[][] {
+export function puntosADataset(puntos: DatosSerie | null | undefined): (number | null)[][] {
   if (!puntos) return [];
   const cached=datasetCache.get(puntos);
   if (cached) return cached;
@@ -169,7 +178,7 @@ export function renderSerieChart(
       showSymbol: puntos.length < 60,
       symbolSize: 4,
       connectNulls: false, // hueco de muestreo visible, nunca interpolado
-      lineStyle: { width: 1.6, color },
+      lineStyle: { width: 1.6, color, type: lineTypeDeNodo(spec.node) },
       itemStyle: { color },
       // Area sombreada opcional (pedido del audit externo 2026-10-02 para
       // el panel fusionado "Trafico total Rx/Tx") -- opacidad baja a
@@ -185,7 +194,7 @@ export function renderSerieChart(
     return;
   }
   chart.setOption({
-    ...baseOption(tituloConUnidad(spec.title, spec.unit)),
+    ...baseOption(tituloConUnidad(spec.title, spec.unit),spec.series[0],spec.node),
     series,
   });
   registrarChart(chart);
@@ -208,7 +217,7 @@ export function renderSerieMultiNodo(
       showSymbol: puntos.length < 60,
       symbolSize: 4,
       connectNulls: false,
-      lineStyle: { width: 1.6, color },
+      lineStyle: { width: 1.6, color, type: lineTypeDeNodo(nodo) },
       itemStyle: { color },
       data: puntos,
     };
@@ -219,7 +228,7 @@ export function renderSerieMultiNodo(
     return;
   }
   chart.setOption({
-    ...baseOption(tituloConUnidad(spec.title, spec.unit)),
+    ...baseOption(tituloConUnidad(spec.title, spec.unit),spec.serie),
     series,
   });
   if (spec.yMin !== undefined || spec.yMax !== undefined) {
@@ -509,6 +518,13 @@ export function reflowCharts(): void {
 
 interface TemporalChart { chart: any; series: any[]; times: number[][]; symbols: boolean[]; names: string[]; applied?: string }
 const temporalCharts: TemporalChart[] = [];
+export function syncVisibleCursors(): void {
+  for(const {chart} of temporalCharts) {
+    const box=chart.getDom().getBoundingClientRect();
+    chart.group=box.height>0 && box.bottom>0 && box.top<window.innerHeight?'odl-visible-time':'';
+  }
+}
+echarts.connect('odl-visible-time');
 function registrarChart(chart: any): void {
   (window as any).__odlCharts = (window as any).__odlCharts || [];
   (window as any).__odlCharts.push(chart);
@@ -518,6 +534,7 @@ function registrarChart(chart: any): void {
     const timeOf=(p:any)=>Number(Array.isArray(p)?p[0]:p.value?.[0]);
     const series=(option.series || []).map((s:any)=>[...(s.data || [])].sort((a,b)=>timeOf(a)-timeOf(b)));
     temporalCharts.push({chart,series,names:(option.series || []).map((s:any)=>s.name),symbols:(option.series || []).map((s:any)=>s.showSymbol),times:series.map((points:any[])=>points.map(p=>Number(Array.isArray(p)?p[0]:p.value?.[0])))});
+    syncVisibleCursors();
   }
 }
 export function aplicarRangoTemporalCharts(from: number, to: number): void {

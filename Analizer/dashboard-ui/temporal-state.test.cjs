@@ -13,3 +13,6 @@ assert.deepEqual(axisRange({from:a,to:b}),{from:a,to:b});
 assert.equal(lowerBound([a,b],a),0);
 assert.equal(lowerBound([a,b],b+1),2);
 console.log("Temporal edge cases OK");
+
+assert.equal(epochMs("2026-10-05T10:30:00+02:00"), epochMs("2026-10-05T08:30:00"));
+assert.equal(epochMs("2026-02-30T10:30:00+02:00"), null);

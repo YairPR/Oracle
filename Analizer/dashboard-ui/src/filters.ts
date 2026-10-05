@@ -93,7 +93,8 @@ export function inicializarFiltrosTimeline(): void {
       const sevOk = estado.sev === "all" || fila.getAttribute("data-sev") === estado.sev;
       const nodeOk = estado.node === "all" || fila.getAttribute("data-node") === estado.node;
       const textoOk = !estado.texto || (fila.textContent || "").toLowerCase().includes(estado.texto);
-      fila.style.display = sevOk && nodeOk && textoOk ? "" : "none";
+      fila.dataset.localHidden=String(!(sevOk && nodeOk && textoOk));
+      fila.hidden=fila.dataset.localHidden==='true' || fila.dataset.rangeHidden==='true';
     }
   };
 

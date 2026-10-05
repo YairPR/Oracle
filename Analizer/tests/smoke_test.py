@@ -55,7 +55,7 @@ def check(nombre, real, esperado):
 
 check("snapshots AWR (texto, 2 HTML quedan unknown)", q("SELECT count(*) FROM fact_awr_snapshots"), 5)
 check("wait events totales (10 por snapshot x 5)", q("SELECT count(*) FROM fact_awr_wait_events"), 50)
-check("filas de telemetria oclumon", q("SELECT count(*) FROM fact_telemetria_so WHERE fuente='oclumon'"), 1260)
+check("filas de telemetria oclumon", q("SELECT count(*) FROM fact_telemetria_so WHERE fuente='oclumon'"), 1620)
 check("instancias RAC distintas en dim_database", q("SELECT count(DISTINCT instance_name) FROM dim_database"), 2)
 check("release Oracle", q("SELECT DISTINCT release FROM dim_database").strip(), "11.2.0.4.0")
 
@@ -99,8 +99,8 @@ check(
 
 check("cores infra (6 reales)", q("SELECT DISTINCT cores FROM dim_infraestructura"), 6.0)
 estado_salud = (resultado["veredicto_ia"].get("estado_salud") or {}).get("estado", "N/D")
-check("estado de salud calculado", estado_salud, "WARNING")
-check("episodios detectados (motor de anomalias oclumon)", len(resultado["resultado_episodios"]["episodios"]), 8)
+check("estado de salud calculado", estado_salud, "OK")
+check("episodios detectados (motor de anomalias oclumon)", len(resultado["resultado_episodios"]["episodios"]), 11)
 tiempos_archivo = resultado["resumen_ingesta"]["tiempos"]["por_archivo"]
 check("archivos con tiempos parse/insert separados", all(
     {"bytes", "parse_seg", "insert_seg", "segundos", "filas"} <= set(fila)
