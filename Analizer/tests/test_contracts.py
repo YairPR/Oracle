@@ -89,7 +89,7 @@ class Contracts(unittest.TestCase):
             )
             con.close()
             text = Path(html).read_text(encoding="utf-8")
-            self.assertIn("Detalles del informe", text)
+            self.assertIn("Hardware y fuentes", text)
             self.assertNotIn('id="odl-rango-nodos"', text)
             con = duckdb.connect(db)
             con.execute(

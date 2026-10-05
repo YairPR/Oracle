@@ -368,28 +368,16 @@ class RootCauseEngine:
         dashboard y, a pedido, el contexto que ve Ollama en el chat
         (ver responder_pregunta()) -- nunca al reves.
 
-        CRITICAL (ver alcance acotado: ya no hay codigos ORA-/CRS-/TNS-
-        ni patrones de alert log en este pipeline -- ver Hito de
-        simplificacion):
-          a) Un salto vertical brusco (delta entre 2 muestras
-             consecutivas del mismo nodo) en los contadores de error de
-             red IPReasFail/TCPRetraSeg (oclumon), por encima de
-             UMBRAL_SALTO_PROTO_ERRORS (ver esa constante para la
-             calibracion real del umbral).
-
-        WARNING (solo si NINGUN CRITICAL de arriba aplico):
-          a) CPU promedio (CPU_USAGE_PCT) por encima de
-             UMBRAL_CPU_WARNING_PCT.
-          b) Tráfico de swap (SWAP_IN_KBPS / SWAP_OUT_KBPS > 0) en cualquier muestra.
-
-        OK: ninguna de las anteriores -- todas las metricas en rango
-        normal.
+        WARNING: incrementos de protocolos mayores que el umbral de revisión,
+        CPU media elevada o swap activo. Son señales históricas para investigar,
+        no prueban impacto ni constituyen un estado crítico global.
+        OK: ninguna señal en estas reglas y esta cobertura; no demuestra salud
+        de toda la infraestructura.
 
         Nunca lanza: cada chequeo usa self._query() (que ya atrapa
         excepciones de SQL y devuelve [] si falla) -- un chequeo que
         falle simplemente no aporta ningun motivo, nunca tumba el
         calculo de los demas."""
-        motivos_critical = []
         motivos_warning = []
 
         # -- a) saltos bruscos en contadores de PROTOCOL ERRORS ---------
@@ -403,13 +391,10 @@ class RootCauseEngine:
         )
         for metrica, nodo, max_delta in filas:
             if max_delta is not None and max_delta > UMBRAL_SALTO_PROTO_ERRORS:
-                motivos_critical.append(
-                    f"salto brusco de {max_delta:.0f} en {metrica} (nodo={nodo or 'N/D'}, "
-                    f"> {UMBRAL_SALTO_PROTO_ERRORS:.0f} entre 2 muestras consecutivas)"
+                motivos_warning.append(
+                    f"incremento observado de {max_delta:.0f} en {metrica} (nodo={nodo or 'N/D'}, "
+                    f"> {UMBRAL_SALTO_PROTO_ERRORS:.0f} entre muestras compatibles; heurística de revisión, impacto no demostrado)"
                 )
-
-        if motivos_critical:
-            return {"estado": "CRITICAL", "motivos": motivos_critical}
 
         # -- WARNING a) CPU promedio -------------------------------------
         filas = self._query(

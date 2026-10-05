@@ -52,7 +52,7 @@ with sync_playwright() as pw:
             ctx.close()
             continue
         assert page.locator(".odl-host-item").count() == args.hosts
-        assert page.locator(".odl-title").text_content().find(f"{args.hosts} nodo") >= 0
+        assert page.locator(".odl-case-identity").text_content().find(f"{args.hosts} host") >= 0
         assert "standalone" not in page.locator(".odl-title").text_content().lower()
         assert not page.locator("#odl-rango-nodos").count()
         # Inspect metadata in the browser; transferring all full-resolution
@@ -65,6 +65,9 @@ with sync_playwright() as pw:
                   memavl:!!m.metric_contracts?.memavl_gib};
         }""")
         assert len(me["node_list"]) == args.hosts
+        if args.hosts == 3 and me.get('time_domains') == ['+0200']:
+            assert all(c['samples'] == 721 for c in me['coverage'].values())
+            assert page.evaluate("() => window.__odlCharts[0].getOption().series.map(s=>s.data[0][1])") == [12.59,15.37,37.05]
         assert page.evaluate(
             """expected=>[...document.querySelectorAll('[data-chart]')].some(e=>JSON.parse(e.dataset.chart).serie==='memavl_gib')===expected""",
             me["memavl"],
@@ -119,6 +122,7 @@ with sync_playwright() as pw:
         assert page.locator('canvas').first.bounding_box() == box
         tooltip_count = page.evaluate("""() => [...document.querySelectorAll('.odl-chart-tooltip')].filter(e=>e.textContent.trim() && getComputedStyle(e).visibility!=='hidden' && +getComputedStyle(e).opacity>0).length""")
         assert tooltip_count == 1, tooltip_count
+        assert page.locator(".odl-shared-cursor").count() > 0
         assert page.locator('.odl-chart-tooltip').first.text_content().find('C:\\Users') == -1
         page.screenshot(path=str(out / f"hover-{zone.replace('/', '-')}.png"))
         page.mouse.wheel(0, 600)
@@ -126,14 +130,43 @@ with sync_playwright() as pw:
         page.evaluate("window.scrollTo(0,0)")
         page.locator("#odl-rango-restaurar").click()
         page.screenshot(path=str(out / f"header-{zone.replace('/', '-')}.png"))
-        # A source offset is preserved; chosen display is UTC, invariant to browser zone.
+        # Capture offset is invariant to browser zone.
         if me.get("time_domains") == ["+0200"]:
             assert 'UTC+02:00' in page.locator('.odl-clock-label').text_content()
             assert page.locator('#odl-rango-desde').input_value().startswith('2026-10-05T10:30')
             assert page.locator('#odl-rango-hasta').input_value().startswith('2026-10-05T11:30')
-            assert "pCPU 9" in page.locator(".odl-host-item").first.text_content()
-            assert "cores 18" in page.locator(".odl-host-item").first.text_content()
-            assert "vCPU 18" in page.locator(".odl-host-item").first.text_content()
+            assert "18 vCPU" in page.locator(".odl-host-item").first.text_content()
+            assert 'Resumen' in page.locator('.odl-resource-nav').text_content()
+        assert 'CONCEPTO' not in page.locator('#sec-oclumon').text_content()
+        assert 'Comparar periodos' not in page.locator('#sec-oclumon').text_content()
+        colors=page.evaluate("() => window.__odlCharts[0].getOption().series.map(s=>s.lineStyle.color)")
+        for resource in ['cpu','memoria','red','discos','filesystems','procesos','resumen']:
+            page.locator(f'.odl-resource-nav [data-resource="{resource}"]').click()
+            assert page.evaluate('window.__odlTemporalState') == full
+            assert page.locator(f'[data-resource-panel="{resource}"]').is_visible()
+            page.wait_for_timeout(120)
+            if resource == 'red' and args.hosts == 3:
+                selector = page.locator('#odl-selector-nic')
+                if selector.locator('option[value="ens193"], option:text-is("ens193")').count():
+                    selector.select_option('ens193')
+                    assert 'Sin clasificación' in page.locator('#odl-nic-inventory').text_content()
+                    assert 'NIC privada' not in page.locator('#odl-nic-inventory').text_content()
+                    assert page.evaluate("window.__PAYLOAD__.motor_episodios.metric_contracts['nic::ens193::indiscarded'].kind") == 'rate'
+            if resource == 'discos':
+                page.locator('#odl-device-search').fill('device-that-does-not-exist')
+                assert 'Sin dispositivos' in page.locator('#odl-device-inventory').text_content()
+                page.locator('#odl-device-search').fill('')
+                page.locator('#odl-device-sort').select_option('iops')
+                if page.locator('[data-device]').count():
+                    device = page.locator('[data-device]').first.get_attribute('data-device')
+                    page.locator('[data-device]').first.click()
+                    assert page.locator('#odl-selector-device').input_value() == device
+            page.screenshot(path=str(out / f'{resource}-{zone.replace("/", "-")}.png'))
+        assert page.evaluate("() => window.__odlCharts[0].getOption().series.map(s=>s.lineStyle.color)") == colors
+        page.locator('[data-observation]').first.click() if page.locator('[data-observation]').count() else None
+        if page.locator('#odl-observation-detail').is_visible():
+            assert 'Fuente:' in page.locator('#odl-observation-detail').text_content()
+            page.locator('#odl-observation-detail [data-close]').click()
         draft(date(full["to"] + 86400000), date(full["to"] + 86460000))
         page.locator("#odl-rango-aplicar").click()
         page.locator("#odl-rango-ajustar").click()

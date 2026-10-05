@@ -546,3 +546,68 @@ table.odl-table tr:last-child td { border-bottom: 0; }
 
 .chart-box { position: relative; }
 .odl-shared-cursor { position:absolute; top:46px; bottom:38px; border-left:1px dashed #898781; pointer-events:none; z-index:2; }
+
+/* Compact shared identity; resource styling is scoped to OCLUMON. */
+.odl-universal-header { padding:12px 16px; margin-bottom:12px; }
+.odl-identity-row { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:10px; }
+.odl-case-identity { flex:0 1 auto; min-width:0; }
+.odl-title { font-size:17px; overflow-wrap:anywhere; }
+.odl-identity-row .odl-host-strip { display:flex; flex:1 1 400px; flex-wrap:wrap; gap:6px; margin:0; }
+.odl-identity-row .odl-host-item { display:grid; grid-template-columns:8px 1fr; gap:2px 7px; padding:6px 10px; font-size:11px; min-width:0; }
+.odl-host-item small { grid-column:2; color:var(--color-text-muted); font-size:10px; }
+.odl-host-dot { width:8px; height:8px; border-radius:50%; background:var(--host-color); align-self:center; }
+.odl-report-details { flex:0 1 auto; font-size:11px; max-width:100%; }
+.odl-report-details[open] { flex-basis:100%; }
+.odl-timebar-controls { gap:7px; align-items:end; }
+.odl-timebar-controls label:first-child { flex:1 1 250px; }
+.odl-timebar-controls label { font-size:10px; }
+.odl-clock-label { font-size:10px; padding:7px 0; color:var(--color-text-muted); }
+.odl-selection-line:has(#odl-rango-nota:empty) { margin:0; min-height:0; }
+.odl-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+#sec-oclumon { --color-surface:#10202f; --color-surface-raised:#132638; --color-border:#294154; --color-text:#e4edf7; --color-text-muted:#acc0d6; }
+.odl-resource-nav { display:flex; flex-wrap:wrap; gap:3px; border-bottom:1px solid #294154; margin-bottom:8px; }
+.odl-resource-button { display:flex; align-items:center; gap:7px; border:0; border-bottom:2px solid transparent; background:transparent; color:#acc0d6; padding:9px 13px; cursor:pointer; }
+.odl-resource-button.active { color:#74b8ff; border-bottom-color:#3987e5; }
+.odl-resource-button:hover, .odl-resource-button:focus-visible { background:#152d42; }
+.odl-resource-button .odl-icon { width:16px; height:16px; }
+.odl-scope-note { margin:4px 0 10px; font-size:11px; color:#acc0d6; }
+[data-resource-panel] { display:none; }
+[data-resource-panel].odl-resource-active { display:block; }
+.odl-metric-card, .odl-resource-card { min-width:0; background:linear-gradient(120deg,#122334,#0d1c29); border:1px solid #294154; border-radius:7px; padding:10px; margin-bottom:12px; }
+#sec-oclumon .panel-grid { gap:12px; }
+#sec-oclumon .chart-box { border:0; background:transparent; height:230px; }
+#sec-oclumon .panel-grid[data-panel-group] .chart-box { border:1px solid #294154; background:#10202f; border-radius:7px; }
+.odl-resource-card h2 { font-size:14px; margin:0 0 10px; }
+.odl-metric-summary { display:flex; flex-direction:column; gap:3px; font-size:10px; color:#acc0d6; margin-top:3px; }
+.odl-stat-host { color:var(--host-color); font-weight:600; }
+.odl-metric-contract { font-size:10px; color:#acc0d6; margin-top:6px; overflow-wrap:anywhere; }
+.odl-metric-contract summary { cursor:pointer; }
+.odl-observation-banner { border:1px solid #756127; border-radius:6px; color:#ebd186; padding:9px 12px; margin-bottom:12px; font-size:12px; background:#242719; }
+.odl-memory-capacity { display:flex; gap:12px; flex-wrap:wrap; }
+.odl-memory-capacity span { border-left:3px solid var(--host-color); padding-left:8px; font-size:12px; }
+.odl-inventory-controls { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+.odl-inventory-controls label { display:flex; gap:7px; align-items:center; font-size:12px; }
+.odl-inventory-scroll { max-height:280px; overflow:auto; margin-bottom:12px; }
+.odl-table-scroll { overflow-x:auto; max-width:100%; }
+.odl-device-link { background:none; border:0; padding:0; color:#8fc4ff; text-decoration:underline; cursor:pointer; }
+.odl-evidence-dialog { max-width:700px; width:calc(100% - 32px); color:#e4edf7; background:#10202f; border:1px solid #456880; border-radius:9px; padding:22px; }
+.odl-evidence-dialog::backdrop { background:rgba(0,0,0,.7); }
+.odl-evidence-dialog h2 { font-size:18px; }
+.odl-dialog-actions { display:flex; gap:10px; margin-top:16px; }
+#sec-oclumon meter { width:90px; max-width:100%; vertical-align:middle; }
+@media(max-width:650px) {
+ .odl-main { padding:10px 10px 40px; }
+ .odl-identity-row .odl-host-strip { flex-basis:100%; }
+ .odl-timebar-controls label { flex:1 1 145px; min-width:0; }
+ .odl-timebar-controls input, .odl-timebar-controls select { width:100%; min-width:0; }
+ .odl-resource-button { padding:8px 9px; font-size:11px; }
+ .odl-universal-header { padding:10px; }
+ .odl-table-scroll .odl-table { min-width:640px; }
+}
+
+@media(max-width:600px) {
+ .odl-universal-header .odl-timebar-controls label:nth-child(2),
+ .odl-universal-header .odl-timebar-controls label:nth-child(3) { grid-column:auto; }
+ .odl-universal-header input[type="datetime-local"] { font-size:10px; padding:6px; }
+ .odl-universal-header .odl-clock-label { grid-column:1 / -1; padding:0; }
+}

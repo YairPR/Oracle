@@ -100,7 +100,10 @@ check(
 check("cores infra (6 reales)", q("SELECT DISTINCT cores FROM dim_infraestructura"), 6.0)
 estado_salud = (resultado["veredicto_ia"].get("estado_salud") or {}).get("estado", "N/D")
 check("estado de salud calculado", estado_salud, "OK")
-check("episodios detectados (motor de anomalias oclumon)", len(resultado["resultado_episodios"]["episodios"]), 11)
+episodes = resultado["resultado_episodios"]["episodios"]
+check("episodios originales conservados", len([e for e in episodes if e["cat"] != "tcp_retrans"]), 11)
+check("episodios TCP incorporados", len([e for e in episodes if e["cat"] == "tcp_retrans"]), 4)
+check("TCP con incrementos positivos y severidad de revision", all(e["peak_value"] > 0 and e["sev"] == "warning" for e in episodes if e["cat"] == "tcp_retrans"), True)
 tiempos_archivo = resultado["resumen_ingesta"]["tiempos"]["por_archivo"]
 check("archivos con tiempos parse/insert separados", all(
     {"bytes", "parse_seg", "insert_seg", "segundos", "filas"} <= set(fila)

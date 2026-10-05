@@ -233,6 +233,12 @@ class InformeCompleto(BaseModel):
 # abajo + su partial Jinja2 correspondiente en templates/panels/.
 
 CATALOGO: dict[str, ComponenteDefinicion] = {
+    "network": ComponenteDefinicion(
+        id="network", label="Red del host e interfaces", icon="interconnect",
+        activate_when=ActivateWhen(finding_type="network"),
+        panels=["episode_summary", "evidence_table"], optional_panels=[],
+        missing_data=MissingData(action="events_only", mensaje="Detalle por interfaz y contadores del host en la vista Red; no se atribuyen a PRIVATE sin evidencia."),
+    ),
     "interconnect": ComponenteDefinicion(
         id="interconnect",
         label="Interconnect",
@@ -313,13 +319,14 @@ CATALOGO: dict[str, ComponenteDefinicion] = {
 _CATEGORIA_A_FINDING = {
     "swap": "memory_pressure",
     "cpu_queue": "cpu_saturation",
-    "nic_errors_hw": "interconnect",
+    "nic_errors_hw": "network",
     "interconnect_burst": "interconnect",
-    "nic_discards": "interconnect",
-    "nic_link_errors": "interconnect",
-    "nic_latency": "interconnect",
-    "ip_reasfail": "interconnect",
-    "udp_rcverr": "interconnect",
+    "nic_discards": "network",
+    "nic_link_errors": "network",
+    "nic_latency": "network",
+    "ip_reasfail": "network",
+    "udp_rcverr": "network",
+    "tcp_retrans": "network",
     "device_state": "asm_io",
     "device_wait": "asm_io",
     "fs_full": "asm_io",
@@ -342,27 +349,13 @@ def resolver_finding_type(categoria: Optional[str] = None) -> str:
 # disparadora (rediseno 2026-10-02: "cada episodio debe graficar la metrica
 # especifica que lo disparo, no un par fijo de paneles genericos").
 # ---------------------------------------------------------------------------
-# device_state/device_wait/fs_full quedan fuera a proposito: oclumon solo
-# entrega esas como evento discreto (cambio de estado puntual), nunca como
-# serie de tiempo propia -- no hay nada que graficar todavia (quedan
-# cubiertas por evidence_table + el aviso de "sin fuente hoy" declarado en
-# core/dashboard_engine.py). nic_errors_hw es una aproximacion deliberada:
-# el contador que la dispara (sys_.nicerrors, agregado a nivel de sistema)
-# no tiene su propia serie en series_por_nodo todavia, asi que se grafica
-# con la serie de errores de capa NIC de la interfaz PRIVATE (errsin/
-# errsout) -- mismo fenomeno (errores de hardware/driver de red), distinto
-# nivel de agregacion; ver docstring de interconnect_nic_link_errors en
-# core/episode_engine.py.
+# Solo se mantiene un panel primario cuando representa el recurso real.
+# El resto se explora por entidad en las vistas OCLUMON.
+# Host counters and arbitrary interfaces must never substitute PRIVATE series.
 _CATEGORIA_A_PANEL_PRIMARIO = {
     "swap": "swap_by_node_chart",
     "cpu_queue": "cpu_queue_chart",
     "interconnect_burst": "interconnect_traffic_chart",
-    "nic_latency": "interconnect_latency_chart",
-    "nic_discards": "nic_discards_chart",
-    "nic_link_errors": "nic_link_errors_chart",
-    "nic_errors_hw": "nic_link_errors_chart",  # aproximacion -- ver nota arriba
-    "ip_reasfail": "protocol_ip_reasfail_chart",
-    "udp_rcverr": "protocol_udp_rcverr_chart",
 }
 
 

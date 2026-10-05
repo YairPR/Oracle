@@ -35,6 +35,7 @@ KNOWN_FIELDS = {
     "system": {
         "cpu",
         "cpuq",
+        "cpusys", "cpuuser", "cpuiowait", "cpusteal", "procs_blocked",
         "swpin",
         "swpout",
         "netr",
@@ -109,6 +110,7 @@ def field_name(value):
         "#cpuq": "cpuq",
         "buffer&cache": "mcache",
         "#procs": "procs",
+        "#procs_blocked": "procs_blocked",
         "netrr": "netr",
         "netwr": "netw",
         "#nicErrors": "nicErrors",
@@ -247,6 +249,9 @@ def parse(path):
                 "ios",
             ]
             sys = {k: n(k) for k in keys}
+            for key in ("cpusys", "cpuuser", "cpuiowait", "cpusteal", "procs_blocked"):
+                if key in toks:
+                    sys[key] = n(key)
             sys["nicerrors"] = n("nicErrors")
             for src, dest in [
                 ("physmemfree", "memfree_mb"),

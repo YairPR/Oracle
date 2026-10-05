@@ -17,6 +17,7 @@ import { inicializarNav } from "./nav";
 import { inicializarSelectorPanel, inicializarExpandirEvidencia, inicializarFiltrosTimeline } from "./filters";
 import type { Payload } from "./types";
 import { initializeProcessSummaries } from "./analysis";
+import { initializeResources } from "./resources";
 import { inicializarRangoTemporal } from "./time-range";
 
 interface ChartSpec {
@@ -117,6 +118,8 @@ function main(): void {
   // Selectores de la seccion OCLUMON (rediseno "meramente grafico",
   // 2026-10-02) -- cada uno controla su propio grupo de paneles
   // (data-panel-group), ver templates/dashboard.html::sec-oclumon.
+  inicializarSelectorPanel("odl-selector-cpu", "cpu");
+  inicializarSelectorPanel("odl-selector-nic", "nic");
   inicializarSelectorPanel("odl-selector-device", "device");
   inicializarSelectorPanel("odl-selector-fs", "fs");
   inicializarSelectorPanel("odl-selector-proc-nodo", "proc-nodo");
@@ -124,6 +127,7 @@ function main(): void {
   inicializarFiltrosTimeline();
   inicializarRangoTemporal(payload);
   initializeProcessSummaries(payload);
+  initializeResources(payload);
   let cursorFrame: number | undefined;
   window.addEventListener('scroll',()=> {
     if(cursorFrame!==undefined) return;

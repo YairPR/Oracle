@@ -8,7 +8,7 @@ import subprocess
 import sys
 import duckdb
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def runtime_metadata():
@@ -141,7 +141,7 @@ def load_report_state(db):
             ) from exc
     if not row or row[0] != SCHEMA_VERSION:
         raise ValueError(
-            "Estado persistido ausente o incompatible; no se genera un informe incompleto."
+            "Estado persistido ausente o incompatible; ejecute una ingesta completa con esta versión."
         )
     data = json.loads(gzip.decompress(bytes(row[1])))
     if data.get("version") != SCHEMA_VERSION or "episodes" not in data:

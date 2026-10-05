@@ -16,41 +16,32 @@
   "motivo_profundidad": "Detección de anomalías sobre series de tiempo (oclumon) + AWR, sin IA automática.",
 } %}
 
-<section class="odl-universal-header" aria-label="Identidad, infraestructura y filtros compartidos">
+<section class="odl-universal-header" aria-label="Identidad y periodo compartidos">
   {% set cab_host = payload.infraestructura[0] if payload.infraestructura else {} %}
   {% set hosts = (payload.motor_episodios.node_list + payload.motor_episodios.nodos_sar + (payload.infraestructura | map(attribute='host') | reject('none') | list)) | unique | list | sort %}
-  <div class="odl-topbar">
-    <div>
-      <h1 class="odl-title">{{ cab_host.db_name if cab_host.db_name else "Caso " ~ payload.caso }}{% if cab_host.release %} · Oracle {{ cab_host.release }}{% endif %}{% if payload.infraestructura | selectattr('rac', 'in', ['YES', 'Yes', 'yes', 'TRUE', 'true', 'RAC', true]) | list %} · RAC{% endif %} · {{ hosts | length }} nodo{{ 's' if hosts | length != 1 else '' }} observado{{ 's' if hosts | length != 1 else '' }}</h1>
-      <div class="odl-clock-label">{{ payload.display_clock.label }}</div>
-      <div class="odl-subtitle">Disponible: {{ payload.resumen.rango_tiempo[0] | fecha_captura }} — {{ payload.resumen.rango_tiempo[1] | fecha_captura }}</div>
-    </div>
-    <details class="odl-report-details"><summary>Detalles del informe</summary>
+  <div class="odl-identity-row"><div class="odl-case-identity">
+    <h1 class="odl-title">{{ cab_host.db_name if cab_host.db_name else payload.caso }}{% if cab_host.release %} · Oracle {{ cab_host.release }}{% endif %}</h1>
+    <span class="odl-subtitle">{{ hosts | length }} {{ "host observado" if hosts | length == 1 else "hosts observados" }}</span>
+  </div><div class="odl-host-strip">
+  {% for node in hosts %}{% set inv = payload.motor_episodios.host_inventory.get(node, {}) %}
+    <div class="odl-host-item" data-host-color="{{ node }}"><span class="odl-host-dot"></span><strong>{{ node }}</strong>{% if inv.vcpus or inv.ram_gib %}<small>{{ inv.vcpus | int if inv.vcpus else 'N/D' }} vCPU · {{ inv.ram_gib | round(2) if inv.ram_gib else 'N/D' }} GiB</small>{% endif %}</div>
+  {% else %}<span>Sin hosts identificados.</span>{% endfor %}
+  </div>    <details class="odl-report-details"><summary>Hardware y fuentes</summary>
       <div>Generado {{ payload.generado_en | fecha_hora }}</div>
       <div>Versión {{ payload.version_ejecucion.commit[:12] }}{{ ' · cambios locales' if payload.version_ejecucion.dirty else '' }}</div>
       <div>Código SHA256 {{ payload.version_ejecucion.codigo_sha256 }}</div>
       {% if payload.motor_episodios.version_ingesta %}<div>Datos: commit {{ payload.motor_episodios.version_ingesta.commit[:12] }} · SHA256 {{ payload.motor_episodios.version_ingesta.codigo_sha256 }}</div>{% endif %}
       <div>Python {{ payload.version_ejecucion.python }} · DuckDB {{ payload.version_ejecucion.duckdb }}</div>
-      <div>{{ payload.version_ejecucion.zona_horaria }}</div>
+      <div>Disponible: {{ payload.resumen.rango_tiempo[0] | fecha_captura }} — {{ payload.resumen.rango_tiempo[1] | fecha_captura }}</div>
+      {% for node in hosts %}{% set inv = payload.motor_episodios.host_inventory.get(node, {}) %}<div>{{ node }} · pCPU {{ inv.pcpus if inv.pcpus is not none else 'N/D' }} · cores {{ inv.cores if inv.cores is not none else 'N/D' }} · vCPU {{ inv.vcpus if inv.vcpus is not none else 'N/D' }} · RAM {{ inv.ram_gib | round(2) if inv.ram_gib else 'N/D' }} GiB</div>{% endfor %}
+      {% for node, c in payload.motor_episodios.coverage.items() %}<div>{{ node }}: {{ c.samples }} muestras · cadencia {{ c.cadence_seconds }} s · {{ c.segments }} tramos</div>{% endfor %}
+      {% for d in payload.motor_episodios.oclumon_diagnostics %}<div class="odl-source-path">{{ d.path }} · {{ d.formats | join(', ') }} · recolector/Grid {{ (d.source_metadata | default({})).get('collector_version') or 'no documentado' }} · secciones no implementadas: {{ d.omitted_sections }}</div>{% endfor %}
       {% for fuente in payload.version_ejecucion.fuentes %}<div class="odl-source-path">{{ fuente.ruta }} · SHA256 {{ fuente.sha256 }}</div>{% endfor %}
-    </details>
-  </div>
-  <div class="odl-host-strip">
-    {% for node in hosts %}
-    {% set host = payload.infraestructura | selectattr('host', 'equalto', node) | first | default({}) %}
-    {% set observed = payload.motor_episodios.host_inventory.get(node, {}) %}
-    <div class="odl-host-item">
-      {{ m.icono(iconos, "node_down") }}<strong>{{ node }}</strong>
-      <span>Instancia {{ host.instance_name or 'no disponible' }}</span>
-      {% if observed %}<span>pCPU {{ observed.pcpus | int if observed.pcpus is not none else 'N/D' }} · cores {{ observed.cores | int if observed.cores is not none else 'N/D' }} · vCPU {{ observed.vcpus | int if observed.vcpus is not none else 'N/D' }}</span>{% else %}<span>Cores {{ (host.cores | int) if host.cores else 'no disponible' }}</span>{% endif %}
-      <span>RAM {{ ((observed.ram_gib or host.mem_gb) | round(2) ~ ' GiB') if (observed.ram_gib or host.mem_gb) else 'no disponible' }}</span>
-    </div>
-    {% else %}<div class="odl-panel-note">Sin hosts identificados en las fuentes.</div>{% endfor %}
-  </div>
+    </details></div>
   <div class="odl-timebar-controls">
     <label>Captura
       <select id="odl-rango-captura" class="odl-filter-input" aria-label="Ventana de captura">
-        <option value="">Todo</option>
+        <option value="">Todas las capturas</option>
         {% for ventana in payload.motor_episodios.ventanas_captura %}
         <option value="{{ loop.index0 }}" title="{{ ventana.muestras_definicion }}; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}">{{ ventana.inicio | fecha_captura }} — {{ ventana.fin | hora_captura }} · {{ ventana.muestras }} timestamps únicos</option>
         {% endfor %}
@@ -62,6 +53,7 @@
     <button id="odl-rango-aplicar" class="odl-filter-btn" type="button">Aplicar</button>
     <button id="odl-rango-ajustar" class="odl-filter-btn" type="button">Ajustar a datos</button>
     <button id="odl-rango-restaurar" class="odl-filter-btn" type="button">Restablecer</button>
+    <span class="odl-clock-label">{{ payload.display_clock.label }}</span>
     <details class="odl-time-help"><summary aria-label="Ayuda de fechas y capturas">Ayuda</summary>
       <div>{{ payload.display_clock.label }}. Las fechas usan esta misma referencia en filtros y gráficos. Las fuentes sin zona declarada no se alinean por suposición.</div>
       <ul>{% for ventana in payload.motor_episodios.ventanas_captura %}<li>{{ ventana.inicio | fecha_captura }}: {{ ventana.muestras }} timestamps; {% for node, count in ventana.por_nodo.items() %}{{ node }}: {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endfor %}</ul>
@@ -69,156 +61,57 @@
       <div>Una muestra se dibuja como punto, con margen de ±1 segundo en el eje. Los huecos interiores se conservan.</div>
     </details>
   </div>
-  <div class="odl-selection-line"><span id="odl-periodo-seleccionado"></span><span id="odl-rango-nota" role="status" aria-live="polite"></span></div>
+  <div class="odl-selection-line"><span id="odl-periodo-seleccionado" class="odl-sr-only"></span><span id="odl-rango-nota" role="status" aria-live="polite"></span></div>
 </section>
 
-  <section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
-  <p class="odl-panel-note">Métricas del host completo · Cobertura OCLUMON: {% for c in payload.motor_episodios.ventanas_captura %}{{ c.inicio | fecha_captura }} — {{ c.fin | fecha_captura }}{% if not loop.last %}; {% endif %}{% else %}sin muestras{% endfor %}.</p>
-  {% set rel = payload.informe.presentacion.series_relevantes %}
-  {% set me = payload.motor_episodios %}
-  <div class="odl-panel">
-
-    {% for node,mounts in me.filesystem_quality.items() %}{% if mounts %}<p class="odl-panel-note">{{ node }} · Capacidad no disponible en {{ mounts | join(', ') }}; no se presenta uso saludable ni porcentaje calculado.</p>{% endif %}{% endfor %}
-    {# ---- Sistema ------------------------------------------------- #}
-    <div class="odl-subsection-title">{{ m.icono(iconos, "cpu_saturation") }}CPU, ejecución y memoria</div>
-    {# Limpieza 2026-10-02 (audit externo pegado por el usuario):
-       - A.1: memtotal_mb/swaptotal_mb (capacidad total, linea plana sin
-         valor forense) ya NO se grafican como panel independiente -- la
-         serie sigue calculandose (core/episode_engine.py) por si se
-         necesita como referencia mas adelante, solo se retira de la vista.
-       - A.2: swpin/swpout/nicerrors_sistema solo se muestran si realmente
-         hubo actividad (>0) en algun nodo -- ver sistema_series_condicionales
-         mas abajo, gateadas ademas por me.series_max.
-       - B.2: netr/netw ("Red total -- recepción"/"envío") se fusionan en
-         un solo chart de Trafico total Rx/Tx con area sombreada, uno por
-         nodo -- ver bloque mas abajo. #}
-    {% set sistema_series = [
-      ("cpu_pct", "Utilización de CPU", "%"), ("cpuq", "Procesos en espera de CPU", "procesos"),
-      ("memfree_gib", "Memoria física libre", "GiB"), ("memavl_gib", "Memoria disponible (memavl)", "GiB"), ("mcache_gib", "Buffers y caché", "GiB"),
-      ("swapfree_mb", "Swap libre", "MiB"),
-      ("procs", "Procesos activos", "procesos"),
-    ] %}
-    {% set sistema_series_condicionales = [
-      ("swpin", "Swap in", "KB/s"), ("swpout", "Swap out", "KB/s"),
-      ("nicerrors_sistema", "Errores NIC (agregado sistema)", "errores/s"),
-    ] %}
-    {% set ns_sistema = namespace(alguno=false) %}
-    <div class="panel-grid">
-      {% for clave, titulo, unidad in sistema_series %}
-        {% if rel.get(clave) %}
-          {% set ns_sistema.alguno = true %}
-          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad, "yMin": 0, "yMax": 100} if clave == "cpu_pct" else {"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad}) }}
-        {% endif %}
-      {% endfor %}
-      {% for clave, titulo, unidad in sistema_series_condicionales %}
-        {% if rel.get(clave) and me.series_max.get(clave, 0) > 0 %}
-          {% set ns_sistema.alguno = true %}
-          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo, "unit": unidad}) }}
-        {% endif %}
-      {% endfor %}
-      {% if rel.get("netr") or rel.get("netw") %}
-        {% set ns_sistema.alguno = true %}
-        {% for n in me.node_list %}
-          {{ m.chart_box({"kind": "serie", "node": n, "series": ["netr", "netw"], "nombres": ["Recepción", "Envío"], "area": true, "title": "Tráfico total -- " ~ n, "unit": "KB/s"}) }}
-        {% endfor %}
-      {% endif %}
-    </div>
-    {% if not ns_sistema.alguno %}
-    <div class="odl-empty-state">Sin telemetría de sistema (SYSTEM) en los archivos OCLUMON de este caso.</div>
-    {% endif %}
-
-    <details class="odl-panel"><summary>CPU individuales e interfaces por entidad</summary>
-      <div class="panel-grid">{% for key in me.metric_contracts %}{% if key.startswith('nic::') or key.startswith('cpu::') %}
-      {{ m.chart_box({"kind":"multi-nodo", "serie":key,"title":key,"unit":me.metric_contracts[key].unit,"yMin":0,"yMax":100} if key.startswith('cpu::') else {"kind":"multi-nodo", "serie":key,"title":key,"unit":me.metric_contracts[key].unit}) }}
-      {% endif %}{% endfor %}</div>
-    </details>
-    {# ---- Red (NICs) ------------------------------------------------ #}
-    <div class="odl-subsection-title">{{ m.icono(iconos, "interconnect") }}Interfaces y protocolos del host</div>
-    {% set nic_metricas = [
-      ("latency_ms", "Latencia estimada", "ms"), ("kbps", "Tráfico medio por interfaz (Rx + Tx)", "KB/s"),
-      ("discards", "Descartes", "paquetes/s"), ("link_errors", "Errores de enlace", "errores/s"),
-      ("pktsin", "Paquetes recibidos", "paquetes/s"), ("pktsout", "Paquetes enviados", "paquetes/s"),
-      ("nicerrors", "nicErrors", "errores/s"),
-    ] %}
-    {% set ns_red = namespace(alguno=false) %}
-    {% for tipo in me.nic_types %}
-    <div class="odl-panel-note" style="margin:10px 0 6px; font-weight:600; color:var(--color-text)">
-      {{ "PRIVATE según la fuente" if tipo == "PRIVATE" else tipo }}
-      {% if me.nic_names_by_type.get(tipo) %} · {{ me.nic_names_by_type[tipo] | join(", ") }}{% endif %}
-    </div>
-    <div class="panel-grid">
-      {% for sufijo, titulo, unidad in nic_metricas %}
-        {% set clave = "nic_" ~ tipo ~ "_" ~ sufijo %}
-        {% if rel.get(clave) %}
-          {% set ns_red.alguno = true %}
-          {{ m.chart_box({"kind": "multi-nodo", "serie": clave, "title": titulo ~ " NIC " ~ tipo, "unit": unidad}) }}
-        {% endif %}
-      {% endfor %}
-    </div>
-    {% endfor %}
-    {% if not ns_red.alguno %}
-    <div class="odl-empty-state">Sin sección NICS en los archivos OCLUMON de este caso.</div>
-    {% endif %}
-
-    {# ---- Protocolo -------------------------------------------------- #}
-    <div class="odl-subsection-title">{{ m.icono(iconos, "status_warning") }}Protocolo (errores de red, nuevos por muestra)</div>
-    {# Limpieza 2026-10-02 (audit, punto B.3): de los 9 contadores, solo
-       IPReasFail y UDPRcvErr son los que la literatura de Oracle asocia
-       directamente con evictions de RAC (ver INTERP_KB en
-       core/episode_engine.py) -- esos quedan siempre visibles si hay
-       datos; los otros 7 quedan disponibles (nunca se borran, el dato
-       sigue siendo real) detras de un "mostrar mas", igual mecanismo que
-       la tabla cruda de Evidencias. #}
-    {% set proto_principales = [
-      ("ipreasfail", "IP -- fallos de reensamblado (IPReasFail)"),
-      ("udprcverr", "UDP -- errores de recepción (UDPRcvErr)"),
-    ] %}
-    {% set proto_otros = [
-      ("iphdrerr", "IP -- errores de cabecera (IPHdrErr)"),
-      ("ipaddrerr", "IP -- errores de dirección (IPAddrErr)"),
-      ("ipfragfail", "IP -- fallos de fragmentación (IPFragFail)"),
-      ("tcpfailedconn", "TCP -- conexiones fallidas (TCPFailedConn)"),
-      ("tcpestrst", "TCP -- resets de conexión establecida (TCPEstRst)"),
-      ("tcpretraseg", "TCP -- segmentos retransmitidos (TCPRetraSeg)"),
-      ("udpunkport", "UDP -- puerto desconocido (UDPUnkPort)"),
-    ] %}
-    {% set ns_proto = namespace(alguno=false, alguno_otros=false) %}
-    <div class="panel-grid">
-      {% for clave, titulo in proto_principales %}
-        {% if rel.get("proto_" ~ clave) %}
-          {% set ns_proto.alguno = true %}
-          {{ m.chart_box({"kind": "multi-nodo", "serie": "proto_" ~ clave, "title": titulo, "unit": "nuevos/muestra"}) }}
-        {% endif %}
-      {% endfor %}
-    </div>
-    {% for clave, titulo in proto_otros %}{% if rel.get("proto_" ~ clave) %}{% set ns_proto.alguno_otros = true %}{% endif %}{% endfor %}
-    {% if ns_proto.alguno_otros %}
-    <button class="odl-filter-btn" data-toggle-evidencia="protocolo-otros" aria-expanded="false" style="margin-top:10px">Mostrar otros contadores de protocolo</button>
-    <div id="protocolo-otros" class="panel-grid" style="display:none; margin-top:10px">
-      {% for clave, titulo in proto_otros %}
-        {% if rel.get("proto_" ~ clave) %}
-          {% set ns_proto.alguno = true %}
-          {{ m.chart_box({"kind": "multi-nodo", "serie": "proto_" ~ clave, "title": titulo, "unit": "nuevos/muestra"}) }}
-        {% endif %}
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% if not ns_proto.alguno %}
-    <div class="odl-empty-state">Sin sección PROTOCOL ERRORS en los archivos OCLUMON de este caso.</div>
-    {% endif %}
-
-    {# ---- Dispositivos (I/O) ----------------------------------------- #}
-    <div class="odl-subsection-title">
-      <span>{{ m.icono(iconos, "asm_io") }}Dispositivos (I/O)</span>
-      {% if me.device_names|length > 1 %}
-      <select id="odl-selector-device" class="odl-filter-btn">
-        {% for d in me.device_names %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
-      </select>
-      {% endif %}
-    </div>
-    {% if me.device_names and me.device_names_vistos_total > me.device_names|length %}
-    <div class="odl-panel-note" style="margin:-4px 0 10px">Mostrando {{ me.device_names|length }} de {{ me.device_names_vistos_total }} dispositivos vistos en OCLUMON -- el resto no tuvo actividad de I/O en la ventana analizada y se omite del selector.</div>
-    {% endif %}
+<section id="sec-oclumon" data-tab-panel class="odl-tab-activo">
+{% set me = payload.motor_episodios %}
+{% macro metric(key, title, unit, fixed=false) %}
+{% if key in me.metric_contracts %}<article class="odl-metric-card">
+{{ m.chart_box({"kind":"multi-nodo", "serie":key, "title":title, "unit":unit,"yMin":0,"yMax":100} if fixed else {"kind":"multi-nodo", "serie":key,"title":title,"unit":unit}) }}
+<div class="odl-metric-summary" data-metric-summary="{{ key }}"></div>
+<details class="odl-metric-contract"><summary>Campo y cálculo</summary><span>{{ me.metric_contracts[key].field }} · {{ me.metric_contracts[key].scope }} · {{ me.metric_contracts[key].transformation }}</span></details>
+</article>{% endif %}
+{% endmacro %}
+<nav class="odl-resource-nav" aria-label="Recursos OCLUMON">
+{% for key, label, icon in [('resumen','Resumen','nav_oclumon'),('cpu','CPU','cpu_saturation'),('memoria','Memoria','memory_pressure'),('red','Red','interconnect'),('discos','Discos','asm_io'),('filesystems','Filesystems','nav_almacenamiento'),('procesos','Procesos','nav_evidencias')] %}
+<button type="button" data-resource="{{ key }}" class="odl-resource-button{{ ' active' if loop.first else '' }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ m.icono(iconos,icon) }}{{ label }}</button>
+{% endfor %}</nav>
+<p class="odl-scope-note">Captura histórica del sistema operativo · series comparables por host; las leyendas permiten ocultarlas.</p>
+<section data-resource-panel="resumen" class="odl-resource-active">
+<div class="odl-observation-banner" id="odl-observation-banner" role="status"></div>
+<div class="panel-grid">
+{{ metric('cpu_pct','CPU por host','%',true) }}{{ metric('cpuq','Cola de CPU','procesos') }}
+{% if 'memavl_gib' in me.metric_contracts %}{{ metric('memavl_gib','Memoria disponible','GiB') }}{% else %}{{ metric('memfree_gib','Memoria física libre','GiB') }}{% endif %}
+{% if 'proto_tcpretraseg' in me.metric_contracts %}{{ metric('proto_tcpretraseg','Segmentos TCP retransmitidos','segmentos/intervalo') }}{% elif 'proto_udprcverr' in me.metric_contracts %}{{ metric('proto_udprcverr','UDP: errores de recepción','incrementos/intervalo') }}{% else %}<div class="odl-empty-state">Sin contadores de protocolos disponibles para esta captura.</div>{% endif %}
+</div>
+<div class="odl-resource-card"><h2>Observaciones y trazabilidad</h2><div id="odl-observations"></div></div>
+</section>
+<section data-resource-panel="cpu">
+<div class="panel-grid">{{ metric('cpu_pct','CPU por host','%',true) }}{{ metric('cpuq','Cola de CPU','procesos') }}
+{{ metric('cpuuser','CPU user','%',true) }}{{ metric('cpusys','CPU system','%',true) }}{{ metric('cpuiowait','CPU iowait','%',true) }}{{ metric('cpusteal','CPU steal','%',true) }}{{ metric('procs_blocked','Procesos bloqueados','procesos') }}</div>
+<p class="odl-panel-note">iowait es tiempo de CPU asociado a espera; no es utilización del disco. Un promedio bajo puede ocultar actividad por CPU.</p>
+<div class="odl-resource-card"><div class="odl-subsection-title">CPU individuales <select id="odl-selector-cpu" class="odl-filter-input" aria-label="CPU individual">{% for key in me.metric_contracts %}{% if key.startswith('cpu::') %}<option value="{{ key }}">CPU {{ key.split('::')[1] }}</option>{% endif %}{% endfor %}</select></div>
+{% set ids = namespace(first=true) %}{% for key in me.metric_contracts %}{% if key.startswith('cpu::') %}<div data-panel-group="cpu" data-panel-key="{{ key }}" class="{{ 'odl-panel-activo' if ids.first else '' }}">{{ metric(key,'CPU ' ~ key.split('::')[1],'%',true) }}</div>{% set ids.first=false %}{% endif %}{% endfor %}
+{% if ids.first %}<p>Sin detalle individual de CPU en la fuente.</p>{% endif %}
+<button type="button" class="odl-filter-btn" data-resource="procesos">Ver procesos consumidores</button></div>
+</section>
+<section data-resource-panel="memoria">
+<div class="odl-resource-card"><h2>Capacidad observada por host</h2><div class="odl-memory-capacity">{% for node,inv in me.host_inventory.items() %}<span data-host-color="{{ node }}">{{ node }} · {{ inv.ram_gib | round(2) if inv.ram_gib else 'N/D' }} GiB</span>{% endfor %}</div></div>
+<div class="panel-grid">{{ metric('memavl_gib','Memoria disponible','GiB') }}{{ metric('memfree_gib','Memoria física libre','GiB') }}{{ metric('mcache_gib','Buffers y caché','GiB') }}{{ metric('swapfree_mb','Swap libre','MiB') }}{{ metric('swpin','Swap in','KB/s') }}{{ metric('swpout','Swap out','KB/s') }}</div>
+<p class="odl-panel-note">Disponible, libre y caché no se suman: pueden solaparse. RAM ocupada no equivale a memoria de Oracle.</p>
+</section>
+<section data-resource-panel="red">
+<div class="odl-resource-card"><h2>Interfaces</h2><label>Interfaz <select id="odl-selector-nic" class="odl-filter-input">{% set ni=namespace(names=[]) %}{% for key in me.metric_contracts %}{% if key.startswith('nic::') and key.split('::')[1] not in ni.names %}{% set ni.names=ni.names+[key.split('::')[1]] %}<option>{{ key.split('::')[1] }}</option>{% endif %}{% endfor %}</select></label><div id="odl-nic-inventory"></div>
+<p class="odl-panel-note">Rol y MTU declarados por la fuente. MTU 9000 no demuestra conectividad jumbo extremo a extremo; no se calcula utilización sin capacidad de enlace.</p></div>
+{% for name in ni.names %}<div data-panel-group="nic" data-panel-key="{{ name }}" class="{{ 'odl-panel-activo' if loop.first else '' }}"><div class="panel-grid">
+{% for field,title,unit in [('netrr','Recepción','KB/s'),('netwr','Envío','KB/s'),('indiscarded','Descartes de entrada','paquetes/s'),('outdiscarded','Descartes de salida','paquetes/s'),('errsin','Errores de entrada','errores/s'),('errsout','Errores de salida','errores/s'),('latency_ms','Latencia estimada','ms')] %}{{ metric('nic::' ~ name ~ '::' ~ field,title ~ ' · ' ~ name,unit) }}{% endfor %}</div></div>{% endfor %}
+{% if not ni.names %}<div class="odl-empty-state">Sin interfaces observadas.</div>{% endif %}
+<div class="odl-resource-card"><h2>Contadores de protocolos del host</h2><p class="odl-panel-note">Incrementos entre muestras compatibles. Primera muestra, reset o hueco: no calculable. No atribuibles a una NIC.</p></div>
+<div class="panel-grid">{% for key in me.metric_contracts %}{% if key.startswith('proto_') %}{{ metric(key,me.metric_contracts[key].field,'incrementos/intervalo') }}{% endif %}{% endfor %}</div>
+</section>
+<section data-resource-panel="discos"><div class="odl-resource-card"><h2>Inventario de dispositivos</h2><div class="odl-inventory-controls"><label>Buscar <input id="odl-device-search" class="odl-filter-input" type="search" placeholder="Nombre o host"></label><label>Ordenar <select id="odl-device-sort" class="odl-filter-input"><option value="wait">Máximo de wait</option><option value="iops">Máximo de IOPS</option><option value="name">Nombre</option></select></label></div><div id="odl-device-inventory"></div>
+<label>Dispositivo <select id="odl-selector-device" class="odl-filter-input">{% for d in me.device_names %}<option>{{ d }}</option>{% endfor %}</select></label><p class="odl-panel-note">No se suman discos, particiones ni capas lógicas sin conocer su correspondencia. wait es una media por intervalo.</p></div>
     {% if me.device_names %}
     {% set primer_device = me.device_names[0] %}
     {% for d in me.device_names %}
@@ -236,15 +129,10 @@
     <div class="odl-empty-state">Sin sección DEVICES en los archivos OCLUMON de este caso.</div>
     {% endif %}
 
-    {# ---- Filesystems ------------------------------------------------- #}
-    <div class="odl-subsection-title">
-      <span>{{ m.icono(iconos, "nav_almacenamiento") }}Filesystems</span>
-      {% if me.filesystem_mounts|length > 1 %}
-      <select id="odl-selector-fs" class="odl-filter-btn">
-        {% for f in me.filesystem_mounts %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
-      </select>
-      {% endif %}
-    </div>
+
+</section>
+<section data-resource-panel="filesystems"><div class="odl-resource-card"><h2>Capacidad de filesystems</h2><div id="odl-filesystem-inventory"></div><p class="odl-panel-note">Última muestra válida del periodo por montaje. Capacidad ausente o nula: no disponible; no representa salud ni rendimiento de I/O.</p></div>
+<details class="odl-resource-card"><summary>Evolución temporal por montaje</summary><label>Montaje <select id="odl-selector-fs" class="odl-filter-input">{% for f in me.filesystem_mounts %}<option>{{ f }}</option>{% endfor %}</select></label>
     {% if me.filesystem_mounts %}
     {% set primer_fs = me.filesystem_mounts[0] %}
     {% for f in me.filesystem_mounts %}
@@ -258,6 +146,9 @@
     <div class="odl-empty-state">Sin sección FILESYSTEMS en los archivos OCLUMON de este caso.</div>
     {% endif %}
 
+
+</details></section>
+<section data-resource-panel="procesos"><div class="odl-resource-card">
     {# ---- Procesos (top consumidores) -------------------------------- #}
     <div class="odl-subsection-title">
       <span>{{ m.icono(iconos, "nav_evidencias") }}Procesos -- top consumidores</span>
@@ -277,7 +168,8 @@
     {% else %}
     <div class="odl-empty-state">Sin sección PROCESSES en los archivos OCLUMON de este caso.</div>
     {% endif %}
-  </div>
+
+</div></section>
 </section>
 
 <section id="sec-timeline" data-tab-panel>

@@ -197,37 +197,10 @@ INTERP_KB = {
             "Cache Fusion."
         ),
     },
-    "nic_discards": {
-        "label": "Paquetes descartados en NIC privada",
-        "explica": (
-            "La propia tarjeta de red descarto paquetes entrantes o salientes, "
-            "normalmente porque su buffer de recepcion/transmision se lleno antes de que "
-            "el kernel pudiera vaciarlo. Bajo rafagas de trafico de interconnect esto es "
-            "una causa directa de perdida de paquetes de Cache Fusion, que Oracle traduce "
-            "en 'gc lost blocks' a nivel de base de datos."
-        ),
-    },
-    "nic_link_errors": {
-        "label": "Errores de capa NIC (errsin/errsout)",
-        "explica": (
-            "Contadores de error reportados por la propia tarjeta/driver de red, "
-            "separados de nicErrors (que es un contador agregado a nivel de "
-            "sistema). Un incremento aqui apunta a la interfaz fisica en si "
-            "-- cable, puerto, negociacion -- mas que a saturacion de buffers "
-            "del kernel."
-        ),
-    },
-    "nic_latency": {
-        "label": "Latencia elevada en NIC privada",
-        "explica": (
-            "Latencia reportada por oclumon para la interfaz privada. En el "
-            "interconnect de RAC esta es la metrica mas cercana a lo que "
-            "Oracle mide como tiempo de respuesta IPC: una latencia elevada "
-            "sostenida es consistente con mensajes que no llegan a tiempo y "
-            "terminan en 'IPC Send timeout' en el alert log, el mismo patron "
-            "que suele preceder a una eviction de nodo."
-        ),
-    },
+    "nic_discards": {"label": "Descartes en interfaz de red", "explica": "Tasa de descartes observada en la interfaz. Revisar tráfico, buffers y evidencia del driver; no identifica por sí sola una causa ni el rol de la NIC."},
+    "nic_link_errors": {"label": "Errores de interfaz de red", "explica": "Tasa de errores errsin/errsout informada por la interfaz. Investigar contexto y driver; el rol de la NIC requiere evidencia independiente."},
+    "nic_latency": {"label": "Latencia observada en interfaz de red", "explica": "Estimación reportada por CHM para esta interfaz; no equivale a latencia de operaciones RAC ni confirma un timeout."},
+    "tcp_retrans": {"label": "Segmentos TCP retransmitidos", "explica": "Incrementos válidos del contador del host. Correlacionar con carga y errores; no atribuirlos a una NIC ni concluir impacto sin evidencia."},
     "ip_reasfail": {
         "label": "Fallos de reensamblado IP (IPReasFail)",
         "explica": (
@@ -302,13 +275,16 @@ def _narrative_sentence(ep):
     when = _fmt_hms(ep["start"]) if ep["start"] == ep["end"] else f"{_fmt_hms(ep['start'])}-{_fmt_hms(ep['end'])}"
     span = f" ({ep['duration_s']}s, {n} muestra{'s' if n != 1 else ''})" if n > 1 else ""
     cat = ep["cat"]
-    if cat in ("ip_reasfail", "udp_rcverr", "nic_discards", "nic_errors_hw", "nic_link_errors"):
+    if cat in ("nic_discards", "nic_errors_hw", "nic_link_errors"):
+        unit = "paquetes/s" if cat == "nic_discards" else "errores/s"
+        return f"En {node}, entre {when}{span}, {ep.get('entity') or 'sistema'} informó una tasa máxima de {ep['peak_value']:g} {unit}; no es un volumen acumulado."
+    if cat in ("ip_reasfail", "udp_rcverr", "tcp_retrans"):
         return (f"En {node}, entre {when}{span}, se acumularon +{int(ep['total_value'])} "
                 f"(pico de +{int(ep['peak_value'])} en una sola muestra).")
     if cat == "interconnect_burst":
         return f"En {node}, entre {when}{span}, el trafico del interconnect llego a un pico de {ep['peak_value']:.0f} KB/s."
     if cat == "nic_latency":
-        return f"En {node}, entre {when}{span}, la latencia de NIC privada llego a un pico de {ep['peak_value']:.1f} ms."
+        return f"En {node}, entre {when}{span}, la latencia observada de la interfaz llegó a un pico de {ep['peak_value']:.1f} ms."
     if cat == "cpu_queue":
         return f"En {node}, entre {when}{span}, la cola de CPU alcanzo un pico de {int(ep['peak_value'])}."
     if cat == "swap":
@@ -339,7 +315,7 @@ def detect_anomalias(nodes):
                 add('cpu_queue',sys['cpuq'],f"cpuq={sys['cpuq']:g}; heuristic threshold 6")
             if sys.get('nicerrors') is not None and sys['nicerrors']>0:
                 add('nic_errors_hw',sys['nicerrors'],f"nicErrors={sys['nicerrors']:g}/s",sev='critical')
-            for key,cat in [('ipreasfail','ip_reasfail'),('udprcverr','udp_rcverr')]:
+            for key,cat in [('ipreasfail','ip_reasfail'),('udprcverr','udp_rcverr'),('tcpretraseg','tcp_retrans')]:
                 value=(row.get('proto_delta') or {}).get(key)
                 if value is not None and value>0:
                     add(cat,value,f"{key} +{value:g}: host protocol counter",sev='warning')
@@ -386,6 +362,7 @@ def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
                     "quality": e.get("quality", "observed"), "threshold_origin": e.get("threshold_origin"),
                     "start": e["t"], "end": e["t"],
                     "n_samples": 0, "peak_value": 0.0, "total_value": 0.0,
+                    "value_kind": "rate" if cat in ("nic_discards", "nic_link_errors", "nic_errors_hw", "swap") else "counter_increment" if cat in ("ip_reasfail", "udp_rcverr", "tcp_retrans") else "instantaneous",
                     "sample_msgs": [],
                 }
             v = e.get("value", 0) or 0
@@ -394,7 +371,8 @@ def build_episodios(events, gap_seconds=EPISODE_GAP_SECONDS):
             if v >= cur["peak_value"]:
                 cur.update(peak_value=v, peak_time=e["t"], peak_source=e.get("source"), peak_line=e.get("line"))
             if e.get("quality") == "suspect": cur["quality"] = "suspect"
-            cur["total_value"] += v
+            if cur["value_kind"] == "counter_increment":
+                cur["total_value"] += v
             if SEV_RANK.get(e["sev"], 0) > SEV_RANK.get(cur["sev"], 0):
                 cur["sev"] = e["sev"]
             if len(cur["sample_msgs"]) < 5:
@@ -609,6 +587,26 @@ def _series_filesystem_nodo(rows, mount, campo):
     return out
 
 
+def nic_inventory(nodes):
+    """Retain metadata changes and absence boundaries instead of repeated labels."""
+    result = {}
+    for node, rows in nodes.items():
+        interfaces = result.setdefault(node, {})
+        for row in rows:
+            t = _epoch_hora_origen(row["t"])
+            for nic in row.get("nics", []):
+                if not nic.get("name"):
+                    continue
+                runs = interfaces.setdefault(nic["name"], [])
+                previous = runs[-1] if runs else None
+                if (previous and previous["type"] == nic["type"] and previous["mtu"] == nic.get("mtu")
+                        and previous["segment"] == row["segment"] and t - previous["to"] <= row["cadence"] * 1.5):
+                    previous["to"] = t
+                else:
+                    runs.append({"from": t, "to": t, "type": nic["type"], "mtu": nic.get("mtu"), "segment": row["segment"]})
+    return result
+
+
 def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
     """Orquestacion de punta a punta de este motor: parsea TODOS los
     archivos de oclumon de un caso, detecta anomalias, arma episodios +
@@ -690,11 +688,11 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
                     abs(d.get("ior") or 0), abs(d.get("iow") or 0),
                     abs(d.get("ios") or 0), abs(d.get("wait_ms") or 0),
                 )
-                if pico > actividad_device.get(nombre, 0.0):
+                if nombre not in actividad_device or pico > actividad_device[nombre]:
                     actividad_device[nombre] = pico
     device_names_vistos_total = len(actividad_device)
     device_names = sorted(
-        (nombre for nombre, pico in actividad_device.items() if pico > 0),
+        actividad_device.keys(),
         key=lambda n: (-actividad_device[n], n),
     )
     filesystem_mounts = sorted({
@@ -721,6 +719,9 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
             "interconnect_latency_ms": _series_puntos_nodo(rows, campo_nic="latency_ms_max", tipo_nic="PRIVATE"),
         }
 
+        for key in ("cpusys", "cpuuser", "cpuiowait", "cpusteal", "procs_blocked"):
+            if any(key in (r.get("sys") or {}) for r in rows):
+                series_por_nodo[node][key] = _series_puntos_nodo(rows, campo_sys=key)
         proto_series = _series_proto_delta_nodo(rows)
         for target,metric in [('interconnect_kbps','kbps'),('interconnect_nic_discards','discards'),('interconnect_nic_link_errors','link_errors')]:
             series_por_nodo[node][target]=_series_nic_tipo(rows,'PRIVATE',metric)
@@ -845,6 +846,7 @@ def analizar_caso(oclumon_paths, log_cb=lambda s: None, normalizados=None):
         "metric_contracts": {key:contract(key) for data in series_por_nodo.values() for key,points in data.items() if any(p.get("v") is not None for p in points)},
         "coverage": {n:{"samples":len(rows),"cadence_seconds":rows[0]["cadence"],"segments":max(r["segment"] for r in rows)} for n,rows in nodes.items()},
         "filesystem_quality": {n:sorted({f['mount'] for r in rows for f in r.get('filesystems',[]) if f.get('quality')=='capacity_unavailable'}) for n,rows in nodes.items()},
+        "nic_inventory": nic_inventory(nodes),
         "nic_types": tipos_nic,
         "nic_names_by_type": nic_names_by_type,
         "episodios": episodios,

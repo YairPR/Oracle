@@ -69,6 +69,7 @@ export function inicializarExpandirEvidencia(): void {
       // inicializados en display:none -- mismo caso que
       // inicializarSelectorPanel(), necesitan un resize despues de
       // volverse visibles.
+      document.dispatchEvent(new CustomEvent("odl:panel-visible"));
       window.setTimeout(reflowCharts, 60);
     });
   });

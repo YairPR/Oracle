@@ -203,7 +203,7 @@ _PANEL_A_CHART_SPEC = {
     "interconnect_errors": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["interconnect_latency_ms"], "title": "Latencia interconnect", "unit": "ms"},
     "interconnect_latency_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["interconnect_latency_ms"], "title": "Latencia interconnect", "unit": "ms"},
     "interconnect_traffic_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["interconnect_kbps"], "title": "Tráfico interconnect", "unit": "KB/s"},
-    "nic_discards_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["interconnect_nic_discards"], "title": "Paquetes descartados en NIC privada", "unit": "paquetes/muestra"},
+    "nic_discards_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["interconnect_nic_discards"], "title": "Descartes en NIC PRIVATE según la fuente", "unit": "paquetes/s"},
     "nic_link_errors_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["interconnect_nic_link_errors"], "title": "Errores de capa NIC (errsin+errsout)", "unit": "errores/muestra"},
     "protocol_ip_reasfail_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["ip_reasfail"], "title": "Fallos de reensamblado IP (IPReasFail)", "unit": "fallos nuevos/muestra"},
     "protocol_udp_rcverr_chart": lambda ep: {"kind": "serie", "node": ep["nodo"], "series": ["udp_rcverr"], "title": "Errores de recepción UDP (UDPRcvErr)", "unit": "errores nuevos/muestra"},
@@ -252,6 +252,25 @@ def compactar_payload_wire(payload):
     """Shared clocks and constants, lossless; templates still see original arrays."""
     wire = dict(payload)
     motor = dict(payload["motor_episodios"])
+    # Older states from this iteration stored one metadata label per sample.
+    # Preserve changes and gaps while compacting these labels for presentation.
+    inventory = {}
+    for node, interfaces in motor.get("nic_inventory", {}).items():
+        inventory[node] = {}
+        step = (motor.get("coverage", {}).get(node, {}).get("cadence_seconds") or 1)
+        for name, records in interfaces.items():
+            runs = []
+            for record in records:
+                if "t" not in record:
+                    runs.append(dict(record))
+                    continue
+                previous = runs[-1] if runs else None
+                if previous and previous["type"] == record["type"] and previous["mtu"] == record.get("mtu") and 0 < record["t"] - previous["to"] <= step * 1.5:
+                    previous["to"] = record["t"]
+                else:
+                    runs.append({"from": record["t"], "to": record["t"], "type": record["type"], "mtu": record.get("mtu")})
+            inventory[node][name] = runs
+    motor["nic_inventory"] = inventory
     clocks = dict(motor.get("series_timestamps", {}))
     clock_ids = {tuple(times): clock for clock, times in clocks.items()}
     series = {}

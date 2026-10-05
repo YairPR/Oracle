@@ -1,0 +1,72 @@
+{
+  "samples": {
+    "before": [
+      {
+        "run": 0,
+        "load_ms": 1951.4790000393987,
+        "filter_ms": 258.53130011819303,
+        "heap_bytes": 44855960,
+        "header_px": 276.796875,
+        "canvas": 10
+      },
+      {
+        "run": 1,
+        "load_ms": 1735.6288998853415,
+        "filter_ms": 261.32480008527637,
+        "heap_bytes": 44024376,
+        "header_px": 276.796875,
+        "canvas": 10
+      },
+      {
+        "run": 2,
+        "load_ms": 2114.7130001336336,
+        "filter_ms": 261.0606998205185,
+        "heap_bytes": 44431068,
+        "header_px": 276.796875,
+        "canvas": 10
+      }
+    ],
+    "after": [
+      {
+        "run": 0,
+        "load_ms": 1220.1811999548227,
+        "filter_ms": 121.16759992204607,
+        "heap_bytes": 28532224,
+        "header_px": 130.9375,
+        "canvas": 4
+      },
+      {
+        "run": 1,
+        "load_ms": 1238.5341001208872,
+        "filter_ms": 143.5720999725163,
+        "heap_bytes": 36881760,
+        "header_px": 130.9375,
+        "canvas": 4
+      },
+      {
+        "run": 2,
+        "load_ms": 1836.242200108245,
+        "filter_ms": 221.98110003955662,
+        "heap_bytes": 31648264,
+        "header_px": 130.9375,
+        "canvas": 4
+      }
+    ]
+  },
+  "medians": {
+    "before": {
+      "load_ms": 1951.4790000393987,
+      "filter_ms": 261.0606998205185,
+      "heap_bytes": 44431068,
+      "header_px": 276.796875,
+      "canvas": 10
+    },
+    "after": {
+      "load_ms": 1238.5341001208872,
+      "filter_ms": 143.5720999725163,
+      "heap_bytes": 31648264,
+      "header_px": 130.9375,
+      "canvas": 4
+    }
+  }
+}

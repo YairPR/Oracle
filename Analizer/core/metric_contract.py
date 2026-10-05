@@ -5,6 +5,8 @@ ORACLECSV = "https://docs.oracle.com/en/database/oracle/oracle-database/12.2/atn
 
 SYSTEM = {
     "cpu_pct": ("cpu / cpuusage", "%", "%", "instantaneous", "identity"),
+    **{key: (key, "%", "%", "instantaneous", "identity; not disk utilization") for key in ("cpusys", "cpuuser", "cpuiowait", "cpusteal")},
+    "procs_blocked": ("procs_blocked", "processes", "processes", "instantaneous", "identity"),
     "cpuq": ("cpuq / #cpuq", "processes", "processes", "instantaneous", "identity"),
     "memfree_gib": ("physmemfree", "KB", "GiB", "instantaneous", "divide by 1048576"),
     "memavl_gib": (

@@ -72,6 +72,7 @@ function baseOption(titulo: string | null, metric?: string, node?: string) {
     // abajo), 28px alcanzaba para una sola linea y las recortaba.
     grid: { left: 42, right: 16, top: titulo ? 46 : 34, bottom: 38 },
     legend: {
+      type: "scroll",
       top: titulo ? 20 : 2, left: 0, icon: "roundRect", itemWidth: 10, itemHeight: 10,
       textStyle: { fontSize: 11, color: INK_SECONDARY },
       inactiveColor: INK_MUTED,
@@ -99,6 +100,10 @@ function baseOption(titulo: string | null, metric?: string, node?: string) {
           html += `<div><span style="color:${p.color}">●</span> ${escapeHtml(node || p.seriesName)}: <b>${escapeHtml(valor)} ${escapeHtml(info?.unit || '')}</b></div>`;
           if(metric?.endsWith('::wait_ms') && p.value[1]>1000000) html += '<div>Extremo observado; validez pendiente.</div>';
         }
+        if (metric?.includes('::')) html += `<div style="margin-top:4px">Entidad: ${escapeHtml(metric.split('::')[1])}</div>`;
+        if (info?.kind === 'counter_increment') html += '<div>Incremento válido entre muestras; sin doble delta.</div>';
+        else if (info?.kind === 'rate') html += '<div>Tasa de la fuente; sin delta.</div>';
+        else if (info?.kind === 'interval_mean') html += '<div>Media del intervalo de origen.</div>';
         return html;
       },
     },
@@ -116,6 +121,7 @@ function baseOption(titulo: string | null, metric?: string, node?: string) {
       axisLabel: {
         fontSize: 10,
         color: INK_MUTED,
+        hideOverlap: true,
         formatter: (valor: number) => aFechaLegible(valor / 1000).replace(", ", "\n"),
       },
       axisLine: { lineStyle: { color: GRIDLINE } },

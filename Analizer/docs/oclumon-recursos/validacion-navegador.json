@@ -1,0 +1,132 @@
+{
+  "csv-final": [
+    {
+      "zone": "Europe/Madrid",
+      "hosts": 3,
+      "startup_ms": 933.3810000680387,
+      "filter_ms": 96.65529988706112,
+      "heap_bytes": 33154712,
+      "errors": []
+    },
+    {
+      "zone": "America/Los_Angeles",
+      "hosts": 3,
+      "startup_ms": 1549.5241999160498,
+      "filter_ms": 152.9461001046002,
+      "heap_bytes": 38080164,
+      "errors": []
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "hosts": 3,
+      "startup_ms": 1638.707300182432,
+      "filter_ms": 170.81729997880757,
+      "heap_bytes": 38092276,
+      "errors": []
+    }
+  ],
+  "legacy-final": [
+    {
+      "zone": "Europe/Madrid",
+      "hosts": 2,
+      "startup_ms": 3206.614200025797,
+      "filter_ms": 345.8358000498265,
+      "heap_bytes": 72971436,
+      "errors": []
+    },
+    {
+      "zone": "America/Los_Angeles",
+      "hosts": 2,
+      "startup_ms": 2673.6278999596834,
+      "filter_ms": 223.82319997996092,
+      "heap_bytes": 70765344,
+      "errors": []
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "hosts": 2,
+      "startup_ms": 3122.686799848452,
+      "filter_ms": 343.37460016831756,
+      "heap_bytes": 72925816,
+      "errors": []
+    }
+  ],
+  "fixture-1": [
+    {
+      "zone": "Europe/Madrid",
+      "hosts": 1,
+      "startup_ms": 866.8611999601126,
+      "filter_ms": 113.23909997008741,
+      "heap_bytes": 10672916,
+      "errors": []
+    },
+    {
+      "zone": "America/Los_Angeles",
+      "hosts": 1,
+      "startup_ms": 1993.481800192967,
+      "filter_ms": 130.48789999447763,
+      "heap_bytes": 10641648,
+      "errors": []
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "hosts": 1,
+      "startup_ms": 829.4544999953359,
+      "filter_ms": 112.57910006679595,
+      "heap_bytes": 10674056,
+      "errors": []
+    }
+  ],
+  "fixture-2": [
+    {
+      "zone": "Europe/Madrid",
+      "hosts": 2,
+      "startup_ms": 863.7023998890072,
+      "filter_ms": 126.02810002863407,
+      "heap_bytes": 9105068,
+      "errors": []
+    },
+    {
+      "zone": "America/Los_Angeles",
+      "hosts": 2,
+      "startup_ms": 1109.688299940899,
+      "filter_ms": 128.82520002312958,
+      "heap_bytes": 10419848,
+      "errors": []
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "hosts": 2,
+      "startup_ms": 980.5538000073284,
+      "filter_ms": 142.11150002665818,
+      "heap_bytes": 9106660,
+      "errors": []
+    }
+  ],
+  "fixture-4": [
+    {
+      "zone": "Europe/Madrid",
+      "hosts": 4,
+      "startup_ms": 919.5379999000579,
+      "filter_ms": 120.02340005710721,
+      "heap_bytes": 9979528,
+      "errors": []
+    },
+    {
+      "zone": "America/Los_Angeles",
+      "hosts": 4,
+      "startup_ms": 803.9371999911964,
+      "filter_ms": 105.82729987800121,
+      "heap_bytes": 10030244,
+      "errors": []
+    },
+    {
+      "zone": "Asia/Tokyo",
+      "hosts": 4,
+      "startup_ms": 1075.7927999366075,
+      "filter_ms": 119.82119991444051,
+      "heap_bytes": 9980960,
+      "errors": []
+    }
+  ]
+}
