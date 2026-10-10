@@ -6,7 +6,25 @@ set verify off
 set feedback off
 set define on
 set termout on
-alter session set current_schema = ASTSYSADMIN;
+
+Rem --- Esquema del motor: se detecta solo (ASTSYSADMIN o ACC_ADMIN), sin setear nada a mano ---
+define esquemaast = '__NO_DETECTADO__'
+define tbsast     = '__NO_DETECTADO__'
+column v_esquemaast noprint new_value esquemaast
+column v_tbsast      noprint new_value tbsast
+select username as v_esquemaast, nvl(default_tablespace,username) as v_tbsast
+  from (select username, default_tablespace from dba_users
+         where username in ('ASTSYSADMIN','ACC_ADMIN')
+         order by decode(username,'ASTSYSADMIN',1,'ACC_ADMIN',2,9))
+ where rownum = 1;
+declare
+begin
+  if upper(trim('&&esquemaast')) = '__NO_DETECTADO__' then
+    raise_application_error(-20001,'No se encontro ni ASTSYSADMIN ni ACC_ADMIN en DBA_USERS -- no se puede determinar el esquema del motor DATAMASKING en esta base.');
+  end if;
+end;
+/
+alter session set current_schema = &&esquemaast;
 
 prompt Descubrimiento en ejecucion.....
 
@@ -42,6 +60,7 @@ declare
 
     v_total_columnas      number := 0;
     v_total_enmascarar_y  number := 0;
+    v_total_tablas        number := 0;
 
     v_total_excepciones   number := 0;
     v_total_excl          number := 0;
@@ -90,7 +109,7 @@ begin
         select max(ejecucion_id)
           into v_ejec_en_curso_id
           from tdm_ejecucion
-         where esquema_objetivo = v_esquema
+         where ora_esquema = v_esquema
            and estado = 'EJECUTANDO';
     exception
         when others then
@@ -107,11 +126,11 @@ begin
 
     if v_param is null or v_param = '' then
         dbms_output.put_line('Modo: DEFAULT');
-        pkg_dm_descubrimiento.p_dm_descubrimiento(v_esquema);
+        pkg_dm_descubrimiento.proc_dm_descubrimiento(v_esquema);
 
     elsif v_param = 'Y' then
         dbms_output.put_line('Modo: FORZAR FULL');
-        pkg_dm_descubrimiento.p_dm_descubrimiento(v_esquema, 'Y');
+        pkg_dm_descubrimiento.proc_dm_descubrimiento(v_esquema, 'Y');
 
     else
         v_num := to_number(v_param);
@@ -121,14 +140,14 @@ begin
         end if;
 
         dbms_output.put_line('Modo: SAMPLE_ROWS = ' || v_num);
-        pkg_dm_descubrimiento.p_dm_descubrimiento(v_esquema, v_num);
+        pkg_dm_descubrimiento.proc_dm_descubrimiento(v_esquema, v_num);
     end if;
 
     begin
         select max(ejecucion_id)
           into v_last_ejec_id_after
           from tdm_ejecucion
-         where esquema_objetivo = v_esquema;
+         where ora_esquema = v_esquema;
     exception
         when others then
             v_last_ejec_id_after := null;
@@ -176,6 +195,22 @@ begin
 
     v_total_enmascarar_y := nvl(v_total_enmascarar_y, 0);
 
+    -- FIX 2026-09-28: se pidio dejar explicito el numero de tablas
+    -- descubiertas y mapeadas junto al de columnas, para que el operador no
+    -- tenga que inferirlo. Se cuenta por tabla distinta dentro de esta MISMA
+    -- ejecucion_id (tdm_columna_hist), no del esquema completo, para que
+    -- coincida exactamente con el alcance de "Columnas descubiertas" de
+    -- abajo.
+    begin
+        select count(distinct table_name)
+          into v_total_tablas
+          from tdm_columna_hist
+         where ejecucion_id = v_last_ejec_id_after;
+    exception
+        when others then
+            v_total_tablas := 0;
+    end;
+
     dbms_output.put_line('=========================================');
     dbms_output.put_line('Resumen de la ejecucion');
     dbms_output.put_line('Ejecucion_id           : ' || v_last_ejec_id_after);
@@ -204,8 +239,28 @@ begin
         dbms_output.put_line('Ultimo objeto          : ' || substr(v_ultimo_objeto, 1, 200));
     end if;
 
+    dbms_output.put_line('Tablas descubiertas y mapeadas : ' || v_total_tablas);
     dbms_output.put_line('Columnas descubiertas  : ' || v_total_columnas);
     dbms_output.put_line('Con enmascarar = Y     : ' || v_total_enmascarar_y);
+
+    -- FIX 2026-10-09: los errores por columna (p.ej. ORA-06502 en SCORE_PATRON)
+    -- se registran en TDM_EJECUCION_ERROR y la funcion devuelve score 0 en
+    -- silencio; esta salida no los mostraba y una columna podia descartarse sin
+    -- evidencia de datos sin que nadie lo viera.
+    declare
+        v_cnt_err_desc number := 0;
+    begin
+        select count(*) into v_cnt_err_desc
+          from tdm_ejecucion_error
+         where ejecucion_id = v_last_ejec_id_after;
+        dbms_output.put_line('Errores en log de fallas : ' || v_cnt_err_desc);
+        if v_cnt_err_desc > 0 then
+            dbms_output.put_line('  *** REVISAR: select * from tdm_ejecucion_error where ejecucion_id = ' || v_last_ejec_id_after || ';');
+            dbms_output.put_line('  *** Las columnas con error se evaluaron SIN parte de su evidencia de datos.');
+        end if;
+    exception
+        when others then null;
+    end;
 
     -- FIX 2026-09-20: excepciones vigentes del esquema (TDM_EXCEPCION_COL).
     -- El descubrimiento clasifica Y/N por heuristica propia, pero
@@ -222,7 +277,7 @@ begin
                v_total_excl,
                v_total_force
           from tdm_excepcion_col
-         where owner_name = v_esquema
+         where ora_owner = v_esquema
            and activa = 'Y';
     exception
         when others then
@@ -246,7 +301,7 @@ begin
         for r in (
             select table_name, column_name, accion, identificador_forz
               from tdm_excepcion_col
-             where owner_name = v_esquema
+             where ora_owner = v_esquema
                and activa = 'Y'
              order by table_name, column_name
         )

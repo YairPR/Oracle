@@ -11,6 +11,40 @@
 --   CK         : ck_tdm_*
 --------------------------------------------------------------------------------
 
+-- 2026-10-05: esquema ya no va fijo -- se detecta solo. La tablespace ya NO
+-- se detecta ni se usa: se quito la clausula TABLESPACE de todo CREATE TABLE/
+-- INDEX de este archivo porque, sin ella, Oracle usa automaticamente la
+-- tablespace por defecto del esquema actual (el mismo valor que antes se
+-- calculaba a mano).
+-- Normalmente este archivo lo incluye 99_install_datamasking.sql (que ya
+-- hizo la deteccion y el ALTER SESSION antes de llegar aqui), pero se deja
+-- la misma guardia por si se ejecuta este archivo suelto.
+-- FIX 2026-10-05 (hallazgo real): la sustitucion &&var sin comillas (GRANT/
+-- ALTER SESSION/TABLESPACE) resolvia a VACIO en el cliente SQL*Plus de este
+-- entorno. Se usa una VARIABLE DE ENLACE real (bind, :g_esquemaast) en vez de
+-- &&esquemaast -- un bind no depende de SET DEFINE/SCAN. Si este archivo se
+-- ejecuta suelto (sin pasar por 99_install_datamasking.sql), VARIABLE vuelve a
+-- declarar el bind sin problema (es idempotente).
+variable g_esquemaast varchar2(30)
+declare
+  l_esquemaast dba_users.username%type;
+begin
+  select username into l_esquemaast
+    from (select username from dba_users
+           where username in ('ASTSYSADMIN','ACC_ADMIN')
+           order by decode(username,'ASTSYSADMIN',1,'ACC_ADMIN',2,9))
+   where rownum = 1;
+  :g_esquemaast := l_esquemaast;
+exception
+  when no_data_found then
+    raise_application_error(-20001,'No se encontro ni ASTSYSADMIN ni ACC_ADMIN en DBA_USERS -- no se puede determinar el esquema del motor DATAMASKING en esta base.');
+end;
+/
+begin
+  execute immediate 'ALTER SESSION SET CURRENT_SCHEMA = '||:g_esquemaast;
+end;
+/
+
 --------------------------------------------------------------------------------
 -- 1) TABLA MAESTRA DE EJECUCIONES
 --    Cabecera única para descubrimiento y enmascaramiento.
@@ -19,8 +53,8 @@
 
 CREATE TABLE tdm_ejecucion (
     ejecucion_id         NUMBER         NOT NULL,
-    esquema_objetivo     VARCHAR2(128)  NOT NULL,
-    ejecutado_por        VARCHAR2(128)  NOT NULL,
+    ora_esquema          VARCHAR2(128)  NOT NULL,
+    ora_usuario          VARCHAR2(128)  NOT NULL,
     fase_proceso         VARCHAR2(30)   NOT NULL,
     estado               VARCHAR2(20)   NOT NULL,
     fecha_inicio         TIMESTAMP      NOT NULL,
@@ -46,16 +80,21 @@ CREATE TABLE tdm_ejecucion (
     CONSTRAINT ck_tdm_ejec_fase CHECK (fase_proceso IN ('DESCUBRIMIENTO','ENMASCARAMIENTO')),
     CONSTRAINT ck_tdm_ejec_estado CHECK ( estado IN ('PENDIENTE','EJECUTANDO','PAUSADO','ABORTADA','FINALIZADO','CANCELADO','ERROR')),
 	CONSTRAINT ck_tdm_ejec_cancel CHECK (cancel_requested IN ('Y','N'))
-    ) tablespace ASTSYSADMIN ;
+    ) ;
 
-CREATE INDEX idm_ejecucion_01 ON tdm_ejecucion (esquema_objetivo, fecha_inicio) tablespace ASTSYSADMIN online;
-CREATE INDEX idm_ejecucion_02 ON tdm_ejecucion (fase_proceso, estado) tablespace ASTSYSADMIN online;
-CREATE UNIQUE INDEX uq_tdm_ejec_esq_activo ON tdm_ejecucion (CASE WHEN estado = 'EJECUTANDO' THEN esquema_objetivo ELSE NULL END) tablespace ASTSYSADMIN;
+CREATE INDEX idm_ejecucion_01 ON tdm_ejecucion (ora_esquema, fecha_inicio);
+CREATE INDEX idm_ejecucion_02 ON tdm_ejecucion (fase_proceso, estado);
+-- 2026-10-05: renombrado por el usuario en PREFORM a ui_dm_ejec_activo
+-- (normalizacion de nombres de indice, fuera del alcance de la convencion
+-- proc_dm_*/func_dm_* documentada en homogenizacion_convencion_nombres_
+-- proc_dm_func_dm_2026-09-28.md). Se actualiza aqui para que una instalacion
+-- nueva desde este script produzca el mismo nombre que ya esta desplegado.
+CREATE UNIQUE INDEX ui_dm_ejec_activo ON tdm_ejecucion (CASE WHEN estado = 'EJECUTANDO' THEN ora_esquema ELSE NULL END);
 
-COMMENT ON TABLE tdm_ejecucion IS 'Cabecera de ejecución de los procesos de descubrimiento y enmascaramiento.';
+COMMENT ON TABLE tdm_ejecucion IS 'PREGUNTA: que corrida es y en que estado esta ahora. Una fila por corrida de DESCUBRIMIENTO o ENMASCARAMIENTO: estado, progreso, latido, sesion Oracle y solicitud de cancelacion. Es la fuente unica para monitor, cancel y reanudar.';
 COMMENT ON COLUMN tdm_ejecucion.ejecucion_id IS 'Identificador único de la ejecución.';
-COMMENT ON COLUMN tdm_ejecucion.esquema_objetivo IS 'Esquema objetivo del proceso.';
-COMMENT ON COLUMN tdm_ejecucion.ejecutado_por IS 'Usuario bbdd que lanzó la ejecución.';
+COMMENT ON COLUMN tdm_ejecucion.ora_esquema IS 'Esquema objetivo del proceso.';
+COMMENT ON COLUMN tdm_ejecucion.ora_usuario IS 'Usuario bbdd que lanzó la ejecución.';
 COMMENT ON COLUMN tdm_ejecucion.fase_proceso IS 'Fase del motor: descubrimiento o enmascaramiento.';
 COMMENT ON COLUMN tdm_ejecucion.estado IS 'Estado de la ejecución.';
 COMMENT ON COLUMN tdm_ejecucion.progreso_pct IS 'Porcentaje estimado de avance.';
@@ -68,6 +107,12 @@ COMMENT ON COLUMN tdm_ejecucion.ultimo_paso IS 'Último paso ejecutado por el pr
 COMMENT ON COLUMN tdm_ejecucion.error_count IS 'Contador acumulado de errores asociados a la ejecución.';
 COMMENT ON COLUMN tdm_ejecucion.forzar_full IS 'Marca que indica si la ejecución forzó procesamiento completo.';
 COMMENT ON COLUMN tdm_ejecucion.heartbeat_ts IS 'Marca de vida usada para monitoreo operativo de procesos largos.';
+COMMENT ON COLUMN tdm_ejecucion.cancel_requested IS 'Y = se pidio cancelar la corrida (proc_dm_cancelar); el motor lo detecta entre columna y columna. Unico lugar donde vive la solicitud de cancelacion.';
+COMMENT ON COLUMN tdm_ejecucion.sesion_audsid IS 'AUDSID de la sesion orquestadora que lanzo la corrida.';
+COMMENT ON COLUMN tdm_ejecucion.sesion_sid IS 'SID de la sesion orquestadora (para saber si sigue viva y poder matarla).';
+COMMENT ON COLUMN tdm_ejecucion.sesion_serial IS 'SERIAL# de la sesion orquestadora.';
+COMMENT ON COLUMN tdm_ejecucion.sesion_inst_id IS 'Instancia RAC de la sesion orquestadora.';
+COMMENT ON COLUMN tdm_ejecucion.detalle IS 'Texto libre de contexto de la corrida; la historia paso a paso esta en TDM_MASK_TRACE.';
 
 
 
@@ -79,7 +124,7 @@ CREATE TABLE tdm_ejecucion_error (
     error_id             NUMBER         NOT NULL,
     ejecucion_id         NUMBER         NOT NULL,
     solicitud_id         NUMBER,
-    owner_name           VARCHAR2(128),
+    ora_owner            VARCHAR2(128),
     table_name           VARCHAR2(128),
     column_name          VARCHAR2(128),
     etapa                VARCHAR2(100),
@@ -90,12 +135,12 @@ CREATE TABLE tdm_ejecucion_error (
     CONSTRAINT pk_tdm_ejec_error PRIMARY KEY (error_id),
     CONSTRAINT fk_tdm_ejec_err_eje FOREIGN KEY (ejecucion_id)
         REFERENCES tdm_ejecucion (ejecucion_id)
-) tablespace ASTSYSADMIN;
+);
 
-CREATE INDEX idm_ejec_error_01 ON tdm_ejecucion_error (ejecucion_id, fecha_error) tablespace ASTSYSADMIN online;
-CREATE INDEX idm_ejec_error_02 ON tdm_ejecucion_error (etapa, codigo_error) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_ejec_error_01 ON tdm_ejecucion_error (ejecucion_id, fecha_error);
+CREATE INDEX idm_ejec_error_02 ON tdm_ejecucion_error (etapa, codigo_error);
 
-COMMENT ON TABLE tdm_ejecucion_error IS 'Detalle de errores registrados por ejecución, etapa y objeto afectado.';
+COMMENT ON TABLE tdm_ejecucion_error IS 'PREGUNTA: que fallo exactamente y por que. Una fila por error con codigo, mensaje completo y backtrace, para diagnosticar. Unico escritor: pkg_dm_trazabilidad.proc_dm_log_ejec_error, que ademas deja la linea de tiempo en TDM_MASK_TRACE con error_id=N al inicio del detalle.';
 COMMENT ON COLUMN tdm_ejecucion_error.solicitud_id IS 'Referencia a la solicitud de enmascaramiento si ocurrió en esa etapa (NULL para discovery).';
 COMMENT ON COLUMN tdm_ejecucion_error.etapa IS 'Etapa lógica o procedimiento donde ocurrió el error.';
 COMMENT ON COLUMN tdm_ejecucion_error.codigo_error IS 'Código Oracle o código funcional registrado.';
@@ -109,15 +154,15 @@ COMMENT ON COLUMN tdm_ejecucion_error.backtrace IS 'trace para soporte y diagnó
 CREATE TABLE tdm_ejecucion_scope (
     scope_id             NUMBER         NOT NULL,
     ejecucion_id         NUMBER         NOT NULL,
-    owner_name           VARCHAR2(128)  NOT NULL,
+    ora_owner            VARCHAR2(128)  NOT NULL,
     table_name           VARCHAR2(128)  NOT NULL,
     column_name          VARCHAR2(128),
     CONSTRAINT pk_tdm_ejec_scope PRIMARY KEY (scope_id),
     CONSTRAINT fk_tdm_scope_ejec FOREIGN KEY (ejecucion_id)
         REFERENCES tdm_ejecucion (ejecucion_id)
-) tablespace ASTSYSADMIN ;
+) ;
 
-CREATE INDEX idm_ejec_scope_01 ON tdm_ejecucion_scope (ejecucion_id, owner_name, table_name, column_name) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_ejec_scope_01 ON tdm_ejecucion_scope (ejecucion_id, ora_owner, table_name, column_name);
 
 COMMENT ON TABLE tdm_ejecucion_scope IS 'Subconjunto de objetos incluidos en una ejecución concreta.';
 COMMENT ON COLUMN tdm_ejecucion_scope.column_name IS 'Columna específica incluida en el alcance; null si el alcance es a nivel tabla.';
@@ -127,7 +172,7 @@ COMMENT ON COLUMN tdm_ejecucion_scope.column_name IS 'Columna específica inclui
 --    Mantiene huella de tablas ya analizadas para procesos incrementales.
 --------------------------------------------------------------------------------
 CREATE TABLE tdm_objeto_ctrl (
-    owner_name           VARCHAR2(128)  NOT NULL,
+    ora_owner            VARCHAR2(128)  NOT NULL,
     table_name           VARCHAR2(128)  NOT NULL,
     object_id            NUMBER,
     last_ddl_time        DATE,
@@ -137,13 +182,13 @@ CREATE TABLE tdm_objeto_ctrl (
     estado_objeto        VARCHAR2(20)   DEFAULT 'PENDIENTE',
     motivo_estado        VARCHAR2(1000),
     fecha_ult_analisis   TIMESTAMP,
-    CONSTRAINT pk_tdm_objeto_ctrl PRIMARY KEY (owner_name, table_name),
+    CONSTRAINT pk_tdm_objeto_ctrl PRIMARY KEY (ora_owner, table_name),
     CONSTRAINT ck_tdm_obj_estado CHECK (
         estado_objeto IN ('PENDIENTE','PROCESADO','OMITIDO','ERROR')
     )
-) tablespace ASTSYSADMIN;
+);
 
-CREATE INDEX idm_objeto_ctrl_01 ON tdm_objeto_ctrl (owner_name, estado_objeto) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_objeto_ctrl_01 ON tdm_objeto_ctrl (ora_owner, estado_objeto);
 
 COMMENT ON TABLE tdm_objeto_ctrl IS 'Control incremental de tablas y metadatos analizados por el proceso de descubrimiento.';
 COMMENT ON COLUMN tdm_objeto_ctrl.firma_txt IS 'Huella lógica del objeto para detectar cambios entre ejecuciones.';
@@ -171,9 +216,9 @@ CREATE TABLE tdm_regla (
     CONSTRAINT ck_tdm_regla_tipo CHECK (
         tipo_regla IN ('COLUMN_NAME','COLUMN_COMMENT','DATA_PATTERN','TABLE_NAME')
     )
-) tablespace ASTSYSADMIN;
+);
 
-CREATE INDEX idm_regla_01 ON tdm_regla (activa, tipo_regla, identificador, prioridad) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_regla_01 ON tdm_regla (activa, tipo_regla, identificador, prioridad);
 
 COMMENT ON TABLE tdm_regla IS 'Catálogo de reglas utilizadas por el motor semántico de descubrimiento.';
 COMMENT ON COLUMN tdm_regla.identificador IS 'Identificador de dato sensible asignado por la regla.';
@@ -190,7 +235,7 @@ COMMENT ON COLUMN tdm_regla.confianza_min IS 'Umbral mínimo de ratio para activ
 CREATE TABLE tdm_columna_hist (
     hist_id              NUMBER         NOT NULL,
     ejecucion_id         NUMBER         NOT NULL,
-    owner_name           VARCHAR2(128)  NOT NULL,
+    ora_owner            VARCHAR2(128)  NOT NULL,
     table_name           VARCHAR2(128)  NOT NULL,
     column_name          VARCHAR2(128)  NOT NULL,
     data_type            VARCHAR2(128),
@@ -216,7 +261,7 @@ CREATE TABLE tdm_columna_hist (
     fecha_creacion       TIMESTAMP      DEFAULT SYSTIMESTAMP,
     CONSTRAINT pk_tdm_col_hist PRIMARY KEY (hist_id),
     CONSTRAINT uk_tdm_col_hist UNIQUE (
-        ejecucion_id, owner_name, table_name, column_name
+        ejecucion_id, ora_owner, table_name, column_name
     ),
     CONSTRAINT fk_tdm_col_hist_eje FOREIGN KEY (ejecucion_id)
         REFERENCES tdm_ejecucion (ejecucion_id),
@@ -224,10 +269,10 @@ CREATE TABLE tdm_columna_hist (
     CONSTRAINT ck_tdm_col_hist_enm CHECK (enmascarar IN ('Y','N')),
     CONSTRAINT ck_tdm_col_hist_est CHECK (estado_final IN ('CONFIRMADO','PROBABLE','REVISAR','DESCARTADO')
     )
-) tablespace ASTSYSADMIN ;
+) ;
 
-CREATE INDEX idm_col_hist_01 ON tdm_columna_hist (owner_name, table_name, estado_final, identificador) tablespace ASTSYSADMIN online;
-CREATE INDEX idm_col_hist_02 ON tdm_columna_hist (ejecucion_id, enmascarar) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_col_hist_01 ON tdm_columna_hist (ora_owner, table_name, estado_final, identificador);
+CREATE INDEX idm_col_hist_02 ON tdm_columna_hist (ejecucion_id, enmascarar);
 
 COMMENT ON TABLE tdm_columna_hist IS 'Histórico del resultado de análisis por columna y por ejecución.';
 COMMENT ON COLUMN tdm_columna_hist.identificador IS 'Identificador lógico finalmente asignado a la columna.';
@@ -244,7 +289,7 @@ COMMENT ON COLUMN tdm_columna_hist.motivo_descarte IS 'Motivo funcional por el q
 CREATE TABLE tdm_dependencia_hist (
     dependencia_id       NUMBER         NOT NULL,
     ejecucion_id         NUMBER         NOT NULL,
-    owner_name           VARCHAR2(128)  NOT NULL,
+    ora_owner            VARCHAR2(128)  NOT NULL,
     table_name           VARCHAR2(128)  NOT NULL,
     column_name          VARCHAR2(128)  NOT NULL,
     tipo_dependencia     VARCHAR2(30)   NOT NULL,
@@ -255,9 +300,9 @@ CREATE TABLE tdm_dependencia_hist (
     CONSTRAINT pk_tdm_dep_hist PRIMARY KEY (dependencia_id),
     CONSTRAINT fk_tdm_dep_hist_eje FOREIGN KEY (ejecucion_id)
         REFERENCES tdm_ejecucion (ejecucion_id)
-) tablespace ASTSYSADMIN ;
+) ;
 
-CREATE INDEX idm_dep_hist_01 ON tdm_dependencia_hist (ejecucion_id, owner_name, table_name, column_name) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_dep_hist_01 ON tdm_dependencia_hist (ejecucion_id, ora_owner, table_name, column_name);
 
 COMMENT ON TABLE tdm_dependencia_hist IS 'Histórico de dependencias detectadas por ejecución.';
 COMMENT ON COLUMN tdm_dependencia_hist.tipo_dependencia IS 'Tipo de dependencia detectada: FK, TRIGGER, INDEX, VIEW, PROCEDURE, etc.';
@@ -272,20 +317,20 @@ COMMENT ON COLUMN tdm_dependencia_hist.detalle IS 'Detalle ampliado de la depend
 
 
 CREATE TABLE tdm_columna_final (
-    owner_name           VARCHAR2(128)  NOT NULL,
+    ora_owner            VARCHAR2(128)  NOT NULL,
     table_name           VARCHAR2(128)  NOT NULL,
     column_name          VARCHAR2(128)  NOT NULL,
     identificador        VARCHAR2(50),
     enmascarar           CHAR(1),
     dominio              VARCHAR2(128), -- Componente/dominio referencial compartido
     CONSTRAINT pk_tdm_col_final PRIMARY KEY (
-        owner_name, table_name, column_name
+        ora_owner, table_name, column_name
     ),
     CONSTRAINT ck_tdm_col_final_enm CHECK (enmascarar IN ('Y','N'))
-) tablespace ASTSYSADMIN;
+);
 
-CREATE INDEX idm_col_final_01 ON tdm_columna_final (enmascarar, identificador) tablespace ASTSYSADMIN online;
-CREATE INDEX idm_col_final_02 ON tdm_columna_final(owner_name, enmascarar, table_name, column_name) TABLESPACE ASTSYSADMIN ONLINE;
+CREATE INDEX idm_col_final_01 ON tdm_columna_final (enmascarar, identificador);
+CREATE INDEX idm_col_final_02 ON tdm_columna_final(ora_owner, enmascarar, table_name, column_name);
 
 COMMENT ON TABLE tdm_columna_final IS 'Catálogo de columnas analizadas, utilizado por el proceso de enmascaramiento.';
 COMMENT ON COLUMN tdm_columna_final.identificador IS 'Identificador lógico vigente asociado a la columna.';
@@ -300,7 +345,7 @@ COMMENT ON COLUMN tdm_columna_final.dominio IS 'Dominio o componente referencial
 --------------------------------------------------------------------------------
 
 CREATE TABLE tdm_dependencia_final (
-    owner_name           VARCHAR2(128 CHAR)  NOT NULL,
+    ora_owner            VARCHAR2(128 CHAR)  NOT NULL,
     table_name           VARCHAR2(128 CHAR)  NOT NULL,
     column_name          VARCHAR2(128 CHAR)  NOT NULL,
     tipo_dependencia     VARCHAR2(30 CHAR)   NOT NULL,
@@ -311,16 +356,16 @@ CREATE TABLE tdm_dependencia_final (
     accion_post_mask     VARCHAR2(30 CHAR)   DEFAULT 'SIN_ACCION' NOT NULL,
     detalle              VARCHAR2(4000 CHAR),
     CONSTRAINT pk_tdm_dep_final PRIMARY KEY (
-        owner_name, table_name, column_name,
+        ora_owner, table_name, column_name,
         tipo_dependencia, dependencia_owner, dependencia_objeto
     ),
     CONSTRAINT ck_tdm_dep_final_categoria    CHECK (categoria_uso IN ('INTEGRIDAD','OPERATIVA')),
     CONSTRAINT ck_tdm_dep_final_pre    CHECK (accion_pre_mask IN ('DISABLE','VALIDAR','SOLO_INFORMATIVO','SIN_ACCION')),
     CONSTRAINT ck_tdm_dep_final_post   CHECK (accion_post_mask IN ('ENABLE_VALIDATE','ENABLE_NOVALIDATE','ENABLE','REVISAR','SIN_ACCION'))
-) TABLESPACE ASTSYSADMIN;
+);
 
-CREATE INDEX idm_dep_final_01  ON tdm_dependencia_final (owner_name, table_name, column_name) TABLESPACE ASTSYSADMIN ONLINE;  
-CREATE INDEX idm_dep_final_02 ON tdm_dependencia_final (owner_name, tipo_dependencia, dependencia_owner, dependencia_objeto) TABLESPACE ASTSYSADMIN ONLINE;
+CREATE INDEX idm_dep_final_01  ON tdm_dependencia_final (ora_owner, table_name, column_name);  
+CREATE INDEX idm_dep_final_02 ON tdm_dependencia_final (ora_owner, tipo_dependencia, dependencia_owner, dependencia_objeto);
 
 COMMENT ON TABLE tdm_dependencia_final IS 'Catálogo final de dependencias para controlar el flujo PRE/POST del enmascaramiento.';
 COMMENT ON COLUMN tdm_dependencia_final.tipo_dependencia IS 'Tipo de dependencia: FK/PK/UK/TRIGGER/otras, usado para estrategia de ejecución.';
@@ -334,7 +379,7 @@ COMMENT ON COLUMN tdm_dependencia_final.detalle IS 'Detalle funcional complement
 --     Permite forzar o excluir columnas del motor de descubrimiento.
 --------------------------------------------------------------------------------
 CREATE TABLE tdm_excepcion_col (
-    owner_name           VARCHAR2(128)  NOT NULL,
+    ora_owner            VARCHAR2(128)  NOT NULL,
     table_name           VARCHAR2(128)  NOT NULL,
     column_name          VARCHAR2(128)  NOT NULL,
     accion               VARCHAR2(10)   NOT NULL,
@@ -342,13 +387,13 @@ CREATE TABLE tdm_excepcion_col (
     razon                VARCHAR2(1000),
     activa               CHAR(1)        DEFAULT 'Y',
     CONSTRAINT pk_tdm_exc_col PRIMARY KEY (
-        owner_name, table_name, column_name
+        ora_owner, table_name, column_name
     ),
     CONSTRAINT ck_tdm_exc_accion CHECK (accion IN ('EXCLUDE','FORCE')),
     CONSTRAINT ck_tdm_exc_activa CHECK (activa IN ('Y','N'))
-) tablespace ASTSYSADMIN;
+);
 
-CREATE INDEX idm_exc_col_01 ON tdm_excepcion_col (activa, accion) tablespace ASTSYSADMIN online;
+CREATE INDEX idm_exc_col_01 ON tdm_excepcion_col (activa, accion);
 
 COMMENT ON TABLE tdm_excepcion_col IS 'Excepciones manuales del proceso de descubrimiento para excluir o forzar columnas.';
 COMMENT ON COLUMN tdm_excepcion_col.identificador_forz IS 'Identificador forzado cuando la acción manual es FORCE.';
@@ -360,7 +405,11 @@ COMMENT ON COLUMN tdm_excepcion_col.razon IS 'Justificación funcional de la exc
 --
 --------------------------------------------------------------------------------
 CREATE SEQUENCE seq_dm_ejecucion START WITH 1 INCREMENT BY 1 NOCACHE;
-CREATE SEQUENCE seq_dm_ejecucion_err START WITH 1 INCREMENT BY 1 NOCACHE;
+-- FIX 28/09/26 (limpieza codigo obsoleto): seq_dm_ejecucion_err retirada.
+-- Nunca se referencia en el motor; el unico escritor de errores
+-- (pkg_dm_trazabilidad.proc_dm_log_ejec_error) usa MAX(error_id)+1 con reintento
+-- ante colision, y la traza usa seq_dm_mask_trace. No crear este objeto evita
+-- ruido en auditoria.
 CREATE SEQUENCE seq_dm_ejecucion_scope START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_dm_regla START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_dm_columna_hist START WITH 1 INCREMENT BY 1 NOCACHE;

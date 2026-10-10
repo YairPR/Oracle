@@ -6,7 +6,25 @@ set verify off
 set feedback off
 set define on
 set termout on
-alter session set current_schema = ASTSYSADMIN;
+
+Rem --- Esquema del motor: se detecta solo (ASTSYSADMIN o ACC_ADMIN), sin setear nada a mano ---
+define esquemaast = '__NO_DETECTADO__'
+define tbsast     = '__NO_DETECTADO__'
+column v_esquemaast noprint new_value esquemaast
+column v_tbsast      noprint new_value tbsast
+select username as v_esquemaast, nvl(default_tablespace,username) as v_tbsast
+  from (select username, default_tablespace from dba_users
+         where username in ('ASTSYSADMIN','ACC_ADMIN')
+         order by decode(username,'ASTSYSADMIN',1,'ACC_ADMIN',2,9))
+ where rownum = 1;
+declare
+begin
+  if upper(trim('&&esquemaast')) = '__NO_DETECTADO__' then
+    raise_application_error(-20001,'No se encontro ni ASTSYSADMIN ni ACC_ADMIN en DBA_USERS -- no se puede determinar el esquema del motor DATAMASKING en esta base.');
+  end if;
+end;
+/
+alter session set current_schema = &&esquemaast;
 
 prompt Descubrimiento por excepciones en ejecucion.....
 
@@ -87,7 +105,7 @@ begin
       from (
         select distinct table_name
           from tdm_excepcion_col
-         where owner_name = v_esquema
+         where ora_owner = v_esquema
            and activa = 'Y'
       );
 
@@ -113,7 +131,7 @@ begin
         select max(ejecucion_id)
           into v_ejec_en_curso_id
           from tdm_ejecucion
-         where esquema_objetivo = v_esquema
+         where ora_esquema = v_esquema
            and estado = 'EJECUTANDO';
     exception
         when others then
@@ -128,7 +146,7 @@ begin
         return;
     end if;
 
-    pkg_dm_descubrimiento.p_dm_descubrimiento_set(
+    pkg_dm_descubrimiento.proc_dm_descubrimiento_set(
         p_esquema     => v_esquema,
         p_tablas_csv  => v_tablas_csv,
         p_sample_rows => 500,
@@ -139,7 +157,7 @@ begin
         select max(ejecucion_id)
           into v_last_ejec_id_after
           from tdm_ejecucion
-         where esquema_objetivo = v_esquema;
+         where ora_esquema = v_esquema;
     exception
         when others then
             v_last_ejec_id_after := null;
@@ -231,7 +249,7 @@ begin
                v_total_excl,
                v_total_force
           from tdm_excepcion_col
-         where owner_name = v_esquema
+         where ora_owner = v_esquema
            and activa = 'Y';
     exception
         when others then
@@ -255,7 +273,7 @@ begin
         for r in (
             select table_name, column_name, accion, identificador_forz
               from tdm_excepcion_col
-             where owner_name = v_esquema
+             where ora_owner = v_esquema
                and activa = 'Y'
              order by table_name, column_name
         )

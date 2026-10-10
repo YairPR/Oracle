@@ -15,6 +15,26 @@ set pagesize 100
 set trimspool on
 set tab off
 
+Rem 2026-10-05: esquema del MOTOR (distinto del esquema objetivo &1 que se
+Rem valida) ya no va fijo -- se detecta solo en &&esquemaast
+Rem --- Esquema del motor: se detecta solo (ASTSYSADMIN o ACC_ADMIN), sin setear nada a mano ---
+define esquemaast = '__NO_DETECTADO__'
+define tbsast     = '__NO_DETECTADO__'
+column v_esquemaast noprint new_value esquemaast
+column v_tbsast      noprint new_value tbsast
+select username as v_esquemaast, nvl(default_tablespace,username) as v_tbsast
+  from (select username, default_tablespace from dba_users
+         where username in ('ASTSYSADMIN','ACC_ADMIN')
+         order by decode(username,'ASTSYSADMIN',1,'ACC_ADMIN',2,9))
+ where rownum = 1;
+declare
+begin
+  if upper(trim('&&esquemaast')) = '__NO_DETECTADO__' then
+    raise_application_error(-20001,'No se encontro ni ASTSYSADMIN ni ACC_ADMIN en DBA_USERS -- no se puede determinar el esquema del motor DATAMASKING en esta base.');
+  end if;
+end;
+/
+
 undefine V_ESQUEMA
 undefine V_EJEC_ID
 
@@ -40,10 +60,10 @@ prompt
 
 declare
   v_esquema VARCHAR2(128) := '&&V_ESQUEMA';
-  v_ejec_id NUMBER := to_number('&&V_EJEC_ID');
+  v_ejec_id NUMBER;
 
   -- Resultados KPIs
-  v_kpi1_passed BOOLEAN := true; -- Cero objetos INVALID (esquema + ASTSYSADMIN)
+  v_kpi1_passed BOOLEAN := true; -- Cero objetos INVALID en el esquema objetivo
   v_kpi2_passed BOOLEAN := true; -- Cero constraints/triggers deshabilitados
   v_kpi3_passed BOOLEAN := true; -- Cero errores en logs (trazabilidad)
   v_kpi4_passed BOOLEAN := true; -- Validacion matematica DNI/NIE
@@ -67,6 +87,7 @@ declare
 
   l_dni_cols_checked NUMBER := 0;
   l_dni_rows_checked NUMBER := 0;
+  l_dni_unknown      NUMBER := 0;   -- FIX 2026-10-07: valores de formato no DNI/NIE/CIF (no verificables)
   l_iban_cols_checked NUMBER := 0;
   l_iban_rows_checked NUMBER := 0;
   l_uniq_idxs_checked NUMBER := 0;
@@ -148,6 +169,48 @@ declare
   end;
 
 begin
+  -- FIX 2026-09-29: validacion explicita de parametros. Antes, convertir
+  -- EJECUCION_ID en la seccion DECLARE (to_number('&&V_EJEC_ID')) fallaba
+  -- con un ORA-06502 crudo e inentendible si los dos parametros posicionales
+  -- se invertian (ESQUEMA <-> EJECUCION_ID; ambos llegan como texto desde
+  -- SQL*Plus, asi que Oracle no puede detectar el intercambio por tipo).
+  -- Una seccion DECLARE no tiene manejador de excepciones propio (el error
+  -- ocurre antes de llegar al BEGIN), asi que el chequeo se mueve aqui, con
+  -- un mensaje que dice exactamente que parametro esta mal y el uso correcto.
+  begin
+    v_ejec_id := to_number('&&V_EJEC_ID');
+  exception
+    when others then
+      dbms_output.put_line('==============================================================================');
+      dbms_output.put_line('ERROR DE PARAMETROS');
+      dbms_output.put_line('==============================================================================');
+      dbms_output.put_line('El EJECUCION_ID recibido (''&&V_EJEC_ID'') no es numerico.');
+      dbms_output.put_line('Uso correcto: @dm_validar_flujo ESQUEMA EJECUCION_ID');
+      dbms_output.put_line('Ejemplo:      @dm_validar_flujo RECSS_OWN 123');
+      dbms_output.put_line('Revisa el orden de los parametros: primero el ESQUEMA (texto),');
+      dbms_output.put_line('despues el EJECUCION_ID (numero).');
+      dbms_output.put_line('==============================================================================');
+      raise_application_error(-20500,
+        'Parametro EJECUCION_ID no numerico: ''&&V_EJEC_ID''. Uso: @dm_validar_flujo ESQUEMA EJECUCION_ID');
+  end;
+
+  -- FIX 2026-10-07: con UN solo parametro (p.ej. @dm_validar_flujo 1) el
+  -- esquema quedaba como '1' y la ejecucion vacia, y los KPI corrian sobre
+  -- nada y daban un FAIL confuso. Se exigen los dos y que el esquema no sea
+  -- un numero.
+  if v_ejec_id is null or regexp_like(v_esquema, '^[0-9]+$') then
+    dbms_output.put_line('==============================================================================');
+    dbms_output.put_line('ERROR DE PARAMETROS');
+    dbms_output.put_line('==============================================================================');
+    dbms_output.put_line('Recibido: ESQUEMA=''&&V_ESQUEMA''  EJECUCION_ID=''&&V_EJEC_ID''');
+    dbms_output.put_line('Hacen falta los DOS parametros, en este orden: ESQUEMA y EJECUCION_ID.');
+    dbms_output.put_line('Uso correcto: @dm_validar_flujo ESQUEMA EJECUCION_ID');
+    dbms_output.put_line('Ejemplo:      @dm_validar_flujo DM_DUMMY 1');
+    dbms_output.put_line('==============================================================================');
+    raise_application_error(-20500,
+      'Faltan parametros o estan invertidos (ESQUEMA=''&&V_ESQUEMA'', EJECUCION_ID=''&&V_EJEC_ID''). Uso: @dm_validar_flujo ESQUEMA EJECUCION_ID');
+  end if;
+
   -- OBTENER SOLICITUD_ID (Proteccion contra NULL/sin solicitudes)
   begin
     select max(solicitud_id)
@@ -203,7 +266,7 @@ begin
           begin
             -- R-01 (auditoria seguridad): identificadores saneados con DBMS_ASSERT.ENQUOTE_NAME
             -- antes de concatenarlos en DDL dinamico, por consistencia con el resto del motor
-            -- (pkg_dm_enmascarar.f_qname). ENQUOTE_NAME ya agrega las comillas dobles, por eso
+            -- (pkg_dm_enmascarar.func_dm_qname). ENQUOTE_NAME ya agrega las comillas dobles, por eso
             -- se retiran las comillas literales que tenia el texto SQL original.
             if r.object_type = 'PACKAGE BODY' then
               l_sql_recomp := 'ALTER PACKAGE '||dbms_assert.enquote_name(v_esquema, false)||'.'||dbms_assert.enquote_name(r.object_name, false)||' COMPILE BODY';
@@ -348,7 +411,7 @@ begin
 
   if l_cnt > 0 or l_cnt_errors > 0 then
     v_kpi3_passed := false;
-    print_result('KPI-03', 'Ausencia de registros de ERROR en logs del motor', false, 'Errores en tdm_ejec_error: '||l_cnt||', Traza ERROR: '||l_cnt_errors);
+    print_result('KPI-03', 'Ausencia de registros de ERROR en logs del motor', false, 'Errores en tdm_ejecucion_error: '||l_cnt||', Traza ERROR: '||l_cnt_errors);
     for r_err in (
       select table_name, column_name, etapa, mensaje_error
         from tdm_ejecucion_error
@@ -366,17 +429,18 @@ begin
   -- --------------------------------------------------------
   begin
     l_cnt_errors := 0;
+    l_dni_unknown := 0;
     for r in (
       select table_name, column_name
         from tdm_columna_final
-       where owner_name = v_esquema
+       where ora_owner = v_esquema
          and enmascarar = 'Y'
          and upper(identificador) in ('IDENTIFICADOR_IDENTIDAD', 'IDENTIFICADOR_DOCUMENTO')
     ) loop
       l_dni_cols_checked := l_dni_cols_checked + 1;
       -- R-01 (auditoria seguridad): identificadores saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
       -- antes de construir el SQL dinamico (punto adicional detectado, mismo patron que KPI-01/06/08),
-      -- por consistencia con el resto del motor (pkg_dm_enmascarar.f_qname).
+      -- por consistencia con el resto del motor (pkg_dm_enmascarar.func_dm_qname).
       l_sql := 'select '||dbms_assert.simple_sql_name(r.column_name)||' from '||dbms_assert.simple_sql_name(v_esquema)||'.'||dbms_assert.simple_sql_name(r.table_name)||' where '||dbms_assert.simple_sql_name(r.column_name)||' is not null and rownum <= 30';
       begin
         open c_val for l_sql;
@@ -409,11 +473,16 @@ begin
               dbms_output.put_line('         -> CIF INVALIDO: '||r.table_name||'.'||r.column_name||' = '''||l_dni_raw||'''');
             end if;
           else
-            -- Ignorar valores sucios de confusión (ERR, MOCK, SUCIO, INVALID) ya que fueron insertados a propósito para probar robustez
-            if not (l_dni_raw like '%ERR%' or l_dni_raw like '%SUCIO%' or l_dni_raw like '%INVALID%' or l_dni_raw like '%MOCK%') then
-              l_cnt_errors := l_cnt_errors + 1;
-              dbms_output.put_line('         -> FORMATO DESCONOCIDO: '||r.table_name||'.'||r.column_name||' = '''||l_dni_raw||'''');
-            end if;
+            -- FIX 2026-10-07: un valor que no tiene forma de DNI/NIE/CIF NO es un fallo
+            -- de digito de control: el motor enmascara a proposito los valores sucios
+            -- de origen (menos de 6 digitos -> sustituto sintetico por minimo NIST;
+            -- sin digitos -> caracteres pseudoaleatorios) y tras enmascarar ya no se
+            -- distingue su marca de origen. Antes una lista blanca por subcadena
+            -- (ERR/SUCIO/INVALID/MOCK), hecha a medida del POC, los ignoraba y cualquier
+            -- otro contaba como fallo. Ahora se cuentan aparte como NO VERIFICABLES y
+            -- solo fallan si superan el 5 % de las filas revisadas (ver mas abajo).
+            l_dni_unknown := l_dni_unknown + 1;
+            dbms_output.put_line('         -> NO VERIFICABLE (formato no DNI/NIE/CIF): '||r.table_name||'.'||r.column_name||' = '''||l_dni_raw||'''');
           end if;
         end loop;
         close c_val;
@@ -429,9 +498,14 @@ begin
       print_result('KPI-04', 'Validacion matematica de digito de control DNI/NIE', true, 'Ok (0 columnas encontradas/analizadas)');
     elsif l_cnt_errors > 0 then
       v_kpi4_passed := false;
-      print_result('KPI-04', 'Validacion matematica de digito de control DNI/NIE', false, 'Fallas: '||l_cnt_errors||' registros de '||l_dni_rows_checked||' checked');
+      print_result('KPI-04', 'Validacion matematica de digito de control DNI/NIE', false, 'Fallas de digito de control: '||l_cnt_errors||' registros de '||l_dni_rows_checked||' checked');
+    elsif l_dni_rows_checked > 0 and l_dni_unknown * 100 > l_dni_rows_checked * 5 then
+      -- Umbral 5 %: mas formato desconocido que eso en columnas de identidad indicaria
+      -- un enmascarado que rompe columnas buenas, no solo datos sucios de origen.
+      v_kpi4_passed := false;
+      print_result('KPI-04', 'Validacion matematica de digito de control DNI/NIE', false, l_dni_unknown||' de '||l_dni_rows_checked||' filas con formato no DNI/NIE/CIF (supera el 5 %)');
     else
-      print_result('KPI-04', 'Validacion matematica de digito de control DNI/NIE', true, 'Ok ('||l_dni_cols_checked||' col, '||l_dni_rows_checked||' rows checked)');
+      print_result('KPI-04', 'Validacion matematica de digito de control DNI/NIE', true, 'Ok ('||l_dni_cols_checked||' col, '||l_dni_rows_checked||' rows checked, '||l_dni_unknown||' no verificables por formato)');
     end if;
   exception
     when others then
@@ -447,14 +521,14 @@ begin
     for r in (
       select table_name, column_name
         from tdm_columna_final
-       where owner_name = v_esquema
+       where ora_owner = v_esquema
          and enmascarar = 'Y'
          and upper(identificador) in ('IDENTIFICADOR_BANCARIO')
     ) loop
       l_iban_cols_checked := l_iban_cols_checked + 1;
       -- R-01 (auditoria seguridad): identificadores saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
       -- antes de construir el SQL dinamico (punto adicional detectado, mismo patron que KPI-01/06/08),
-      -- por consistencia con el resto del motor (pkg_dm_enmascarar.f_qname).
+      -- por consistencia con el resto del motor (pkg_dm_enmascarar.func_dm_qname).
       l_sql := 'select '||dbms_assert.simple_sql_name(r.column_name)||' from '||dbms_assert.simple_sql_name(v_esquema)||'.'||dbms_assert.simple_sql_name(r.table_name)||' where '||dbms_assert.simple_sql_name(r.column_name)||' is not null and rownum <= 30';
       begin
         open c_val for l_sql;
@@ -515,7 +589,7 @@ begin
          AND EXISTS (
            SELECT 1
              FROM tdm_columna_final f
-            WHERE f.owner_name = idx.table_owner
+            WHERE f.ora_owner = idx.table_owner
               AND f.table_name = idx.table_name
               AND f.column_name = ic.column_name
               AND f.enmascarar = 'Y'
@@ -529,7 +603,7 @@ begin
           -- R-01 (auditoria seguridad): r.col_list es una lista de columnas ya concatenada con comas
           -- (LISTAGG), por lo que no puede pasarse completa a DBMS_ASSERT como si fuera un unico
           -- identificador; se sanea columna por columna con DBMS_ASSERT.SIMPLE_SQL_NAME antes de
-          -- reconstruir la lista, por consistencia con el resto del motor (pkg_dm_enmascarar.f_qname).
+          -- reconstruir la lista, por consistencia con el resto del motor (pkg_dm_enmascarar.func_dm_qname).
           l_col_list_safe varchar2(4000) := null;
           l_remaining      varchar2(4000) := r.col_list;
           l_comma_pos      pls_integer;
@@ -588,18 +662,18 @@ begin
     for r in (
       select column_expression
         from dba_ind_expressions
-       where index_owner = 'ASTSYSADMIN'
-          and index_name = 'UQ_TDM_EJEC_ESQ_ACTIVO'
+       where index_owner = '&&esquemaast' -- 2026-10-05: esquema del motor ya no va fijo
+          and index_name = 'UI_DM_EJEC_ACTIVO' -- 2026-10-05: renombrado en PREFORM (era UQ_TDM_EJEC_ESQ_ACTIVO)
     ) loop
       l_sql := r.column_expression;
-      if upper(l_sql) like '%ESTADO%' and upper(l_sql) like '%ESQUEMA_OBJETIVO%' then
+      if upper(l_sql) like '%ESTADO%' and upper(l_sql) like '%ORA_ESQUEMA%' then
         l_cnt := l_cnt + 1;
       end if;
     end loop;
 
     if l_cnt = 0 then
       v_kpi7_passed := false;
-      print_result('KPI-07', 'Prevencion de ejecuciones duplicadas en paralelo', false, 'El indice condicionado uq_tdm_ejec_esq_activo no esta configurado correctamente');
+      print_result('KPI-07', 'Prevencion de ejecuciones duplicadas en paralelo', false, 'El indice condicionado ui_dm_ejec_activo no esta configurado correctamente');
     else
       print_result('KPI-07', 'Prevencion de ejecuciones duplicadas en paralelo', true, 'Ok (Filtro por expresion validado)');
     end if;
@@ -641,7 +715,7 @@ begin
              select 1
                from dba_cons_columns cc
                join tdm_columna_final f
-                 on f.owner_name  = cc.owner
+                 on f.ora_owner  = cc.owner
                 and f.table_name  = cc.table_name
                 and f.column_name = cc.column_name
                 and f.enmascarar  = 'Y'
@@ -652,7 +726,7 @@ begin
              select 1
                from dba_cons_columns ccp
                join tdm_columna_final fp
-                 on fp.owner_name  = ccp.owner
+                 on fp.ora_owner  = ccp.owner
                 and fp.table_name  = ccp.table_name
                 and fp.column_name = ccp.column_name
                 and fp.enmascarar  = 'Y'
@@ -677,7 +751,7 @@ begin
       ) loop
         -- R-01 (auditoria seguridad): nombres de columna saneados con DBMS_ASSERT.SIMPLE_SQL_NAME
         -- antes de concatenarlos en el predicado de join, por consistencia con el resto del motor
-        -- (pkg_dm_enmascarar.f_qname).
+        -- (pkg_dm_enmascarar.func_dm_qname).
         l_pred_join := l_pred_join
           || case when l_pred_join is null then '' else ' AND ' end
           || 'p.'||dbms_assert.simple_sql_name(col.parent_col)||' = c.'||dbms_assert.simple_sql_name(col.child_col);

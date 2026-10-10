@@ -2,12 +2,7 @@
 -- cuando existe en t_columna_hist
 update astsysadmin.tdm_columna_hist set ENMASCARAR='Y' where owner_name='PNCSS_OWN' and column_name='AYU_APELNOM';
 
---------------------------------------------------------------------------------
--- Limpieza (2026-09-16, hallazgo R-04): estas 3 lineas no tenian prefijo "--"
--- y por tanto NO eran comentarios, sino texto suelto que SQL*Plus/SQLcl
--- intenta interpretar como sentencia SQL - ejecutar este script tal cual
--- fallaba en cuanto llegaba aqui (ORA-00900 o similar). Corregido a comentario.
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 --CUANDO NO EXISTE EN T_COLUMNA_HIST
 --EXCLUDE -> elimina columna del discovery
 --FORCE   -> fuerza identificador y masking
@@ -25,9 +20,6 @@ UPDATE tdm_excepcion_col SET activa = 'N' WHERE owner_name = 'ESQUEMA' AND table
 
 --eliminar excepcion:
 DELETE FROM tdm_excepcion_col WHERE owner_name = 'ESQUEMA' AND table_name = 'TABLA' AND column_name = 'COLUMNA';
-
-
-
 
 
 -- INCLUDE

@@ -1,0 +1,794 @@
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+*** ESQUEMA DEL MOTOR DETECTADO (variable de enlace g_esquemaast) ***
+
+G_ESQUEMAAST
+--------------------------------------------------------------------------------------------------------------------------------
+ASTSYSADMIN
+
+*** Si el valor anterior no es el esquema esperado, Ctrl+C ahora. ***
+
+begin
+*
+ERROR en línea 1:
+ORA-00942: la tabla o vista no existe
+ORA-06512: en línea 3
+
+
+Privilegios de sistema CONCEDIDOS DIRECTAMENTE a ASTSYSADMIN:
+SELECT ANY TABLE    concedido
+UPDATE ANY TABLE    concedido
+ALTER ANY TABLE     concedido
+ALTER ANY TRIGGER   concedido
+CREATE JOB          concedido
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Tabla creada.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+58 filas fusionadas.
+
+
+Confirmación terminada.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Tabla modificada.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Secuencia creada.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Tabla creada.
+
+
+Índice creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+Comentario creado.
+
+
+9 filas creadas.
+
+
+15 filas creadas.
+
+
+3 filas creadas.
+
+
+16 filas creadas.
+
+
+12 filas creadas.
+
+
+14 filas creadas.
+
+
+0 filas suprimidas.
+
+
+0 filas suprimidas.
+
+
+5 filas creadas.
+
+
+2 filas creadas.
+
+
+3 filas creadas.
+
+
+1 fila creada.
+
+
+3 filas creadas.
+
+
+8 filas creadas.
+
+
+2 filas creadas.
+
+
+5 filas creadas.
+
+
+1 fila creada.
+
+
+Confirmación terminada.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+
+
+
+
+1 fila seleccionada.
+
+
+Procedimiento PL/SQL terminado correctamente.
+
+
+Sesión modificada.
+
+
+Paquete creado.
+
+
+Cuerpo del paquete creado.
+
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+No hay errores.
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+
+
+Concesión terminada correctamente.
+

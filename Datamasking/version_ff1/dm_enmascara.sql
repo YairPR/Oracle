@@ -11,7 +11,25 @@ set linesize 220
 set pagesize 200
 set trimspool on
 set tab off
-alter session set current_schema = ASTSYSADMIN;
+
+Rem --- Esquema del motor: se detecta solo (ASTSYSADMIN o ACC_ADMIN), sin setear nada a mano ---
+define esquemaast = '__NO_DETECTADO__'
+define tbsast     = '__NO_DETECTADO__'
+column v_esquemaast noprint new_value esquemaast
+column v_tbsast      noprint new_value tbsast
+select username as v_esquemaast, nvl(default_tablespace,username) as v_tbsast
+  from (select username, default_tablespace from dba_users
+         where username in ('ASTSYSADMIN','ACC_ADMIN')
+         order by decode(username,'ASTSYSADMIN',1,'ACC_ADMIN',2,9))
+ where rownum = 1;
+declare
+begin
+  if upper(trim('&&esquemaast')) = '__NO_DETECTADO__' then
+    raise_application_error(-20001,'No se encontro ni ASTSYSADMIN ni ACC_ADMIN en DBA_USERS -- no se puede determinar el esquema del motor DATAMASKING en esta base.');
+  end if;
+end;
+/
+alter session set current_schema = &&esquemaast;
 
 column c_estado         format a18
 column c_fase           format a25
@@ -60,6 +78,10 @@ declare
     v_total_candidatas      number := 0;
     v_solicitud_id          number := -1;
 
+    v_total_tablas_y        number := 0;
+    v_total_tablas_force    number := 0;
+    v_total_tablas_map      number := 0;
+
     v_estado_pre            varchar2(30);
     v_fase_pre              varchar2(30);
     v_fecha_ini_pre         date;
@@ -83,6 +105,23 @@ declare
     v_cnt_errs_log          number := 0;
     v_dep_disabled          number := 0;
     v_dep_enabled           number := 0;
+    -- FIX 2026-10-02 (hallazgo real, pregunta directa del usuario sobre la
+    -- asimetria "desactivadas: 2 / reactivadas: 4" en una ejecucion real sobre
+    -- DATAM_ARCA_OWN): habilitado_ok='Y' en TDM_MASK_DEP_ESTADO se marca en DOS
+    -- situaciones semanticamente distintas (ver 05_dm_pkg_enmascarar.sql):
+    --   1) proc_dm_post_dep la marca tras ejecutar con exito el ENABLE real
+    --      (reactivacion autentica de algo que SI se deshabilito).
+    --   2) proc_dm_pre_dep la marca de forma preventiva, en el momento del PRE,
+    --      para dependencias configuradas en TDM_DEPENDENCIA_FINAL que ya NO
+    --      EXISTEN en el diccionario (SKIP_DEP_NOT_FOUND) -- nunca se deshabilitaron,
+    --      asi que no necesitan reactivarse, y se marcan "ok" por definicion.
+    -- v_dep_enabled contaba TODAS las filas con habilitado_ok='Y' sin distinguir
+    -- ambos casos, de modo que dependencias nunca tocadas (por estar obsoletas)
+    -- se sumaban como si hubieran sido reactivadas. Se añaden contadores propios
+    -- para cada situacion real y se corrige v_dep_enabled para que solo cuente
+    -- reactivaciones autenticas (deshabilitado_ok='Y' AND habilitado_ok='Y').
+    v_dep_no_hallada        number := 0;
+    v_dep_fallo_reactivar   number := 0;
 
 begin
     if v_tok1 is null or not regexp_like(v_tok1, '^[0-9]+$') then
@@ -102,7 +141,7 @@ begin
     end if;
 
     begin
-        select esquema_objetivo,
+        select ora_esquema,
                estado,
                fase_proceso,
                cast(fecha_inicio as date),
@@ -156,42 +195,31 @@ begin
     select count(*)
       into v_total_final
       from tdm_columna_final
-     where owner_name = v_esquema;
+     where ora_owner = v_esquema;
 
     if v_total_final = 0 then
         raise_application_error(-20306,
             'No existen columnas en TDM_COLUMNA_FINAL para el esquema ' || v_esquema || '. Ejecute discovery primero.');
     end if;
 
-    select count(*)
-      into v_total_final_y
+    select count(*), count(distinct table_name)
+      into v_total_final_y, v_total_tablas_y
       from tdm_columna_final
-     where owner_name = v_esquema
+     where ora_owner = v_esquema
        and enmascarar = 'Y';
 
-    -- FIX 2026-09-20: el motor (pkg_dm_enmascarar.proc_dm_mask_cat, variable
-    -- l_has_final) NO exige enmascarar='Y' de forma incondicional: si no hay
-    -- NINGUNA columna en TDM_COLUMNA_FINAL con enmascarar='Y' para el
-    -- esquema, toma como fuente alterna las columnas con excepcion FORCE
-    -- activa en TDM_EXCEPCION_COL (identificador_forz definido y existente
-    -- en DBA_TAB_COLUMNS) - es el flujo "FORCE-only" acordado el 17/09
-    -- (TDM_COLUMNA_FINAL.enmascarar='N' en todo el esquema, enmascarado
-    -- 100% vía excepciones) y ya usado en producción (ejecucion_id=57).
-    -- Esta precondicion debe reflejar exactamente esa misma regla de
-    -- l_has_final; antes solo miraba enmascarar='Y' y bloqueaba con -20307
-    -- un escenario que el motor SI puede procesar.
     if v_total_final_y = 0 then
-        select count(*)
-          into v_total_force_y
+        select count(*), count(distinct table_name)
+          into v_total_force_y, v_total_tablas_force
           from tdm_excepcion_col e
-         where upper(trim(e.owner_name)) = v_esquema
+         where upper(trim(e.ora_owner)) = v_esquema
            and upper(trim(e.activa)) = 'Y'
            and upper(trim(e.accion)) = 'FORCE'
            and e.identificador_forz is not null
            and exists (
              select 1
                from dba_tab_columns c
-              where c.owner = upper(trim(e.owner_name))
+              where c.owner = upper(trim(e.ora_owner))
                 and c.table_name = upper(trim(e.table_name))
                 and c.column_name = upper(trim(e.column_name))
            );
@@ -205,8 +233,12 @@ begin
 
     v_total_candidatas := case when v_total_final_y > 0 then v_total_final_y else v_total_force_y end;
 
+    v_total_tablas_map := case when v_total_final_y > 0 then v_total_tablas_y else v_total_tablas_force end;
+
     dbms_output.put_line('Total columnas catalogadas : ' || v_total_final);
     dbms_output.put_line('Columnas con enmascarar=Y  : ' || v_total_final_y);
+    dbms_output.put_line('Tablas descubiertas y mapeadas : ' || v_total_tablas_map ||
+                          case when v_total_final_y = 0 then ' (via excepciones FORCE)' else '' end);
 
     if v_total_final_y = 0 then
         dbms_output.put_line('Fuente de enmascarado      : EXCEPCIONES FORCE (' || v_total_force_y ||
@@ -221,14 +253,14 @@ begin
 
     if v_param = 'Y' then
         dbms_output.put_line('Modo: FORZAR / REPROCESO');
-        pkg_dm_enmascarar.p_dm_enmascara(
+        pkg_dm_enmascarar.proc_dm_enmascaramiento(
             p_ejecucion_id => v_ejecucion_id,
             p_reproceso    => 'Y',
             p_commit_lote  => 1000
         );
     else
         dbms_output.put_line('Modo: DEFAULT');
-        pkg_dm_enmascarar.p_dm_enmascara(
+        pkg_dm_enmascarar.proc_dm_enmascaramiento(
             p_ejecucion_id => v_ejecucion_id,
             p_reproceso    => 'N',
             p_commit_lote  => 1000
@@ -246,7 +278,7 @@ begin
     end;
 
     begin
-        select esquema_objetivo,
+        select ora_esquema,
                estado,
                fase_proceso,
                cast(fecha_inicio as date),
@@ -341,11 +373,45 @@ begin
         end;
 
         begin
+            -- FIX 2026-10-02: solo reactivaciones autenticas (lo que SI se
+            -- deshabilito y luego SI se volvio a habilitar con exito), no el
+            -- "ok trivial" que proc_dm_pre_dep marca para dependencias que ya
+            -- no existian en el diccionario (ver comentario de declaracion).
             select count(*)
               into v_dep_enabled
               from tdm_mask_dep_estado
              where solicitud_id = v_solicitud_id
+               and deshabilitado_ok = 'Y'
                and habilitado_ok = 'Y';
+        exception when others then null;
+        end;
+
+        begin
+            -- Dependencias configuradas en TDM_DEPENDENCIA_FINAL que no se
+            -- encontraron en el diccionario al momento del PRE (constraint o
+            -- trigger renombrado/eliminado desde el ultimo descubrimiento).
+            -- No es un error del motor, pero si una señal de que la foto de
+            -- dependencias esta desactualizada y conviene re-descubrir.
+            select count(*)
+              into v_dep_no_hallada
+              from tdm_mask_dep_estado
+             where solicitud_id = v_solicitud_id
+               and deshabilitado_ok = 'N';
+        exception when others then null;
+        end;
+
+        begin
+            -- CRITICO: dependencias que SI se deshabilitaron pero que el POST
+            -- no logro reactivar (quedaron deshabilitadas en el esquema real).
+            -- Antes de este fix esto no era visible en el resumen: un fallo de
+            -- reactivacion solo bajaba el v_dep_enabled "global", mezclado con
+            -- las no-encontradas, sin ninguna señal explicita de alarma.
+            select count(*)
+              into v_dep_fallo_reactivar
+              from tdm_mask_dep_estado
+             where solicitud_id = v_solicitud_id
+               and deshabilitado_ok = 'Y'
+               and habilitado_ok = 'N';
         exception when others then null;
         end;
     end if;
@@ -364,7 +430,16 @@ begin
     dbms_output.put_line('Alertas en trace (WARN)  : ' || v_cnt_warns);
     dbms_output.put_line('Errores en trace (ERROR) : ' || v_cnt_errs_trace);
     dbms_output.put_line('Errores en log de fallas : ' || v_cnt_errs_log);
-    dbms_output.put_line('Restricciones desactivadas: ' || v_dep_disabled || ' / reactivadas: ' || v_dep_enabled);
+    dbms_output.put_line('Dependencias (FK/UK/trigger) desactivadas: ' || v_dep_disabled);
+    dbms_output.put_line('Dependencias reactivadas (desactivada=Y y reactivada=Y): ' || v_dep_enabled);
+    if v_dep_no_hallada > 0 then
+        dbms_output.put_line('Dependencias configuradas pero no halladas en el diccionario: ' || v_dep_no_hallada ||
+                              ' (TDM_DEPENDENCIA_FINAL desactualizada -- revisar TDM_MASK_DEP_ESTADO, re-ejecutar descubrimiento)');
+    end if;
+    if v_dep_fallo_reactivar > 0 then
+        dbms_output.put_line('*** ALERTA: dependencias desactivadas que NO se pudieron reactivar: ' || v_dep_fallo_reactivar ||
+                              ' -- revisar TDM_MASK_DEP_ESTADO y TDM_EJECUCION_ERROR antes de dar por cerrada esta ejecucion ***');
+    end if;
     dbms_output.put_line('================================================');
 	dbms_output.put_line('  ');
     dbms_output.put_line('Tablas para mas detalle:');

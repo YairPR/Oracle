@@ -96,7 +96,7 @@ declare
 
     -- R7: Backup y restauración del catálogo original en ejecuciones parciales
     type t_col_state is record (
-      owner_name   varchar2(128),
+      ora_owner   varchar2(128),
       table_name   varchar2(128),
       column_name  varchar2(128),
       enmascarar   char(1)
@@ -128,7 +128,7 @@ begin
     end if;
 
     begin
-        select esquema_objetivo,
+        select ora_esquema,
                estado,
                fase_proceso,
                cast(fecha_inicio as date),
@@ -183,7 +183,7 @@ begin
     select count(*)
       into v_total_final
       from tdm_columna_final
-     where owner_name = v_esquema;
+     where ora_owner = v_esquema;
 
     if v_total_final = 0 then
         raise_application_error(-20306,
@@ -193,7 +193,7 @@ begin
     select count(*)
       into v_total_identificador
       from tdm_columna_final
-     where owner_name = v_esquema
+     where ora_owner = v_esquema
        and upper(identificador) = v_identificador;
 
     if v_total_identificador = 0 then
@@ -209,11 +209,11 @@ begin
     declare
       l_idx pls_integer := 0;
     begin
-      for r in (select owner_name, table_name, column_name, enmascarar 
+      for r in (select ora_owner, table_name, column_name, enmascarar 
                   from tdm_columna_final 
-                 where owner_name = v_esquema) loop
+                 where ora_owner = v_esquema) loop
         l_idx := l_idx + 1;
-        l_backup_final(l_idx).owner_name := r.owner_name;
+        l_backup_final(l_idx).ora_owner := r.ora_owner;
         l_backup_final(l_idx).table_name := r.table_name;
         l_backup_final(l_idx).column_name := r.column_name;
         l_backup_final(l_idx).enmascarar := r.enmascarar;
@@ -223,11 +223,11 @@ begin
     declare
       l_idx pls_integer := 0;
     begin
-      for r in (select owner_name, table_name, column_name, enmascarar 
+      for r in (select ora_owner, table_name, column_name, enmascarar 
                   from tdm_columna_hist 
                  where ejecucion_id = v_ejecucion_id) loop
         l_idx := l_idx + 1;
-        l_backup_hist(l_idx).owner_name := r.owner_name;
+        l_backup_hist(l_idx).ora_owner := r.ora_owner;
         l_backup_hist(l_idx).table_name := r.table_name;
         l_backup_hist(l_idx).column_name := r.column_name;
         l_backup_hist(l_idx).enmascarar := r.enmascarar;
@@ -236,11 +236,11 @@ begin
 
     update tdm_columna_final
        set enmascarar = 'N'
-     where owner_name = v_esquema;
+     where ora_owner = v_esquema;
 
     update tdm_columna_final
        set enmascarar = 'Y'
-     where owner_name = v_esquema
+     where ora_owner = v_esquema
        and upper(identificador) = v_identificador;
 
     v_total_final_y := sql%rowcount;
@@ -248,13 +248,13 @@ begin
     update tdm_columna_hist
        set enmascarar = 'N'
      where ejecucion_id = v_ejecucion_id
-       and owner_name = v_esquema
+       and ora_owner = v_esquema
        and nvl(vigente,'Y') = 'Y';
 
     update tdm_columna_hist
        set enmascarar = 'Y'
      where ejecucion_id = v_ejecucion_id
-       and owner_name = v_esquema
+       and ora_owner = v_esquema
        and nvl(vigente,'Y') = 'Y'
        and upper(identificador) = v_identificador;
 
@@ -274,14 +274,14 @@ begin
 
     if v_param = 'Y' then
         dbms_output.put_line('Modo: FORZAR / REPROCESO');
-        pkg_dm_enmascarar.p_dm_enmascara(
+        pkg_dm_enmascarar.proc_dm_enmascaramiento(
             p_ejecucion_id => v_ejecucion_id,
             p_reproceso    => 'Y',
             p_commit_lote  => 1000
         );
     else
         dbms_output.put_line('Modo: DEFAULT');
-        pkg_dm_enmascarar.p_dm_enmascara(
+        pkg_dm_enmascarar.proc_dm_enmascaramiento(
             p_ejecucion_id => v_ejecucion_id,
             p_reproceso    => 'N',
             p_commit_lote  => 1000
@@ -299,7 +299,7 @@ begin
     end;
 
     begin
-        select esquema_objetivo,
+        select ora_esquema,
                estado,
                fase_proceso,
                cast(fecha_inicio as date),
@@ -331,7 +331,7 @@ begin
       for i in 1..l_backup_final.count loop
         update tdm_columna_final
            set enmascarar = l_backup_final(i).enmascarar
-         where owner_name = l_backup_final(i).owner_name
+         where ora_owner = l_backup_final(i).ora_owner
            and table_name = l_backup_final(i).table_name
            and column_name = l_backup_final(i).column_name;
       end loop;
@@ -341,7 +341,7 @@ begin
         update tdm_columna_hist
            set enmascarar = l_backup_hist(i).enmascarar
          where ejecucion_id = v_ejecucion_id
-           and owner_name = l_backup_hist(i).owner_name
+           and ora_owner = l_backup_hist(i).ora_owner
            and table_name = l_backup_hist(i).table_name
            and column_name = l_backup_hist(i).column_name;
       end loop;
@@ -395,7 +395,7 @@ exception
           for i in 1..l_backup_final.count loop
             update tdm_columna_final
                set enmascarar = l_backup_final(i).enmascarar
-             where owner_name = l_backup_final(i).owner_name
+             where ora_owner = l_backup_final(i).ora_owner
                and table_name = l_backup_final(i).table_name
                and column_name = l_backup_final(i).column_name;
           end loop;
@@ -405,7 +405,7 @@ exception
             update tdm_columna_hist
                set enmascarar = l_backup_hist(i).enmascarar
              where ejecucion_id = v_ejecucion_id
-               and owner_name = l_backup_hist(i).owner_name
+               and ora_owner = l_backup_hist(i).ora_owner
                and table_name = l_backup_hist(i).table_name
                and column_name = l_backup_hist(i).column_name;
           end loop;
@@ -431,8 +431,8 @@ select table_name as c_table_name,
        identificador as c_identificador,
        enmascarar
 from tdm_columna_final
-where owner_name = (
-        select esquema_objetivo
+where ora_owner = (
+        select ora_esquema
           from tdm_ejecucion
          where ejecucion_id = &V_EJEC_ID
       )
@@ -469,7 +469,7 @@ from (
            t.fase                        as c_fase,
            t.paso                        as c_paso,
            substr(t.detalle,1,100)       as c_detalle,
-           to_char(cast(t.fecha_evento as date),'dd-mm-yyyy hh24:mi:ss') as c_fecha
+           to_char(t.fecha_evento,'dd-mm-yyyy hh24:mi:ss') as c_fecha
     from tdm_mask_trace t
     where t.ejecucion_id = &V_EJEC_ID
     order by t.solicitud_id desc, t.fecha_evento, t.trace_id
