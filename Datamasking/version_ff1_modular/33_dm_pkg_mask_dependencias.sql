@@ -5,16 +5,13 @@ Rem pkg_dm_mask_dependencias  --  33_dm_pkg_mask_dependencias.sql
 Rem ================================================================================
 Rem Deshabilitar (PRE) y rehabilitar (POST) constraints y triggers alrededor del enmascarado.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
+Rem    epurisaca    10/12/26 - Se elimina la compatibilidad de columnas de TDM_DEPENDENCIA_FINAL (siempre existen)
+Rem                           y el parametro p_tablas_csv de proc_dm_pre_dep
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_mask_dependencias AS
-
-  FUNCTION func_dm_dep_col_exists(
-    p_col IN VARCHAR2
-  ) RETURN NUMBER;
 
   PROCEDURE proc_dm_dep_policy(
     p_owner_name      IN VARCHAR2,
@@ -38,8 +35,7 @@ create or replace PACKAGE pkg_dm_mask_dependencias AS
   PROCEDURE proc_dm_pre_dep(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
-    p_esquema      IN VARCHAR2,
-    p_tablas_csv   IN VARCHAR2 DEFAULT NULL
+    p_esquema      IN VARCHAR2
   );
 
   PROCEDURE proc_dm_post_dep(
@@ -47,7 +43,7 @@ create or replace PACKAGE pkg_dm_mask_dependencias AS
     p_ejecucion_id IN NUMBER
   );
 
-  -- R13a: control posterior al enmascarado (extraido de proc_dm_enmascaramiento).
+  -- Control posterior al enmascarado.
   PROCEDURE proc_dm_post_check(
     p_solicitud_id  IN NUMBER,
     p_ejecucion_id  IN NUMBER,
@@ -61,65 +57,10 @@ END pkg_dm_mask_dependencias;
 
 create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
 
-  g_dep_has_categoria_uso NUMBER;
-  g_dep_has_accion_pre_mask NUMBER;
-  g_dep_has_accion_post_mask NUMBER;
-
 
   ------------------------------------------------------------------------------
-  -- Dependencias PRE/POST robustas (fix ORA-02431/02430 + ORA-06502)
+  -- Dependencias PRE/POST
   ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
-  -- [DOC] function func_dm_dep_col_exists
-  -- PROPOSITO    : Comprueba (con cache en variables de paquete) si TDM_DEPENDENCIA_FINAL tiene las
-  --                columnas opcionales de politica CATEGORIA_USO, ACCION_PRE_MASK y ACCION_POST_MASK.
-  -- ENTRADAS     : p_col; retorna 1 si existe, 0 si no.
-  -- LEE          : DBA_TAB_COLUMNS
-  -- ESCRIBE      : variables de paquete g_dep_has_* (cache)
-  -- ERRORES      : ninguno
-  -- LLAMADO DESDE: Interno: proc_dm_dep_policy y func_dm_dep_post_action.
-  ------------------------------------------------------------------------------
-  FUNCTION func_dm_dep_col_exists(
-    p_col IN VARCHAR2
-  ) RETURN NUMBER IS
-    l_cnt NUMBER := 0;
-    l_col VARCHAR2(128) := UPPER(TRIM(p_col));
-  BEGIN
-    IF l_col = 'CATEGORIA_USO' AND g_dep_has_categoria_uso IS NOT NULL THEN
-      RETURN g_dep_has_categoria_uso;
-    ELSIF l_col = 'ACCION_PRE_MASK' AND g_dep_has_accion_pre_mask IS NOT NULL THEN
-      RETURN g_dep_has_accion_pre_mask;
-    ELSIF l_col = 'ACCION_POST_MASK' AND g_dep_has_accion_post_mask IS NOT NULL THEN
-      RETURN g_dep_has_accion_post_mask;
-    END IF;
-
-    BEGIN
-      SELECT COUNT(*)
-        INTO l_cnt
-        FROM dba_tab_columns
-       WHERE owner = SYS_CONTEXT('USERENV','CURRENT_USER')
-         AND table_name = 'TDM_DEPENDENCIA_FINAL'
-         AND column_name = l_col;
-    EXCEPTION
-      WHEN OTHERS THEN
-        l_cnt := 0;
-    END;
-
-    IF l_col = 'CATEGORIA_USO' THEN
-      g_dep_has_categoria_uso := CASE WHEN l_cnt > 0 THEN 1 ELSE 0 END;
-      RETURN g_dep_has_categoria_uso;
-    ELSIF l_col = 'ACCION_PRE_MASK' THEN
-      g_dep_has_accion_pre_mask := CASE WHEN l_cnt > 0 THEN 1 ELSE 0 END;
-      RETURN g_dep_has_accion_pre_mask;
-    ELSIF l_col = 'ACCION_POST_MASK' THEN
-      g_dep_has_accion_post_mask := CASE WHEN l_cnt > 0 THEN 1 ELSE 0 END;
-      RETURN g_dep_has_accion_post_mask;
-    END IF;
-
-    RETURN 0;
-  END;
-
-
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_dep_policy
   -- PROPOSITO    : Determina la categoria de uso y las acciones pre y post enmascarado de una
@@ -127,9 +68,9 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
   --                desde TDM_DEPENDENCIA_FINAL.
   -- ENTRADAS     : p_owner_name, p_table_name, p_dep_owner, p_dep_objeto, p_tipo_dependencia; OUT
   --                p_categoria_uso, p_accion_pre, p_accion_post.
-  -- LEE          : TDM_DEPENDENCIA_FINAL (SQL dinamico)
+  -- LEE          : TDM_DEPENDENCIA_FINAL
   -- ESCRIBE      : ninguno
-  -- ERRORES      : Sin errores: los fallos de lectura se ignoran y se mantienen los defaults.
+  -- ERRORES      : ninguno propio; sin fila en TDM_DEPENDENCIA_FINAL se mantienen los defaults.
   -- LLAMADO DESDE: Interno: proc_dm_pre_dep.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_dep_policy(
@@ -143,7 +84,9 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
     p_accion_post     OUT VARCHAR2
   ) IS
     l_tipo VARCHAR2(100) := UPPER(TRIM(NVL(p_tipo_dependencia,'')));
-    l_val  VARCHAR2(100);
+    l_cat  VARCHAR2(100);
+    l_pre  VARCHAR2(100);
+    l_post VARCHAR2(100);
   BEGIN
     -- Defaults seguros (compatibles con comportamiento existente).
     IF l_tipo IN ('FK','R','FOREIGN KEY','CONSTRAINT') THEN
@@ -164,77 +107,20 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
       p_accion_post   := 'SIN_ACCION';
     END IF;
 
-    IF func_dm_dep_col_exists('CATEGORIA_USO') = 1 THEN
-      BEGIN
-        EXECUTE IMMEDIATE
-          'SELECT MAX(UPPER(TRIM(categoria_uso))) '||
-          'FROM tdm_dependencia_final '||
-          'WHERE ora_owner = :1 '||
-          '  AND table_name = :2 '||
-          '  AND UPPER(TRIM(dependencia_owner)) = :3 '||
-          '  AND UPPER(TRIM(dependencia_objeto)) = :4 '||
-          '  AND UPPER(TRIM(tipo_dependencia)) = :5'
-          INTO l_val
-          USING UPPER(TRIM(p_owner_name)),
-                UPPER(TRIM(p_table_name)),
-                UPPER(TRIM(p_dep_owner)),
-                UPPER(TRIM(p_dep_objeto)),
-                UPPER(TRIM(p_tipo_dependencia));
-        IF l_val IS NOT NULL THEN
-          p_categoria_uso := l_val;
-        END IF;
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
-    END IF;
-
-    IF func_dm_dep_col_exists('ACCION_PRE_MASK') = 1 THEN
-      BEGIN
-        EXECUTE IMMEDIATE
-          'SELECT MAX(UPPER(TRIM(accion_pre_mask))) '||
-          'FROM tdm_dependencia_final '||
-          'WHERE ora_owner = :1 '||
-          '  AND table_name = :2 '||
-          '  AND UPPER(TRIM(dependencia_owner)) = :3 '||
-          '  AND UPPER(TRIM(dependencia_objeto)) = :4 '||
-          '  AND UPPER(TRIM(tipo_dependencia)) = :5'
-          INTO l_val
-          USING UPPER(TRIM(p_owner_name)),
-                UPPER(TRIM(p_table_name)),
-                UPPER(TRIM(p_dep_owner)),
-                UPPER(TRIM(p_dep_objeto)),
-                UPPER(TRIM(p_tipo_dependencia));
-        IF l_val IS NOT NULL THEN
-          p_accion_pre := l_val;
-        END IF;
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
-    END IF;
-
-    IF func_dm_dep_col_exists('ACCION_POST_MASK') = 1 THEN
-      BEGIN
-        EXECUTE IMMEDIATE
-          'SELECT MAX(UPPER(TRIM(accion_post_mask))) '||
-          'FROM tdm_dependencia_final '||
-          'WHERE ora_owner = :1 '||
-          '  AND table_name = :2 '||
-          '  AND UPPER(TRIM(dependencia_owner)) = :3 '||
-          '  AND UPPER(TRIM(dependencia_objeto)) = :4 '||
-          '  AND UPPER(TRIM(tipo_dependencia)) = :5'
-          INTO l_val
-          USING UPPER(TRIM(p_owner_name)),
-                UPPER(TRIM(p_table_name)),
-                UPPER(TRIM(p_dep_owner)),
-                UPPER(TRIM(p_dep_objeto)),
-                UPPER(TRIM(p_tipo_dependencia));
-        IF l_val IS NOT NULL THEN
-          p_accion_post := l_val;
-        END IF;
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
-    END IF;
+    -- La politica definida en TDM_DEPENDENCIA_FINAL manda sobre el default por tipo.
+    SELECT MAX(UPPER(TRIM(categoria_uso))),
+           MAX(UPPER(TRIM(accion_pre_mask))),
+           MAX(UPPER(TRIM(accion_post_mask)))
+      INTO l_cat, l_pre, l_post
+      FROM tdm_dependencia_final
+     WHERE ora_owner = UPPER(TRIM(p_owner_name))
+       AND table_name = UPPER(TRIM(p_table_name))
+       AND UPPER(TRIM(dependencia_owner)) = UPPER(TRIM(p_dep_owner))
+       AND UPPER(TRIM(dependencia_objeto)) = UPPER(TRIM(p_dep_objeto))
+       AND UPPER(TRIM(tipo_dependencia)) = UPPER(TRIM(p_tipo_dependencia));
+    IF l_cat  IS NOT NULL THEN p_categoria_uso := l_cat;  END IF;
+    IF l_pre  IS NOT NULL THEN p_accion_pre    := l_pre;  END IF;
+    IF l_post IS NOT NULL THEN p_accion_post   := l_post; END IF;
   END;
 
 
@@ -243,9 +129,9 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
   -- PROPOSITO    : Devuelve la accion de rehabilitacion post enmascarado de una dependencia (por
   --                defecto ENABLE para trigger, ENABLE_VALIDATE para el resto).
   -- ENTRADAS     : p_owner_name, p_table_name, p_dep_owner, p_dep_objeto, p_tipo_obj; retorna accion.
-  -- LEE          : TDM_DEPENDENCIA_FINAL (SQL dinamico)
+  -- LEE          : TDM_DEPENDENCIA_FINAL
   -- ESCRIBE      : ninguno
-  -- ERRORES      : Sin errores: ante fallo devuelve el default.
+  -- ERRORES      : ninguno propio; sin fila en TDM_DEPENDENCIA_FINAL devuelve el default.
   -- LLAMADO DESDE: Interno: proc_dm_post_dep.
   ------------------------------------------------------------------------------
   FUNCTION func_dm_dep_post_action(
@@ -264,26 +150,15 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
       l_def := 'ENABLE_VALIDATE';
     END IF;
 
-    IF func_dm_dep_col_exists('ACCION_POST_MASK') = 1 THEN
-      BEGIN
-        EXECUTE IMMEDIATE
-          'SELECT MAX(UPPER(TRIM(accion_post_mask))) '||
-          'FROM tdm_dependencia_final '||
-          'WHERE ora_owner = :1 '||
-          '  AND table_name = :2 '||
-          '  AND UPPER(TRIM(dependencia_owner)) = :3 '||
-          '  AND UPPER(TRIM(dependencia_objeto)) = :4'
-          INTO l_val
-          USING UPPER(TRIM(p_owner_name)),
-                UPPER(TRIM(p_table_name)),
-                UPPER(TRIM(p_dep_owner)),
-                UPPER(TRIM(p_dep_objeto));
-        IF l_val IS NOT NULL THEN
-          RETURN l_val;
-        END IF;
-      EXCEPTION
-        WHEN OTHERS THEN NULL;
-      END;
+    SELECT MAX(UPPER(TRIM(accion_post_mask)))
+      INTO l_val
+      FROM tdm_dependencia_final
+     WHERE ora_owner = UPPER(TRIM(p_owner_name))
+       AND table_name = UPPER(TRIM(p_table_name))
+       AND UPPER(TRIM(dependencia_owner)) = UPPER(TRIM(p_dep_owner))
+       AND UPPER(TRIM(dependencia_objeto)) = UPPER(TRIM(p_dep_objeto));
+    IF l_val IS NOT NULL THEN
+      RETURN l_val;
     END IF;
 
     RETURN l_def;
@@ -294,44 +169,77 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
   -- [DOC] procedure proc_dm_pre_dep
   -- PROPOSITO    : Deshabilita (DDL) las FK, claves y triggers definidos en TDM_DEPENDENCIA_FINAL y
   --                deja constancia en TDM_MASK_DEP_ESTADO para poder rehabilitarlos tras enmascarar.
-  -- ENTRADAS     : p_solicitud_id, p_ejecucion_id, p_esquema, p_tablas_csv (opcional: acota a esas
-  --                tablas).
+  -- ENTRADAS     : p_solicitud_id, p_ejecucion_id, p_esquema.
   -- LEE          : DBA_CONSTRAINTS; DBA_TRIGGERS; TDM_COLUMNA_FINAL; TDM_DEPENDENCIA_FINAL
   -- ESCRIBE      : TDM_MASK_DEP_ESTADO (INSERT/UPDATE); DDL: ALTER TABLE ... DISABLE CONSTRAINT ...
   --                CASCADE; DDL: ALTER TRIGGER ... DISABLE; COMMIT
   -- ERRORES      : Sin RAISE_APPLICATION_ERROR: el error de cada dependencia se registra con etapa
   --                PRE_DEP y el bucle continua.
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento (esquema completo) y proc_dm_enmascara_tabla
-  --                (acotado a sus tablas).
+  -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_enmascaramiento_core.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_pre_dep(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
-    p_esquema      IN VARCHAR2,
-    p_tablas_csv   IN VARCHAR2 DEFAULT NULL
+    p_esquema      IN VARCHAR2
   ) IS
     l_tabla_real VARCHAR2(261);
     l_exists NUMBER;
     l_esquema VARCHAR2(128) := UPPER(TRIM(p_esquema));
-    l_tablas_csv VARCHAR2(4000) := UPPER(TRIM(p_tablas_csv));
     l_categoria_uso VARCHAR2(100);
     l_accion_pre    VARCHAR2(100);
     l_accion_post   VARCHAR2(100);
+    l_est_previo    VARCHAR2(20);   -- estado REAL previo (ENABLED, ENABLED_NOVAL, DISABLED)
+    l_status        VARCHAR2(8);
+    l_valid         VARCHAR2(13);
+    l_tipo_c        VARCHAR2(1);
+    l_ya            NUMBER;
   BEGIN
-    -- FIX 2026-09-27 (auditoria , Nivel 1 #5): p_tablas_csv es opcional
-    -- y por defecto NULL -- proc_dm_enmascaramiento (enmascarado de ESQUEMA completo)
-    -- sigue llamando sin este parametro y su comportamiento queda IDENTICO al
-    -- de siempre (deshabilita TODA dependencia de tdm_dependencia_final del
-    -- esquema). Solo proc_dm_enmascara_tabla (enmascarado SELECTIVO de 1 o varias tablas)
-    -- pasa aqui su lista de tablas, para no deshabilitar FK/triggers de tablas
-    -- que no va a tocar -- antes de este fix, proc_dm_enmascara_tabla sobre 1 sola tabla
-    -- deshabilitaba dependencias del ESQUEMA COMPLETO, con el riesgo real de
-    -- interferir con otra operacion concurrente sobre el mismo esquema
-    -- (ver tambien el guarda de concurrencia añadido en proc_dm_enmascara_tabla).
-    pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id, p_ejecucion_id, 'PRE', 'INICIO', 'Deshabilitando dependencias definidas en TDM_DEPENDENCIA_FINAL'||
-                  CASE WHEN l_tablas_csv IS NOT NULL THEN ' (acotado a tablas: '||l_tablas_csv||')' ELSE '' END);
+    pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id, p_ejecucion_id, 'PRE', 'INICIO', 'Deshabilitando dependencias definidas en TDM_DEPENDENCIA_FINAL');
 
-    -- A.3: Enumerar y trazar la jerarquía FK (hija -> padre) de las tablas a enmascarar
+    -- Reanudacion tras un corte (kill, caida): lo que una solicitud ANTERIOR de esta ejecucion dejo
+    -- deshabilitado y no llego a rehabilitar es del motor, no del cliente. Sin esto, el PRE de la
+    -- reanudacion lo leeria DISABLED, lo tomaria por "ya estaba deshabilitado antes del motor" y
+    -- nadie lo rehabilitaria nunca (PK/UK, FK hijas y triggers quedarian deshabilitados). Se hereda
+    -- con su estado_previo original (la fila mas reciente por objeto) y esta solicitud lo rehabilita
+    -- en su POST. Solo se hereda lo que el diccionario muestra hoy DISABLED.
+    DECLARE
+      l_heredadas NUMBER := 0;
+    BEGIN
+      INSERT INTO tdm_mask_dep_estado(
+        solicitud_id, tipo_objeto, ora_owner, table_name, objeto_name,
+        estado_previo, deshabilitado_ok, orden_rehabilitacion, fecha_pre
+      )
+      SELECT p_solicitud_id, x.tipo_objeto, x.ora_owner, x.table_name, x.objeto_name,
+             x.estado_previo, 'Y', x.orden_rehabilitacion, SYSTIMESTAMP
+        FROM (SELECT d.tipo_objeto, d.ora_owner, d.table_name, d.objeto_name, d.estado_previo,
+                     d.deshabilitado_ok, d.habilitado_ok, d.orden_rehabilitacion,
+                     ROW_NUMBER() OVER (PARTITION BY d.tipo_objeto, d.ora_owner, d.table_name, d.objeto_name
+                                        ORDER BY d.solicitud_id DESC) rn
+                FROM tdm_mask_dep_estado d
+                JOIN tdm_mask_solicitud s ON s.solicitud_id = d.solicitud_id
+               WHERE s.ejecucion_id = p_ejecucion_id
+                 AND d.solicitud_id < p_solicitud_id) x
+       WHERE x.rn = 1
+         AND x.deshabilitado_ok = 'Y'
+         AND NVL(x.habilitado_ok,'N') <> 'Y'
+         AND x.estado_previo IN ('ENABLED','ENABLED_NOVAL')
+         AND ((x.tipo_objeto = 'CONSTRAINT'
+               AND EXISTS (SELECT 1 FROM dba_constraints c
+                            WHERE c.owner = x.ora_owner AND c.constraint_name = x.objeto_name
+                              AND c.status = 'DISABLED'))
+           OR (x.tipo_objeto = 'TRIGGER'
+               AND EXISTS (SELECT 1 FROM dba_triggers t
+                            WHERE t.owner = x.ora_owner AND t.trigger_name = x.objeto_name
+                              AND t.status = 'DISABLED')));
+      l_heredadas := SQL%ROWCOUNT;
+      IF l_heredadas > 0 THEN
+        pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id, p_ejecucion_id, 'PRE', 'HEREDA_DEP',
+          l_heredadas||' dependencia(s) quedaron deshabilitadas por una solicitud anterior interrumpida: '||
+          'se heredan con su estado original y se rehabilitan en el POST de esta');
+      END IF;
+    END;
+
+    -- Enumerar y trazar la jerarquía FK (hija -> padre) de las tablas a enmascarar
     FOR fk IN (
       SELECT c.owner        child_owner,  c.table_name child_table,
              c.constraint_name fk_name,    c.status,
@@ -342,7 +250,6 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
          AND c.owner = l_esquema
          AND c.table_name IN (SELECT DISTINCT table_name FROM tdm_columna_final
                                WHERE ora_owner = l_esquema AND enmascarar = 'Y')
-         AND (l_tablas_csv IS NULL OR ','||l_tablas_csv||',' LIKE '%,'||c.table_name||',%')
        ORDER BY c.table_name, pk.table_name
     ) LOOP
       pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id, p_ejecucion_id, 'PRE', 'FK_JERARQUIA',
@@ -366,7 +273,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
                  ) rn
             FROM tdm_dependencia_final
            WHERE ora_owner = l_esquema
-             AND (l_tablas_csv IS NULL OR ','||l_tablas_csv||',' LIKE '%,'||UPPER(table_name)||',%')
+             AND pkg_dm_mask_estado.func_dm_en_alcance(p_ejecucion_id, l_esquema, UPPER(table_name), NULL) = 1
         )
        WHERE rn = 1
        ORDER BY CASE
@@ -410,10 +317,37 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
               l_tabla_real := rc.table_name;
           END;
 
+          -- Si ya figura (hija FK registrada por el CASCADE de su padre) no se vuelve a leer su
+          -- estado: ya estaria DESHABILITADA por el motor y se guardaria un estado falso.
+          SELECT COUNT(*) INTO l_ya
+            FROM tdm_mask_dep_estado e
+           WHERE e.solicitud_id = p_solicitud_id AND e.tipo_objeto = 'CONSTRAINT'
+             AND e.ora_owner = UPPER(TRIM(rc.dependencia_owner))
+             AND e.table_name = UPPER(TRIM(l_tabla_real))
+             AND e.objeto_name = UPPER(TRIM(rc.dependencia_objeto));
+          IF l_ya > 0 THEN
+            CONTINUE;
+          END IF;
+          -- Se guarda el estado REAL: una restriccion ya DESHABILITADA se deja como esta; una
+          -- ENABLED NOT VALIDATED vuelve como tal.
+          l_status := NULL; l_valid := NULL; l_tipo_c := NULL;
+          BEGIN
+            SELECT c.status, c.validated, c.constraint_type
+              INTO l_status, l_valid, l_tipo_c
+              FROM dba_constraints c
+             WHERE c.owner = UPPER(TRIM(rc.dependencia_owner))
+               AND c.constraint_name = UPPER(TRIM(rc.dependencia_objeto))
+               AND ROWNUM = 1;
+          EXCEPTION
+            WHEN OTHERS THEN NULL;
+          END;
+          l_est_previo := CASE WHEN l_status = 'DISABLED' THEN 'DISABLED'
+                               WHEN l_valid = 'NOT VALIDATED' THEN 'ENABLED_NOVAL'
+                               ELSE 'ENABLED' END;
           INSERT INTO tdm_mask_dep_estado(
             solicitud_id, tipo_objeto, ora_owner, table_name, objeto_name, estado_previo, fecha_pre
           ) VALUES (
-            p_solicitud_id, 'CONSTRAINT', UPPER(TRIM(rc.dependencia_owner)), UPPER(TRIM(l_tabla_real)), UPPER(TRIM(rc.dependencia_objeto)), 'ENABLED', SYSTIMESTAMP
+            p_solicitud_id, 'CONSTRAINT', UPPER(TRIM(rc.dependencia_owner)), UPPER(TRIM(l_tabla_real)), UPPER(TRIM(rc.dependencia_objeto)), l_est_previo, SYSTIMESTAMP
           );
           BEGIN
             SELECT COUNT(*)
@@ -427,28 +361,57 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
               l_exists := 0;
           END;
 
-          IF l_exists > 0 THEN
-            -- FIX 2026-10-04 (hallazgo real, no artefacto del incidente de
-            -- concurrencia): este bucle ordena el DISABLE por
-            -- ora_owner/table_name/objeto_name (ver ORDER BY arriba), NO
-            -- por profundidad real de dependencia FK. Eso deja una PK/UK
-            -- "atrapada": si tiene un hijo FK en una tabla cuyo nombre
-            -- ordena DESPUES alfabeticamente (p.ej. PK_TBL_PERSONAS en
-            -- TBL_PERSONAS vs su hijo SYS_C00125502 en
-            -- TBL_RENOVACION_CONSTRAINT, 'R' > 'P'), el DISABLE de la PK se
-            -- intenta ANTES de que ese hijo se haya deshabilitado, y Oracle
-            -- lo rechaza con ORA-02297 ("existen dependencias") -- visto de
-            -- verdad en produccion (ejecucion_id=5, WARN_DEP sobre
-            -- PK_TBL_PERSONAS). CASCADE resuelve esto sin reescribir el
-            -- orden: para un hijo FK sin dependientes propios es un no-op
-            -- inofensivo (nada que cascadear); para una PK/UK con hijos
-            -- ENABLED los deshabilita a todos de una vez, sea cual sea el
-            -- orden en que este bucle los visite despues (un DISABLE
-            -- posterior sobre un hijo ya deshabilitado por la cascada
-            -- tampoco da error, es idempotente).
+          IF l_exists > 0 AND l_est_previo = 'DISABLED' THEN
+            -- Ya estaba deshabilitada antes del motor: no se toca ni se rehabilita despues.
+            UPDATE tdm_mask_dep_estado
+               SET deshabilitado_ok = 'N'
+             WHERE solicitud_id = p_solicitud_id
+               AND tipo_objeto  = 'CONSTRAINT'
+               AND ora_owner   = UPPER(TRIM(rc.dependencia_owner))
+               AND table_name   = UPPER(TRIM(l_tabla_real))
+               AND objeto_name  = UPPER(TRIM(rc.dependencia_objeto));
+            pkg_dm_trazabilidad.proc_dm_trace(
+              p_solicitud_id, p_ejecucion_id, 'PRE', 'SKIP_DEP_YA_DESHAB',
+              'CONSTRAINT '||pkg_dm_sql_seguro.func_dm_safe_name(rc.dependencia_owner)||'.'||pkg_dm_sql_seguro.func_dm_safe_name(rc.dependencia_objeto)||
+              ' ya estaba DESHABILITADA antes del motor: se deja como esta'
+            );
+          ELSIF l_exists > 0 THEN
+            -- El CASCADE deshabilita tambien las FK hijas ENABLED de una PK/UK. Se registran antes
+            -- (con su estado real, orden_rehabilitacion=9) para que POST las devuelva a ese estado.
+            IF l_tipo_c IN ('P','U') THEN
+              INSERT INTO tdm_mask_dep_estado(
+                solicitud_id, tipo_objeto, ora_owner, table_name, objeto_name,
+                estado_previo, deshabilitado_ok, orden_rehabilitacion, fecha_pre
+              )
+              SELECT p_solicitud_id, 'CONSTRAINT', h.owner, h.table_name, h.constraint_name,
+                     CASE WHEN h.validated = 'NOT VALIDATED' THEN 'ENABLED_NOVAL' ELSE 'ENABLED' END,
+                     'N', 9, SYSTIMESTAMP
+                FROM dba_constraints h
+               WHERE h.constraint_type = 'R'
+                 AND h.r_owner = UPPER(TRIM(rc.dependencia_owner))
+                 AND h.r_constraint_name = UPPER(TRIM(rc.dependencia_objeto))
+                 AND h.status = 'ENABLED'
+                 AND NOT EXISTS (SELECT 1 FROM tdm_mask_dep_estado e
+                                  WHERE e.solicitud_id = p_solicitud_id AND e.tipo_objeto = 'CONSTRAINT'
+                                    AND e.ora_owner = h.owner AND e.table_name = h.table_name
+                                    AND e.objeto_name = h.constraint_name);
+            END IF;
+            -- El DISABLE se ordena por owner/tabla/objeto, no por profundidad FK: una PK con un hijo
+            -- que ordena despues daria ORA-02297. CASCADE lo resuelve (es no-op en un hijo sin
+            -- dependientes e idempotente si el hijo ya fue deshabilitado).
             EXECUTE IMMEDIATE
               'ALTER TABLE '||pkg_dm_sql_seguro.func_dm_qname(rc.dependencia_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(l_tabla_real)||
               ' DISABLE CONSTRAINT '||pkg_dm_sql_seguro.func_dm_qname(rc.dependencia_objeto)||' CASCADE';
+            -- Las hijas registradas pasan a 'Y' solo si el diccionario las muestra ya DISABLED.
+            UPDATE tdm_mask_dep_estado e
+               SET e.deshabilitado_ok = 'Y'
+             WHERE e.solicitud_id = p_solicitud_id
+               AND e.tipo_objeto = 'CONSTRAINT'
+               AND e.orden_rehabilitacion = 9
+               AND e.deshabilitado_ok = 'N'
+               AND EXISTS (SELECT 1 FROM dba_constraints h
+                            WHERE h.owner = e.ora_owner AND h.constraint_name = e.objeto_name
+                              AND h.status = 'DISABLED');
             UPDATE tdm_mask_dep_estado
                SET deshabilitado_ok = 'Y'
              WHERE solicitud_id = p_solicitud_id
@@ -481,10 +444,31 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
             );
             CONTINUE;
           END IF;
+          -- Heredado de una solicitud anterior interrumpida (ver PRE INICIO): ya figura, no se vuelve a leer.
+          SELECT COUNT(*) INTO l_ya
+            FROM tdm_mask_dep_estado e
+           WHERE e.solicitud_id = p_solicitud_id AND e.tipo_objeto = 'TRIGGER'
+             AND e.ora_owner = UPPER(TRIM(rc.dependencia_owner))
+             AND e.objeto_name = UPPER(TRIM(rc.dependencia_objeto));
+          IF l_ya > 0 THEN
+            CONTINUE;
+          END IF;
+          -- Estado REAL del trigger: uno ya DISABLED no se rehabilita.
+          l_status := NULL;
+          BEGIN
+            SELECT t.status INTO l_status
+              FROM dba_triggers t
+             WHERE t.owner = UPPER(TRIM(rc.dependencia_owner))
+               AND t.trigger_name = UPPER(TRIM(rc.dependencia_objeto))
+               AND ROWNUM = 1;
+          EXCEPTION
+            WHEN OTHERS THEN NULL;
+          END;
+          l_est_previo := CASE WHEN l_status = 'DISABLED' THEN 'DISABLED' ELSE 'ENABLED' END;
           INSERT INTO tdm_mask_dep_estado(
             solicitud_id, tipo_objeto, ora_owner, table_name, objeto_name, estado_previo, fecha_pre
           ) VALUES (
-            p_solicitud_id, 'TRIGGER', UPPER(TRIM(rc.dependencia_owner)), UPPER(TRIM(rc.table_name)), UPPER(TRIM(rc.dependencia_objeto)), 'ENABLED', SYSTIMESTAMP
+            p_solicitud_id, 'TRIGGER', UPPER(TRIM(rc.dependencia_owner)), UPPER(TRIM(rc.table_name)), UPPER(TRIM(rc.dependencia_objeto)), l_est_previo, SYSTIMESTAMP
           );
           BEGIN
             SELECT COUNT(*)
@@ -497,7 +481,19 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
               l_exists := 0;
           END;
 
-          IF l_exists > 0 THEN
+          IF l_exists > 0 AND l_est_previo = 'DISABLED' THEN
+            UPDATE tdm_mask_dep_estado
+               SET deshabilitado_ok = 'N'
+             WHERE solicitud_id = p_solicitud_id
+               AND tipo_objeto  = 'TRIGGER'
+               AND ora_owner   = UPPER(TRIM(rc.dependencia_owner))
+               AND objeto_name  = UPPER(TRIM(rc.dependencia_objeto));
+            pkg_dm_trazabilidad.proc_dm_trace(
+              p_solicitud_id, p_ejecucion_id, 'PRE', 'SKIP_DEP_YA_DESHAB',
+              'TRIGGER '||pkg_dm_sql_seguro.func_dm_safe_name(rc.dependencia_owner)||'.'||pkg_dm_sql_seguro.func_dm_safe_name(rc.dependencia_objeto)||
+              ' ya estaba DESHABILITADO antes del motor: se deja como esta'
+            );
+          ELSIF l_exists > 0 THEN
             EXECUTE IMMEDIATE 'ALTER TRIGGER '||pkg_dm_sql_seguro.func_dm_qname(rc.dependencia_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(rc.dependencia_objeto)||' DISABLE';
             UPDATE tdm_mask_dep_estado
                SET deshabilitado_ok = 'Y'
@@ -521,7 +517,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
         END IF;
       EXCEPTION
         WHEN OTHERS THEN
-          -- B.2: Registrar error de dependencia PRE en tdm_ejecucion_error (deja tambien
+          -- Registrar error de dependencia PRE en tdm_ejecucion_error (deja tambien
           -- la linea ERROR.REGISTRADO en la linea de tiempo)
           pkg_dm_trazabilidad.proc_dm_log_ejec_error(
             p_ejecucion_id => p_ejecucion_id,
@@ -554,8 +550,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
   --                ... ENABLE; DDL: ALTER TABLE ... ENABLE [VALIDATE|NOVALIDATE] CONSTRAINT; COMMIT
   -- ERRORES      : Sin RAISE_APPLICATION_ERROR: los fallos se registran con etapa POST_DEP_TRIGGER o
   --                POST_DEP_CONSTRAINT y se sigue.
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento (flujo normal y manejador de error) y
-  --                proc_dm_enmascara_tabla.
+  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento (flujo normal y manejador de error).
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_post_dep(
     p_solicitud_id IN NUMBER,
@@ -569,7 +564,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
     pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id, p_ejecucion_id, 'POST', 'INICIO', 'Rehabilitando dependencias');
 
     FOR rc IN (
-      SELECT ora_owner, objeto_name
+      SELECT ora_owner, objeto_name, table_name
         FROM tdm_mask_dep_estado
        WHERE solicitud_id = p_solicitud_id
          AND tipo_objeto = 'TRIGGER'
@@ -577,7 +572,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
        ORDER BY ora_owner, objeto_name
     ) LOOP
       l_owner := rc.ora_owner; l_objeto := rc.objeto_name;
-      l_accion_post := func_dm_dep_post_action(l_owner, NULL, l_owner, l_objeto, 'TRIGGER');
+      l_accion_post := func_dm_dep_post_action(l_owner, rc.table_name, l_owner, l_objeto, 'TRIGGER');  -- antes table_name NULL
       IF l_accion_post IN ('SIN_ACCION','REVISAR') THEN
         pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'POST','SKIP_POST_POLICY',
                       'TRIGGER '||pkg_dm_sql_seguro.func_dm_safe_name(l_owner)||'.'||pkg_dm_sql_seguro.func_dm_safe_name(l_objeto)||
@@ -596,7 +591,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
            SET estado_posterior = SUBSTR('ERROR',1,30), fecha_post = SYSTIMESTAMP, habilitado_ok = 'N'
          WHERE solicitud_id = p_solicitud_id AND tipo_objeto='TRIGGER'
            AND ora_owner=l_owner AND objeto_name=l_objeto;
-        -- B.2: Registrar error de dependencia POST en tdm_ejecucion_error (deja tambien
+        -- Registrar error de dependencia POST en tdm_ejecucion_error (deja tambien
         -- la linea ERROR.REGISTRADO en la linea de tiempo)
         pkg_dm_trazabilidad.proc_dm_log_ejec_error(
           p_ejecucion_id => p_ejecucion_id,
@@ -613,7 +608,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
     END LOOP;
 
     FOR rc IN (
-      SELECT d.ora_owner, d.table_name, d.objeto_name
+      SELECT d.ora_owner, d.table_name, d.objeto_name, d.estado_previo, d.orden_rehabilitacion
         FROM tdm_mask_dep_estado d
         LEFT JOIN dba_constraints c
           ON c.owner = d.ora_owner AND c.constraint_name = d.objeto_name
@@ -630,6 +625,14 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
     ) LOOP
       l_owner := rc.ora_owner; l_tabla := rc.table_name; l_objeto := rc.objeto_name;
       l_accion_post := func_dm_dep_post_action(l_owner, l_tabla, l_owner, l_objeto, 'CONSTRAINT');
+      -- Una hija FK deshabilitada por el CASCADE (orden 9) no figura en la politica: se restaura
+      -- tal como estaba.
+      IF rc.orden_rehabilitacion = 9 THEN
+        l_accion_post := CASE WHEN rc.estado_previo = 'ENABLED_NOVAL' THEN 'ENABLE_NOVALIDATE' ELSE 'ENABLE' END;
+      -- Si estaba ENABLED NOT VALIDATED vuelve como NOVALIDATE aunque la politica pida validar.
+      ELSIF rc.estado_previo = 'ENABLED_NOVAL' AND l_accion_post IN ('ENABLE','ENABLE_VALIDATE') THEN
+        l_accion_post := 'ENABLE_NOVALIDATE';
+      END IF;
       IF l_accion_post IN ('SIN_ACCION','REVISAR') THEN
         pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'POST','SKIP_POST_POLICY',
                       'CONSTRAINT '||pkg_dm_sql_seguro.func_dm_safe_name(l_owner)||'.'||pkg_dm_sql_seguro.func_dm_safe_name(l_tabla)||'.'||pkg_dm_sql_seguro.func_dm_safe_name(l_objeto)||
@@ -657,7 +660,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
            SET estado_posterior = SUBSTR('ERROR',1,30), fecha_post = SYSTIMESTAMP, habilitado_ok = 'N'
          WHERE solicitud_id = p_solicitud_id AND tipo_objeto='CONSTRAINT'
            AND ora_owner=l_owner AND table_name=l_tabla AND objeto_name=l_objeto;
-        -- B.2: Registrar error de dependencia POST en tdm_ejecucion_error (deja tambien
+        -- Registrar error de dependencia POST en tdm_ejecucion_error (deja tambien
         -- la linea ERROR.REGISTRADO en la linea de tiempo)
         pkg_dm_trazabilidad.proc_dm_log_ejec_error(
           p_ejecucion_id => p_ejecucion_id,
@@ -687,8 +690,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
   -- SALIDA       : p_mask_errors incrementado con lo hallado; trazas POST_CHECK_INVALID y
   --                PII_SIN_ENMASCARAR; errores POST_CHECK*.
   -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_enmascaramiento (despues de proc_dm_post_dep).
-  -- NOTA         : cuerpo movido sin cambios (R13a); l_mask_errors -> p_mask_errors y
-  --                proc_dm_trace/proc_dm_log_ejec_error -> pkg_dm_trazabilidad.*.
+  -- NOTA         : l_mask_errors pasa a p_mask_errors.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_post_check(
     p_solicitud_id  IN NUMBER,
@@ -704,7 +706,7 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
     l_invalidos_nuevos NUMBER        := 0;
     l_cons_mal         NUMBER        := 0;
   BEGIN
-    -- B.3: Control de dependencias no rehabilitadas e invalidación de objetos (con baseline)
+    -- Control de dependencias no rehabilitadas e invalidación de objetos (con baseline)
     BEGIN
       SELECT COUNT(*)
         INTO l_cons_mal
@@ -713,7 +715,8 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
           ON c.owner = d.ora_owner AND c.constraint_name = d.objeto_name
        WHERE d.solicitud_id = l_solicitud_id
          AND d.tipo_objeto  = 'CONSTRAINT'
-         AND d.estado_previo = 'ENABLED'
+         AND d.estado_previo IN ('ENABLED','ENABLED_NOVAL')
+         AND d.deshabilitado_ok = 'Y'
          AND c.status <> 'ENABLED';
     EXCEPTION
       WHEN OTHERS THEN
@@ -772,10 +775,8 @@ create or replace PACKAGE BODY pkg_dm_mask_dependencias AS
             END IF;
             EXECUTE IMMEDIATE l_sql_recomp;
           EXCEPTION
-            -- Intencional (auditoria industrial G8, 2026-10-10): intento de recompilacion
-            -- por mejor esfuerzo. Lo que no se logre recompilar NO se pierde: el conteo
-            -- de INVALID posterior (l_invalidos_nuevos) lo detecta y registra
-            -- POST.POST_CHECK_INVALID y el error POST_CHECK (-20203).
+            -- Recompilacion por mejor esfuerzo: lo que no se logre recompilar lo detecta el conteo de
+            -- INVALID posterior (POST.POST_CHECK_INVALID y error POST_CHECK -20203).
             WHEN OTHERS THEN
               NULL;
           END;

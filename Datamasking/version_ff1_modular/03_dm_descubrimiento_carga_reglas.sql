@@ -6,31 +6,31 @@
 --   Cada INSERT agrega unicamente lo que falta (clave: identificador + tipo_regla +
 --   expresion), asi que se puede ejecutar varias veces. Cambiar una regla existente se
 --   hace con una fila nueva y retirando la anterior fuera de este archivo (reinstalacion
---   o script de migracion), nunca editando datos aqui.
+--   o script de migracion).
 -- * Organizacion: BLOQUE A (genericas) y BLOQUE B (negocio actual, DGA); dentro de cada
 --   bloque un INSERT por identificador, en orden alfabetico; dentro de cada INSERT las
 --   reglas van por tipo (COLUMN_NAME, COLUMN_COMMENT, TABLE_NAME, DATA_PATTERN) y, dentro
 --   de cada tipo, primero los descartes (puntuacion negativa) y luego la evidencia.
---   El orden NO cambia ningun score: el motor suma las reglas que coinciden.
+--   El orden no cambia ningun score: el motor suma las reglas que coinciden.
 -- * BLOQUE A sirve en cualquier organizacion; los patrones DATA_PATTERN de DNI/NIE/CIF,
 --   IBAN ES, telefono ES y tipos de via INE son de localizacion Espana; hay nombres de
 --   columna en espanol e ingles.
--- * BLOQUE B: alias y convenciones propias del negocio actual (DGA: PNCSS, ICSS/PCSS,
---   SIGAD...). Es lo unico que se sustituye al instalar en otra organizacion.
+-- * BLOQUE B: alias y convenciones propias del negocio actual. Es lo unico que se
+--   sustituye al instalar en otra organizacion.
 -- * Puntuaciones negativas = descartes (la regla resta al score del identificador).
 --   Umbrales: >= 85 CONFIRMADO, >= 65 PROBABLE (ambos se enmascaran), >= 45 REVISAR.
 --
 -- MODIFICADO   (MM/DD/YY)
--- epurisaca    10/10/26 - Seccion "CONFIGURACION SIN PUNTUACION" al final del bloque A: seis tipos
---                         nuevos (NUMBER_ADMITIDO, NOMBRE_CANDIDATO, NOMBRE_PERSONAL,
---                         NOMBRE_GENERICO, CTX_PERSONA, CTX_APELLIDO) con las listas que antes vivian
---                         en el codigo. Puntuacion 0: no cambian ningun score.
--- epurisaca    10/10/26 - Reorganizacion por bloque/identificador/tipo y retiro de los dos
---                         DELETE de reparacion (centinelas ya inexistentes). Las 99 reglas
---                         previas quedan identicas. Se agregan 10 reglas: ADDRESS y STREET
---                         (ingles) con refutaciones, tipos de via abreviados y comentarios
---                         de direccion; sufijo numerico en nombres/apellidos ingleses
---                         (SURNAME2); comentarios de email y de apellido.
+-- epurisaca    10/10/26 - Reorganizacion por bloque/identificador/tipo; se retiran los DELETE de
+--                         reparacion. Reglas de direccion en ingles (ADDRESS, STREET), tipos de via
+--                         abreviados, sufijo numerico en nombres/apellidos ingleses y comentarios de
+--                         email y apellido
+-- epurisaca    10/10/26 - Seccion "CONFIGURACION SIN PUNTUACION" (NUMBER_ADMITIDO, NOMBRE_CANDIDATO,
+--                         NOMBRE_PERSONAL, NOMBRE_GENERICO, CTX_PERSONA, CTX_APELLIDO): listas que
+--                         antes vivian en el codigo, con puntuacion 0
+-- epurisaca    10/11/26 - Cobertura de telefono y de texto libre en ingles y plural (7 reglas):
+--                         TELEFONO (PHONE, MOBILE, CELL...) con descarte de flags, OBS, y
+--                         NUMBER_ADMITIDO: CELULAR. Ninguna regla existente cambia
 --------------------------------------------------------------------------------
 
 -- ##############################  BLOQUE A: GENERICAS  ##############################
@@ -67,19 +67,13 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
 --------------------------------------------------------------------------------
 -- A) DIRECCION
 --------------------------------------------------------------------------------
--- Reglas de REFUTACION por contenido (caso real GCAA_OWN, 2026-10-09):
--- GCAA_OWN.AUDITORIA_ESTACION.DIRECCION_IP_CAMBIO quedaba CONFIRMADA como
--- IDENTIFICADOR_DIRECCION (85 = justo el umbral): el token 'DIRECCION' sumaba 85 aunque
--- 341 de 341 valores eran direcciones IP. Una direccion postal es texto libre y no tiene
--- formato exigente que la confirme por contenido, pero SI se puede refutar: si los valores
--- tienen forma de IP, correo o URL, el dato manda sobre el nombre (puntuacion negativa,
--- misma mecanica que '^[SN]$'; la penalizacion escala con la proporcion de filas que
--- cumplen la forma). La regla de nombre cubre IP_* / DIRECCION_IP|MAC|WEB|URL|CORREO...
--- aunque la columna este vacia.
--- Ingles y comentarios (2026-10-10, GPT3_OWN.PERSON.ADDRESS, hasta entonces sin regla de
--- nombre y clasificada como OBS): ADDRESS (85) con sus refutaciones tecnicas (IP_ADDRESS,
--- EMAIL_ADDRESS, ADDRESS_TYPE...), STREET (40, necesita datos), y tipos de via abreviados
--- (CL, AV, PS, PZ: el dato real de DGA no trae CALLE/AVDA completos).
+-- Reglas de refutacion por contenido: el token 'DIRECCION' suma 85 aunque los valores sean IPs.
+-- Una direccion postal no tiene formato que la confirme por contenido, pero si se puede refutar:
+-- si los valores tienen forma de IP, correo o URL el dato manda sobre el nombre (puntuacion
+-- negativa, proporcional a las filas que cumplen la forma). La regla de nombre cubre
+-- IP_* / DIRECCION_IP|MAC|WEB|URL|CORREO... aunque la columna este vacia.
+-- Ingles: ADDRESS (85) con sus refutaciones tecnicas (IP_ADDRESS, EMAIL_ADDRESS, ADDRESS_TYPE...),
+-- STREET (40, necesita datos) y tipos de via abreviados (CL, AV, PS, PZ).
 insert into tdm_regla (regla_id, identificador, tipo_regla, expresion, puntuacion, prioridad, confianza_min, muestra_min, descripcion)
 select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntuacion, v.prioridad, v.confianza_min, v.muestra_min, v.descripcion
   from (
@@ -146,8 +140,7 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
 -- A) EMAIL
 --------------------------------------------------------------------------------
 -- Nombre en ingles ya cubierto: EMAIL, MAIL, E_MAIL, EMAIL_ADDRESS, CORREO (+ sufijo numerico).
--- 2026-10-10: GPT3_OWN.PERSON.EMAIL (score 110) se descartaba por nulidad, no por reglas;
--- la correccion esta en 22_dm_pkg_descubrimiento.sql (ALTA_NULIDAD_EN_MUESTRA).
+-- Una columna de email con muchos nulos se descarta por nulidad (ALTA_NULIDAD_EN_MUESTRA, ver 22).
 insert into tdm_regla (regla_id, identificador, tipo_regla, expresion, puntuacion, prioridad, confianza_min, muestra_min, descripcion)
 select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntuacion, v.prioridad, v.confianza_min, v.muestra_min, v.descripcion
   from (
@@ -221,6 +214,12 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
         union all
         select 'IDENTIFICADOR_OBS' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(MENSAJE|COMENTARIO|OBS|OBSERVACION|OBSERVACIONES|NOTA|TEXTO)($|_)' expresion, 35 puntuacion, 8 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Columna potencial OBS, requiere evidencia de datos' descripcion from dual
         union all
+        select 'IDENTIFICADOR_OBS' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(NOTAS|OBSERV|NOTE|NOTES|REMARK|REMARKS|OBSERVATION|OBSERVATIONS)($|_)' expresion, 90 puntuacion, 6 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Notas/observaciones: plural, abreviatura e ingles' descripcion from dual
+        union all
+        select 'IDENTIFICADOR_OBS' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(DESCRIPCIONES|DETALLES|MOTIVO|RESUMEN|JUSTIFICACION|DESCRIPTION|DESCRIPTIONS|DETAIL|DETAILS|RESPONSE|ANSWER)($|_)' expresion, 55 puntuacion, 7 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Texto libre potencial: plural, terminos afines e ingles (requiere validacion por patron de datos)' descripcion from dual
+        union all
+        select 'IDENTIFICADOR_OBS' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(COMENTARIOS|MENSAJES|TEXTOS|COMMENT|COMMENTS|MESSAGE|MESSAGES|TEXT|MEMO)($|_)' expresion, 35 puntuacion, 8 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Columna potencial OBS (plural e ingles), requiere evidencia de datos' descripcion from dual
+        union all
         select 'IDENTIFICADOR_OBS' identificador, 'TABLE_NAME' tipo_regla, '(^|_)(BAREMO|PESTANAS?|TIPOINGRESO|TIPOID|ROL|ACCION|PARENTESCO)($|_)' expresion, -210 puntuacion, 1 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Tablas de catálogo/listado no suelen contener observaciones sensibles' descripcion from dual
         union all
         select 'IDENTIFICADOR_OBS' identificador, 'TABLE_NAME' tipo_regla, '(^|_)(CAT|CATALOG|CATALOGO|PARAM|TIPO|PARENTESCO|PREGUNTA|PESTANA|PESTAÑA|COMODIN|MAESTRO|DICCIONARIO|LOOKUP|LOV)($|_)' expresion, -180 puntuacion, 2 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Tablas de catálogo/listado/documento con baja probabilidad de OBS sensible' descripcion from dual
@@ -245,22 +244,16 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
 --------------------------------------------------------------------------------
 -- A) PERSONAL (nombres y apellidos)
 --------------------------------------------------------------------------------
--- Nombre completo ('NOMBRE_COMPLETO', 'FULL_NAME'...): la columna ya lleva los apellidos, asi
--- que la penalizacion NOMBRE_SIN_APELLIDOS_TABLA (-220) no le corresponde. La regla suma 140:
--- con datos que parecen nombres de persona (rescate semantico +170) la columna sube a
--- CONFIRMADO; sin esa evidencia sigue descartada (322-310 = 12). Antes
--- TBL_LOTE_RESUME.NOMBRE_COMPLETO, con 500 de 500 filas nombres reales, quedaba en 42.
--- Nombres/apellidos inequivocos en ingles (FIRST_NAME, LAST_NAME, SURNAME...), igual que la
--- regla espanola NOMBRE/APELLIDOS; el sufijo numerico (SURNAME2, LASTNAME2) va en regla
--- aparte porque el token termina en digito. 'NAME' a secas puntua 75 (PROBABLE) pero 22 lo
--- somete a una compuerta de datos propia (func_dm_es_nombre_generico): con columna de apellido
--- en la tabla exige ratio semantico >= 0.70; sin ella exige contexto de persona y >= 0.90; si
--- no, queda REVISAR/N (NOMBRE_GENERICO_SIN_SEMANTICA). Para una tabla sin contexto se fuerza
--- con TDM_EXCEPCION_COL.
--- Reglas retiradas el 2026-10-03: los centinelas __CONTENIDO_NOMBRE_PERSONA__ y
--- __CONTENIDO_DOC_IDENTIDAD_EMBEBIDO__ (mecanismo "el dato manda sobre el nombre" revertido
--- por causar falsos positivos reales). Este script ya no lleva DELETE: una instalacion nueva
--- no las contiene; un entorno antiguo que las conserve las pierde con 98_uninstall + 99.
+-- Nombre completo ('NOMBRE_COMPLETO', 'FULL_NAME'...): la columna ya lleva los apellidos, asi que
+-- no le corresponde la penalizacion NOMBRE_SIN_APELLIDOS_TABLA (-220). La regla suma 140: con datos
+-- que parecen nombres (rescate semantico +170) sube a CONFIRMADO; sin esa evidencia sigue descartada.
+-- Nombres/apellidos inequivocos en ingles (FIRST_NAME, LAST_NAME, SURNAME...); el sufijo numerico
+-- (SURNAME2, LASTNAME2) va en regla aparte porque el token termina en digito. 'NAME' a secas puntua
+-- 75 (PROBABLE) pero 22 lo somete a una compuerta de datos propia (func_dm_es_nombre_generico): con
+-- columna de apellido en la tabla exige ratio semantico >= 0.70; sin ella exige contexto de persona
+-- y >= 0.90; si no, queda REVISAR/N (NOMBRE_GENERICO_SIN_SEMANTICA). Para una tabla sin contexto se
+-- fuerza con TDM_EXCEPCION_COL.
+-- No hay reglas centinela de contenido de nombre: el gate de IDENTIFICADOR_PERSONAL es el nombre de columna.
 insert into tdm_regla (regla_id, identificador, tipo_regla, expresion, puntuacion, prioridad, confianza_min, muestra_min, descripcion)
 select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntuacion, v.prioridad, v.confianza_min, v.muestra_min, v.descripcion
   from (
@@ -315,9 +308,15 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
   from (
         select 'IDENTIFICADOR_TELEFONO' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(TIPO|COD|ID|FLAG|CHECK|SW|IND|VALIDO)_(TEL|TELEFONO|TFNO|MOVIL)($|_)|(^|_)(TEL|TELEFONO|TFNO|MOVIL)_(TIPO|COD|ID|FLAG|CHECK|SW|IND|VALIDO)($|_)' expresion, -300 puntuacion, 1 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Descarte de metadatos o flags de teléfono' descripcion from dual
         union all
+        select 'IDENTIFICADOR_TELEFONO' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(TYPE|CODE|ID|FLAG|CHECK|IND|VALID|IS|HAS)_(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)($|_)|(^|_)(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)_(TYPE|CODE|ID|FLAG|CHECK|IND|VALID)($|_)' expresion, -300 puntuacion, 1 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Descarte de metadatos o flags de telefono (ingles)' descripcion from dual
+        union all
         select 'IDENTIFICADOR_TELEFONO' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(TEL|TELEFONO|TFNO|MOVIL|CELULAR)([0-9]{1,2})($|_)' expresion, 78 puntuacion, 9 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Teléfono con sufijo numérico (ej. TELEFONO1/TELEFONO2)' descripcion from dual
         union all
         select 'IDENTIFICADOR_TELEFONO' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(TEL|TELEFONO|TFNO|MOVIL|CELULAR)($|_)' expresion, 75 puntuacion, 10 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Teléfono' descripcion from dual
+        union all
+        select 'IDENTIFICADOR_TELEFONO' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)([0-9]{1,2})($|_)' expresion, 78 puntuacion, 9 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Phone con sufijo numerico (ej. PHONE1/PHONE2)' descripcion from dual
+        union all
+        select 'IDENTIFICADOR_TELEFONO' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)($|_)' expresion, 75 puntuacion, 10 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Telefono (ingles)' descripcion from dual
         union all
         select 'IDENTIFICADOR_TELEFONO' identificador, 'DATA_PATTERN' tipo_regla, '^(\+34)?[ -]?[6789][0-9]{8}$' expresion, 50 puntuacion, 20 prioridad, 1 confianza_min, 10 muestra_min, 'Teléfono ES' descripcion from dual
         union all
@@ -341,6 +340,8 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
         select 'IDENTIFICADOR_PERSONAL' identificador, 'NUMBER_ADMITIDO' tipo_regla, 'CUENTA|IBAN|CCC|SWIFT|NIF|NIE|DNI|DOC|DOCUMENTO|TELEFONO|TFNO|MOVIL|TEL|CP|CODIGO_POSTAL' expresion, 0 puntuacion, 1 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Nombres (por palabra) de columna NUMBER que SI se evaluan: documento, cuenta, telefono, codigo postal (espanol)' descripcion from dual
         union all
         select 'IDENTIFICADOR_PERSONAL' identificador, 'NUMBER_ADMITIDO' tipo_regla, 'PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE|IDNUMBER|ID_NUMBER' expresion, 0 puntuacion, 2 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Nombres (por palabra) de columna NUMBER que SI se evaluan: equivalentes en ingles' descripcion from dual
+        union all
+        select 'IDENTIFICADOR_PERSONAL' identificador, 'NUMBER_ADMITIDO' tipo_regla, 'CELULAR' expresion, 0 puntuacion, 3 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Nombres (por palabra) de columna NUMBER que SI se evaluan: celular' descripcion from dual
         union all
         select 'IDENTIFICADOR_PERSONAL' identificador, 'NOMBRE_CANDIDATO' tipo_regla, 'NOMBRE|NOMBRE_ALT|NOMBRE_USUARIO|US_NOMBRE|NOM|APELLIDOS_NOMBRE|NOMBRE_COMPLETO' expresion, 0 puntuacion, 1 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Palabras que hacen a una columna candidata a nombre de persona (compuertas de nombre; se suman los ALIAS_NOMBRE)' descripcion from dual
         union all
@@ -392,7 +393,7 @@ select seq_dm_regla.nextval, v.identificador, v.tipo_regla, v.expresion, v.puntu
         union all
         select 'IDENTIFICADOR_DIRECCION' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(DOMISO|VIASO)($|_)' expresion, 82 puntuacion, 8 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Alias funcionales de domicilio y vía' descripcion from dual
         union all
-        select 'IDENTIFICADOR_DIRECCION' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(DOMICILIOSOCIAL(_APA[12])?|NOMBREVIA|RESTDIR)($|_)' expresion, 88 puntuacion, 8 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Campos de direccion frecuentes en SIGAD educacion' descripcion from dual
+        select 'IDENTIFICADOR_DIRECCION' identificador, 'COLUMN_NAME' tipo_regla, '(^|_)(DOMICILIOSOCIAL(_APA[12])?|NOMBREVIA|RESTDIR)($|_)' expresion, 88 puntuacion, 8 prioridad, to_number(null) confianza_min, to_number(null) muestra_min, 'Campos de direccion frecuentes del negocio' descripcion from dual
        ) v
  where not exists (select 1 from tdm_regla r
                     where r.identificador = v.identificador

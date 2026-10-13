@@ -3,11 +3,14 @@ set define off
 Rem ================================================================================
 Rem pkg_dm_mask_worker  --  34_dm_pkg_mask_worker.sql
 Rem ================================================================================
-Rem Tareas DBMS_PARALLEL_EXECUTE: nombre/texto de tarea, UPDATE de una columna (directo o por chunks), reconciliacion de tareas huerfanas.
+Rem Tareas DBMS_PARALLEL_EXECUTE: nombre/texto de tarea, UPDATE de una columna (directo o por
+Rem chunks) y reconciliacion de tareas huerfanas.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
+Rem    epurisaca    10/12/26 - Se retira APPLY_COL_COLLISION (ningun codigo lo emite) y dos variables sin uso
+Rem    epurisaca    10/12/26 - func_dm_col_con_unicidad: una columna con indice unico propio se enmascara en UN solo UPDATE
+Rem                           aunque tenga mas de 100000 filas (los chunks confirman por separado y daban falso ORA-00001)
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_mask_worker AS
@@ -24,6 +27,12 @@ create or replace PACKAGE pkg_dm_mask_worker AS
     p_tabla IN VARCHAR2
   ) RETURN VARCHAR2;
 
+  FUNCTION func_dm_col_con_unicidad(
+    p_owner   IN VARCHAR2,
+    p_tabla   IN VARCHAR2,
+    p_columna IN VARCHAR2
+  ) RETURN VARCHAR2;
+
   PROCEDURE proc_dm_ejecuta_update_seguro(
     p_owner    IN VARCHAR2,
     p_tabla    IN VARCHAR2,
@@ -32,6 +41,12 @@ create or replace PACKAGE pkg_dm_mask_worker AS
     p_ejecucion_id IN NUMBER,
     p_rows_out OUT NUMBER,
     p_ruta_out OUT VARCHAR2
+  );
+
+  PROCEDURE proc_dm_cierra_tarea(
+    p_owner   IN VARCHAR2,
+    p_tabla   IN VARCHAR2,
+    p_columna IN VARCHAR2
   );
 
   PROCEDURE proc_dm_gestiona_tareas(
@@ -43,7 +58,7 @@ create or replace PACKAGE pkg_dm_mask_worker AS
     p_ejecucion_id IN NUMBER
   ) RETURN VARCHAR2;
 
-  -- R13a: PRE-FLIGHT de tareas huerfanas (extraido de proc_dm_enmascaramiento).
+  -- PRE-FLIGHT de tareas huerfanas.
   PROCEDURE proc_dm_preflight_tareas(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
@@ -58,10 +73,9 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
 
 
   ------------------------------------------------------------------------------
-  -- [DOC] contrato de tarea paralela (nombre y texto), R1c 2026-10-10
+  -- [DOC] contrato de tarea paralela (nombre y texto)
   -- PROPOSITO    : Un solo lugar para el nombre determinista de la tarea de una columna y para el
-  --                texto SQL que ejecuta cada worker. Antes estaba repetido en 5 sitios (hash) y en
-  --                3 (texto del chunk y las dos lecturas con REGEXP).
+  --                texto SQL que ejecuta cada worker.
   --                func_dm_nombre_tarea : 'TDM_'||hash de OWNER.TABLA.COLUMNA (mismo valor que antes).
   --                func_dm_chunk_sql    : texto del chunk; antepone proc_dm_set_ejecucion(<id>).
   --                func_dm_ejecucion_de_sql: lee de vuelta el <id> de ese texto. Las dos ultimas
@@ -92,19 +106,9 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
   END;
 
 
-  -- FIX 2026-09-18 (prueba de volumen SRI2006): deteccion conservadora de
-  -- riesgo de deadlock GES en RAC. Un trigger ENABLED de UPDATE puede
-  -- recalcular agregados de negocio por CLAVE DE NEGOCIO (no por rowid/PK),
-  -- lo cual es incompatible con el supuesto de independencia por fila de
-  -- DBMS_PARALLEL_EXECUTE.CREATE_CHUNKS_BY_ROWID: dos workers pueden acabar
-  -- bloqueandose mutuamente vía el mismo trigger sobre filas "hermanas" de
-  -- negocio aunque sus rangos de rowid no se solapen. Confirmado en
-  -- produccion (trace LMD0 preform1_lmd0_55892.trc, 77 deadlocks GES sobre
-  -- SRI_DEUDAS_DETALLE / SRI_CARTAS_PAGO_DEUDA). Fallo cerrado: ante
-  -- cualquier duda o error de metadata, se asume riesgo (RETURN 'Y') y el
-  -- llamador fuerza ejecucion en serie — mas lento en el peor caso, nunca
-  -- corrompe datos ni bloquea instancias RAC.
-  ------------------------------------------------------------------------------
+  -- Si la tabla tiene un trigger de UPDATE habilitado se asume riesgo de deadlock entre workers
+  -- (el trigger puede tocar filas hermanas por clave de negocio) y se fuerza ejecucion en serie.
+  -- Ante cualquier duda o error devuelve 'Y': mas lento, pero nunca corrompe datos.
   -- [DOC] function func_dm_tabla_tiene_trig_upd
   -- PROPOSITO    : Indica si una tabla tiene triggers de UPDATE habilitados, para forzar ejecucion en
   --                serie y evitar deadlocks GES en RAC.
@@ -135,6 +139,49 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
       RETURN 'Y';
   END func_dm_tabla_tiene_trig_upd;
 
+  ------------------------------------------------------------------------------
+  -- Una columna con un indice UNICO propio (PK o UNIQUE de una sola columna) no puede enmascararse
+  -- por chunks: cada chunk confirma por separado y el valor enmascarado de una fila puede coincidir con
+  -- el valor ORIGINAL, aun sin enmascarar, de una fila de otro chunk (falso ORA-00001 aunque la
+  -- funcion sea biyectiva). En UN solo UPDATE Oracle comprueba la unicidad al final de la sentencia.
+  -- Los indices unicos compuestos no se consideran (la colision exige repetir tambien las demas columnas).
+  -- [DOC] function func_dm_col_con_unicidad
+  -- PROPOSITO    : Indica si la columna es la UNICA columna de algun indice unico (PK o UNIQUE).
+  -- ENTRADAS     : p_owner, p_tabla, p_columna; retorna Y o N.
+  -- LEE          : DBA_INDEXES; DBA_IND_COLUMNS
+  -- ESCRIBE      : ninguno
+  -- ERRORES      : Fallo cerrado: ante cualquier error devuelve Y (un solo UPDATE: mas lento, nunca falso ORA-00001).
+  -- LLAMADO DESDE: proc_dm_ejecuta_update_seguro; pkg_dm_mask_columna.proc_dm_apl_col (aviso en traza).
+  ------------------------------------------------------------------------------
+  FUNCTION func_dm_col_con_unicidad(
+    p_owner   IN VARCHAR2,
+    p_tabla   IN VARCHAR2,
+    p_columna IN VARCHAR2
+  ) RETURN VARCHAR2 IS
+    l_cnt NUMBER;
+  BEGIN
+    SELECT COUNT(*)
+      INTO l_cnt
+      FROM dba_indexes i
+     WHERE i.table_owner = pkg_dm_sql_seguro.func_dm_norm(p_owner)
+       AND i.table_name  = pkg_dm_sql_seguro.func_dm_norm(p_tabla)
+       AND i.uniqueness  = 'UNIQUE'
+       AND (SELECT COUNT(*)
+              FROM dba_ind_columns c
+             WHERE c.index_owner = i.owner
+               AND c.index_name  = i.index_name) = 1
+       AND EXISTS (SELECT 1
+                     FROM dba_ind_columns c
+                    WHERE c.index_owner = i.owner
+                      AND c.index_name  = i.index_name
+                      AND c.column_name = pkg_dm_sql_seguro.func_dm_norm(p_columna));
+
+    RETURN CASE WHEN l_cnt > 0 THEN 'Y' ELSE 'N' END;
+  EXCEPTION
+    WHEN OTHERS THEN
+      RETURN 'Y';
+  END func_dm_col_con_unicidad;
+
 
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_ejecuta_update_seguro
@@ -150,7 +197,7 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
   -- ESCRIBE      : UPDATE sobre la tabla/columna objetivo (directo o por chunks de rowid);
   --                DBMS_PARALLEL_EXECUTE: CREATE_TASK, CREATE_CHUNKS_BY_ROWID, RUN_TASK, RESUME_TASK,
   --                DROP_TASK (tarea TDM_<hash>); devuelve la ruta elegida en p_ruta_out
-  -- ERRORES      : ORA-20332 p_ejecucion_id nulo (R15, falla cerrado).; ORA-20330 tarea paralela huerfana (ORA-29497 en CREATE_TASK): no reanuda
+  -- ERRORES      : ORA-20332 p_ejecucion_id nulo (falla cerrado).; ORA-20330 tarea paralela huerfana (ORA-29497 en CREATE_TASK): no reanuda
   --                automaticamente.; ORA-20321 / ORA-20322 / ORA-20323 si TODOS los chunks fallidos
   --                son ORA-06502 / ORA-00001 / ORA-12899.; ORA-20320 enmascarado paralelo incompleto
   --                (cualquier otro patron de fallo).; ORA-20350 si el UPDATE falla con ORA-01031 (el
@@ -170,24 +217,26 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
   ) IS
     l_row_count NUMBER;
     l_iot_type  VARCHAR2(30);
+    l_seg_bytes NUMBER;
     l_task_name VARCHAR2(100);
     l_sql_chunk VARCHAR2(32767);
     l_stmt_check VARCHAR2(1000);
-    l_parallel_level NUMBER;       -- FIX 2026-09-18: dinamico segun riesgo de trigger UPDATE
-    l_estado_tarea  NUMBER;        -- C-02: estado terminal de la tarea paralela
-    l_chunks_error  NUMBER;        -- C-02: nro de chunks PROCESSED_WITH_ERROR
-    l_chunks_error_6502 NUMBER;    -- FIX 2026-09-18: nro de esos chunks cuyo error es ORA-06502
-    l_chunks_error_1    NUMBER;    -- FIX 2026-09-27: nro de esos chunks cuyo error es ORA-00001
-    l_chunks_error_12899 NUMBER;   -- FIX 2026-09-27: nro de esos chunks cuyo error es ORA-12899
-    l_detalle_error VARCHAR2(400); -- C-02: ejemplo de error de chunk (diagnostico)
-    l_chunk_blocks  NUMBER;        -- FIX 2026-09-23: tamaño de chunk adaptativo (en BLOQUES, by_row=>FALSE)
-    l_job_class_exists NUMBER;     -- FIX 2026-09-23: JC_DATAMASKING es OPCIONAL (afinidad RAC), nunca bloqueante
-    l_retry_all_ok  BOOLEAN;       -- FIX 2026-09-27: reintento serie acotado a chunks fallidos (ver mas abajo)
-    l_tarea_propia  BOOLEAN := FALSE; -- FIX 2026-10-03 (8.1): TRUE solo si ESTA invocacion creo la tarea (ver EXCEPTION final)
+    l_parallel_level NUMBER;       -- dinamico segun riesgo de trigger UPDATE
+    l_estado_tarea  NUMBER;        -- estado terminal de la tarea paralela
+    l_chunks_error  NUMBER;        -- nro de chunks PROCESSED_WITH_ERROR
+    l_chunks_error_6502 NUMBER;    -- nro de esos chunks cuyo error es ORA-06502
+    l_chunks_error_1    NUMBER;    -- nro de esos chunks cuyo error es ORA-00001
+    l_chunks_error_12899 NUMBER;   -- nro de esos chunks cuyo error es ORA-12899
+    l_detalle_error VARCHAR2(400); -- ejemplo de error de chunk (diagnostico)
+    l_chunk_blocks  NUMBER;        -- tamaño de chunk adaptativo (en BLOQUES, by_row=>FALSE)
+    l_job_class_exists NUMBER;     -- JC_DATAMASKING es OPCIONAL (afinidad RAC), nunca bloqueante
+    l_chunks_ok     NUMBER := 0;   -- chunks PROCESSED (trabajo ya confirmado en la tabla)
+    l_tarea_propia  BOOLEAN := FALSE; -- TRUE solo si ESTA invocacion creo la tarea (ver EXCEPTION final)
     l_chunks_total  NUMBER;        -- traza: nro de chunks de la tarea
+    l_col_unica     VARCHAR2(1) := 'N'; -- Y = la columna tiene indice unico propio: un solo UPDATE
   BEGIN
     p_ruta_out := NULL;
-    -- R15 (A2 de la revision de Codex): falla cerrado. Sin ejecucion no hay pepper de sesion, y
+    -- Falla cerrado: sin ejecucion no hay pepper de sesion, y
     -- func_dm_chunk_sql habria emitido proc_dm_set_ejecucion(NULL) en cada chunk.
     IF p_ejecucion_id IS NULL THEN
       RAISE_APPLICATION_ERROR(-20332,
@@ -203,102 +252,51 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
         l_iot_type  := NULL;
     END;
 
+    -- estadisticas viejas. num_rows pequeno pero segmento grande (>256 MB) indica que la tabla
+    -- crecio despues del ultimo ANALYZE: se cuenta de verdad antes de elegir ruta, para no mandar
+    -- una tabla enorme a un unico UPDATE sin recuperacion.
+    IF l_row_count IS NOT NULL AND l_row_count > 0 AND l_row_count <= 100000 THEN
+      BEGIN
+        SELECT NVL(SUM(bytes),0) INTO l_seg_bytes FROM dba_segments
+         WHERE owner = pkg_dm_sql_seguro.func_dm_norm(p_owner)
+           AND segment_name = pkg_dm_sql_seguro.func_dm_norm(p_tabla)
+           AND segment_type LIKE 'TABLE%';
+        IF l_seg_bytes > 268435456 THEN
+          l_row_count := NULL;
+        END IF;
+      EXCEPTION
+        WHEN OTHERS THEN NULL;
+      END;
+    END IF;
+
     IF l_row_count IS NULL OR l_row_count = 0 THEN
       BEGIN
-        -- HINT 2026-09-18: PARALLEL aqui es seguro porque es una sola consulta
-        -- diagnostica en la sesion orquestadora (decide si activar
-        -- DBMS_PARALLEL_EXECUTE), NUNCA dentro de un worker paralelo -
-        -- distinto del UPDATE por chunk, donde SI se evita a proposito
-        -- (ver comentario en RUN_TASK) para no multiplicar procesos
-        -- paralelos dentro de sesiones ya paralelas. Solo se alcanza este
-        -- fallback cuando dba_tables no tiene num_rows (stats ausentes o en
-        -- 0), tipicamente tablas grandes recien cargadas sin ANALYZE.
+        -- PARALLEL es seguro aqui: es una consulta unica en la sesion orquestadora, no en un
+        -- worker. Solo se llega si la tabla no tiene estadisticas (num_rows nulo o 0).
         EXECUTE IMMEDIATE 'SELECT /*+ PARALLEL(4) */ COUNT(*) FROM '||pkg_dm_sql_seguro.func_dm_qname(p_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(p_tabla) INTO l_row_count;
       EXCEPTION
         WHEN OTHERS THEN
-          l_row_count := 0;
+          -- sin conteo no se asume tabla pequena; se toma la ruta por bloques (valida para cualquier tamano).
+          l_row_count := 100001;
       END;
     END IF;
 
     -- 2. Si la tabla supera el umbral (100,000 registros) y NO es una tabla IOT (Index-Organized), usar DBMS_PARALLEL_EXECUTE
     -- De lo contrario, usar EXECUTE IMMEDIATE estándar
     IF l_row_count > 100000 AND l_iot_type IS NULL THEN
-      -- FIX 2026-09-18 (ver tambien FIX 2026-10-03 inmediatamente abajo):
-      -- nombre de tarea basado en GUID. La version anterior (SUBSTR con
-      -- nombre de tabla/columna + GET_TIME truncado a 30 chars) cortaba ANTES
-      -- del sufijo temporal unico para tablas/columnas largas, provocando
-      -- colisiones ORA-29497 con tareas homonimas (incl. tareas huerfanas de
-      -- una ejecucion previa interrumpida). El contexto tabla/columna ya queda
-      -- trazado en tdm_ejecucion_error/proc_dm_trace, asi que el nombre
-      -- interno de la tarea Oracle solo necesita ser unico.
-      --
-      -- FIX 2026-10-03 (peer review seccion 8.1, "doble-enmascarado en
-      -- reanudacion de tablas/columnas grandes/chunked"): el GUID aleatorio
-      -- de arriba resolvio el ORA-29497 de 2026-09-18, pero de paso elimino
-      -- la UNICA señal que el motor tenia (por accidente) para detectar una
-      -- tarea huerfana: con nombre aleatorio, CREATE_TASK nunca vuelve a
-      -- chocar con una tarea anterior, pase lo que pase. Si la sesion
-      -- orquestadora moria entre RUN_TASK y el DROP_TASK final de este mismo
-      -- procedimiento (kill -9, caida de red, caida de instancia -- el
-      -- EXCEPTION WHEN OTHERS de mas abajo nunca llega a ejecutarse en ese
-      -- escenario porque la sesion completa deja de existir), la tarea
-      -- quedaba huerfana en USER_PARALLEL_EXECUTE_TASKS con parte de sus
-      -- chunks ya PROCESSED (cada chunk exitoso commitea de forma
-      -- independiente al terminar, ver comentario de RUN_TASK mas abajo). Al
-      -- reanudar, este procedimiento se volvia a invocar para la MISMA
-      -- columna, generaba OTRO GUID aleatorio distinto y relanzaba
-      -- CREATE_CHUNKS_BY_ROWID sobre TODA la tabla desde cero -- reenmascarando
-      -- con FF1 las filas que la tarea huerfana ya habia completado (doble
-      -- cifrado, se pierde la reversibilidad del dominio FF1 sin dejar
-      -- rastro de que ocurrio).
-      --
-      -- Se evaluaron las dos soluciones pedidas explicitamente:
-      -- (1) Detectar la tarea huerfana y REUTILIZARLA de forma automatica
-      --     (RUN_TASK nativo de Oracle ya salta los chunks PROCESSED y solo
-      --     reprocesa UNASSIGNED/PROCESSED_WITH_ERROR). Se descarta como
-      --     automatismo: si el worker de un chunk moria junto con la caida
-      --     (no solo el coordinador), ese chunk puede quedar en estado
-      --     ASSIGNED de forma permanente -- DBMS_PARALLEL_EXECUTE no lo trata
-      --     ni como pendiente ni como error, por diseño, y RUN_TASK no lo
-      --     retoma solo. Decidir si eso ocurrio (y resetear ese chunk a mano)
-      --     exige que un humano mire USER_PARALLEL_EXECUTE_CHUNKS del
-      --     task_name concreto -- automatizarlo a ciegas aqui seria abrir un
-      --     riesgo nuevo para cerrar el que ya existe.
-      -- (2) Por eso se implementa esta alternativa: nombre de tarea
-      --     DETERMINISTICO (hash estable de owner.tabla.columna -- NUNCA
-      --     truncado, para no repetir el bug de colision de 2026-09-18 entre
-      --     columnas DISTINTAS; aqui la "colision" es intencional y consigo
-      --     misma) + fallo cerrado si CREATE_TASK choca con ese nombre: solo
-      --     puede significar que una invocacion anterior para esta MISMA
-      --     columna hizo CREATE_TASK pero nunca llego al DROP_TASK final --
-      --     la firma exacta de una sesion muerta a mitad. Se exige entonces
-      --     confirmacion manual explicita: el DBA debe inspeccionar
-      --     USER_PARALLEL_EXECUTE_CHUNKS para ese task_name, decidir el
-      --     camino seguro (reanudar a mano con DBMS_PARALLEL_EXECUTE.RUN_TASK/
-      --     RESUME_TASK si los chunks estan limpios, o resetear a mano los que
-      --     quedaron ASSIGNED) y el propio DBMS_PARALLEL_EXECUTE.DROP_TASK
-      --     manual que haga al terminar es lo que libera el nombre para que
-      --     el motor pueda volver a tomar esta columna. No se crea ninguna
-      --     tabla ni flag nuevo: USER_PARALLEL_EXECUTE_TASKS ya es la fuente
-      --     de verdad; el nombre deterministico es lo unico que faltaba para
-      --     poder consultarla por columna, y se reutiliza el propio
-      --     ORA-29497 de Oracle (el mismo codigo que ya aparecia en
-      --     produccion en 2026-09-18, ahora REINTERPRETADO como señal util en
-      --     vez de ruido a evitar) en vez de un SELECT propio contra
-      --     USER_PARALLEL_EXECUTE_TASKS, para no introducir una ventana de
-      --     carrera entre ese SELECT y el CREATE_TASK.
-      --
-      -- Supuesto que se apoya en este fix (ya garantizado por los controles
-      -- de exclusividad existentes en el motor, no nuevo aqui): no puede
-      -- haber dos invocaciones LEGITIMAS y simultaneas de este procedimiento
-      -- sobre la misma owner.tabla.columna -- por eso una colision de nombre
-      -- solo puede ser una huerfana, nunca una concurrencia valida.
+      l_col_unica := func_dm_col_con_unicidad(p_owner, p_tabla, p_columna);
+    END IF;
+
+    IF l_row_count > 100000 AND l_iot_type IS NULL AND l_col_unica = 'N' THEN
+      -- Nombre de tarea deterministico (hash de OWNER.TABLA.COLUMNA, nunca truncado). Si
+      -- CREATE_TASK choca con ese nombre (ORA-29497) es una tarea huerfana de esta misma columna:
+      -- una ejecucion anterior murio entre RUN_TASK y DROP_TASK, con chunks ya PROCESSED.
+      -- Reutilizarla a ciegas podria dejar chunks ASSIGNED sin resolver y volver a cifrar filas, asi
+      -- que se aborta (ORA-20330) y el DBA revisa USER_PARALLEL_EXECUTE_CHUNKS antes de reanudar o
+      -- hacer DROP_TASK manual.
       l_task_name := func_dm_nombre_tarea(p_owner, p_tabla, p_columna);
 
-      -- Crear tarea. ORA-29497 aqui ya NO es ruido a esconder (ver FIX
-      -- 2026-10-03 arriba): con nombre deterministico, solo puede significar
-      -- una tarea huerfana de esta misma columna de una ejecucion anterior
-      -- interrumpida.
+      -- Crear tarea. Un ORA-29497 aqui indica tarea huerfana de esta columna (ver arriba).
       BEGIN
         DBMS_PARALLEL_EXECUTE.CREATE_TASK(task_name => l_task_name);
       EXCEPTION
@@ -323,17 +321,8 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
       -- procedimiento puede limpiarla sin riesgo si algo falla mas adelante.
       l_tarea_propia := TRUE;
 
-      -- FIX 2026-09-23 (industrializacion, hallazgo  validado contra
-      -- produccion real): by_row=>TRUE obliga a Oracle a ESTIMAR cuantas filas
-      -- caen en cada rango de rowid (escaneo/estadistica adicional por chunk) y
-      -- el chunk_size=50000 fijo anterior no se adaptaba al volumen real de cada
-      -- tabla (mismo tamaño para una tabla de 200k filas que para una de 80M).
-      -- by_row=>FALSE trocea por BLOQUES fisicos de datos (mas barato: no
-      -- requiere esa estimacion de filas) y chunk_size pasa a interpretarse en
-      -- BLOQUES, no en filas. El tamaño se adapta con l_row_count (ya calculado
-      -- arriba) para no generar ni chunks pequeños de más (overhead de
-      -- coordinacion DBMS_PARALLEL_EXECUTE) ni chunks grandes de menos
-      -- (paralelismo real insuficiente) segun el volumen de la tabla.
+      -- Chunks por bloques (by_row => FALSE): evita estimar filas por rango. El tamano del chunk
+      -- (en bloques) se adapta al volumen de la tabla.
       IF l_row_count > 10000000 THEN
         l_chunk_blocks := 20000;
       ELSIF l_row_count > 1000000 THEN
@@ -356,28 +345,16 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
       -- para leer el pepper de la ejecución correcta (el ejec es un literal numerico).
       l_sql_chunk := func_dm_chunk_sql(p_ejecucion_id, p_sql_base);
 
-      -- FIX 2026-09-18: parallel_level dinamico. Con 2 workers fijos, dos
-      -- chunks de una tabla con trigger de UPDATE por clave de negocio
-      -- pueden deadlockear entre si (GES) aunque sus rangos de rowid no se
-      -- solapen. Si se detecta ese riesgo se fuerza serie (1); si no, se
-      -- mantiene el paralelismo original de 2 (uno por instancia RAC).
+      -- Paralelismo dinamico: 1 (serie) si la tabla tiene trigger de UPDATE con riesgo de
+      -- deadlock; 2 (uno por instancia RAC) en caso contrario.
       IF func_dm_tabla_tiene_trig_upd(p_owner, p_tabla) = 'Y' THEN
         l_parallel_level := 1;
       ELSE
         l_parallel_level := 2;
       END IF;
 
-      -- FIX 2026-09-23 (industrializacion, hallazgo ): soporte OPCIONAL
-      -- de job_class para afinidad de instancia RAC. Si existe una job_class
-      -- llamada JC_DATAMASKING (creada FUERA de este motor, por el DBA, via
-      -- srvctl add/start service + DBMS_SCHEDULER.CREATE_JOB_CLASS ligada a ese
-      -- servicio; ver plan de servicio RAC), los workers paralelos se ejecutan
-      -- en esa clase y quedan afines a la instancia del servicio (menos
-      -- "gc current block/grant" de RAC, ver AWR report_datamasking_biy.txt).
-      -- Es un REQUISITO RECOMENDADO, NO obligatorio: si la job_class no existe
-      -- (caso por defecto, ningun servicio RAC creado todavia), se cae de forma
-      -- transparente al RUN_TASK original sin job_class. Nunca bloquea la
-      -- ejecucion por falta de infraestructura RAC opcional.
+      -- Si existe la job_class opcional JC_DATAMASKING (creada por el DBA, ligada a un servicio
+      -- RAC) los workers corren en ella para tener afinidad de instancia; si no, RUN_TASK normal.
       SELECT COUNT(*) INTO l_chunks_total
         FROM user_parallel_execute_chunks
        WHERE task_name = l_task_name;
@@ -413,7 +390,7 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
         );
       END IF;
 
-      -- C-02: FALLO CERRADO. No dar por buena la columna hasta confirmar que TODOS
+      -- FALLO CERRADO. No dar por buena la columna hasta confirmar que TODOS
       -- los chunks terminaron OK. Un reintento acotado cubre errores transitorios.
       l_estado_tarea := DBMS_PARALLEL_EXECUTE.TASK_STATUS(l_task_name);
       IF l_estado_tarea <> DBMS_PARALLEL_EXECUTE.FINISHED THEN
@@ -431,66 +408,31 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
        WHERE task_name = l_task_name
          AND status    = 'PROCESSED_WITH_ERROR';
 
-      -- FIX 2026-09-27 (auditoria , Nivel 1 #1 - "doble cifrado/doble
-      -- enmascarado"): antes de este fix, si SOLO parte de los chunks fallaba,
-      -- el codigo de abajo tiraba la tarea entera (DROP_TASK, se pierde el
-      -- detalle de que rowid exactos fallaron) y el llamador (proc_dm_apl_col)
-      -- reintentaba la MISMA columna con un UPDATE sobre TODA la tabla
-      -- (WHERE columna IS NOT NULL) -- incluidas las filas de los chunks que
-      -- YA habian terminado bien y cuyo commit ya establecio DBMS_PARALLEL_EXECUTE
-      -- (cada chunk exitoso commitea de forma independiente al terminar). Ese
-      -- reintento sobre toda la tabla lee el valor de columna ya enmascarado
-      -- por FF1 en esas filas exitosas y lo vuelve a transformar (con la
-      -- expresion original en un proc_dm_reanudar posterior, o con la expresion
-      -- de fallback si -6502 mas abajo) -- perdiendo la reversibilidad del
-      -- dominio FF1 sin dejar ningun rastro de que ocurrio.
-      --
-      -- Ahora, antes de rendirse, se reintenta UNA vez en serie, en la propia
-      -- sesion orquestadora, acotado EXCLUSIVAMENTE al rowid de los chunks que
-      -- fallaron (misma p_sql_base, sin tocar las filas de los chunks ya
-      -- exitosos). Si los reintentos serie resuelven TODOS los chunks
-      -- fallidos, la tarea se da por buena aqui mismo y ni siquiera se llega a
-      -- lanzar una excepcion hacia el llamador. Si algun chunk sigue fallando,
-      -- se seguye exactamente el mismo camino que antes (clasificacion por
-      -- error_code original, ya capturado arriba, sin alterar).
-      IF NVL(l_chunks_error,0) > 0 THEN
-        l_retry_all_ok := TRUE;
-        FOR rc IN (
-          SELECT start_rowid, end_rowid
-            FROM user_parallel_execute_chunks
-           WHERE task_name = l_task_name
-             AND status    = 'PROCESSED_WITH_ERROR'
-        ) LOOP
-          BEGIN
-            EXECUTE IMMEDIATE p_sql_base||' AND ROWID BETWEEN :b1 AND :b2'
-              USING rc.start_rowid, rc.end_rowid;
-          EXCEPTION
-            WHEN OTHERS THEN
-              l_retry_all_ok := FALSE;
-              EXIT;
-          END;
-        END LOOP;
-
-        IF l_retry_all_ok THEN
-          l_chunks_error := 0;
-        END IF;
-      END IF;
+      -- Sin reintento manual por rowid: el reintento oficial es el RESUME_TASK de arriba, que si
+      -- actualiza el estado de los chunks. Un UPDATE por fuera dejaria el chunk PROCESSED_WITH_ERROR
+      -- y un RESUME posterior lo cifraria dos veces. Aqui solo se cuenta el trabajo ya confirmado.
+      SELECT COUNT(*)
+        INTO l_chunks_ok
+        FROM user_parallel_execute_chunks
+       WHERE task_name = l_task_name
+         AND status    = 'PROCESSED';
 
       IF l_estado_tarea <> DBMS_PARALLEL_EXECUTE.FINISHED OR NVL(l_chunks_error,0) > 0 THEN
         -- Se captura el diagnostico ANTES de limpiar la tarea, y se aborta la columna.
-        DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
+        -- Si algun chunk ya quedo PROCESSED esa parte esta cifrada y la tarea es la unica evidencia:
+        -- no se borra (la reanudacion la reconcilia, ORA-20330). Solo se borra si no hay nada
+        -- confirmado.
+        IF NVL(l_chunks_ok,0) = 0 THEN
+          DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
+        ELSE
+          l_tarea_propia := FALSE;   -- el EXCEPTION final tampoco debe borrarla
+        END IF;
 
-        -- FIX 2026-09-18: distinguir ORA-06502 puro (buffer insuficiente en
-        -- TODOS los chunks fallidos) de cualquier otro patron de fallo
-        -- (deadlock GES, mezcla de errores, tarea que no llego a FINISHED,
-        -- etc). proc_dm_apl_col ya tiene un fallback de 3 niveles para
-        -- -6502, pero antes de este fix esa ruta era codigo muerto para
-        -- tablas grandes (>100k filas): el error real quedaba absorbido por
-        -- el framework paralelo y homogeneizado aqui a -20320 generico.
-        -- -20320 se conserva para todo lo demas (deadlocks incluidos:
-        -- fallo cerrado, sin reintento ciego ni perdida de severidad).
+        -- Si TODOS los chunks fallidos son ORA-06502, se relanza -20321 para que proc_dm_apl_col
+        -- aplique su fallback de longitud. Cualquier otro patron (deadlock, mezcla) sigue en -20320.
         IF l_estado_tarea = DBMS_PARALLEL_EXECUTE.FINISHED
            AND NVL(l_chunks_error,0) > 0
+           AND l_chunks_ok = 0   -- con chunks ya cifrados un fallback sobre toda la columna los cifraria dos veces
            AND l_chunks_error_6502 = l_chunks_error THEN
           RAISE_APPLICATION_ERROR(-20321,
             'ORA-06502 (buffer insuficiente) en TODOS los chunks paralelos de '||
@@ -498,19 +440,11 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
             '). Requiere fallback de longitud segura.');
         END IF;
 
-        -- FIX 2026-09-27 (auditoria , Nivel 1 #2): mismo razonamiento que
-        -- -20321 arriba, pero para ORA-00001 y ORA-12899. Antes de este fix, una
-        -- tabla >100k filas (ruta DBMS_PARALLEL_EXECUTE) que fallaba por colision
-        -- de unicidad (dominio no biyectivo, texto) o por longitud insuficiente
-        -- perdia ese codigo especifico -- quedaba homogeneizado al -20320 generico
-        -- de abajo, que el handler de proc_dm_apl_col NO reconoce (solo mira -1,
-        -- -12899, -6502/-20321), asi que la columna terminaba en RAISE crudo en vez
-        -- del auto-exclude gracioso que ya funciona en la ruta serie/directa para
-        -- esos mismos dos errores. Se distingue igual: solo cuando TODOS los chunks
-        -- fallidos comparten el mismo codigo puro (nunca ante mezcla de errores,
-        -- que sigue cayendo en el -20320 fail-closed de abajo).
+        -- Igual que -20321, para ORA-00001 y ORA-12899 (-20322 / -20323): solo si todos los chunks
+        -- fallidos comparten ese codigo, para que proc_dm_apl_col haga el auto-exclude como en serie.
         IF l_estado_tarea = DBMS_PARALLEL_EXECUTE.FINISHED
            AND NVL(l_chunks_error,0) > 0
+           AND l_chunks_ok = 0   -- con chunks ya cifrados un fallback sobre toda la columna los cifraria dos veces
            AND l_chunks_error_1 = l_chunks_error THEN
           RAISE_APPLICATION_ERROR(-20322,
             'ORA-00001 (colision de unicidad) en TODOS los chunks paralelos de '||
@@ -520,6 +454,7 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
 
         IF l_estado_tarea = DBMS_PARALLEL_EXECUTE.FINISHED
            AND NVL(l_chunks_error,0) > 0
+           AND l_chunks_ok = 0   -- con chunks ya cifrados un fallback sobre toda la columna los cifraria dos veces
            AND l_chunks_error_12899 = l_chunks_error THEN
           RAISE_APPLICATION_ERROR(-20323,
             'ORA-12899 (valor demasiado grande) en TODOS los chunks paralelos de '||
@@ -530,44 +465,35 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
         RAISE_APPLICATION_ERROR(-20320,
           'Enmascarado paralelo incompleto en '||p_owner||'.'||p_tabla||'.'||p_columna||
           ' (estado_tarea='||l_estado_tarea||', chunks_error='||NVL(l_chunks_error,0)||
-          CASE WHEN l_detalle_error IS NOT NULL THEN ', ej='||l_detalle_error ELSE '' END||')');
+          CASE WHEN l_detalle_error IS NOT NULL THEN ', ej='||l_detalle_error ELSE '' END||
+          CASE WHEN l_chunks_ok > 0 THEN ', chunks_PROCESSED='||l_chunks_ok||': tarea CONSERVADA, reanude con @dm_enmascara_reanudar' ELSE '' END||')');
       END IF;
 
-      -- Tarea validada: limpiar.
-      DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
-      -- Nota: p_rows_out es aproximado (num_rows de dba_tables); el conteo exacto
-      -- por chunk no lo expone DBMS_PARALLEL_EXECUTE. Lo relevante es que, si algun
-      -- chunk fallo, arriba ya se abortó (no se reporta exito con datos incompletos).
+      -- Tarea validada. No se borra aqui: si el proceso cae antes de anotar APPLY_COL, la
+      -- reanudacion la ve CERRADA (todos los chunks PROCESSED) y no recifra. El llamador la libera
+      -- con proc_dm_cierra_tarea despues de anotar APPLY_COL. p_rows_out es aproximado (num_rows).
       p_rows_out := l_row_count;
     ELSE
       -- Ejecución original directa
-      p_ruta_out := CASE WHEN l_iot_type IS NOT NULL THEN 'UPDATE [tabla IOT: sin chunks]' ELSE 'UPDATE [max 100000 filas]' END||
+      p_ruta_out := CASE WHEN l_iot_type IS NOT NULL THEN 'UPDATE [tabla IOT: sin chunks]'
+                         WHEN l_col_unica = 'Y'      THEN 'UPDATE [columna con indice unico: un solo UPDATE, sin chunks]'
+                         ELSE 'UPDATE [max 100000 filas]' END||
                 ' - filas_estimadas='||NVL(l_row_count,0);
       EXECUTE IMMEDIATE p_sql_base;
       p_rows_out := SQL%ROWCOUNT;
     END IF;
   EXCEPTION
     WHEN OTHERS THEN
-      -- Asegurar limpieza de la tarea si falla -- PERO solo si ESTA
-      -- invocacion fue quien la creo (l_tarea_propia). FIX 2026-10-03 (8.1):
-      -- antes de esta guarda, un fallo en CUALQUIER punto (incluido el
-      -- ORA-20330 nuevo de mas arriba, que señala una tarea huerfana de OTRA
-      -- invocacion anterior interrumpida) llegaba hasta aqui y este DROP_TASK
-      -- la borraba igual como "limpieza" -- destruyendo exactamente la
-      -- evidencia (chunks PROCESSED vs ASSIGNED vs UNASSIGNED) que el DBA
-      -- necesita inspeccionar para decidir como reanudar sin doble
-      -- enmascarado. Con la guarda, una tarea que esta invocacion NO creo
-      -- nunca se toca aqui.
+      -- Limpiar la tarea si falla, pero solo si la creo esta invocacion: una tarea huerfana de otra
+      -- ejecucion es evidencia que el DBA necesita inspeccionar.
       IF l_tarea_propia THEN
         BEGIN
           DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => l_task_name);
         EXCEPTION WHEN OTHERS THEN NULL;
         END;
       END IF;
-      -- 2026-10-09 (DESSIGAD, CEFCEN_OWN): ORA-01031 sin mas dato dejaba las 11 columnas
-      -- fallidas sin decir QUE falta. Este procedimiento corre con derechos del DEFINIDOR
-      -- (el dueño del motor): sus ROLES no cuentan, solo los privilegios concedidos
-      -- directamente. Se dice cual es el objeto y que concesion falta.
+      -- ORA-01031: este procedimiento corre con derechos del definidor (los roles no cuentan);
+      -- se indica el objeto y la concesion directa que falta.
       IF SQLCODE = -1031 THEN
         RAISE_APPLICATION_ERROR(-20350,
           'ORA-01031 al modificar '||p_owner||'.'||p_tabla||' (columna '||p_columna||'): el dueño del motor ('||
@@ -578,6 +504,31 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
       RAISE;
   END proc_dm_ejecuta_update_seguro;
 
+
+  ------------------------------------------------------------------------------
+  -- [DOC] procedure proc_dm_cierra_tarea
+  -- PROPOSITO    : Libera la tarea DBMS_PARALLEL_EXECUTE de una columna YA registrada como hecha
+  --                (APPLY_COL). proc_dm_ejecuta_update_seguro deja la tarea viva al terminar bien para que
+  --                una caida antes del punto de control no obligue a rehacer la columna; el llamador
+  --                la cierra con este procedimiento justo despues de anotar APPLY_COL.
+  -- ENTRADAS     : p_owner, p_tabla, p_columna
+  -- LEE          : nada (el nombre de tarea es func_dm_nombre_tarea)
+  -- ESCRIBE      : DBMS_PARALLEL_EXECUTE.DROP_TASK
+  -- ERRORES      : ninguno (mejor esfuerzo): si no hay tarea (ruta UPDATE directa) o no se puede borrar,
+  --                la reanudacion la reconoce como CERRADA y la libera.
+  -- LLAMADO DESDE: 35_dm_pkg_mask_columna.sql (proc_dm_apl_col)
+  ------------------------------------------------------------------------------
+  PROCEDURE proc_dm_cierra_tarea(
+    p_owner   IN VARCHAR2,
+    p_tabla   IN VARCHAR2,
+    p_columna IN VARCHAR2
+  ) IS
+  BEGIN
+    DBMS_PARALLEL_EXECUTE.DROP_TASK(task_name => func_dm_nombre_tarea(p_owner, p_tabla, p_columna));
+  EXCEPTION
+    WHEN OTHERS THEN
+      NULL;
+  END;
 
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_gestiona_tareas
@@ -603,15 +554,10 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
     p_ejecucion_id IN NUMBER,
     p_modo         IN VARCHAR2 DEFAULT 'INFORMAR'
   ) IS
-    -- FIX 2026-10-09 (resultado de las pruebas de kill E-02, ver
-    -- claude/hallazgos_correcciones_y_estado_pruebas_2026-10-09.md, seccion 5):
-    --  * cada chunk confirma UPDATE + estado PROCESSED en UN solo commit: un kill revierte el
-    --    chunk entero y reanudar NO reprocesa los chunks PROCESSED (medido con un UPDATE no
-    --    idempotente, n = n + 1, nivel 1 y nivel 2);
-    --  * parallel_level 1 ejecuta los chunks en la propia sesion orquestadora; con 2 hay jobs;
-    --  * tras matar un job la tarea pasa sola a CRASHED y RESUME_TASK basta; tras matar la
-    --    sesion orquestadora (nivel 1) la tarea queda en PROCESSING y hace falta force => TRUE.
-    -- El unico peligro de force es un ejecutor vivo: por eso aqui se exige que no quede ninguno.
+    -- Cada chunk confirma UPDATE y estado PROCESSED en un solo commit, asi que reanudar no
+    -- reprocesa chunks PROCESSED. Tras matar un job la tarea pasa a CRASHED (basta RESUME_TASK);
+    -- tras matar la sesion orquestadora queda en PROCESSING y hace falta force => TRUE, que solo
+    -- es seguro si no queda ningun ejecutor vivo (se exige).
     TYPE t_mapa IS TABLE OF VARCHAR2(300) INDEX BY VARCHAR2(300);
     l_hash_col   t_mapa;   -- TDM_<hash>      -> TABLA.COLUMNA
     l_col_hash   t_mapa;   -- TABLA.COLUMNA   -> TDM_<hash>
@@ -635,7 +581,6 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
     l_unas       NUMBER;
     l_err        NUMBER;
     l_jobs       NUMBER;
-    l_estado_t   VARCHAR2(30);
     l_stmt       CLOB;
     l_lang       NUMBER;
     l_ej_tarea   NUMBER;
@@ -655,7 +600,6 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
     l_n_cand     PLS_INTEGER := 0;
     l_i          PLS_INTEGER;
     l_visto      PLS_INTEGER;
-    l_detalle    VARCHAR2(600);
 
     PROCEDURE say(p_txt IN VARCHAR2) IS
     BEGIN
@@ -782,13 +726,30 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
       l_col_hash(l_col) := l_k;
     END LOOP;
 
+    -- una columna omitida por longitud (SKIP_AUTO_LEN) esta resuelta (con aviso), no pendiente.
+    FOR tr IN (
+      SELECT detalle
+        FROM tdm_mask_trace
+       WHERE ejecucion_id = p_ejecucion_id
+         AND fase = 'MASK'
+         AND paso = 'SKIP_AUTO_LEN'
+    ) LOOP
+      l_i := INSTR(tr.detalle, ' SIN ENMASCARAR');
+      IF l_i > 0 THEN
+        l_k := SUBSTR(tr.detalle, 1, l_i - 1);
+        IF SUBSTR(l_k, 1, LENGTH(l_esquema) + 1) = l_esquema||'.' THEN
+          l_hechas(SUBSTR(l_k, LENGTH(l_esquema) + 2)) := '0';
+        END IF;
+      END IF;
+    END LOOP;
+
     -- Columnas ya terminadas en esta ejecucion (misma clave que usa proc_dm_mask_cat para saltarlas).
     FOR tr IN (
       SELECT detalle
         FROM tdm_mask_trace
        WHERE ejecucion_id = p_ejecucion_id
          AND fase = 'MASK'
-         AND paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
+         AND paso IN ('APPLY_COL','APPLY_COL_SAFE_FALLBACK')
     ) LOOP
       l_i := INSTR(tr.detalle, ' filas=');
       IF l_i > 0 THEN
@@ -1053,7 +1014,9 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
     say('=========================================');
 
     IF l_modo = 'INFORMAR' THEN
-      IF l_diag IN ('EN_CURSO','ATENCION') THEN
+      IF l_diag = 'ATENCION' AND UPPER(NVL(l_estado,'?')) = 'FINALIZADO' THEN
+        say('SIGUIENTE PASO: ninguno. La ejecucion esta FINALIZADA; la sesion viva es la que la lanzo y ya no tiene trabajo.');
+      ELSIF l_diag IN ('EN_CURSO','ATENCION') THEN
         say('SIGUIENTE PASO: ninguno, sigue corriendo. Siga el avance con @dm_monitor '||p_ejecucion_id||
             '. No lance reanudar ni cancelar salvo que la vea colgada.');
       ELSIF l_diag = 'HUERFANA' OR l_n_tareas > 0 OR (UPPER(NVL(l_estado,'?')) <> 'FINALIZADO' AND l_n_pend > 0) THEN
@@ -1124,36 +1087,13 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
   --                p_reproceso ('Y' = reproceso completo; 'N' = se omiten columnas ya confirmadas).
   -- SALIDA       : ninguna; ORA-20331 si hay tareas que bloquean; traza PREFLIGHT_*.
   -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_enmascaramiento (antes de proc_dm_pre_dep).
-  -- NOTA         : cuerpo movido sin cambios desde proc_dm_enmascaramiento (R13a);
-  --                solo cambia proc_dm_trace -> pkg_dm_trazabilidad.proc_dm_trace.
-    -- FIX 2026-10-07 (Fase 1, PRE-FLIGHT de tareas DBMS_PARALLEL_EXECUTE huerfanas).
-    -- Incidente real (DM_DUMMY, ejecucion_id=1): una tarea TDM_<hash> quedo viva
-    -- en USER_PARALLEL_EXECUTE_TASKS (reliquia de una corrida anterior, o de la
-    -- propia corrida cuya sesion orquestadora fue matada: los workers de
-    -- DBMS_SCHEDULER siguen procesando chunks y la tarea termina FINISHED sin
-    -- DROP_TASK). El motor solo se enteraba al llegar a esa columna
-    -- (ORA-20330 en proc_dm_ejecuta_update_seguro), con el resto del esquema ya
-    -- enmascarado y el run contaminado. Aqui se detecta ANTES de tocar ningun
-    -- dato (antes de proc_dm_pre_dep y del pepper): si alguna tarea
-    -- TDM_<hash> del esquema que ejecuta el motor corresponde a una columna que
-    -- ESTE run enmascararia, se aborta cerrado con un mensaje accionable.
-    --
-    -- Solo DIAGNOSTICA y se detiene: NO reanuda, NO borra, NO hace RESUME_TASK
-    -- ni SET_CHUNK_STATUS -- decidir si una tarea con chunks PROCESSED se
-    -- reconcilia o se descarta exige evidencia (doble cifrado FF1 = perdida de
-    -- reversibilidad e integridad FK). La reconciliacion automatica queda para
-    -- una fase posterior, tras validar con pruebas de kill (E-01/E-02).
-    --
-    -- Correlacion tarea->columna: el task_name es DETERMINISTICO (hash de
-    -- OWNER.TABLA.COLUMNA, ver proc_dm_ejecuta_update_seguro). Se construye en
-    -- memoria el mapa hash->columna con DOS consultas simples (columnas Y de
-    -- TDM_COLUMNA_FINAL y FORCE vivos de TDM_EXCEPCION_COL; sin CTE/UNION/EXISTS
-    -- correlado para no rozar el ORA-07445 [qctcopn_internal] ya visto en
-    -- proc_dm_mask_cat) y se recorre USER_PARALLEL_EXECUTE_TASKS. Quedan fuera,
-    -- y solo se informan: tareas sin columna objetivo (nombres antiguos tipo
-    -- GUID, columnas ya fuera de alcance), columnas con EXCLUDE vivo y columnas
-    -- ya confirmadas (APPLY_COL) en ESTA ejecucion cuando no es reproceso
-    -- completo -- este run no las toca, asi que no pueden contaminarlo.
+    -- Aborta cerrado, antes de tocar datos, si hay una tarea TDM_<hash> huerfana de una columna
+    -- que este run enmascararia. Solo diagnostica: no reanuda ni borra, porque decidir exige ver los
+    -- chunks (riesgo de doble cifrado).
+    -- La tarea se relaciona con la columna por el hash deterministico del nombre, con consultas
+    -- simples sin CTE/UNION/EXISTS correlado (evita el ORA-07445 qctcopn_internal). Solo se
+    -- informan: tareas sin columna objetivo, columnas con EXCLUDE vivo y columnas ya confirmadas
+    -- (APPLY_COL) cuando no es reproceso completo.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_preflight_tareas(
     p_solicitud_id IN NUMBER,
@@ -1231,8 +1171,8 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
               FROM tdm_mask_trace tr
              WHERE tr.ejecucion_id = p_ejecucion_id
                AND tr.fase = 'MASK'
-               AND tr.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
-               AND tr.detalle LIKE l_esquema||'.'||l_col||' filas=%';
+               AND tr.paso IN ('APPLY_COL','APPLY_COL_SAFE_FALLBACK')
+               AND tr.detalle LIKE REPLACE(REPLACE(l_esquema||'.'||l_col,'_','\_'),'%','\%')||' filas=%' ESCAPE '\';
           END IF;
 
           IF l_n_excl > 0 OR l_n_hecha > 0 THEN
@@ -1251,16 +1191,10 @@ create or replace PACKAGE BODY pkg_dm_mask_worker AS
               FROM user_parallel_execute_chunks
              WHERE task_name = t.task_name;
 
-            -- FIX 2026-10-07 (recarga de DM_DUMMY + reinstalacion del motor): las tareas
-            -- DBMS_PARALLEL_EXECUTE viven en el diccionario del dueño del motor, no en
-            -- sus tablas, asi que sobreviven a reinstalar el motor y a recargar el
-            -- esquema objetivo. Su nombre es deterministico, por lo que una tarea de la
-            -- version ANTERIOR de la tabla bloqueaba el run con "YA HAY FILAS CIFRADAS"
-            -- aunque sus chunks describan una tabla que ya no existe. El rowid de cada
-            -- chunk lleva el data_object_id de la tabla: si no coincide con el actual,
-            -- la tabla fue recreada/recargada/truncada/movida. Solo se CLASIFICA (sigue
-            -- bloqueando, porque CREATE_TASK chocaria igual y un MOVE no prueba que los
-            -- datos esten sin cifrar): el DBA decide con el dato correcto delante.
+            -- Las tareas viven en el diccionario del dueno del motor y sobreviven a reinstalar el motor
+            -- o recargar el esquema. El rowid de cada chunk lleva el data_object_id de la tabla: si no
+            -- coincide con el actual, la tabla fue recreada, truncada o movida. Solo se clasifica
+            -- (sigue bloqueando): el DBA decide con el dato correcto.
             l_obsoleta := FALSE;
             BEGIN
               SELECT DBMS_ROWID.ROWID_OBJECT(start_rowid)

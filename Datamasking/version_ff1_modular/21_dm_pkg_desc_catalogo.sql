@@ -5,9 +5,8 @@ Rem pkg_dm_desc_catalogo  --  21_dm_pkg_desc_catalogo.sql
 Rem ================================================================================
 Rem Publicar el resultado del descubrimiento en el catalogo final y en las dependencias.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_desc_catalogo AS
@@ -128,25 +127,9 @@ procedure proc_dm_aplica_excepcion(
   l_accion        tdm_excepcion_col.accion%type;
   l_ident_forzado tdm_excepcion_col.identificador_forz%type;
 begin
-  -- 2026-09-22: se agrega ROWNUM=1 (y WHEN OTHERS defensivo). Confirmado en
-  -- produccion (SRI2006.TMP_LIQUIDACION_MENSUAL.NIF, via dm_tabref.sql) que
-  -- TDM_EXCEPCION_COL puede tener MAS de una fila activa='Y' para el mismo
-  -- ora_owner+table_name+column_name a pesar de que su PK declarada es
-  -- justo esa combinacion -- indica que la PK esta deshabilitada/NOVALIDATE
-  -- o hay drift de datos historico (mismo patron de drift ya visto con
-  -- dominio/solicitud_id el 20/09). Sin este fix, esa fila dispara
-  -- ORA-01422 (TOO_MANY_ROWS) aqui; el llamador (proc_dm_procesa_desc) SI
-  -- atrapa WHEN OTHERS por columna y sigue con la siguiente (no aborta el
-  -- descubrimiento completo), pero esta columna especifica queda sin
-  -- clasificar (se pierde la excepcion Y CUALQUIER score de esa columna,
-  -- registrado solo como error PROCESA_COLUMNA en tdm_ejecucion_error, sin
-  -- ninguna senal en el resumen normal). proc_dm_get_excepcion (05, ruta de
-  -- enmascarado) ya tenia este mismo guard -- este fix solo alinea 04 con
-  -- ese patron ya existente. Con ROWNUM=1 el comportamiento pasa a ser "no
-  -- fatal, toma una fila de forma no determinista" en vez de "columna
-  -- saltada silenciosamente" -- de cualquier forma, la causa raiz (filas
-  -- duplicadas en TDM_EXCEPCION_COL) debe limpiarse en los datos, no solo
-  -- en el codigo.
+  -- ROWNUM=1 y WHEN OTHERS defensivo: TDM_EXCEPCION_COL puede traer mas de una fila activa para la
+  -- misma columna (PK deshabilitada o datos duplicados) y ORA-01422 dejaria la columna sin clasificar.
+  -- La causa (filas duplicadas) debe limpiarse en los datos.
   select accion, identificador_forz
     into l_accion, l_ident_forzado
     from tdm_excepcion_col
@@ -168,17 +151,11 @@ exception
   when no_data_found then
     null;
   when too_many_rows then
-    -- no deberia ocurrir con rownum=1, pero si el optimizador cambia el
-    -- plan de acceso y esta excepcion reaparece, se registra en vez de
-    -- perderse silenciosamente (ver comentario 2026-09-22 arriba).
+    -- Con rownum=1 no deberia ocurrir; si reaparece se registra en vez de perderse.
     pkg_dm_trazabilidad.proc_dm_log_error(p_ejecucion_id, p_owner, p_tabla, p_columna, 'APLICA_EXCEPCION', sqlcode, sqlerrm);
   when others then
-    -- FIX 09/27/26: antes era NULL silencioso -- si TDM_EXCEPCION_COL tiene
-    -- un problema (p.ej. corrupcion, permisos, drift de estructura), la
-    -- columna se procesaba como si NO tuviera excepcion activa, sin dejar
-    -- rastro alguno. Ahora se registra el error (autonomo, no aborta el
-    -- descubrimiento) y se continua con p_identificador/p_score_total/
-    -- p_forzar_mask sin modificar, igual que antes.
+    -- Se registra el error (autonomo, no aborta el descubrimiento) y la columna continua sin
+    -- excepcion aplicada.
     pkg_dm_trazabilidad.proc_dm_log_error(p_ejecucion_id, p_owner, p_tabla, p_columna, 'APLICA_EXCEPCION', sqlcode, sqlerrm);
 end proc_dm_aplica_excepcion;
 
@@ -229,19 +206,12 @@ begin
             and nvl(h.enmascarar,'N') <> 'Y'
    );
 
-  -- FIX 2026-10-09 (hallazgo real GCAA_OWN, ejecucion 2): el DELETE de arriba solo
-  -- retira de TDM_COLUMNA_FINAL las columnas que ESTA ejecucion dejo en
-  -- TDM_COLUMNA_HIST con enmascarar<>'Y'. Una columna que antes era Y y ahora no
-  -- tiene evidencia (se ajusto una regla, cambio el dato) ya no se escribe en HIST,
-  -- asi que su fila Y antigua sobrevivia para siempre y se enmascaraba igual
-  -- (DIRECCION_IP_CAMBIO seguia en FINAL tras descartarla la regla nueva). Igual
-  -- las columnas de tablas ya borradas. Se retira de FINAL toda columna que:
-  --   a) pertenece a una tabla ANALIZADA en esta ejecucion (PROCESADO con
-  --      ultimo_run_id = esta ejecucion: las no analizadas por alcance/modo no
-  --      se tocan) y no quedo Y en el HIST de esta ejecucion, o
+  -- Se retira de TDM_COLUMNA_FINAL toda columna que:
+  --   a) pertenece a una tabla analizada en esta ejecucion (PROCESADO con ultimo_run_id = esta
+  --      ejecucion) y no quedo en Y en el HIST de esta ejecucion, o
   --   b) ya no existe en el diccionario (columna o tabla borrada).
-  -- Va ANTES de proc_dm_propaga_dominios: la integridad referencial re-incluye
-  -- despues (RI_REINCLUYE) las columnas hijas que correspondan.
+  -- Asi una fila Y antigua no sobrevive cuando la regla o el dato cambian. Va antes de
+  -- proc_dm_propaga_dominios, que re-incluye despues (RI_REINCLUYE) las columnas hijas.
   declare
     l_esq_sync varchar2(128);
     l_borradas number;
@@ -296,11 +266,7 @@ begin
     pkg_dm_dominios.proc_dm_propaga_dominios(l_esquema);
   exception
     when others then
-      -- R3: No silenciar el fallo de propagación en la sincronización del catálogo
-      -- 2026-09-16: llamada estatica a pkg_dm_trazabilidad (ver nota arriba);
-      -- ya no hace falta el EXECUTE IMMEDIATE ni el comentario de "si
-      -- pkg_dm_enmascarar no esta compilado" - pkg_dm_trazabilidad siempre
-      -- esta disponible en este punto del install.
+      -- No silenciar el fallo de propagacion en la sincronizacion del catalogo.
       begin
         pkg_dm_trazabilidad.proc_dm_trace(
           NULL, p_ejecucion_id, 'DESCUBRIMIENTO', 'PROPAGA_DOMINIOS_ERR',
@@ -323,7 +289,7 @@ end proc_dm_sync_col_final;
 --                actual).
 -- ENTRADAS     : p_ejecucion_id. Sin OUT.
 -- LEE          : TDM_DEPENDENCIA_HIST; DBA_CONSTRAINTS; DBA_TRIGGERS
--- ESCRIBE      : TDM_DEPENDENCIA_FINAL (MERGE)
+-- ESCRIBE      : TDM_DEPENDENCIA_FINAL (MERGE + purga de dependencias cuyo objeto ya no existe)
 -- ERRORES      : ninguno
 -- LLAMADO DESDE: proc_dm_procesa_desc
 ------------------------------------------------------------------------------
@@ -411,6 +377,27 @@ begin
       d.dependencia_owner, d.dependencia_objeto,
       d.categoria_uso, d.accion_pre_mask, d.accion_post_mask, d.detalle
     );
+
+  -- Purga de dependencias huerfanas: el MERGE solo inserta/actualiza, asi que si el esquema se
+  -- recrea (DDL nuevo, constraints SYS_Cxxxx con otro nombre) o se elimina un constraint/trigger,
+  -- las filas antiguas quedarian en el catalogo y el PRE/POST avisaria "no existe" en cada
+  -- enmascarado. Solo se borran las que apuntan a un objeto que YA NO existe en el diccionario,
+  -- y solo de los propietarios tratados en esta ejecucion, por lo que es seguro tambien en
+  -- descubrimientos parciales (no depende de que la ejecucion haya visto todas las tablas).
+  delete from tdm_dependencia_final u
+   where u.tipo_dependencia in ('FK','CONSTRAINT','TRIGGER')
+     and u.ora_owner in (select h.ora_owner
+                           from tdm_dependencia_hist h
+                          where h.ejecucion_id = p_ejecucion_id)
+     and u.dependencia_objeto is not null
+     and ( (u.tipo_dependencia in ('FK','CONSTRAINT')
+            and not exists (select 1 from dba_constraints c
+                             where c.owner = u.dependencia_owner
+                               and c.constraint_name = u.dependencia_objeto))
+        or (u.tipo_dependencia = 'TRIGGER'
+            and not exists (select 1 from dba_triggers t
+                             where t.owner = u.dependencia_owner
+                               and t.trigger_name = u.dependencia_objeto)) );
 end proc_dm_sync_dep_final;
 
 END pkg_dm_desc_catalogo;

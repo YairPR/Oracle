@@ -10,10 +10,8 @@ set serveroutput on size unlimited
 set linesize 220
 set pagesize 200
 
-Rem 2026-10-05: esquema ya no va fijo -- se detecta solo (ASTSYSADMIN o
-Rem ACC_ADMIN, el que exista) y queda disponible como &&esquemaast para los
-Rem ejemplos de este guion.
-Rem --- Esquema del motor: se detecta solo (ASTSYSADMIN o ACC_ADMIN), sin setear nada a mano ---
+Rem El esquema del motor se detecta solo (ASTSYSADMIN o ACC_ADMIN) y queda como &&esquemaast
+Rem para los ejemplos de este guion.
 define esquemaast = '__NO_DETECTADO__'
 define tbsast     = '__NO_DETECTADO__'
 column v_esquemaast noprint new_value esquemaast
@@ -71,9 +69,9 @@ order  by ejecucion_id desc;
 
 Rem --- Si una ejecucion anterior quedo bloqueada en estado EJECUTANDO (por una
 Rem caida de sesion, por ejemplo) y no te deja lanzar una nueva sobre el mismo
-Rem esquema, revisala y libera la fila atascada (marca la ejecucion como
-Rem ABORTADA; no toca el dato ya enmascarado):
-Rem   @dm_liberar_ejecucion_activa <ESQUEMA>
+Rem esquema, abortala (mata sesion y workers y marca la ejecucion como ABORTADA;
+Rem no toca el dato ya enmascarado):
+Rem   @dm_enmascara_cancel <EJEC> CONFIRMAR
 
 Rem ================================================================================
 Rem 2) REVISION DE LA CLASIFICACION
@@ -121,7 +119,7 @@ Rem
 Rem Si el enmascaramiento se interrumpio (caida de sesion, timeout, etc.) y la
 Rem ejecucion quedo a medio terminar, reanuda SOLO lo pendiente (no repite lo ya
 Rem hecho). Si el script devuelve el error -20504, primero libera la ejecucion
-Rem con @dm_liberar_ejecucion_activa (ver seccion 1):
+Rem con @dm_enmascara_cancel <EJEC> CONFIRMAR (ver seccion 1):
 Rem   @dm_enmascara_reanudar <EJEC>
 
 Rem ================================================================================
@@ -158,14 +156,14 @@ Rem (seccion 5) y exportar (seccion 6). Una vez purgado el pepper el dato
 Rem enmascarado de esa ejecucion deja de ser reversible: no hay vuelta atras
 Rem salvo reimportar desde PRO. No purgar si todavia se puede necesitar volver
 Rem a generar el export o revisar la ejecucion.
-Rem   @dm_pepper_purgar <EJEC>
+Rem   EXEC pkg_dm_enmascarar.proc_dm_pepper_purgar(<EJEC>,'Y');
 
 Rem ================================================================================
-Rem 8) CANCELAR / REANUDAR / LIBERAR / DESINSTALAR
+Rem 8) CANCELAR / REANUDAR / DESINSTALAR
 Rem ================================================================================
 Rem Cancelar descubrimiento:          EXEC pkg_dm_descubrimiento.proc_dm_cancelar(<EJEC>);
 Rem Cancelar enmascaramiento:         EXEC pkg_dm_enmascarar.proc_dm_cancelar(<EJEC>);
 Rem Reanudar enmascaramiento:         @dm_enmascara_reanudar <EJEC>   (ver seccion 4)
-Rem Liberar ejecucion activa atascada: @dm_liberar_ejecucion_activa <ESQUEMA>   (ver seccion 1)
+Rem Abortar una ejecucion atascada:   @dm_enmascara_cancel <EJEC> CONFIRMAR   (ver seccion 1)
 Rem
 Rem Desinstalar todo:                 @@98_uninstall.sql

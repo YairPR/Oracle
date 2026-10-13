@@ -4,124 +4,59 @@ Rem    NOMBRE
 Rem      12_dm_pkg_mask_ff1.sql - Funciones deterministas de enmascaramiento
 Rem
 Rem    DESCRIPCION
-Rem      Funciones base de enmascaramiento invocadas por pkg_dm_enmascarar.
-Rem      Transforman valores sensibles en datos ficticios preservando formato,
-Rem      consistencia funcional e integridad referencial.
+Rem      Funciones base de enmascaramiento invocadas por pkg_dm_enmascarar. Transforman valores
+Rem      sensibles en datos ficticios preservando formato, consistencia e integridad referencial.
 Rem
-Rem      NUCLEO CRIPTOGRAFICO (cambio de esta version):
-Rem        Los dominios NUMERICOS de longitud fija (DNI, NIE, CIF, cuenta, BBAN
-Rem        del IBAN) se cifran ahora con FF1, el modo de Cifrado que Preserva
-Rem        Formato (FPE) estandar del NIST (SP 800-38G), construido sobre AES-128.
-Rem        Sustituye a la red Feistel propia de 4 rondas con HMAC-SHA1 truncado.
-Rem
-Rem      PROPIEDADES QUE APORTA FF1
-Rem        - Biyectivo por construccion  -> 0 colisiones dentro de (longitud, ajuste)
-Rem        - Determinista                -> mismo valor + misma clave = mismo cifrado
-Rem        - Irreversible en la practica -> sin la clave AES (derivada del pepper)
-Rem        - Ajuste (tweak) por DOMINIO  -> separa dominios sin romper la
-Rem                                         propagacion por clave ajena (FK)
-Rem        - Basado en el estandar NIST SP 800-38G/Gr1, validado contra sus
-Rem          vectores oficiales -> auditable y defendible ante el cliente. NOTA:
-Rem          no hay certificacion CAVP/CMVP de esta implementacion (eso exige
-Rem          el programa formal de validacion de NIST); la redaccion correcta
-Rem          es "basado en/validado contra FF1", nunca "certificado NIST"
+Rem      Los dominios numericos de longitud fija (DNI, NIE, CIF, cuenta, BBAN del IBAN) se cifran
+Rem      con FF1, el modo de cifrado que preserva formato del NIST (SP 800-38G) sobre AES-128.
+Rem        - Biyectivo por construccion: sin colisiones dentro de (longitud, ajuste)
+Rem        - Determinista: mismo valor y misma clave dan el mismo cifrado
+Rem        - Irreversible en la practica sin la clave AES (derivada del pepper)
+Rem        - Ajuste (tweak) por dominio: separa dominios sin romper la propagacion por FK
+Rem        - Validado contra los vectores oficiales del NIST. No hay certificacion CAVP/CMVP de esta
+Rem          implementacion: debe decirse "basado en / validado contra FF1", nunca "certificado"
 Rem
 Rem    INVARIANTE DE INTEGRIDAD REFERENCIAL (FK)
-Rem      El ajuste FF1 depende SOLO del identificador semantico (no de tabla,
-Rem      columna, ROWID ni ID de fila). Dos columnas unidas por una FK que
-Rem      comparten identificador reciben el mismo ajuste y la misma longitud,
-Rem      luego el mismo valor original produce el mismo valor enmascarado en
-Rem      padre e hija. Un ajuste por fila ROMPERIA la propagacion: NO usar.
+Rem      El ajuste FF1 depende solo del identificador semantico (no de tabla, columna, ROWID ni
+Rem      fila). Dos columnas unidas por FK con el mismo identificador reciben el mismo ajuste y la
+Rem      misma longitud, asi que el mismo valor da el mismo enmascarado en padre e hija. Un ajuste
+Rem      por fila romperia la propagacion: no usar.
 Rem
-Rem    RESOLUCION AUDITORIA (A-02): se retiro la palabra clave DETERMINISTIC de
-Rem      todas las funciones de este paquete porque su resultado depende del
-Rem      estado de sesion (pepper/clave AES fijados por proc_dm_set_ejecucion), que
-Rem      cambia entre campanas de enmascaramiento. Declararlas DETERMINISTIC
-Rem      era una promesa falsa al optimizador; se elimina en vez de solo
-Rem      documentar la excepcion.
+Rem    DETERMINISTIC
+Rem      Las funciones no se declaran DETERMINISTIC: su resultado depende del estado de sesion
+Rem      (pepper y clave AES fijados por proc_dm_set_ejecucion), que cambia entre campanas.
 Rem
 Rem    COMPATIBILIDAD
-Rem      - Oracle 11g en adelante (AES-128 y HMAC/HASH SHA-1 de DBMS_CRYPTO son 11g)
+Rem      - Oracle 11g en adelante. SHA-256 se usa en 12c+ por compilacion condicional; en 11g
+Rem        (DBMS_CRYPTO sin SHA-2) queda SHA-1.
 Rem      - No requiere wallet ni TDE. Requiere GRANT EXECUTE ON SYS.DBMS_CRYPTO.
-Rem      - Firmas PUBLICAS identicas a la version anterior: pkg_dm_enmascarar y
-Rem        pkg_dm_descubrimiento NO necesitan cambios.
 Rem
 Rem    MODIFICADO   (MM/DD/YY)
-Rem    epurisaca    ...      - Versiones previas (hash, biyeccion afin, Feistel propio)
-Rem    epurisaca    06/06/26 - Migracion del nucleo numerico a FF1 (NIST SP 800-38G).
-Rem                            CIF y doc_segun_tipo pasan a ser biyectivos (FF1).
-Rem                            Semilla de dominios de texto elevada a 60 bits (HMAC-SHA1).
-Rem
-Rem    epurisaca    09/23/26 - Revisión de industrialización (auditoría Antigravity/Codex):
-Rem                            paquete confirmado como referencia de estilo limpio,
-Rem                            sin COMMIT/WHEN OTHERS/EXECUTE IMMEDIATE; sin cambios
-Rem                            funcionales requeridos en este ciclo
-Rem
-Rem    epurisaca    09/27/26 - Auditoría estricta (hallazgo Nivel 2): func_dm_cifra_digitos_en_texto
-Rem                            cerraba en passthrough silencioso (devolvía el texto original
-Rem                            sin cifrar) cuando el valor no tenía dígitos o tenía solo 1
-Rem                            (FF1 exige mínimo 2 posiciones numéricas). Ahora ambos casos
-Rem                            producen un reemplazo sintético determinista vía func_dm_hash (mismo
-Rem                            primitivo HMAC-SHA1+pepper ya usado en el fallback no estándar
-Rem                            de func_dm_iban), igual que cualquier otro valor de esa columna.
-Rem                            No se tocó func_dm_ff1_cifrar_raw/func_dm_fpe_num (núcleo FF1 verificado);
-Rem                            el límite n menor a 2 es matemático de la construcción Feistel y las
-Rem                            rutas 1-dígito alcanzables ya quedaban cubiertas en el llamador.
-Rem
-Rem    epurisaca    09/28/26 - CONVENCION DE NOMBRES (auditoria/orden estructural): todas las
-Rem                            funciones publicas func_* (sin _dm_) y privadas f_* se renombran
-Rem                            a func_dm_*, y la procedure publica set_ejecucion a
-Rem                            proc_dm_set_ejecucion. Sin cambio de firma ni de logica, solo el
-Rem                            identificador. Coordinado con 04, 05 y 07 y los drivers .sql que
-Rem                            invocan estos nombres. Mapa completo en el proyecto Claude
-Rem                            "Enmascaramiento". NOTA: las menciones de estos nombres en
-Rem                            entradas de changelog anteriores a esta fecha (p.ej. la del
-Rem                            09/27/26 arriba) quedan con el nombre NUEVO por el propio
-Rem                            renombrado textual -- ya no reflejan con exactitud historica el
-Rem                            identificador vigente en el momento de esa entrada, tradeoff
-Rem                            aceptado a cambio de no dejar nombres obsoletos sueltos en el
-Rem                            codigo.
-Rem
-Rem    epurisaca    09/28/26 - PEER REVIEW contra el texto oficial NIST SP 800-38Gr1
-Rem                            2pd (borrador publico feb/2025, aportado por el usuario):
-Rem                            (1) verificado linea a linea func_dm_ff1_cifrar_raw contra
-Rem                            el Algoritmo 5 (P/Q, 10 rondas, PRF=CBC-MAC, expansion a
-Rem                            d bytes, reduccion de Horner para y=NUM(S) mod 10^m) --
-Rem                            correcto. (2) HALLAZGO REAL: esta revision del NIST eleva
-Rem                            el minimo de dominio de "recomendacion" a requisito
-Rem                            obligatorio ("shall"): radix^minlen >= 1.000.000 (Sec.4,
-Rem                            Apendice A.2/G) -- en radix 10, minimo 6 digitos. El
-Rem                            guard existente solo cortaba en <2 digitos (heredado del
-Rem                            limite matematico de Feistel, no del minimo NIST), asi
-Rem                            que dominios de 2 a 5 digitos (func_dm_cuenta con cuentas
-Rem                            cortas, func_dm_cifra_digitos_en_texto y
-Rem                            func_dm_especial_doc_keep_ends con interiores numericos
-Rem                            cortos) se cifraban con FF1 real por debajo del minimo
-Rem                            exigido. Corregido: nuevo helper privado
-Rem                            func_dm_digitos_min_dominio (mismo mecanismo HMAC-SHA1
-Rem                            ya usado desde 09/27/26 para el caso de 1 digito, ahora
-Rem                            generalizado a 1-5 digitos) sustituye a FF1 en ese tramo
-Rem                            en los tres puntos de entrada (func_dm_fpe_num,
-Rem                            func_dm_cifra_digitos_en_texto,
-Rem                            func_dm_especial_doc_keep_ends). DNI(8)/NIE(7)/CIF(7)/
-Rem                            IBAN(20) no se ven afectados (ya estaban por encima del
-Rem                            minimo). func_dm_ff1_cifrar_raw NO se toco (permanece
-Rem                            como primitivo puro para validar contra vectores NIST).
-Rem                            Se corrigio ademas la redaccion "Algoritmo certificado
-Rem                            NIST" mas arriba (overclaim ya senalado en auditorias
-Rem                            previas, nunca corregido en este comentario): no existe
-Rem                            certificacion CAVP/CMVP de esta implementacion.
-Rem    epurisaca    10/09/26 - PORTABILIDAD 11g: func_dm_especial_doc_segun_tipo (31 caracteres)
-Rem                            se renombra a func_dm_espec_doc_segun_tipo (28). Oracle 11g limita los
-Rem                            identificadores PL/SQL a 30 caracteres (PLS-00114) y el paquete no
-Rem                            compilaba; 12.2 en adelante lo admite, por lo que 30 es el techo comun.
-
-Rem    epurisaca    10/10/26 - Auditoria industrial (G9): nueva func_dm_clase_identificador, fuente
-Rem                            unica de la correspondencia identificador -> clase de enmascarado.
-Rem                            func_dm_generico la usa con el mismo enrutado de antes (exacto,
-Rem                            palabras clave y OBS por defecto); pkg_dm_mask_columna tambien, en
-Rem                            vez de su propia tabla. Sin cambio de resultado para los siete
-Rem                            identificadores de las reglas.
+Rem    epurisaca    06/06/26 - Migracion del nucleo numerico a FF1 (NIST SP 800-38G); CIF y
+Rem                            doc_segun_tipo pasan a ser biyectivos
+Rem    epurisaca    09/27/26 - func_dm_cifra_digitos_en_texto ya no devuelve el texto original sin
+Rem                            cifrar cuando no hay digitos o hay solo uno: genera un reemplazo
+Rem                            sintetico determinista
+Rem    epurisaca    09/28/26 - Convencion de nombres func_dm_* / proc_dm_*, sin cambio de firma
+Rem    epurisaca    10/12/26 - func_dm_ff1_cifra: mas de 70 digitos se cifran por bloques de 36 (antes resultado
+Rem                            incorrecto sin error o ORA-06502); buffers de 200 a 4000 digitos; IBAN con espacios
+Rem    epurisaca    09/28/26 - Minimo de dominio de NIST SP 800-38Gr1 (radix^minlen >= 1.000.000, 6
+Rem                            digitos en radix 10): de 1 a 5 digitos no se aplica FF1 y se usa
+Rem                            func_dm_digitos_min_dominio (func_dm_fpe_num,
+Rem                            func_dm_cifra_digitos_en_texto, func_dm_especial_doc_keep_ends).
+Rem                            func_dm_ff1_cifrar_raw no cambia (se valida contra los vectores NIST)
+Rem    epurisaca    10/09/26 - Portabilidad 11g: func_dm_especial_doc_segun_tipo pasa a
+Rem                            func_dm_espec_doc_segun_tipo (limite de 30 caracteres)
+Rem    epurisaca    10/10/26 - SHA-1 -> SHA-256 en la clave AES, el ajuste por dominio y la semilla
+Rem                            HMAC de texto, con func_dm_sha_hash / func_dm_sha_mac (SHA-1 en 11g).
+Rem                            FF1/AES y vectores NIST no cambian
+Rem    epurisaca    10/10/26 - func_dm_clase_identificador: fuente unica de la correspondencia
+Rem                            identificador -> clase de enmascarado
+Rem    epurisaca    10/11/26 - NIE: el prefijo X/Y/Z se cifra junto con los 7 digitos (sin colisiones)
+Rem    epurisaca    10/12/26 - Sin campana activa no hay pepper: se elimina la clave de reserva PEPPER_MASK
+Rem                           (falla cerrado con ORA-20210)
+Rem    epurisaca    10/12/26 - func_dm_ff1_cifrar_raw: b se calcula con BITLEN entero (sin coma flotante, borrador
+Rem                           SP 800-38G Rev.1); mismo b para todo v, resultados identicos. Mitad > 37 digitos: ORA-20211
 
 create or replace PACKAGE pkg_dm_mask_ff1 AS
 
@@ -176,7 +111,7 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
   -- MISMA clave AES -> resultado determinista y coherente entre chunks y tablas.
   -- ============================================================================
   g_pepper      VARCHAR2(128);
-  g_ejecucion_id NUMBER;        -- campana activa; NULL = clave legacy fija
+  g_ejecucion_id NUMBER;        -- campana activa; NULL = ninguna (sin pepper no se enmascara)
   g_clave_aes   RAW(16);
   c_iv_cero     CONSTANT RAW(16) := HEXTORAW('00000000000000000000000000000000');
 
@@ -188,7 +123,7 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
   -- [DOC] procedure proc_dm_set_ejecucion
   -- PROPOSITO    : Fija en la sesion la campana (ejecucion_id) activa para que el pepper y la clave
   --                AES se lean de esa campana, invalidando las caches si cambia.
-  -- ENTRADAS     : p_ejecucion_id (NUMBER; NULL = clave legacy PEPPER_MASK); sin retorno
+  -- ENTRADAS     : p_ejecucion_id (NUMBER; NULL = ninguna campana activa); sin retorno
   -- LEE          : ninguno
   -- ESCRIBE      : ninguno
   -- ERRORES      : ninguno
@@ -210,22 +145,24 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
   -- [DOC] function func_dm_get_pepper
   -- PROPOSITO    : Devuelve el pepper (secreto base) de la campana activa leyendolo de TDM_SECRETO y
   --                cacheandolo en la sesion; aborta si no existe.
-  -- ENTRADAS     : Sin parametros; retorna VARCHAR2 con el pepper (clave PEPPER_MASK o
-  --                PEPPER_MASK:<ejecucion_id>)
+  -- ENTRADAS     : Sin parametros; retorna VARCHAR2 con el pepper (clave PEPPER_MASK:<ejecucion_id>)
   -- LEE          : tdm_secreto
   -- ESCRIBE      : ninguno
-  -- ERRORES      : ORA-20210 si no hay pepper registrado para la clave (aborta: enmascarar sin
-  --                secreto es inseguro)
+  -- ERRORES      : ORA-20210 si no hay campana fijada (proc_dm_set_ejecucion) o no hay pepper
+  --                registrado para ella (aborta: enmascarar sin secreto es inseguro)
   -- LLAMADO DESDE: func_dm_clave_aes, func_dm_hash
   ------------------------------------------------------------------------------
   FUNCTION func_dm_get_pepper RETURN VARCHAR2 IS
     l_clave VARCHAR2(64);
   BEGIN
     IF g_pepper IS NULL THEN
-      -- Pepper por campana: clave = 'PEPPER_MASK:'||ejecucion_id (aisla campanas
-      -- concurrentes). Sin ejecucion fijada usa la clave legacy 'PEPPER_MASK'.
-      l_clave := 'PEPPER_MASK' ||
-                 CASE WHEN g_ejecucion_id IS NULL THEN '' ELSE ':'||TO_CHAR(g_ejecucion_id) END;
+      -- Pepper por campana: clave = 'PEPPER_MASK:'||ejecucion_id (aisla campanas concurrentes).
+      -- Sin campana fijada no hay pepper: falla cerrado, no hay clave de reserva.
+      IF g_ejecucion_id IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20210,
+          'Sin campana activa (proc_dm_set_ejecucion). Abortado: enmascarar sin pepper es inseguro.');
+      END IF;
+      l_clave := 'PEPPER_MASK:'||TO_CHAR(g_ejecucion_id);
       SELECT valor INTO g_pepper FROM tdm_secreto WHERE clave = l_clave;
     END IF;
     RETURN g_pepper;
@@ -236,11 +173,45 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
   END;
 
   -- ----------------------------------------------------------------------------
-  -- Clave AES-128 para FF1: primeros 16 bytes de SHA-1(pepper). Cacheada por sesion.
+  -- Primitivas SHA: SHA-256 en 12c+, SHA-1 en 11g (DBMS_CRYPTO en 11.2 no trae SHA-2).
+  -- Unico punto del paquete que elige el algoritmo (compilacion condicional).
+  -- ----------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- [DOC] function func_dm_sha_hash
+  -- PROPOSITO    : Hash de p_src con SHA-256 (12c+) o SHA-1 (11g, piso de portabilidad).
+  -- ENTRADAS     : p_src RAW; retorna RAW de 32 bytes (12c+) o 20 bytes (11g)
+  -- LLAMADO DESDE: func_dm_clave_aes, func_dm_ajuste_dominio
+  ------------------------------------------------------------------------------
+  FUNCTION func_dm_sha_hash(p_src IN RAW) RETURN RAW IS
+  BEGIN
+    $IF DBMS_DB_VERSION.VER_LE_11_2 $THEN
+    RETURN DBMS_CRYPTO.HASH(p_src, DBMS_CRYPTO.HASH_SH1);
+    $ELSE
+    RETURN DBMS_CRYPTO.HASH(p_src, DBMS_CRYPTO.HASH_SH256);
+    $END
+  END;
+
+  ------------------------------------------------------------------------------
+  -- [DOC] function func_dm_sha_mac
+  -- PROPOSITO    : HMAC de p_src con clave p_key: HMAC-SHA256 (12c+) o HMAC-SHA1 (11g).
+  -- ENTRADAS     : p_src RAW, p_key RAW; retorna RAW de 32 bytes (12c+) o 20 bytes (11g)
+  -- LLAMADO DESDE: func_dm_hash
+  ------------------------------------------------------------------------------
+  FUNCTION func_dm_sha_mac(p_src IN RAW, p_key IN RAW) RETURN RAW IS
+  BEGIN
+    $IF DBMS_DB_VERSION.VER_LE_11_2 $THEN
+    RETURN DBMS_CRYPTO.MAC(p_src, DBMS_CRYPTO.HMAC_SH1, p_key);
+    $ELSE
+    RETURN DBMS_CRYPTO.MAC(p_src, DBMS_CRYPTO.HMAC_SH256, p_key);
+    $END
+  END;
+
+  -- ----------------------------------------------------------------------------
+  -- Clave AES-128 para FF1: primeros 16 bytes de SHA-256(pepper) (SHA-1 en 11g). Cacheada por sesion.
   -- ----------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_clave_aes
-  -- PROPOSITO    : Deriva la clave AES-128 de FF1 (primeros 16 bytes de SHA-1 del pepper) y la cachea
+  -- PROPOSITO    : Deriva la clave AES-128 de FF1 (primeros 16 bytes de SHA-256 del pepper; SHA-1 en 11g) y la cachea
   --                por sesion.
   -- ENTRADAS     : Sin parametros; retorna RAW(16)
   -- LEE          : tdm_secreto (indirecto, via func_dm_get_pepper)
@@ -252,7 +223,7 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
   BEGIN
     IF g_clave_aes IS NULL THEN
       g_clave_aes := UTL_RAW.SUBSTR(
-                       DBMS_CRYPTO.HASH(UTL_RAW.CAST_TO_RAW(func_dm_get_pepper), DBMS_CRYPTO.HASH_SH1),
+                       func_dm_sha_hash(UTL_RAW.CAST_TO_RAW(func_dm_get_pepper)),
                        1, 16);
     END IF;
     RETURN g_clave_aes;
@@ -260,13 +231,13 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
 
   -- ----------------------------------------------------------------------------
   -- Semilla determinista de 60 bits para dominios de TEXTO (nombre, direccion,
-  -- email, telefono). HMAC-SHA1(pepper, texto). Sube de 31 a 60 bits la entropia
+  -- email, telefono). HMAC-SHA256 (SHA1 en 11g)(pepper, texto). Sube de 31 a 60 bits la entropia
   -- de la semilla -> reduce drasticamente colisiones de texto a gran volumen.
   -- ----------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_hash
-  -- PROPOSITO    : Genera una semilla numerica determinista de 56 bits (HMAC-SHA1 con el pepper como
-  --                clave) para los dominios de texto y para los sustitutos de dominio pequeno.
+  -- PROPOSITO    : Genera una semilla numerica determinista de 56 bits (HMAC-SHA256, SHA1 en 11g, con el pepper
+  --                como clave) para los dominios de texto y para los sustitutos de dominio pequeno.
   -- ENTRADAS     : p_txt VARCHAR2 (NULL se trata como '~NULL~', UTF-8 fijo); retorna NUMBER 0..2^56-1
   -- LEE          : tdm_secreto (indirecto, via func_dm_get_pepper)
   -- ESCRIBE      : ninguno
@@ -276,11 +247,10 @@ create or replace PACKAGE BODY pkg_dm_mask_ff1 AS
   --                func_dm_especial_doc_keep_ends
   ------------------------------------------------------------------------------
   FUNCTION func_dm_hash(p_txt VARCHAR2) RETURN NUMBER IS
-    l_mac RAW(20);
+    l_mac RAW(32);
   BEGIN
-l_mac := DBMS_CRYPTO.MAC(
-               UTL_I18N.STRING_TO_RAW(NVL(p_txt,'~NULL~'), 'AL32UTF8'),  -- M-03: UTF-8 fijo, no depende del NLS
-               DBMS_CRYPTO.HMAC_SH1,
+l_mac := func_dm_sha_mac(
+               UTL_I18N.STRING_TO_RAW(NVL(p_txt,'~NULL~'), 'AL32UTF8'),  -- UTF-8 fijo, no depende del NLS
                UTL_RAW.CAST_TO_RAW(func_dm_get_pepper));
     -- 14 hex = 56 bits: entra exacto en NUMBER y en las aritmeticas MOD posteriores
     RETURN TO_NUMBER(SUBSTR(RAWTOHEX(l_mac), 1, 14), 'XXXXXXXXXXXXXX');
@@ -312,11 +282,11 @@ l_mac := DBMS_CRYPTO.MAC(
     RETURN l_hex;
   END;
 
-  -- Ajuste (tweak) por DOMINIO: 8 bytes de SHA-1('DOMINIO:'||identificador).
+  -- Ajuste (tweak) por DOMINIO: 8 bytes de SHA-256('DOMINIO:'||identificador) (SHA-1 en 11g).
   -- Depende SOLO del identificador -> mismo dominio, mismo ajuste (invariante FK).
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_ajuste_dominio
-  -- PROPOSITO    : Calcula el ajuste (tweak) FF1 de 8 bytes a partir del nombre del dominio (SHA-1 de
+  -- PROPOSITO    : Calcula el ajuste (tweak) FF1 de 8 bytes a partir del nombre del dominio (SHA-256, SHA-1 en 11g, de
   --                'DOMINIO:'||identificador) para que un mismo dominio siempre cifre igual.
   -- ENTRADAS     : p_dominio VARCHAR2 (NULL o vacio = 'GEN'); retorna RAW de 8 bytes
   -- LEE          : ninguno
@@ -329,9 +299,8 @@ l_mac := DBMS_CRYPTO.MAC(
   FUNCTION func_dm_ajuste_dominio(p_dominio IN VARCHAR2) RETURN RAW IS
   BEGIN
     RETURN UTL_RAW.SUBSTR(
-             DBMS_CRYPTO.HASH(
-               UTL_RAW.CAST_TO_RAW('DOMINIO:'||UPPER(NVL(TRIM(p_dominio),'GEN'))),
-               DBMS_CRYPTO.HASH_SH1),
+             func_dm_sha_hash(
+               UTL_RAW.CAST_TO_RAW('DOMINIO:'||UPPER(NVL(TRIM(p_dominio),'GEN')))),
              1, 8);
   END;
 
@@ -359,6 +328,8 @@ l_mac := DBMS_CRYPTO.MAC(
     l_a       VARCHAR2(64);
     l_b       VARCHAR2(64);
     l_bnum    PLS_INTEGER;      -- 'b': bytes para NUM_radix(B)
+    l_pot     NUMBER;           -- 10^v, se divide entre 2 para contar bits
+    l_bits    PLS_INTEGER;      -- BITLEN(10^v)
     l_d       PLS_INTEGER;      -- 'd': bytes de S
     l_hex_p   VARCHAR2(64);
     l_hex_q   VARCHAR2(512);
@@ -383,8 +354,21 @@ l_mac := DBMS_CRYPTO.MAC(
     l_a := SUBSTR(p_digitos, 1, l_u);
     l_b := SUBSTR(p_digitos, l_u+1);
 
-    -- Paso 2: tamanos b y d (log2(10) = 3.32192809488736)
-    l_bnum := CEIL(CEIL(l_v * 3.32192809488736) / 8);
+    -- Paso 2: tamanos b y d. b = CEIL(BITLEN(radix^v) / 8), con BITLEN calculado solo con enteros
+    -- (sin coma flotante, como exige el borrador SP 800-38G Rev.1). radix^v nunca es potencia de 2,
+    -- asi que BITLEN(10^v) = CEIL(v*log2(10)): mismo b que la formula con decimales para todo v.
+    -- NUMBER guarda 38 cifras exactas: 10^v y sus mitades son exactos hasta v = 37; mas alla se
+    -- aborta (NUM_radix(B) tampoco cabria en un NUMBER).
+    IF l_v > 37 THEN
+      RAISE_APPLICATION_ERROR(-20211, 'func_dm_ff1_cifrar_raw: mitad de '||l_v||' digitos; maximo 37 (cifre por bloques con func_dm_ff1_cifra)');
+    END IF;
+    l_pot  := POWER(10, l_v);
+    l_bits := 0;
+    WHILE l_pot > 0 LOOP
+      l_pot  := FLOOR(l_pot / 2);
+      l_bits := l_bits + 1;
+    END LOOP;
+    l_bnum := CEIL(l_bits / 8);
     l_d    := 4*CEIL(l_bnum/4) + 4;
 
     -- Paso 3: bloque fijo P (16 bytes) = 01 02 01 | radix(3) | 0A | u(1) | n(4) | t(4)
@@ -461,24 +445,43 @@ l_mac := DBMS_CRYPTO.MAC(
   -- LLAMADO DESDE: func_dm_fpe_num, func_dm_cifra_digitos_en_texto, func_dm_especial_doc_keep_ends,
   --                func_dm_especial_iban_continuo
   ------------------------------------------------------------------------------
+  -- Hasta 70 digitos es FF1 puro (la aritmetica NUMBER de 38 cifras es exacta: Horner m <= 35). Por encima
+  -- (valores anormales, p. ej. un documento con texto libre) el resultado seria incorrecto sin error o
+  -- desbordaria (ORA-06502): se cifra por BLOQUES de 36 digitos como maximo, con el indice de bloque
+  -- anexado al ajuste. Sigue siendo determinista, de igual longitud y biyectivo, pero NO es FF1 estandar
+  -- (fuera de los vectores NIST); no ocurre con datos de identidad reales.
   FUNCTION func_dm_ff1_cifra(p_digitos IN VARCHAR2, p_ajuste IN RAW) RETURN VARCHAR2 IS
+    c_max_exacto CONSTANT PLS_INTEGER := 70;
+    c_bloque     CONSTANT PLS_INTEGER := 36;
+    l_n     PLS_INTEGER := NVL(LENGTH(p_digitos),0);
+    l_k     PLS_INTEGER;
+    l_base  PLS_INTEGER;
+    l_extra PLS_INTEGER;
+    l_len   PLS_INTEGER;
+    l_pos   PLS_INTEGER := 1;
+    l_clave RAW(16);
+    l_out   VARCHAR2(4000);
   BEGIN
-    RETURN func_dm_ff1_cifrar_raw(p_digitos, func_dm_clave_aes, p_ajuste);
+    IF l_n <= c_max_exacto THEN
+      RETURN func_dm_ff1_cifrar_raw(p_digitos, func_dm_clave_aes, p_ajuste);
+    END IF;
+    l_clave := func_dm_clave_aes;
+    l_k     := CEIL(l_n / c_bloque);
+    l_base  := TRUNC(l_n / l_k);
+    l_extra := MOD(l_n, l_k);
+    FOR i IN 1 .. l_k LOOP
+      l_len := l_base + CASE WHEN i <= l_extra THEN 1 ELSE 0 END;
+      l_out := l_out || func_dm_ff1_cifrar_raw(
+                 SUBSTR(p_digitos, l_pos, l_len),
+                 l_clave,
+                 UTL_RAW.CONCAT(p_ajuste, HEXTORAW(LPAD(TO_CHAR(i,'FMXX'),2,'0'))));
+      l_pos := l_pos + l_len;
+    END LOOP;
+    RETURN l_out;
   END;
 
-  -- ----------------------------------------------------------------------------
-  -- FIX 2026-09-28 (peer review vs NIST SP 800-38Gr1 2pd, Sec.4 "shall"):
-  -- el minimo de dominio exigido para FF1 es radix^minlen >= 1.000.000 (antes
-  -- una recomendacion, ahora requisito obligatorio -- ver Apendice A.2/G del
-  -- estandar: por debajo de ese umbral el dominio es susceptible a ataques
-  -- analiticos de dominio pequeno). En radix 10 eso exige minimo 6 digitos.
-  -- Este helper sustituye a FF1 para dominios de 1 a 5 digitos: genera un
-  -- reemplazo sintetico determinista via HMAC-SHA1(pepper) (func_dm_hash),
-  -- MISMO mecanismo ya usado desde 09/27/26 para el caso puntual de 1 digito
-  -- (ver changelog de cabecera), ahora generalizado a todo el tramo fuera de
-  -- norma. Preserva longitud/formato; NO reclama ser FF1 en ese tramo, que es
-  -- justamente lo correcto: el estandar prohibe usar FF1 ahi, no exige forzarlo.
-  -- ----------------------------------------------------------------------------
+  -- Para dominios de 1 a 5 digitos NIST prohibe FF1 (radix^minlen >= 1.000.000): este helper
+  -- genera un reemplazo numerico determinista via HMAC(pepper) que conserva longitud y formato.
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_digitos_min_dominio
   -- PROPOSITO    : Genera un reemplazo numerico de n digitos (con ceros a la izquierda) via HMAC-SHA1
@@ -777,8 +780,9 @@ l_mac := DBMS_CRYPTO.MAC(
   -- igual resultado por func_dm_nif y por func_dm_espec_doc_segun_tipo.
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_enmascara_nie
-  -- PROPOSITO    : Enmascara el numero de un NIE con FF1 (dominio 10^7) y compone un NIE valido:
-  --                prefijo X/Y/Z derivado del numero generado, 7 digitos y letra de control;
+  -- PROPOSITO    : Enmascara un NIE con FF1 sobre (prefijo X/Y/Z, 7 digitos) como un unico dominio de
+  --                3*10^7 (sin colisiones entre prefijos) y compone un NIE valido: prefijo,
+  --                7 digitos y letra de control;
   --                determinista por campana.
   -- ENTRADAS     : p_num_original NUMBER (parte numerica), p_ajuste RAW; retorna VARCHAR2 de 9
   --                caracteres
@@ -787,30 +791,28 @@ l_mac := DBMS_CRYPTO.MAC(
   -- ERRORES      : ORA-20210 propagado desde func_dm_get_pepper si no hay pepper registrado
   -- LLAMADO DESDE: func_dm_nif, func_dm_espec_doc_segun_tipo
   ------------------------------------------------------------------------------
-  FUNCTION func_dm_enmascara_nie(p_num_original IN NUMBER, p_ajuste IN RAW) RETURN VARCHAR2 IS
+  FUNCTION func_dm_enmascara_nie(p_num_original IN NUMBER, p_ajuste IN RAW, p_prefijo IN VARCHAR2 DEFAULT 'X') RETURN VARCHAR2 IS
     l_num7      VARCHAR2(7);
+    l_idx_in    PLS_INTEGER;
     l_idx_pref  PLS_INTEGER;
     l_prefijo   CHAR(1);
+    l_out       NUMBER;
   BEGIN
-    l_num7     := LPAD(TO_CHAR(func_dm_fpe_num(p_num_original, 10000000, p_ajuste)), 7, '0');
-    l_idx_pref := MOD(TO_NUMBER(SUBSTR(l_num7,1,1)), 3);       -- 0->X, 1->Y, 2->Z
+    -- El prefijo X/Y/Z forma parte del dato. Se cifra (prefijo, 7 digitos) como UN
+    -- numero de dominio 3*10^7: X1234567, Y1234567 y Z1234567 ya no colisionan (antes se cifraban
+    -- solo los 7 digitos y el prefijo salia de la salida). Biyectivo sobre el dominio NIE.
+    l_idx_in   := GREATEST(INSTR('XYZ', UPPER(SUBSTR(p_prefijo,1,1))) - 1, 0);
+    l_out      := func_dm_fpe_num(l_idx_in * 10000000 + MOD(ABS(p_num_original), 10000000), 30000000, p_ajuste);
+    l_idx_pref := TRUNC(l_out / 10000000);                      -- 0->X, 1->Y, 2->Z
+    l_num7     := LPAD(TO_CHAR(MOD(l_out, 10000000)), 7, '0');
     l_prefijo  := SUBSTR('XYZ', l_idx_pref+1, 1);
     RETURN l_prefijo || l_num7 || func_dm_letra_dni(TO_NUMBER(TO_CHAR(l_idx_pref) || l_num7));
   END;
 
   -- Sustituye cada DIGITO de un texto por otro (FF1 conjunto sobre los digitos)
   -- manteniendo intactos los caracteres no numericos. Uso: Pasaporte.
-  -- FIX CRITICO 2026-09-27 (auditoria estricta): si p_texto no contiene NINGUN
-  -- digito (documento extranjero puramente alfabetico, dato de mala calidad
-  -- tipo "PENDIENTE"/"NO DISPONIBLE", formato no contemplado), l_solo_digitos
-  -- quedaba vacio y esta funcion devolvia p_texto SIN TRANSFORMAR, integro,
-  -- caracter por caracter -- indistinguible de un valor bien enmascarado, y
-  -- justo sobre el dominio mas sensible (identidad: func_dm_nif y
-  -- func_dm_espec_doc_segun_tipo son los dos unicos llamadores). Ahora, en
-  -- ausencia total de digitos, se genera un reemplazo sintetico determinista
-  -- de la MISMA longitud via func_dm_hash (mismo HMAC-SHA1 con pepper ya usado en
-  -- el fallback no estandar de func_dm_iban), posicion a posicion, para que la
-  -- salida no conserve ni un solo caracter del valor original.
+  -- Si p_texto no contiene digitos (p.ej. 'PENDIENTE') se genera un reemplazo sintetico
+  -- determinista de la misma longitud via func_dm_hash, para no devolver el valor original.
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_cifra_digitos_en_texto
   -- PROPOSITO    : Enmascara documentos de formato libre (pasaporte, extranjero): cifra los digitos
@@ -824,8 +826,8 @@ l_mac := DBMS_CRYPTO.MAC(
   -- LLAMADO DESDE: func_dm_nif, func_dm_espec_doc_segun_tipo
   ------------------------------------------------------------------------------
   FUNCTION func_dm_cifra_digitos_en_texto(p_texto IN VARCHAR2, p_ajuste IN RAW) RETURN VARCHAR2 IS
-    l_solo_digitos VARCHAR2(200);
-    l_cifrados     VARCHAR2(200);
+    l_solo_digitos VARCHAR2(4000);   -- antes 200: mas de 200 digitos daba ORA-06502
+    l_cifrados     VARCHAR2(4000);
     l_resultado    VARCHAR2(4000) := '';
     l_pos_digito   PLS_INTEGER := 1;
     l_caracter     VARCHAR2(1 CHAR);
@@ -834,19 +836,8 @@ l_mac := DBMS_CRYPTO.MAC(
     IF p_texto IS NULL THEN RETURN NULL; END IF;
     l_solo_digitos := REGEXP_REPLACE(p_texto, '[^0-9]', '');
 
-    -- FIX 2026-10-05 (incidente real, ejecucion_id=8, DM_DUMMY.TBL_PERSONAS.DNI='ABC'):
-    -- la guarda de la rama DOC_SIN_DIGITOS comparaba LENGTH(l_solo_digitos) = 0, pero
-    -- en Oracle REGEXP_REPLACE sobre una cadena sin ningun digito devuelve '' y Oracle
-    -- trata '' como NULL -- por lo que LENGTH(l_solo_digitos) tambien es NULL, no 0.
-    -- "NULL = 0" no es TRUE ni FALSE (es NULL), asi que el IF nunca entraba aqui para
-    -- un valor puramente alfabetico: caia al tramo de abajo, que calcula l_cifrados
-    -- pero nunca lo usa (no hay digitos que sustituir), y el bucle final se limitaba a
-    -- reinsertar cada caracter original sin tocarlo. Resultado: 'ABC' salia como 'ABC',
-    -- identico al bug original que esta misma rama (fix 2026-09-27/09-28) se creo para
-    -- eliminar -- reproducido por una via distinta. Confirmado en vivo:
-    -- SELECT astsysadmin.pkg_dm_mask_ff1.func_dm_nif('ABC') FROM dual; devolvia 'ABC'.
-    -- func_dm_cuenta (mas arriba, func_dm_cuenta) ya usaba el idiom correcto
-    -- "NVL(l_in_len,0) = 0"; aqui se alinea con ese mismo patron probado en el paquete.
+    -- REGEXP_REPLACE sin digitos devuelve '' (NULL en Oracle), por lo que LENGTH(...) = 0 nunca
+    -- es TRUE: se usa la comprobacion de NULL, igual que func_dm_cuenta.
     IF l_solo_digitos IS NULL THEN
       FOR i IN 1 .. LENGTH(p_texto) LOOP
         l_resultado := l_resultado ||
@@ -855,13 +846,8 @@ l_mac := DBMS_CRYPTO.MAC(
       RETURN l_resultado;
     END IF;
 
-    -- Minimo NIST (radix^minlen >= 1.000.000, radix=10 -> minlen=6, SP 800-38Gr1
-    -- Sec.4 "shall"): de 1 a 5 digitos NO se aplica FF1, se usa el sustituto
-    -- sintetico determinista (func_dm_digitos_min_dominio). FIX 2026-09-28
-    -- (peer review): generaliza el fix puntual del 09/27/26 (que solo cubria
-    -- el caso de 1 digito) a todo el tramo fuera de norma (2 a 5 digitos
-    -- tambien quedaban, hasta ahora, cifrandose con FF1 real por debajo del
-    -- minimo exigido).
+    -- Minimo NIST (6 digitos en radix 10): de 1 a 5 digitos no se aplica FF1, se usa el sustituto
+    -- sintetico determinista (func_dm_digitos_min_dominio).
     IF LENGTH(l_solo_digitos) >= 6 THEN
       l_cifrados := LPAD(func_dm_ff1_cifra(l_solo_digitos, p_ajuste), LENGTH(l_solo_digitos), '0');
     ELSE
@@ -914,7 +900,7 @@ l_mac := DBMS_CRYPTO.MAC(
 
     -- NIE: prefijo derivado del numero generado (coherente con doc_segun_tipo)
     ELSIF REGEXP_LIKE(l_val,'^[XYZ][0-9]{7}[A-Z]$') THEN
-      l_out := func_dm_enmascara_nie(TO_NUMBER(SUBSTR(l_val,2,7)), l_ajuste);
+      l_out := func_dm_enmascara_nie(TO_NUMBER(SUBSTR(l_val,2,7)), l_ajuste, SUBSTR(l_val,1,1));
 
     -- CIF: letra + 7 digitos + control (ahora tambien biyectivo via FF1)
     ELSE
@@ -1031,7 +1017,7 @@ l_mac := DBMS_CRYPTO.MAC(
       l_seed := func_dm_hash('IBAN|'||UPPER(TRIM(SUBSTR(p_valor,1,50))));
       l_bban := LPAD(TO_CHAR(MOD(l_seed*137+31, 100000000000000000000)), 20, '0');
       l_cc   := func_dm_iban_cc_es(l_bban);
-      l_out  := 'ES'||l_cc||l_bban;   -- 24 chars exactos, sin truncar (C-01)
+      l_out  := 'ES'||l_cc||l_bban;   -- 24 chars exactos, sin truncar
     END IF;
     RETURN l_out;
   END;
@@ -1069,12 +1055,8 @@ l_mac := DBMS_CRYPTO.MAC(
 
     l_medio := SUBSTR(l_val, 2, l_len-2);
 
-    -- Interior 100% numerico -> FF1 (colision imposible para igual extremos+longitud).
-    -- Minimo NIST (radix^minlen >= 1.000.000, SP 800-38Gr1 Sec.4 "shall", 6
-    -- digitos en radix 10): FIX 2026-09-28 (peer review) -- por debajo de eso
-    -- no se aplica FF1, se usa el mismo sustituto sintetico determinista que
-    -- func_dm_cifra_digitos_en_texto (esta funcion llamaba a FF1 directo sin
-    -- ningun guard de tamano de dominio).
+    -- Interior 100% numerico -> FF1. Por debajo del minimo NIST (6 digitos) se usa el mismo
+    -- sustituto determinista que func_dm_cifra_digitos_en_texto.
     IF REGEXP_LIKE(l_medio, '^[0-9]+$') THEN
       IF LENGTH(l_medio) >= 6 THEN
         l_out := LPAD(func_dm_ff1_cifra(l_medio, l_ajuste), LENGTH(l_medio), '0');
@@ -1122,7 +1104,7 @@ l_mac := DBMS_CRYPTO.MAC(
   ) RETURN VARCHAR2 IS
     l_val      VARCHAR2(4000) := UPPER(TRIM(p_documento));
     l_ajuste   RAW(8) := func_dm_ajuste_dominio('IDENTIDAD');
-    l_digitos  VARCHAR2(200);
+    l_digitos  VARCHAR2(4000);   -- antes 200: mas de 200 digitos daba ORA-06502
     l_new      NUMBER;
     l_num8     VARCHAR2(8);
   BEGIN
@@ -1130,12 +1112,12 @@ l_mac := DBMS_CRYPTO.MAC(
     l_digitos := REGEXP_REPLACE(l_val,'[^0-9]','');
 
     IF p_idtipodocumento = 1 AND l_digitos IS NOT NULL THEN    -- DNI
-      l_new  := func_dm_fpe_num(TO_NUMBER(l_digitos), 100000000, l_ajuste);
+      l_new  := func_dm_fpe_num(TO_NUMBER(SUBSTR(l_digitos,-18)), 100000000, l_ajuste);   -- SUBSTR(-18): un DNI real no cambia; evita ORA-01426 con texto anormal
       l_num8 := LPAD(TO_CHAR(l_new), 8, '0');
       RETURN l_num8 || func_dm_letra_dni(l_new);
 
     ELSIF p_idtipodocumento = 3 AND l_digitos IS NOT NULL THEN -- NIE (misma logica que func_dm_nif)
-      RETURN func_dm_enmascara_nie(TO_NUMBER(l_digitos), l_ajuste);
+      RETURN func_dm_enmascara_nie(TO_NUMBER(SUBSTR(l_digitos,-18)), l_ajuste, CASE WHEN SUBSTR(l_val,1,1) IN ('X','Y','Z') THEN SUBSTR(l_val,1,1) ELSE 'X' END);
 
     ELSE                                                       -- Pasaporte (o sin digitos)
       RETURN func_dm_cifra_digitos_en_texto(l_val, l_ajuste);
@@ -1143,7 +1125,7 @@ l_mac := DBMS_CRYPTO.MAC(
   END;
 
   -- IBAN "continuo" (sin separadores, 24 caracteres): BBAN cifrado con FF1 y
-  -- control modulo 97. NUNCA se trunca (C-01): siempre devuelve ES + cc + 20.
+  -- control modulo 97. Nunca se trunca: siempre devuelve ES + cc + 20.
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_especial_iban_continuo
   -- PROPOSITO    : Enmascara un IBAN espanol en formato continuo: produce un VARCHAR2 de 24
@@ -1221,6 +1203,8 @@ l_mac := DBMS_CRYPTO.MAC(
       WHEN 'IDENTIFICADOR_IDENTIDAD'   THEN RETURN 'IDENTIDAD';
       WHEN 'IDENTIFICADOR_DOCUMENTO'   THEN RETURN 'IDENTIDAD';
       WHEN 'IDENTIFICADOR_BANCARIO'    THEN RETURN 'BANCARIO';
+      WHEN 'IDENTIFICADOR_IBAN'        THEN RETURN 'BANCARIO';   -- alias exactos
+      WHEN 'IDENTIFICADOR_CUENTA'      THEN RETURN 'BANCARIO';
       ELSE
         -- Enrutado por palabras clave si el identificador no es exacto
         IF    INSTR(l_id,'NOMBRE')>0 OR INSTR(l_id,'PERSON')>0 OR INSTR(l_id,'APELL')>0
@@ -1232,10 +1216,12 @@ l_mac := DBMS_CRYPTO.MAC(
           RETURN 'EMAIL';
         ELSIF INSTR(l_id,'TELEF')>0 OR INSTR(l_id,'MOVIL')>0 THEN
           RETURN 'TELEFONO';
-        ELSIF INSTR(l_id,'NIF')>0 OR INSTR(l_id,'NIE')>0 OR INSTR(l_id,'DOC')>0 OR INSTR(l_id,'IDENT')>0 THEN
-          RETURN 'IDENTIDAD';
+        -- La rama bancaria va antes de la de identidad: 'IDENT' esta en todos los IDENTIFICADOR_*
+        -- y capturaba IBAN/CUENTA/BANC como IDENTIDAD.
         ELSIF INSTR(l_id,'IBAN')>0 OR INSTR(l_id,'CUENTA')>0 OR INSTR(l_id,'BANC')>0 THEN
           RETURN 'BANCARIO';
+        ELSIF INSTR(l_id,'NIF')>0 OR INSTR(l_id,'NIE')>0 OR INSTR(l_id,'DOC')>0 OR INSTR(l_id,'IDENT')>0 THEN
+          RETURN 'IDENTIDAD';
         ELSE
           RETURN 'OBS';
         END IF;
@@ -1275,7 +1261,7 @@ l_mac := DBMS_CRYPTO.MAC(
       WHEN 'EMAIL'     THEN RETURN func_dm_email(p_valor);
       WHEN 'IDENTIDAD' THEN RETURN func_dm_nif(p_valor);
       WHEN 'BANCARIO'  THEN
-        IF REGEXP_LIKE(UPPER(TRIM(SUBSTR(p_valor,1,50))), '^ES[0-9]{22}$') THEN
+        IF REGEXP_LIKE(REPLACE(UPPER(TRIM(SUBSTR(p_valor,1,50))),' ',''), '^ES[0-9]{22}$') THEN
           RETURN func_dm_iban(p_valor);
         ELSE
           RETURN func_dm_cuenta(p_valor);

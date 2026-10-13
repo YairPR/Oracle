@@ -4,83 +4,36 @@ Rem    NOMBRE
 Rem      pkg_dm_trazabilidad.sql - Registro de traza y errores del motor
 Rem
 Rem    DESCRIPCION
-Rem      Paquete minimo, SIN dependencias de otros paquetes del motor, que
-Rem      centraliza dos operaciones de solo escritura: registrar un evento de
-Rem      traza (tdm_mask_trace) y registrar un error de ejecucion
-Rem      (tdm_ejecucion_error). Ambas rutinas usan AUTONOMOUS_TRANSACTION para
-Rem      que su COMMIT nunca interfiera con la transaccion de negocio del
-Rem      llamador.
+Rem      Paquete minimo, sin dependencias de otros paquetes del motor, que centraliza la
+Rem      escritura de la traza (tdm_mask_trace) y de los errores de ejecucion
+Rem      (tdm_ejecucion_error). Usa AUTONOMOUS_TRANSACTION para que su COMMIT no interfiera con
+Rem      la transaccion de negocio del llamador.
 Rem
-Rem    MOTIVO DE ESTE PAQUETE (cierre de auditoria 2026-09-16, hallazgo
-Rem    de "acoplamiento cruzado de paquetes"):
-Rem      Antes de este cambio, pkg_dm_trace vivia dentro de pkg_dm_enmascarar
-Rem      (05). Pero pkg_dm_descubrimiento (04) tambien necesita trazar eventos
-Rem      (p.ej. re-inclusion de columnas por integridad referencial), y 04
-Rem      compila ANTES que 05 en el orden de instalacion (ver 99_install:
-Rem      04 -> 06 -> 05 -> 07). Una llamada ESTATICA de 04 hacia
-Rem      pkg_dm_enmascarar.proc_dm_trace fallaria en una instalacion limpia
-Rem      porque pkg_dm_enmascarar todavia no existe en el esquema en ese
-Rem      punto del script. La solucion anterior evitaba esto con
-Rem      EXECUTE IMMEDIATE ('begin pkg_dm_enmascarar.proc_dm_trace(...); end;'),
-Rem      lo que difiere la resolucion del nombre a tiempo de ejecucion -
-Rem      funciona, pero es fragil (un cambio de firma en proc_dm_trace no lo
-Rem      detecta el compilador, solo revienta en produccion) y crea un ciclo
-Rem      logico entre 04 y 05 dificil de razonar.
-Rem
-Rem      Extrayendo la trazabilidad a este paquete independiente, sin
-Rem      dependencias de pepper, sesion ni de ningun otro paquete del motor,
-Rem      se rompe el ciclo: pkg_dm_trazabilidad compila justo despues de las
-Rem      tablas (02) y antes de 04, y tanto 04 como 05 lo llaman de forma
-Rem      ESTATICA sin ningun EXECUTE IMMEDIATE.
-Rem
-Rem      Hasta el 10/10/26 pkg_dm_enmascarar.proc_dm_trace y proc_dm_log_ejec_error
-Rem      siguieron existiendo como wrappers de una linea que delegaban aqui. Se
-Rem      retiraron (R14): ningun script ni SIGAD los invocaba; el unico punto de
-Rem      entrada es este paquete.
+Rem      Tambien aloja el control de vida de TDM_EJECUCION compartido por descubrimiento y
+Rem      enmascarado: sesion, latido y autocancelacion de ejecuciones huerfanas.
 Rem
 Rem    COMPATIBILIDAD
 Rem      Oracle 11g en adelante. No requiere wallet ni TDE.
 Rem
 Rem    ORDEN DE INSTALACION
-Rem      Debe compilarse despues de 02_dm_enmascaramiento_objetos.sql (crea
-Rem      tdm_mask_trace y sus secuencias) y ANTES de 22_dm_pkg_descubrimiento.sql
-Rem      y de 37_dm_pkg_enmascarar.sql.
+Rem      Despues de 02_dm_enmascaramiento_objetos.sql (crea tdm_mask_trace y sus secuencias) y
+Rem      antes de 22_dm_pkg_descubrimiento.sql y 37_dm_pkg_enmascarar.sql.
 Rem
 Rem    MODIFICADO   (MM/DD/YY)
-Rem    epurisaca    09/16/26 - Extraido de pkg_dm_enmascarar para romper el
-Rem                            acoplamiento circular 04<->05 (auditoria Gemini).
-Rem
-Rem    epurisaca    10/09/26 - proc_dm_trace ahora escribe NIVEL (WARN/ERROR derivado de
-Rem                            fase/paso). Antes siempre INFO: contadores y KPI-03 sobre
-Rem                            traza eran vacuamente 0.
-Rem
-Rem    epurisaca    10/09/26 - TRAZA ORDENADA (una pregunta, una tabla):
-Rem                            * proc_dm_trace toma el NIVEL del catalogo TDM_PARAMETRO
-Rem                              (grupo EVENTO, clave FASE.PASO) y acepta claves de objeto
-Rem                              (owner/tabla/columna), filas, duracion_seg y error_id.
-Rem                            * proc_dm_log_ejec_error es el UNICO escritor de errores
-Rem                              (04 delega aqui) y deja siempre la linea de tiempo
-Rem                              ERROR.REGISTRADO enlazada por error_id.
-Rem                            * func_dm_seg_desde: segundos desde un instante, para duracion_seg.
-Rem
-Rem    epurisaca    10/10/26 - fecha_evento pasa a DATE (al segundo, SYSDATE) y la duracion
-Rem                            se registra en SEGUNDOS con 2 decimales (duracion_ms -> duracion_seg;
-Rem                            func_dm_ms_desde -> func_dm_seg_desde).
-Rem
-Rem    epurisaca    09/27/26 - Se incorporan proc_dm_refresca_sesion,
-Rem                            func_dm_sesion_viva y proc_dm_autocancel_huerfanas,
-Rem                            movidas desde pkg_dm_descubrimiento (04), donde
-Rem                            eran privadas y no las podia usar pkg_dm_enmascarar
-Rem                            (05), que se quedaba sin autocancelacion de
-Rem                            ejecuciones huerfanas en ENMASCARAMIENTO. Mismo
-Rem                            motivo que la extraccion del 09/16: es
-Rem                            infraestructura sobre TDM_EJECUCION compartida
-Rem                            por ambas fases, no logica de negocio de ninguna.
+Rem    epurisaca    09/16/26 - Extraido de pkg_dm_enmascarar para romper el acoplamiento circular
+Rem                            entre descubrimiento y enmascarado
+Rem    epurisaca    09/27/26 - Se incorporan proc_dm_refresca_sesion, func_dm_sesion_viva y
+Rem                            proc_dm_autocancel_huerfanas, compartidas por ambas fases
+Rem    epurisaca    10/09/26 - proc_dm_trace toma el NIVEL del catalogo TDM_MASK_TRACE_EVENTO y
+Rem                            acepta objeto, filas, duracion_seg y error_id;
+Rem                            proc_dm_log_ejec_error es el unico escritor de errores
+Rem    epurisaca    10/10/26 - fecha_evento pasa a DATE y la duracion se registra en segundos
+Rem                            (func_dm_ms_desde -> func_dm_seg_desde)
 Rem
 
 create or replace PACKAGE pkg_dm_trazabilidad AS
 
-  -- Linea de tiempo (TDM_MASK_TRACE). El nivel sale del catalogo TDM_PARAMETRO.
+  -- Linea de tiempo (TDM_MASK_TRACE). El nivel sale del catalogo TDM_MASK_TRACE_EVENTO.
   PROCEDURE proc_dm_trace(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
@@ -107,12 +60,8 @@ create or replace PACKAGE pkg_dm_trazabilidad AS
   -- Segundos (2 decimales) transcurridos desde p_t0 (para p_duracion_seg de proc_dm_trace).
   FUNCTION func_dm_seg_desde(p_t0 IN TIMESTAMP WITH TIME ZONE) RETURN NUMBER;
 
-  -- 2026-09-27: control de vida de TDM_EJECUCION (sesion/heartbeat/huerfanas).
-  -- Vive aqui por el mismo motivo que proc_dm_trace: es infraestructura
-  -- compartida por DESCUBRIMIENTO (04) y ENMASCARAMIENTO (05) sobre una
-  -- tabla comun (TDM_EJECUCION), no logica de negocio de ninguno de los dos.
-  -- Antes vivia duplicada/privada dentro de 04, y 05 no tenia equivalente
-  -- (ver hallazgo "gap_autocancelacion_enmascarado" del proyecto).
+  -- Control de vida de TDM_EJECUCION (sesion, latido, huerfanas), compartido por descubrimiento
+  -- y enmascarado.
   PROCEDURE proc_dm_refresca_sesion(
     p_ejecucion_id IN NUMBER
   );
@@ -126,7 +75,7 @@ create or replace PACKAGE pkg_dm_trazabilidad AS
     p_forzar_sin_vsession IN VARCHAR2 DEFAULT 'N'
   );
 
-  -- Movido desde 04 (modularizacion 2026-10-10): error de descubrimiento con backtrace.
+  -- Error de descubrimiento con backtrace.
   procedure proc_dm_log_error(
       p_ejecucion_id in number,
       p_owner        in varchar2,
@@ -143,7 +92,7 @@ END pkg_dm_trazabilidad;
 create or replace PACKAGE BODY pkg_dm_trazabilidad AS
 
   ------------------------------------------------------------------------------
-  -- Catalogo de eventos en memoria (TDM_PARAMETRO, grupo EVENTO). Se carga una
+  -- Catalogo de eventos en memoria (TDM_MASK_TRACE_EVENTO). Se carga una
   -- vez por sesion; un cambio de nivel hecho a mano rige desde la sesion
   -- siguiente. Si la tabla no existe o esta vacia, se usa la regla heredada.
   ------------------------------------------------------------------------------
@@ -154,10 +103,10 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_nivel
   -- PROPOSITO    : Devuelve el nivel (INFO, WARN, ERROR) de un evento de traza a partir del catalogo
-  --                TDM_PARAMETRO (grupo EVENTO); si el par fase/paso no esta en el catalogo aplica la
+  --                TDM_MASK_TRACE_EVENTO; si el par fase/paso no esta en el catalogo aplica la
   --                regla heredada.
   -- ENTRADAS     : p_fase, p_paso; retorna el nivel en VARCHAR2.
-  -- LEE          : TDM_PARAMETRO (una vez por sesion, cache en memoria)
+  -- LEE          : TDM_MASK_TRACE_EVENTO (una vez por sesion, cache en memoria)
   -- ESCRIBE      : ninguno
   -- ERRORES      : Ninguno: si la tabla no existe usa la regla heredada.
   -- LLAMADO DESDE: proc_dm_trace.
@@ -168,8 +117,8 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
     IF NOT g_cat_cargado THEN
       g_cat_cargado := TRUE;      -- aunque falle la carga: no se reintenta en cada evento
       BEGIN
-        FOR r IN (SELECT clave, valor FROM tdm_parametro WHERE grupo = 'EVENTO') LOOP
-          g_cat(r.clave) := UPPER(r.valor);
+        FOR r IN (SELECT fase, paso, nivel FROM tdm_mask_trace_evento) LOOP
+          g_cat(UPPER(r.fase)||'.'||UPPER(r.paso)) := UPPER(r.nivel);
         END LOOP;
       EXCEPTION
         WHEN OTHERS THEN NULL;
@@ -192,7 +141,7 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   -- LEE          : ninguno
   -- ESCRIBE      : ninguno
   -- ERRORES      : ninguno
-  -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_apl_col y pkg_dm_descubrimiento.proc_dm_procesa_desc.
+  -- LLAMADO DESDE: pkg_dm_mask_columna, pkg_dm_mask_worker, pkg_dm_enmascarar y pkg_dm_descubrimiento.
   ------------------------------------------------------------------------------
   FUNCTION func_dm_seg_desde(p_t0 IN TIMESTAMP WITH TIME ZONE) RETURN NUMBER IS
     l_d INTERVAL DAY(9) TO SECOND(6);
@@ -209,12 +158,12 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   --                catalogo, detalle y duracion). El objeto afectado va dentro del detalle
   --                (ESQUEMA.TABLA.COLUMNA ...), no en columnas aparte.
   -- ENTRADAS     : p_solicitud_id, p_ejecucion_id, p_fase, p_paso, p_detalle y opcional p_duracion_seg.
-  -- LEE          : TDM_PARAMETRO (via func_dm_nivel)
+  -- LEE          : TDM_MASK_TRACE_EVENTO (via func_dm_nivel)
   -- ESCRIBE      : TDM_MASK_TRACE (INSERT)
   -- ERRORES      : Ninguno: transaccion autonoma que nunca propaga el fallo (deja una migaja en
   --                DBMS_OUTPUT).
-  -- LLAMADO DESDE: pkg_dm_enmascarar (wrapper proc_dm_trace), pkg_dm_descubrimiento,
-  --                pkg_dm_trazabilidad.proc_dm_log_ejec_error y dm_liberar_ejecucion_activa.sql.
+  -- LLAMADO DESDE: los paquetes de enmascaramiento (31 a 37), pkg_dm_descubrimiento y
+  --                pkg_dm_trazabilidad.proc_dm_log_ejec_error.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_trace(
     p_solicitud_id IN NUMBER,
@@ -228,10 +177,8 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
     l_nivel VARCHAR2(10);
   BEGIN
     l_nivel := func_dm_nivel(p_fase, p_paso);
-    -- El NIVEL ya no se deduce del texto de la fase: lo fija el catalogo
-    -- TDM_PARAMETRO (grupo EVENTO). Historia: hasta el 10/09/26 la columna NIVEL
-    -- no se escribia y los contadores WARN/ERROR de dm_enmascara, dm_enmascara_reanudar
-    -- y KPI-03 de dm_validar_flujo eran siempre 0.
+    -- El NIVEL lo fija el catalogo TDM_MASK_TRACE_EVENTO; de el dependen los contadores WARN/ERROR
+    -- de dm_enmascara, dm_enmascara_reanudar y el KPI-03 de dm_validar_flujo.
     INSERT INTO tdm_mask_trace(
       trace_id, solicitud_id, ejecucion_id, nivel, fase, paso, detalle, fecha_evento,
       duracion_seg
@@ -260,19 +207,8 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
       END;
   END;
 
-  -- FIX 2026-09-27 (auditoria estricta): SELECT MAX(error_id)+1 seguido de
-  -- INSERT no es atomico -- dos llamadas concurrentes (dos sesiones logueando
-  -- un error casi al mismo tiempo, escenario real bajo volumen con varios
-  -- workers fallando cerca en el tiempo) pueden leer el mismo MAX antes de que
-  -- ninguna confirme, generar el mismo error_id, y la segunda INSERT violaba
-  -- el PK -- perdiendose en silencio (solo DBMS_OUTPUT), justo en la tabla
-  -- cuyo proposito es sostener la trazabilidad de auditoria. No se vuelve a
-  -- SEQ_DM_EJECUCION_ERR (podria seguir desincronizada de MAX(error_id) tras
-  -- el incidente SRI2006) ni se anade una secuencia nueva (requeriria DDL
-  -- adicional en el esquema). En su lugar: reintento optimista -- ante
-  -- ORA-00001 especificamente, se recalcula el MAX y se reintenta el INSERT,
-  -- hasta 5 veces. Una colision real bajo concurrencia es transitoria; el
-  -- reintento la resuelve sin necesitar bloqueos ni objetos nuevos.
+  -- El error_id se calcula con MAX+1 y, ante ORA-00001 por concurrencia, se recalcula y se
+  -- reintenta el INSERT (hasta 5 veces), sin bloqueos ni objetos nuevos.
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_log_ejec_error
   -- PROPOSITO    : Unico escritor de errores: registra un error con codigo, mensaje y backtrace en
@@ -283,7 +219,7 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   -- LEE          : TDM_EJECUCION_ERROR (MAX(error_id)); USER_TABLES
   -- ESCRIBE      : TDM_EJECUCION_ERROR (INSERT); TDM_MASK_TRACE (via proc_dm_trace)
   -- ERRORES      : Ninguno: transaccion autonoma; reintenta hasta 5 veces ante colision del error_id.
-  -- LLAMADO DESDE: pkg_dm_enmascarar (wrapper) y pkg_dm_descubrimiento.proc_dm_log_error.
+  -- LLAMADO DESDE: pkg_dm_mask_dependencias, pkg_dm_mask_columna y pkg_dm_enmascarar.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_log_ejec_error(
     p_ejecucion_id IN NUMBER,
@@ -365,21 +301,9 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   END;
 
   ------------------------------------------------------------------------------
-  -- Captura datos de sesion Oracle (sid/serial#/inst_id) de quien esta
-  -- corriendo esta ejecucion_id, y refresca el heartbeat. Best-effort: la
-  -- ausencia de SID/SERIAL# (permiso, RAC en failover) no debe abortar el
-  -- proceso que la invoca, por eso el WHEN OTHERS exterior es silencioso.
-  -- 2026-09-27: movida aqui desde pkg_dm_descubrimiento (04), que la tenia
-  -- privada y duplicada palabra por palabra en pkg_dm_enmascarar (05).
-  -- FIX 2026-09-27 (auditoria estricta): le faltaba PRAGMA
-  -- AUTONOMOUS_TRANSACTION -- su COMMIT confirmaba directamente la
-  -- transaccion del llamador, violando el principio de diseno que este mismo
-  -- paquete declara en su cabecera ("el COMMIT nunca interfiere con la
-  -- transaccion de negocio del llamador"). Con los 3 puntos de llamada
-  -- actuales (inicio de proc_dm_enmascaramiento/proc_dm_descubrimiento/proc_dm_reanudar,
-  -- siempre antes de tocar datos) esto no causaba dano hoy, pero es una bomba
-  -- de tiempo ante cualquier futura llamada a mitad de un lote sin darse
-  -- cuenta. Ahora es autonoma como el resto del paquete.
+  -- Captura la sesion Oracle (sid/serial#/inst_id) de la ejecucion y refresca el latido.
+  -- Mejor esfuerzo: si no se puede leer, no debe abortar al proceso que la llama. Es autonoma
+  -- para que su COMMIT no confirme la transaccion del llamador.
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_refresca_sesion
@@ -401,30 +325,10 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
     l_inst   NUMBER;
   BEGIN
     BEGIN
-      -- FIX 2026-10-05 (hallazgo en vivo, ejecucion_id=1): el self-lookup
-      -- anterior identificaba "mi propia sesion" por (audsid, username)
-      -- contra GV$SESSION. Para conexiones SYS/AS SYSDBA eso no sirve:
-      -- Oracle asigna el AUDSID centinela 4294967295 (2**32-1) a TODAS las
-      -- sesiones SYS por igual, asi que con varias ventanas SYS abiertas a
-      -- la vez (patron real de uso de este motor) el WHERE no distinguia
-      -- nada y ROWNUM=1 se quedaba con cualquiera de ellas. Confirmado en
-      -- vivo: ejecucion_id=1 quedo con sid=1088/serial#=29559 (una sesion
-      -- SYS totalmente distinta, ya muerta) en vez del sid/serial# real del
-      -- orquestador (visible en el titulo de su propia ventana SQL*Plus).
-      -- SYS_CONTEXT('USERENV','SID')/('USERENV','INSTANCE') identifican la
-      -- sesion ACTUAL sin ambiguedad para cualquier tipo de cuenta (no
-      -- dependen de audsid ni username), y PRAGMA AUTONOMOUS_TRANSACTION no
-      -- cambia este contexto -- es de sesion, no de transaccion. serial# no
-      -- esta expuesto en USERENV, asi que se resuelve con un lookup local
-      -- (V$SESSION, no GV$SESSION) por SID -- unico dentro de la instancia
-      -- local, sin la ambiguedad de audsid/username del metodo anterior.
-      -- Verificado contra los 3 puntos de llamada reales de este
-      -- procedimiento (inicio de proc_dm_descubrimiento_core/proc_dm_reanudar
-      -- en 04, proc_dm_enmascaramiento en 05): los tres lo invocan de forma
-      -- sincrona, en la propia sesion orquestadora, nunca desde un job de
-      -- DBMS_SCHEDULER ni un worker paralelo -- asi que SID/INSTANCE aqui
-      -- siempre corresponden a la sesion real que arranco o reanudo la
-      -- ejecucion_id.
+      -- La sesion propia se identifica con SYS_CONTEXT('USERENV','SID'/'INSTANCE'), no por
+      -- audsid/username: las sesiones SYS comparten el AUDSID centinela 4294967295 y el lookup
+      -- podia tomar otra ventana. El serial# se resuelve en V$SESSION por SID. Solo se invoca desde
+      -- la sesion orquestadora, nunca desde un job o worker.
       l_sid  := TO_NUMBER(SYS_CONTEXT('USERENV','SID'));
       l_inst := TO_NUMBER(SYS_CONTEXT('USERENV','INSTANCE'));
 
@@ -448,8 +352,7 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
      WHERE ejecucion_id = p_ejecucion_id;
     COMMIT;
   EXCEPTION
-    -- 2026-10-10 (auditoria industrial G8): no se propaga (el motor no debe caer por un
-    -- latido), pero deja una migaja como el resto del paquete en vez de silencio total.
+    -- No se propaga (el motor no debe caer por un latido), pero deja una traza minima.
     WHEN OTHERS THEN
       BEGIN
         DBMS_OUTPUT.PUT_LINE('[pkg_dm_trazabilidad.proc_dm_refresca_sesion] no se pudo refrescar la sesion de ejecucion_id='||
@@ -460,8 +363,6 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
 
   ------------------------------------------------------------------------------
   -- Verifica si la sesion Oracle que registro esta ejecucion_id sigue viva.
-  -- 2026-09-27: movida aqui desde pkg_dm_descubrimiento (04); antes era
-  -- privada y pkg_dm_enmascarar (05) no tenia equivalente propio.
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- [DOC] function func_dm_sesion_viva
@@ -469,7 +370,7 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   -- ENTRADAS     : p_ejecucion_id; retorna 1 si hay sesion viva (no KILLED/SNIPED), 0 si no.
   -- LEE          : TDM_EJECUCION; GV$SESSION
   -- ESCRIBE      : ninguno
-  -- ERRORES      : Ninguno: ante cualquier error devuelve 0.
+  -- ERRORES      : Ninguno: si no puede leer GV$SESSION devuelve 1 (asume viva; evita reanudar en paralelo).
   -- LLAMADO DESDE: proc_dm_gestiona_tareas, pkg_dm_descubrimiento.proc_dm_reanudar y los scripts de
   --                monitor/cancel/reanudar.
   ------------------------------------------------------------------------------
@@ -494,62 +395,28 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
          AND NVL(s.status,'ACTIVE') NOT IN ('KILLED','SNIPED');
     EXCEPTION
       WHEN OTHERS THEN
-        l_cnt := 0;
+        -- Si GV$SESSION no se puede leer se asume que la sesion vive: darla por muerta permitiria
+        -- reanudar y enmascarar dos veces (FF1 no es idempotente).
+        BEGIN
+          DBMS_OUTPUT.PUT_LINE('[func_dm_sesion_viva] no se pudo leer GV$SESSION para ejecucion_id='||p_ejecucion_id||
+                               ': se asume sesion viva. '||SQLERRM);
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        RETURN 1;
     END;
 
     RETURN CASE WHEN l_cnt > 0 THEN 1 ELSE 0 END;
   END func_dm_sesion_viva;
 
   ------------------------------------------------------------------------------
-  -- Auto-cancelacion de ejecuciones huerfanas: barre TODAS las filas
-  -- TDM_EJECUCION.ESTADO='EJECUTANDO' (cualquier esquema, cualquier
-  -- FASE_PROCESO -- DESCUBRIMIENTO o ENMASCARAMIENTO) y las pasa a ABORTADA
-  -- SOLO cuando la sesion Oracle que las origino esta confirmada como NO viva,
-  -- o esta viva pero inactiva (sin ejecutar nada) durante mas de
-  -- p_minutos_inactividad. No es un job de fondo: se invoca de forma
-  -- perezosa desde los puntos de entrada de 04 y 05.
-  --
-  -- FIX CRITICO 2026-09-27 (auditoria estricta del motor completo): el diseno
-  -- anterior autocancelaba por heartbeat obsoleto INCLUSO cuando gv$session
-  -- confirmaba la sesion viva -- una unica sentencia larga (un UPDATE/chunk de
-  -- DBMS_PARALLEL_EXECUTE sobre una columna de millones de filas) no vuelve a
-  -- PL/SQL para llamar proc_dm_refresca_sesion hasta que termina, y ya se ha
-  -- observado en produccion que UNA SOLA columna puede tardar 1-2 horas (ej.
-  -- TBL_CUENTA_VOL.IBAN, 10.8M filas, ~31 min en la prueba del 27/09). Con el
-  -- umbral por defecto de 15 min, cualquier ejecucion legitima de tablas
-  -- grandes se marcaba ABORTADA mientras seguia corriendo de verdad -- el
-  -- aborto es solo una bandera en TDM_EJECUCION (no mata la sesion Oracle), asi
-  -- que el trabajo real continuaba mientras el motor creia el esquema libre,
-  -- abriendo la puerta a que otra ejecucion arrancara en paralelo sobre las
-  -- mismas tablas (func_dm_conflicto_running ya no veria la fila EJECUTANDO).
-  --
-  -- Nuevo criterio, usando gv$session.status ademas de la mera existencia de
-  -- la sesion:
-  --   * Sesion NO encontrada (l_cnt=0)            -> huerfana real. ABORTADA.
-  --   * Sesion encontrada y ACTIVE (l_activos>0)   -> esta ejecutando SQL
-  --                                                    AHORA MISMO (Oracle
-  --                                                    marca ACTIVE mientras
-  --                                                    el servidor sigue
-  --                                                    dentro de la misma
-  --                                                    llamada de usuario, ya
-  --                                                    sea un UPDATE directo o
-  --                                                    bloqueada esperando a
-  --                                                    RUN_TASK). NUNCA se
-  --                                                    autocancela, sea cual
-  --                                                    sea el heartbeat.
-  --   * Sesion encontrada pero INACTIVE (ociosa) y
-  --     heartbeat obsoleto                         -> SI es sospechoso
-  --                                                    (proceso colgado entre
-  --                                                    pasos, o el cliente
-  --                                                    abandono la sesion sin
-  --                                                    cerrarla). Se conserva
-  --                                                    el autosanado original.
-  --   * Sesion encontrada, INACTIVE pero heartbeat
-  --     todavia dentro del margen                  -> no se toca.
-  -- El fallback cuando gv$session no se puede consultar (permiso, RAC) sigue
-  -- siendo best-effort y solo actua si p_forzar_sin_vsession='Y' (default
-  -- 'N' = no hacer nada), pero ahora TAMBIEN exige heartbeat obsoleto -- antes
-  -- cancelaba de inmediato sin comprobar el heartbeat en absoluto.
+  -- Auto-cancelacion de ejecuciones huerfanas: barre las filas TDM_EJECUCION en EJECUTANDO (cualquier
+  -- fase) y las pasa a ABORTADA solo si:
+  --   * la sesion que las origino ya no existe, o
+  --   * la sesion esta INACTIVE y el latido supera p_minutos_inactividad.
+  -- Una sesion ACTIVE nunca se cancela: una sola sentencia larga (UPDATE o chunks de una columna de
+  -- millones de filas) no refresca el latido hasta terminar. Si gv$session no se puede consultar, solo
+  -- actua con p_forzar_sin_vsession='Y' y heartbeat obsoleto. No es un job: se invoca desde los puntos
+  -- de entrada de descubrimiento y enmascarado.
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_autocancel_huerfanas
@@ -561,8 +428,7 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
   -- LEE          : TDM_EJECUCION; GV$SESSION
   -- ESCRIBE      : TDM_EJECUCION (estado ABORTADA, fecha_fin, ultimo_paso)
   -- ERRORES      : Ninguno: nunca aborta una sesion viva y activa.
-  -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_validar_concurrencia y la validacion de concurrencia del
-  --                descubrimiento.
+  -- LLAMADO DESDE: pkg_dm_mask_validacion.proc_dm_validar_concurrencia y pkg_dm_descubrimiento.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_autocancel_huerfanas(
     p_minutos_inactividad IN NUMBER DEFAULT 15,
@@ -637,65 +503,19 @@ create or replace PACKAGE BODY pkg_dm_trazabilidad AS
     COMMIT;
   END proc_dm_autocancel_huerfanas;
 
-  -- Movido desde 04 (modularizacion 2026-10-10, R1d): misma logica, ahora compartida.
+  -- Logica compartida por descubrimiento y enmascarado.
 
--- =========================================================
--- REVERSION COMPLETA 2026-10-03 (vespertino): se retira TODO el mecanismo
--- "el dato manda sobre el nombre" para IDENTIFICADOR_PERSONAL introducido el
--- 02/10/26 y ajustado el 03/10/26 (funciones func_dm_es_nombre_persona_valido,
--- func_dm_contiene_doc_identidad_valido y func_dm_contenido_parece_persona,
--- mas la regla sentinela __CONTENIDO_NOMBRE_PERSONA__ en 03_...carga_reglas).
--- Motivo (evaluacion solicitada por el usuario sobre los resultados reales de
--- @dm_descubre en DM_DUMMY y DATAM_ARCA_OWN el mismo dia):
---   1) REGRESION REAL CONFIRMADA: DATAM_ARCA_OWN.PRESTAMOS.EDIFICIO y
---      PRESTAMOS_BK.EDIFICIO (direcciones tipo "Paseo Maria Agustin, 36
---      (Pignatelli)") empezaron a clasificar PROBABLE/ENMASCARAR=Y. Causa
---      raiz: el regex de forma de nombre, al quitarle el ancla '$' el mismo
---      dia para intentar resolver PROMOTOR, pasa a aceptar como "nombre" el
---      PREFIJO de cualquier valor con 2 a 4 tokens capitalizados -- y un
---      nombre de calle/edificio en castellano tiene exactamente esa forma
---      lexica. Confirmado fila por fila contra TDM_COLUMNA_HIST real
---      (score_patron=67,4 = 100*0,674; ratio_match=337/500=0,674) y contra el
---      mismo regex ejecutado en Python sobre la muestra real.
---   2) EL FIX NUNCA CUMPLIO SU PROPIO OBJETIVO: el score_patron real de
---      EXPEDIENTES.PROMOTOR en produccion fue 46,8 (100*0,468), por debajo
---      del umbral PROBABLE (65) -- sigue en REVISAR/ENMASCARAR=N, igual que
---      antes de todo este cambio. La estimacion de ~73% de ratio citada en el
---      changelog del mismo dia (basada en combinar nombre+documento) NO se
---      corresponde con lo que el bucle de scoring realmente evalua (solo la
---      señal de nombre, tras simplificarse por costo mas temprano ese mismo
---      dia) -- un error de medicion propio, detectado al re-verificar con el
---      archivo real de 1000 filas: nombre-solo-sin-ancla=41,4%,
---      nombre-con-ancla=7,6%, documento-solo=25,2%, con-ancla-OR-documento=
---      32,8% -- ninguna combinacion realista alcanza 65 ni siquiera 45.
---   3) CONCLUSION: el mecanismo no logra enmascarar PROMOTOR (sigue N en
---      cualquier variante evaluada) y SI introduce un falso positivo real y
---      peligroso sobre datos de direccion/edificio -- a escala SRI2006 (79
---      tablas, ~100M filas) el mismo patron lexico (calle+numero+parentesis)
---      aparece en cualquier columna de domicilio/emplazamiento del esquema,
---      no solo en DM_DUMMY.EDIFICIO. Coste sin beneficio y con riesgo real:
---      se revierte por completo, no se parchea. El gate de
---      IDENTIFICADOR_PERSONAL vuelve a ser el simple chequeo por nombre de
---      columna (NOMBRE|APELLIDO|...) que existia antes del 02/10/26.
--- PROMOTOR queda, de forma deliberada, sin clasificacion automatica: es un
--- caso genuinamente mixto (persona fisica o entidad segun la fila) que un
--- heuristico de contenido generico no puede resolver con seguridad a esta
--- escala. Via correcta si el negocio confirma que debe enmascararse: FORCE
--- manual en TDM_EXCEPCION_COL (ya soportado por el motor), no un regex mas
--- permisivo evaluado sobre las 500 filas de muestra de cada columna de los
--- 79 tablas de SRI2006.
--- =========================================================
+-- Nota de diseno: el gate de IDENTIFICADOR_PERSONAL es el chequeo por nombre de columna
+-- (NOMBRE|APELLIDO|...). Se descarto clasificar por el contenido de la muestra porque confundia
+-- direcciones con nombres. PROMOTOR (persona o entidad segun la fila) queda sin clasificacion
+-- automatica: si el negocio confirma que debe enmascararse, se fuerza en TDM_EXCEPCION_COL.
 
 ------------------------------------------------------------------------------
 -- LOG DE ERRORES
--- 2026-10-09 (limpieza de duplicidad): ya NO escribe en TDM_EJECUCION_ERROR por su
--- cuenta. El unico escritor es pkg_dm_trazabilidad.proc_dm_log_ejec_error, que
--- ademas deja la linea ERROR.REGISTRADO en la linea de tiempo (TDM_MASK_TRACE)
--- enlazada por error_id. Esta rutina se conserva solo como atajo con la firma
--- historica del descubrimiento (7 llamadores) y como red de seguridad: NUNCA debe
--- poder abortar el proceso que esta protegiendo (historia: incidente SRI2006,
--- ORA-00001 en el PK del error escalaba un fallo de una columna a un aborto total;
--- la proteccion contra colision de error_id con reintento vive ahora en este paquete).
+-- No escribe en TDM_EJECUCION_ERROR por su cuenta: delega en
+-- pkg_dm_trazabilidad.proc_dm_log_ejec_error (unico escritor, enlaza la traza por error_id).
+-- Es un atajo con la firma del descubrimiento y red de seguridad: nunca debe abortar el proceso
+-- que protege.
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 -- [DOC] procedure proc_dm_log_error

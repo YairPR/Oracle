@@ -5,9 +5,8 @@ Rem pkg_dm_mask_sync  --  36_dm_pkg_mask_sync.sql
 Rem ================================================================================
 Rem Coherencia entre tablas sin FK (TDM_MASK_RELACION_SYNC) tras el enmascarado.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_mask_sync AS
@@ -15,7 +14,8 @@ create or replace PACKAGE pkg_dm_mask_sync AS
   PROCEDURE proc_dm_post_sync(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
-    p_esquema      IN VARCHAR2
+    p_esquema      IN VARCHAR2,
+    p_errores      OUT NUMBER
   );
 
 END pkg_dm_mask_sync;
@@ -33,15 +33,18 @@ create or replace PACKAGE BODY pkg_dm_mask_sync AS
   --                (SELECT dinamico de verificacion)
   -- ESCRIBE      : UPDATE de la columna destino (via proc_dm_ejecuta_update_seguro); TDM_MASK_TRACE
   --                (SYNC, SYNC_OK, SYNC_MISMATCH, WARN_SYNC*); COMMIT
-  -- ERRORES      : Sin errores propagados: todo fallo por relacion se traza como WARN_SYNC /
+  -- SALIDA       : p_errores = relaciones con fallo (WARN_SYNC, WARN_SYNC_CHECK, WARN_SYNC_LEN) o con
+  --                diferencias (SYNC_MISMATCH). El llamador las suma a los errores de la corrida.
+  -- ERRORES      : Sin excepciones propagadas: todo fallo por relacion se traza como WARN_SYNC /
   --                WARN_SYNC_CHECK y continua.; Si la longitud origen supera la del destino se omite
   --                la relacion (WARN_SYNC_LEN).
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento y proc_dm_enmascara_tabla.
+  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_post_sync(
     p_solicitud_id IN NUMBER,
     p_ejecucion_id IN NUMBER,
-    p_esquema      IN VARCHAR2
+    p_esquema      IN VARCHAR2,
+    p_errores      OUT NUMBER
   ) IS
     l_sql CLOB;
     l_rows NUMBER;
@@ -53,6 +56,7 @@ create or replace PACKAGE BODY pkg_dm_mask_sync AS
     l_len_conflicts  NUMBER;
     l_max_src_len    NUMBER;
   BEGIN
+    p_errores := 0;
     FOR rc IN (
       SELECT tabla_origen, columna_join_origen, tabla_destino, columna_join_destino,
              columna_origen, columna_destino, prioridad
@@ -93,6 +97,7 @@ create or replace PACKAGE BODY pkg_dm_mask_sync AS
               ' max_len_origen='||NVL(l_max_src_len,0)||
               ' max_len_destino='||l_dest_len
             );
+            p_errores := p_errores + 1;
             CONTINUE;
           END IF;
         END IF;
@@ -114,22 +119,20 @@ create or replace PACKAGE BODY pkg_dm_mask_sync AS
             p_solicitud_id,p_ejecucion_id,'POST_SYNC','WARN_SYNC',
             rc.tabla_origen||'.'||rc.columna_origen||' -> '||rc.tabla_destino||'.'||rc.columna_destino||' => '||pkg_dm_sql_seguro.func_dm_safe_err(SQLERRM)
           );
+          p_errores := p_errores + 1;
           CONTINUE;
       END;
 
       BEGIN
-        -- Verificación de consistencia padre/hijo según la relación definida
-        -- HINT 2026-09-18: PARALLEL aqui es seguro (consulta diagnostica de
-        -- verificacion post-sync en la sesion orquestadora, no en un worker
-        -- paralelo) y util: es un JOIN + comparacion NVL(TO_CHAR(..)) entre
-        -- dos tablas potencialmente grandes, sin indices utilizables por la
-        -- comparacion por texto.
+        -- Verificacion de consistencia padre/hijo segun la relacion. PARALLEL es seguro: consulta
+        -- diagnostica en la sesion orquestadora, no en un worker.
         l_sql :=
           'SELECT /*+ PARALLEL(d,4) PARALLEL(s,4) */ COUNT(*) FROM '||pkg_dm_sql_seguro.func_dm_qname(p_esquema)||'.'||pkg_dm_sql_seguro.func_dm_qname(rc.tabla_destino)||' d '||
           'JOIN '||pkg_dm_sql_seguro.func_dm_qname(p_esquema)||'.'||pkg_dm_sql_seguro.func_dm_qname(rc.tabla_origen)||' s '||
           '  ON s.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_join_origen)||' = d.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_join_destino)||' '||
-          'WHERE NVL(TO_CHAR(d.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_destino)||'),''#NULL#'') '||
-          '   <> NVL(TO_CHAR(s.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_origen)||'),''#NULL#'')';
+          'WHERE (TO_CHAR(d.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_destino)||') <> TO_CHAR(s.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_origen)||')'||
+          '    OR (d.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_destino)||' IS NULL AND s.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_origen)||' IS NOT NULL)'||
+          '    OR (d.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_destino)||' IS NOT NULL AND s.'||pkg_dm_sql_seguro.func_dm_qname(rc.columna_origen)||' IS NULL))';
         EXECUTE IMMEDIATE l_sql INTO l_diff;
         IF NVL(l_diff,0) = 0 THEN
           pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'POST_SYNC','SYNC_OK',
@@ -137,6 +140,7 @@ create or replace PACKAGE BODY pkg_dm_mask_sync AS
         ELSE
           pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'POST_SYNC','SYNC_MISMATCH',
                         rc.tabla_origen||'.'||rc.columna_origen||' -> '||rc.tabla_destino||'.'||rc.columna_destino||' diferencias='||l_diff);
+          p_errores := p_errores + 1;
         END IF;
       EXCEPTION
         WHEN OTHERS THEN
@@ -144,6 +148,7 @@ create or replace PACKAGE BODY pkg_dm_mask_sync AS
             p_solicitud_id,p_ejecucion_id,'POST_SYNC','WARN_SYNC_CHECK',
             rc.tabla_origen||'.'||rc.columna_origen||' -> '||rc.tabla_destino||'.'||rc.columna_destino||' => '||pkg_dm_sql_seguro.func_dm_safe_err(SQLERRM)
           );
+          p_errores := p_errores + 1;
       END;
     END LOOP;
   END;

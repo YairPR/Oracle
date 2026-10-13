@@ -19,20 +19,11 @@
 --
 --------------------------------------------------------------------------------
 
--- 2026-10-05: esquema ya no va fijo -- se detecta solo. La tablespace ya NO
--- se detecta ni se usa: se quito la clausula TABLESPACE de todo CREATE TABLE/
--- INDEX de este archivo porque, sin ella, Oracle usa automaticamente la
--- tablespace por defecto del esquema actual (el mismo valor que antes se
--- calculaba a mano).
--- Normalmente este archivo lo incluye 99_install_datamasking.sql (que ya
--- hizo la deteccion y el ALTER SESSION antes de llegar aqui), pero se deja
--- la misma guardia por si se ejecuta este archivo suelto.
--- FIX 2026-10-05 (hallazgo real): la sustitucion &&var sin comillas (GRANT/
--- ALTER SESSION/TABLESPACE) resolvia a VACIO en el cliente SQL*Plus de este
--- entorno. Se usa una VARIABLE DE ENLACE real (bind, :g_esquemaast) en vez de
--- &&esquemaast -- un bind no depende de SET DEFINE/SCAN. Si este archivo se
--- ejecuta suelto (sin pasar por 99_install_datamasking.sql), VARIABLE vuelve a
--- declarar el bind sin problema (es idempotente).
+-- El esquema del motor se detecta solo. No se usa TABLESPACE en los CREATE: Oracle toma la del
+-- esquema actual. Normalmente lo incluye 99_install_datamasking.sql (que ya hizo la deteccion);
+-- se deja la misma guardia por si se ejecuta suelto.
+-- Se usa una variable de enlace (:g_esquemaast) en vez de &&esquemaast sin comillas, que algunos
+-- clientes SQL*Plus resuelven a vacio; VARIABLE es idempotente.
 variable g_esquemaast varchar2(30)
 declare
   l_esquemaast dba_users.username%type;
@@ -67,102 +58,99 @@ COMMENT ON COLUMN tdm_secreto.clave IS 'Identificador de la clave secreta.';
 COMMENT ON COLUMN tdm_secreto.valor IS 'Valor de la clave secreta (Raw Hex o texto largo).';
 
 --------------------------------------------------------------------------------
--- 0b) PARAMETROS Y CATALOGOS DEL MOTOR (TDM_PARAMETRO)
---     Una sola tabla clave/valor para todo lo que el motor consulta y que
---     conviene poder ajustar SIN recompilar paquetes.
---       grupo EVENTO  : catalogo de la linea de tiempo. clave = FASE.PASO,
---                       valor = nivel (INFO/WARN/ERROR), descripcion = que significa
---                       ese paso. pkg_dm_trazabilidad.proc_dm_trace lo consulta para
---                       fijar el nivel; un par que no este aqui se detecta con la
---                       consulta de auditoria del plan de pruebas (T-02).
---     Hoy solo existe el grupo EVENTO. Si mas adelante se decide tener
---     parametros por version o de entorno, se agrega el grupo al CHECK
---     ck_tdm_parametro_grupo; por ahora NO se captura version/undo/CPU/SGA/PGA.
+-- 0b) CATALOGO DE EVENTOS DE LA TRAZA (TDM_MASK_TRACE_EVENTO)
+--     Diccionario de TDM_MASK_TRACE: para cada par FASE/PASO que escribe proc_dm_trace fija el
+--     nivel (INFO/WARN/ERROR) y explica el paso. pkg_dm_trazabilidad.proc_dm_trace lo consulta
+--     para fijar el nivel. No guarda parametros de ejecucion: los umbrales y constantes del
+--     motor viven en el codigo.
 --------------------------------------------------------------------------------
-CREATE TABLE tdm_parametro (
-    grupo               VARCHAR2(30)   NOT NULL,
-    clave               VARCHAR2(100)  NOT NULL,
-    valor               VARCHAR2(400),
-    descripcion         VARCHAR2(200),
-    fecha_modificacion  TIMESTAMP      DEFAULT SYSTIMESTAMP,
-    CONSTRAINT pk_tdm_parametro PRIMARY KEY (grupo, clave),
-    CONSTRAINT ck_tdm_parametro_grupo CHECK (grupo IN ('EVENTO'))
+CREATE TABLE tdm_mask_trace_evento (
+    fase                VARCHAR2(30)   NOT NULL,
+    paso                VARCHAR2(70)   NOT NULL,
+    nivel               VARCHAR2(5)    NOT NULL,
+    descripcion         VARCHAR2(400),
+    CONSTRAINT pk_tdm_mask_trace_evento PRIMARY KEY (fase, paso),
+    CONSTRAINT ck_tdm_mask_trace_evento_niv CHECK (nivel IN ('INFO','WARN','ERROR'))
 );
 
-COMMENT ON TABLE tdm_parametro IS 'PREGUNTA: que valores o catalogos usa el motor y puedo ajustar sin recompilar. Grupo EVENTO = catalogo de pasos de la traza (FASE.PASO -> nivel y significado).';
-COMMENT ON COLUMN tdm_parametro.grupo IS 'Familia del parametro. Hoy solo EVENTO (catalogo de pasos de la traza).';
-COMMENT ON COLUMN tdm_parametro.clave IS 'Identificador dentro del grupo. En EVENTO: FASE.PASO tal como lo escribe proc_dm_trace.';
-COMMENT ON COLUMN tdm_parametro.valor IS 'Valor. En EVENTO: nivel del paso (INFO, WARN o ERROR).';
-COMMENT ON COLUMN tdm_parametro.descripcion IS 'Descripcion breve: de que es el parametro o que significa el paso.';
-COMMENT ON COLUMN tdm_parametro.fecha_modificacion IS 'Fecha de la ultima modificacion del registro.';
+COMMENT ON TABLE tdm_mask_trace_evento IS 'PREGUNTA: que significa cada paso de la traza y con que nivel se registra. Catalogo de TDM_MASK_TRACE: FASE + PASO -> nivel y significado.';
+COMMENT ON COLUMN tdm_mask_trace_evento.fase IS 'Fase tal como la escribe proc_dm_trace (ENMASCARAMIENTO, PRE, MASK, DESCUBRIMIENTO...).';
+COMMENT ON COLUMN tdm_mask_trace_evento.paso IS 'Paso dentro de la fase tal como lo escribe proc_dm_trace.';
+COMMENT ON COLUMN tdm_mask_trace_evento.nivel IS 'Nivel del paso: INFO, WARN o ERROR. Es el que copia TDM_MASK_TRACE.NIVEL.';
+COMMENT ON COLUMN tdm_mask_trace_evento.descripcion IS 'Que significa el paso y que debe hacer el DBA si aparece.';
 
 -- Semilla del catalogo de eventos. Idempotente: si el paso ya existe solo se
 -- refresca la descripcion; el NIVEL ajustado a mano por el operador se respeta.
-MERGE INTO tdm_parametro p
+MERGE INTO tdm_mask_trace_evento p
 USING (
-      SELECT 'EVENTO' grupo, 'ENMASCARAMIENTO.INICIO' clave, 'INFO' valor, 'Arranque de proc_dm_enmascaramiento: esquema objetivo; en una reanudacion añade - REANUDACION desde solicitud_id=N.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'ENMASCARAMIENTO.REANUDACION' clave, 'INFO' valor, 'Reanudacion de una ejecucion interrumpida: intento, columnas ya confirmadas (se omiten) y pendientes.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PRE.INICIO' clave, 'INFO' valor, 'Comienza la desactivacion de dependencias (FK, triggers) de las tablas a enmascarar.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PRE.FK_JERARQUIA' clave, 'INFO' valor, 'Una FK hija->padre detectada en el alcance; documenta el orden de integridad antes de tocar nada.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PRE.SKIP_DEP_POLICY' clave, 'INFO' valor, 'Dependencia NO tocada porque su accion PRE (SOLO_INFORMATIVO/SIN_ACCION) lo indica; decision de politica, no fallo.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PRE.SKIP_DEP_NOT_FOUND' clave, 'WARN' valor, 'La dependencia del catalogo ya no existe en el diccionario; se omite. Revisar si el catalogo esta desactualizado.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PRE.FIN' clave, 'INFO' valor, 'Terminada la desactivacion de dependencias.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PROPAGACION.PROPAGA_START' clave, 'INFO' valor, 'Comienza el recalculo de dominios referenciales (FK) antes de enmascarar.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PROPAGACION.PROPAGA_END' clave, 'INFO' valor, 'Dominios FK propagados con exito.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PROPAGACION.PROPAGA_ERR' clave, 'ERROR' valor, 'Fallo propagando dominios FK; el enmascarado se aborta (sin propagacion valida no hay integridad).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'PROPAGACION.RI_REINCLUYE' clave, 'INFO' valor, 'El descubrimiento re-incluyo una columna (Y) por integridad referencial de su dominio.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PEPPER_START' clave, 'INFO' valor, 'Comienza la generacion del pepper efimero de la campana.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PEPPER_END' clave, 'INFO' valor, 'Pepper efimero listo; los workers paralelos leen la misma clave.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PEPPER_ERR' clave, 'ERROR' valor, 'Fallo preparando el pepper; el enmascarado se aborta (sin pepper no se enmascara).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PREFLIGHT_OK' clave, 'INFO' valor, 'Pre-flight de tareas DBMS_PARALLEL_EXECUTE: ninguna huerfana bloquea.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PREFLIGHT_INFO' clave, 'INFO' valor, 'Tarea de otra corrida o fuera de alcance: se informa pero no bloquea.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PREFLIGHT_ORFANA' clave, 'WARN' valor, 'Tarea huerfana de una columna a enmascarar: bloquea hasta decidir (reanudar o descartar).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.PREFLIGHT_ABORT' clave, 'ERROR' valor, 'Pre-flight aborta la corrida (ORA-20331) por tareas huerfanas; no se toco ningun dato.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.COL_INICIO' clave, 'INFO' valor, 'Comienza el enmascarado de una columna (identificador y ruta elegidos).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.EXCEPTION_FORCE' clave, 'INFO' valor, 'La columna usa el identificador forzado de TDM_EXCEPCION_COL.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_EXCLUDE' clave, 'INFO' valor, 'Columna omitida porque TDM_EXCEPCION_COL la excluye.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_TABLE' clave, 'INFO' valor, 'Tabla omitida: todas sus columnas estan excluidas.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_TABLE_TABMODE' clave, 'INFO' valor, 'Tabla omitida en el modo por tabla de proc_dm_enmascara_tabla.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_AUTO_LEN' clave, 'WARN' valor, 'Columna sensible SIN enmascarar: su longitud es menor que el minimo del identificador.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_ORA00001' clave, 'WARN' valor, 'Columna auto-excluida tras colision de unicidad (ORA-00001): queda SIN enmascarar y bloquea FINALIZADO.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_ORA12899' clave, 'WARN' valor, 'Columna auto-excluida tras ORA-12899 (valor mayor que la columna).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.SKIP_ORA06502' clave, 'WARN' valor, 'Columna auto-excluida tras ORA-06502 sin fallback posible.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.APPLY_COL' clave, 'INFO' valor, 'Columna ENMASCARADA y confirmada: una linea por columna con filas, ruta (UPDATE o CHUNKS) y duracion. PUNTO DE CONTROL de la reanudacion: una columna con APPLY_COL no se vuelve a enmascarar.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.APPLY_COL_SAFE_FALLBACK' clave, 'WARN' valor, 'Columna enmascarada con la expresion de reserva tras ORA-06502; tambien es punto de control de reanudacion.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.APPLY_COL_COLLISION' clave, 'INFO' valor, 'Reservado: columna confirmada por una ruta de colision (compatibilidad con trazas antiguas).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.TAREA_DESCARTADA' clave, 'WARN' valor, 'Una tarea interrumpida se descarto con proc_dm_gestiona_tareas DESCARTAR.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.NOOP' clave, 'INFO' valor, 'No habia columnas a enmascarar en esta corrida.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'MASK.RESUMEN' clave, 'INFO' valor, 'Resumen del bucle de columnas: procesadas, fallidas, tablas y filas afectadas.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST_SYNC.SYNC' clave, 'INFO' valor, 'Sincronizacion de una columna origen hacia su destino dependiente (filas).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST_SYNC.SYNC_OK' clave, 'INFO' valor, 'Verificacion post-sincronizacion: sin diferencias.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST_SYNC.SYNC_MISMATCH' clave, 'WARN' valor, 'Verificacion post-sincronizacion: quedan diferencias entre origen y destino.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST_SYNC.WARN_SYNC' clave, 'WARN' valor, 'Fallo sincronizando un par origen-destino; se continua.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST_SYNC.WARN_SYNC_LEN' clave, 'WARN' valor, 'Par origen-destino omitido por longitud insuficiente del destino.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST_SYNC.WARN_SYNC_CHECK' clave, 'WARN' valor, 'Fallo al verificar un par sincronizado.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST.INICIO' clave, 'INFO' valor, 'Comienza la rehabilitacion de dependencias.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST.SKIP_POST_POLICY' clave, 'INFO' valor, 'Dependencia NO rehabilitada porque su accion POST (REVISAR/SIN_ACCION) exige revision manual.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST.POST_CHECK_INVALID' clave, 'WARN' valor, 'Tras rehabilitar quedan objetos INVALID nuevos o constraints no ENABLED.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'POST.FIN' clave, 'INFO' valor, 'Terminada la rehabilitacion de dependencias.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'FIN.OK' clave, 'INFO' valor, 'Enmascaramiento finalizado sin errores.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'FIN.ERROR' clave, 'ERROR' valor, 'Enmascaramiento terminado con errores (la corrida no queda FINALIZADA).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'FIN.PII_SIN_ENMASCARAR' clave, 'ERROR' valor, 'Hay columnas sensibles auto-excluidas: no se permite FINALIZADO.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'FIN.ESTADO_FINAL_WARN' clave, 'WARN' valor, 'El manejador de errores no pudo registrar el estado final de la solicitud o de la ejecucion; revisar que no quede en EJECUTANDO.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'FIN.PEPPER_PURGE_WARN' clave, 'WARN' valor, 'Corrida FINALIZADA pero no se pudo autopurgar el pepper; purgar a mano.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'ERROR.REGISTRADO' clave, 'ERROR' valor, 'Un error se registro en TDM_EJECUCION_ERROR; el detalle empieza por error_id=N para ubicarlo.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'CONTROL.UPD_EJEC_BLOQUEADO' clave, 'WARN' valor, 'Un ping de progreso no se aplico: la ejecucion ya estaba cerrada (no se resucita).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'CONTROL.UPD_EJEC_FALLO' clave, 'ERROR' valor, 'Fallo actualizando el progreso en TDM_EJECUCION.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'CONTROL.CLOSE_SOL_OPEN_FALLO' clave, 'ERROR' valor, 'Fallo cerrando solicitudes abiertas de una corrida anterior.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'DESCUBRIMIENTO.TABLAS_OMITIDAS' clave, 'INFO' valor, 'Tablas sin filas que no se analizaron (solo aparece si hay alguna).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'DESCUBRIMIENTO.FINAL_OBSOLETAS' clave, 'INFO' valor, 'Se retiraron de TDM_COLUMNA_FINAL columnas que ya no cumplen el descubrimiento o ya no existen.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'DESCUBRIMIENTO.FINAL_OBSOLETAS_ERR' clave, 'WARN' valor, 'Fallo retirando columnas obsoletas del catalogo final.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'DESCUBRIMIENTO.PROPAGA_DOMINIOS_ERR' clave, 'WARN' valor, 'Fallo propagando dominios FK durante la sincronizacion del catalogo.' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'DESCUBRIMIENTO.RESUMEN' clave, 'INFO' valor, 'Resumen unico del descubrimiento: tablas con columnas evaluadas, columnas evaluadas y columnas a enmascarar (Y).' descripcion FROM dual UNION ALL
-      SELECT 'EVENTO' grupo, 'ADMIN.LIBERADA_MANUAL_DBA' clave, 'WARN' valor, 'Un DBA cerro a mano una ejecucion con dm_liberar_ejecucion_activa.' descripcion FROM dual
+      SELECT 'ENMASCARAMIENTO' fase, 'INICIO' paso, 'INFO' nivel, 'Arranque de proc_dm_enmascaramiento: esquema objetivo; en una reanudacion añade - REANUDACION desde solicitud_id=N.' descripcion FROM dual UNION ALL
+      SELECT 'ENMASCARAMIENTO' fase, 'REANUDACION' paso, 'INFO' nivel, 'Reanudacion de una ejecucion interrumpida: intento, columnas ya confirmadas (se omiten) y pendientes.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'INICIO' paso, 'INFO' nivel, 'Comienza la desactivacion de dependencias (FK, triggers) de las tablas a enmascarar.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'FK_JERARQUIA' paso, 'INFO' nivel, 'Una FK hija->padre detectada en el alcance; documenta el orden de integridad antes de tocar nada.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'SKIP_DEP_POLICY' paso, 'INFO' nivel, 'Dependencia NO tocada porque su accion PRE (SOLO_INFORMATIVO/SIN_ACCION) lo indica; decision de politica, no fallo.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'HEREDA_DEP' paso, 'INFO' nivel, 'Dependencias que una solicitud anterior interrumpida dejo deshabilitadas: se heredan para rehabilitarlas al final.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'SKIP_DEP_YA_DESHAB' paso, 'INFO' nivel, 'Dependencia ya deshabilitada antes de empezar: no se toca y no se rehabilita.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'SKIP_DEP_NOT_FOUND' paso, 'WARN' nivel, 'La dependencia del catalogo ya no existe en el diccionario; se omite. Revisar si el catalogo esta desactualizado.' descripcion FROM dual UNION ALL
+      SELECT 'PRE' fase, 'FIN' paso, 'INFO' nivel, 'Terminada la desactivacion de dependencias.' descripcion FROM dual UNION ALL
+      SELECT 'PROPAGACION' fase, 'PROPAGA_START' paso, 'INFO' nivel, 'Comienza el recalculo de dominios referenciales (FK) antes de enmascarar.' descripcion FROM dual UNION ALL
+      SELECT 'PROPAGACION' fase, 'PROPAGA_END' paso, 'INFO' nivel, 'Dominios FK propagados con exito.' descripcion FROM dual UNION ALL
+      SELECT 'PROPAGACION' fase, 'PROPAGA_ERR' paso, 'ERROR' nivel, 'Fallo propagando dominios FK; el enmascarado se aborta (sin propagacion valida no hay integridad).' descripcion FROM dual UNION ALL
+      SELECT 'PROPAGACION' fase, 'RI_REINCLUYE' paso, 'INFO' nivel, 'El descubrimiento re-incluyo una columna (Y) por integridad referencial de su dominio.' descripcion FROM dual UNION ALL
+      SELECT 'ENMASCARAMIENTO' fase, 'ALCANCE_ERR' paso, 'WARN' nivel, 'No se pudo registrar el alcance (ID, SET o COMPLETO) en TDM_MASK_SOLICITUD; la corrida continua.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PEPPER_START' paso, 'INFO' nivel, 'Comienza la generacion del pepper efimero de la campana.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PEPPER_END' paso, 'INFO' nivel, 'Pepper efimero listo; los workers paralelos leen la misma clave.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PEPPER_ERR' paso, 'ERROR' nivel, 'Fallo preparando el pepper; el enmascarado se aborta (sin pepper no se enmascara).' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PREFLIGHT_OK' paso, 'INFO' nivel, 'Pre-flight de tareas DBMS_PARALLEL_EXECUTE: ninguna huerfana bloquea.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PREFLIGHT_INFO' paso, 'INFO' nivel, 'Tarea de otra corrida o fuera de alcance: se informa pero no bloquea.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PREFLIGHT_ORFANA' paso, 'WARN' nivel, 'Tarea huerfana de una columna a enmascarar: bloquea hasta decidir (reanudar o descartar).' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'PREFLIGHT_ABORT' paso, 'ERROR' nivel, 'Pre-flight aborta la corrida (ORA-20331) por tareas huerfanas; no se toco ningun dato.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'COL_INICIO' paso, 'INFO' nivel, 'Comienza el enmascarado de una columna (identificador y ruta elegidos).' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'EXCEPTION_FORCE' paso, 'INFO' nivel, 'La columna usa el identificador forzado de TDM_EXCEPCION_COL.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'SKIP_EXCLUDE' paso, 'INFO' nivel, 'Columna omitida porque TDM_EXCEPCION_COL la excluye.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'SKIP_TABLE' paso, 'INFO' nivel, 'Tabla omitida: todas sus columnas estan excluidas.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'SKIP_AUTO_LEN' paso, 'WARN' nivel, 'Columna sensible SIN enmascarar: su longitud es menor que el minimo del identificador.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'CHECKPOINT_PERDIDO' paso, 'ERROR' nivel, 'La columna se enmascaro pero su punto de control APPLY_COL no quedo registrado: NO reanudar sin revisar (FF1 no es idempotente).' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'UNICIDAD_RIESGO' paso, 'WARN' nivel, 'Columna con indice unico enmascarada con una funcion no inyectiva (nombre, direccion, telefono, email, observacion): puede dar ORA-00001 y auto-excluirse.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'SKIP_ORA00001' paso, 'WARN' nivel, 'Columna auto-excluida tras colision de unicidad (ORA-00001): queda SIN enmascarar y bloquea FINALIZADO.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'NO_ENMASCARADA' paso, 'WARN' nivel, 'Resumen de cierre: columna que queda SIN enmascarar por cualquier motivo (omision por longitud, auto-exclusion ORA-00001/12899/06502 o auto-exclusion heredada de una corrida anterior). No detiene el proceso.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'SKIP_ORA12899' paso, 'WARN' nivel, 'Columna auto-excluida tras ORA-12899 (valor mayor que la columna).' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'SKIP_ORA06502' paso, 'WARN' nivel, 'Columna auto-excluida tras ORA-06502 sin fallback posible.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'APPLY_COL' paso, 'INFO' nivel, 'Columna ENMASCARADA y confirmada: una linea por columna con filas, ruta (UPDATE o CHUNKS) y duracion. PUNTO DE CONTROL de la reanudacion: una columna con APPLY_COL no se vuelve a enmascarar.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'APPLY_COL_SAFE_FALLBACK' paso, 'WARN' nivel, 'Columna enmascarada con la expresion de reserva tras ORA-06502; tambien es punto de control de reanudacion.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'TAREA_DESCARTADA' paso, 'WARN' nivel, 'Una tarea interrumpida se descarto con proc_dm_gestiona_tareas DESCARTAR.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'NOOP' paso, 'INFO' nivel, 'No habia columnas a enmascarar en esta corrida.' descripcion FROM dual UNION ALL
+      SELECT 'MASK' fase, 'RESUMEN' paso, 'INFO' nivel, 'Resumen del bucle de columnas: procesadas, fallidas, tablas y filas afectadas.' descripcion FROM dual UNION ALL
+      SELECT 'POST_SYNC' fase, 'SYNC' paso, 'INFO' nivel, 'Sincronizacion de una columna origen hacia su destino dependiente (filas).' descripcion FROM dual UNION ALL
+      SELECT 'POST_SYNC' fase, 'SYNC_OK' paso, 'INFO' nivel, 'Verificacion post-sincronizacion: sin diferencias.' descripcion FROM dual UNION ALL
+      SELECT 'POST_SYNC' fase, 'SYNC_MISMATCH' paso, 'WARN' nivel, 'Verificacion post-sincronizacion: quedan diferencias entre origen y destino.' descripcion FROM dual UNION ALL
+      SELECT 'POST_SYNC' fase, 'WARN_SYNC' paso, 'WARN' nivel, 'Fallo sincronizando un par origen-destino; se continua.' descripcion FROM dual UNION ALL
+      SELECT 'POST_SYNC' fase, 'WARN_SYNC_LEN' paso, 'WARN' nivel, 'Par origen-destino omitido por longitud insuficiente del destino.' descripcion FROM dual UNION ALL
+      SELECT 'POST_SYNC' fase, 'WARN_SYNC_CHECK' paso, 'WARN' nivel, 'Fallo al verificar un par sincronizado.' descripcion FROM dual UNION ALL
+      SELECT 'POST' fase, 'INICIO' paso, 'INFO' nivel, 'Comienza la rehabilitacion de dependencias.' descripcion FROM dual UNION ALL
+      SELECT 'POST' fase, 'SKIP_POST_POLICY' paso, 'INFO' nivel, 'Dependencia NO rehabilitada porque su accion POST (REVISAR/SIN_ACCION) exige revision manual.' descripcion FROM dual UNION ALL
+      SELECT 'POST' fase, 'POST_CHECK_INVALID' paso, 'WARN' nivel, 'Tras rehabilitar quedan objetos INVALID nuevos o constraints no ENABLED.' descripcion FROM dual UNION ALL
+      SELECT 'POST' fase, 'FIN' paso, 'INFO' nivel, 'Terminada la rehabilitacion de dependencias.' descripcion FROM dual UNION ALL
+      SELECT 'FIN' fase, 'OK' paso, 'INFO' nivel, 'Enmascaramiento finalizado sin errores.' descripcion FROM dual UNION ALL
+      SELECT 'FIN' fase, 'ERROR' paso, 'ERROR' nivel, 'Enmascaramiento terminado con errores (la corrida no queda FINALIZADA).' descripcion FROM dual UNION ALL
+      SELECT 'FIN' fase, 'PII_SIN_ENMASCARAR' paso, 'ERROR' nivel, 'Hay columnas sensibles auto-excluidas: no se permite FINALIZADO.' descripcion FROM dual UNION ALL
+      SELECT 'FIN' fase, 'ESTADO_FINAL_WARN' paso, 'WARN' nivel, 'El manejador de errores no pudo registrar el estado final de la solicitud o de la ejecucion; revisar que no quede en EJECUTANDO.' descripcion FROM dual UNION ALL
+      SELECT 'FIN' fase, 'PEPPER_PURGE_WARN' paso, 'WARN' nivel, 'Corrida FINALIZADA pero no se pudo autopurgar el pepper; purgar a mano.' descripcion FROM dual UNION ALL
+      SELECT 'ERROR' fase, 'REGISTRADO' paso, 'ERROR' nivel, 'Un error se registro en TDM_EJECUCION_ERROR; el detalle empieza por error_id=N para ubicarlo.' descripcion FROM dual UNION ALL
+      SELECT 'CONTROL' fase, 'UPD_EJEC_BLOQUEADO' paso, 'WARN' nivel, 'Un ping de progreso no se aplico: la ejecucion ya estaba cerrada (no se resucita).' descripcion FROM dual UNION ALL
+      SELECT 'CONTROL' fase, 'UPD_EJEC_FALLO' paso, 'ERROR' nivel, 'Fallo actualizando el progreso en TDM_EJECUCION.' descripcion FROM dual UNION ALL
+      SELECT 'CONTROL' fase, 'CLOSE_SOL_OPEN_FALLO' paso, 'ERROR' nivel, 'Fallo cerrando solicitudes abiertas de una corrida anterior.' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'EXCEPCION_EXCLUDE' paso, 'INFO' nivel, 'Columna descartada en el descubrimiento por una excepcion EXCLUDE de TDM_EXCEPCION_COL (una fila por columna).' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'TABLAS_OMITIDAS' paso, 'INFO' nivel, 'Tablas sin filas que no se analizaron (solo aparece si hay alguna).' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'TABLAS_CON_ERROR' paso, 'WARN' nivel, 'Tablas con columnas que no se pudieron evaluar: no se retira su catalogo FINAL y se reintentan.' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'FINAL_OBSOLETAS' paso, 'INFO' nivel, 'Se retiraron de TDM_COLUMNA_FINAL columnas que ya no cumplen el descubrimiento o ya no existen.' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'FINAL_OBSOLETAS_ERR' paso, 'WARN' nivel, 'Fallo retirando columnas obsoletas del catalogo final.' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'PROPAGA_DOMINIOS_ERR' paso, 'WARN' nivel, 'Fallo propagando dominios FK durante la sincronizacion del catalogo.' descripcion FROM dual UNION ALL
+      SELECT 'DESCUBRIMIENTO' fase, 'RESUMEN' paso, 'INFO' nivel, 'Resumen unico del descubrimiento: tablas con columnas evaluadas, columnas evaluadas y columnas a enmascarar (Y).' descripcion FROM dual
 ) s
-ON (p.grupo = s.grupo AND p.clave = s.clave)
+ON (p.fase = s.fase AND p.paso = s.paso)
 WHEN MATCHED THEN UPDATE SET p.descripcion = s.descripcion
-WHEN NOT MATCHED THEN INSERT (grupo, clave, valor, descripcion)
-     VALUES (s.grupo, s.clave, s.valor, s.descripcion);
+WHEN NOT MATCHED THEN INSERT (fase, paso, nivel, descripcion)
+     VALUES (s.fase, s.paso, s.nivel, s.descripcion);
 
 COMMIT;
 
@@ -190,10 +178,12 @@ CREATE TABLE tdm_mask_solicitud (
     ultima_tabla         VARCHAR2(128),
     ultima_columna       VARCHAR2(128),
     detalle              VARCHAR2(4000),
+    alcance_tipo         VARCHAR2(10),
     CONSTRAINT pk_tdm_mask_solicitud PRIMARY KEY (solicitud_id),
     CONSTRAINT fk_tdm_mask_sol_ejec FOREIGN KEY (ejecucion_id)
         REFERENCES tdm_ejecucion (ejecucion_id),
     CONSTRAINT ck_tdm_mask_sol_forzar CHECK (forzar_reproceso IN ('Y','N')),
+    CONSTRAINT ck_tdm_mask_sol_alcance CHECK (alcance_tipo IN ('ID','SET','COMPLETO')),
     CONSTRAINT ck_tdm_mask_sol_estado CHECK (
         estado IN ('PENDIENTE','EN_PROCESO','FINALIZADO','ERROR','CANCELADO','REPROCESANDO')
     )
@@ -203,7 +193,7 @@ CREATE INDEX idm_mask_sol_01 ON tdm_mask_solicitud (ejecucion_id, estado);
 
 CREATE INDEX idm_mask_sol_02 ON tdm_mask_solicitud (ora_esquema, fecha_inicio);
 
--- B.1: Vincular tdm_ejecucion_error con tdm_mask_solicitud de forma diferida para respetar el orden de creación
+-- Se vincula tdm_ejecucion_error con tdm_mask_solicitud aqui para respetar el orden de creacion.
 ALTER TABLE tdm_ejecucion_error 
     ADD CONSTRAINT fk_tdm_ejec_err_sol FOREIGN KEY (solicitud_id) 
     REFERENCES tdm_mask_solicitud (solicitud_id);
@@ -240,6 +230,9 @@ COMMENT ON COLUMN tdm_mask_solicitud.ultima_columna IS 'Última columna evaluada
 
 COMMENT ON COLUMN tdm_mask_solicitud.detalle IS 'Detalle técnico o funcional del subproceso.';
 
+COMMENT ON COLUMN tdm_mask_solicitud.alcance_tipo IS 'Modo de alcance de la corrida: ID (por identificador), SET (grupo de tablas) o COMPLETO (esquema entero). Independiente de forzar_reproceso (default/Y).';
+
+
 --------------------------------------------------------------------------------
 -- 2) TRACE DE ENMASCARAMIENTO
 --------------------------------------------------------------------------------
@@ -265,7 +258,7 @@ CREATE INDEX idm_mask_trace_01  ON tdm_mask_trace (ejecucion_id, fase, paso, fec
 
 CREATE INDEX idm_mask_trace_02  ON tdm_mask_trace (solicitud_id, fase, paso, fecha_evento);
 
-COMMENT ON TABLE tdm_mask_trace IS 'PREGUNTA: que paso, en que orden y cuanto tardo. Linea de tiempo de una corrida: una fila por paso del catalogo TDM_PARAMETRO (grupo EVENTO). El enmascaramiento deja todos sus pasos; el descubrimiento deja solo un resumen y, aparte, tablas omitidas, avisos o errores. Cada error queda ubicado aqui y su detalle completo esta en TDM_EJECUCION_ERROR. No guarda valores de datos.';
+COMMENT ON TABLE tdm_mask_trace IS 'PREGUNTA: que paso, en que orden y cuanto tardo. Linea de tiempo de una corrida: una fila por paso del catalogo TDM_MASK_TRACE_EVENTO. El enmascaramiento deja todos sus pasos; el descubrimiento deja solo un resumen y, aparte, tablas omitidas, avisos o errores. Cada error queda ubicado aqui y su detalle completo esta en TDM_EJECUCION_ERROR. No guarda valores de datos.';
 
 COMMENT ON COLUMN tdm_mask_trace.trace_id IS 'Identificador único del evento de trace.';
 
@@ -273,7 +266,7 @@ COMMENT ON COLUMN tdm_mask_trace.solicitud_id IS 'Referencia a la solicitud de e
 
 COMMENT ON COLUMN tdm_mask_trace.ejecucion_id IS 'Referencia a la ejecución maestra.';
 
-COMMENT ON COLUMN tdm_mask_trace.nivel IS 'Nivel del evento (INFO, WARN, ERROR), tomado del catalogo TDM_PARAMETRO grupo EVENTO.';
+COMMENT ON COLUMN tdm_mask_trace.nivel IS 'Nivel del evento (INFO, WARN, ERROR), tomado del catalogo TDM_MASK_TRACE_EVENTO.';
 
 COMMENT ON COLUMN tdm_mask_trace.fase IS 'Fase funcional del evento (ENMASCARAMIENTO, PRE, PROPAGACION, MASK, POST_SYNC, POST, FIN, DESCUBRIMIENTO, CONTROL, ERROR, ADMIN). Ya NO codifica el nivel.';
 
@@ -354,15 +347,10 @@ CREATE SEQUENCE seq_dm_mask_regla_esp  START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_dm_mask_relacion_sync START WITH 1 INCREMENT BY 1  NOCACHE;
 
 --------------------------------------------------------------------------------
--- 5) REGLAS ESPECIALES DE TRATAMIENTO (mecanismo GENERICO del motor; sin
---    literales de ningun cliente en esta capa)
+-- 5) REGLAS ESPECIALES DE TRATAMIENTO (mecanismo generico del motor)
 --------------------------------------------------------------------------------
--- FIX 2026-09-28 (peer review): esta seccion se titulaba "...SIGAD" aunque la
--- tabla es generica (cero literales de cliente aqui, ver nota de portabilidad
--- mas abajo). Es un mecanismo del motor para solicitudes de tratamiento
--- especial por columna (p.ej. mantener 1er/ultimo caracter, IBAN continuo,
--- documento segun tipo); SIGAD es el CASO DE USO que hoy la puebla via
--- SIGAD/config_sigad.sql (dato, no codigo), no el dueño del mecanismo.
+-- Tratamiento especial por columna (mantener 1er/ultimo caracter, IBAN continuo, documento
+-- segun tipo). La puebla el DBA con datos propios; esta capa no lleva literales de ningun cliente.
 CREATE TABLE tdm_mask_regla_esp (
     regla_id              NUMBER         NOT NULL,
     ora_esquema          VARCHAR2(128)  NOT NULL,
@@ -388,14 +376,10 @@ COMMENT ON COLUMN tdm_mask_regla_esp.valor_regla IS 'Valor libre o metadata de l
 COMMENT ON COLUMN tdm_mask_regla_esp.observacion IS 'Observación funcional o técnica asociada a la regla.';
 
 --------------------------------------------------------------------------------
--- 6) RELACIONES DE SINCRONIZACION POST-MASKING (mecanismo GENERICO del motor;
---    sin literales de ningun cliente en esta capa)
+-- 6) RELACIONES DE SINCRONIZACION POST-MASKING (mecanismo generico del motor)
 --------------------------------------------------------------------------------
--- FIX 2026-09-28 (peer review): idem nota de la seccion 5 -- esta tabla es
--- generica (coherencia entre tablas relacionadas por join no expresado como
--- FK real); SIGAD es hoy el unico caso de uso que la puebla (13 filas en
--- SIGAD/config_sigad.sql, SEGUSUARIO como maestro hacia PERPROFESOR/
--- CENALUMNO/CENFAMILIAR), no el dueño del mecanismo.
+-- Coherencia entre tablas relacionadas por un join que no es FK real. La puebla el DBA con datos
+-- propios; esta capa no lleva literales de ningun cliente.
 CREATE TABLE tdm_mask_relacion_sync (
     sync_id               NUMBER         NOT NULL,
     ora_esquema          VARCHAR2(128)  NOT NULL,

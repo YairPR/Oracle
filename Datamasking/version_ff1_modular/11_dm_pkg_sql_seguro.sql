@@ -5,9 +5,9 @@ Rem pkg_dm_sql_seguro  --  11_dm_pkg_sql_seguro.sql
 Rem ================================================================================
 Rem Entrecomillar, normalizar y acotar texto antes de concatenarlo en SQL dinamico.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
+Rem    epurisaca    10/12/26 - Se elimina func_dm_csv_item (solo la usaba proc_dm_enmascara_tabla)
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_sql_seguro AS
@@ -20,7 +20,6 @@ create or replace PACKAGE pkg_dm_sql_seguro AS
 
   FUNCTION func_dm_qname(p_name IN VARCHAR2) RETURN VARCHAR2;
 
-  FUNCTION func_dm_csv_item(p_lista IN VARCHAR2, p_pos IN PLS_INTEGER) RETURN VARCHAR2;
 
 END pkg_dm_sql_seguro;
 /
@@ -40,7 +39,7 @@ create or replace PACKAGE BODY pkg_dm_sql_seguro AS
   -- LEE          : ninguno
   -- ESCRIBE      : ninguno
   -- ERRORES      : ninguno
-  -- LLAMADO DESDE: Interno: helper usado por casi todas las unidades del paquete (csv_item, qname,
+  -- LLAMADO DESDE: Interno: helper usado por casi todas las unidades del paquete (qname,
   --                expr_gen_sql, apl_col, mask_cat, enmascaramiento, gestiona_tareas, pre_dep,
   --                pepper_purgar, etc.); sin llamadas externas (40_dm_pkg_export tiene su propia
   --                copia).
@@ -59,7 +58,7 @@ create or replace PACKAGE BODY pkg_dm_sql_seguro AS
   -- LEE          : ninguno
   -- ESCRIBE      : ninguno
   -- ERRORES      : ninguno
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento, proc_dm_enmascara_tabla, proc_dm_mask_cat,
+  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento, proc_dm_mask_cat,
   --                proc_dm_apl_col, proc_dm_post_sync, proc_dm_upd_ejec, proc_dm_close_sol_open.
   ------------------------------------------------------------------------------
   FUNCTION func_dm_safe_err(p_err IN VARCHAR2) RETURN VARCHAR2 DETERMINISTIC IS
@@ -106,22 +105,6 @@ create or replace PACKAGE BODY pkg_dm_sql_seguro AS
   EXCEPTION
     WHEN OTHERS THEN
       RAISE_APPLICATION_ERROR(-20060, 'Nombre SQL invalido: '||SUBSTR(NVL(p_name,'NULL'),1,120));
-  END;
-
-
-  ------------------------------------------------------------------------------
-  -- [DOC] function func_dm_csv_item
-  -- PROPOSITO    : Extrae el elemento N de una lista separada por comas, normalizado, para iterar
-  --                tablas y columnas pasadas como CSV.
-  -- ENTRADAS     : p_lista, p_pos; retorna el elemento normalizado o NULL si no existe.
-  -- LEE          : ninguno
-  -- ESCRIBE      : ninguno
-  -- ERRORES      : ninguno
-  -- LLAMADO DESDE: Interno: proc_dm_enmascara_tabla (listas p_tabla y p_columna).
-  ------------------------------------------------------------------------------
-  FUNCTION func_dm_csv_item(p_lista IN VARCHAR2, p_pos IN PLS_INTEGER) RETURN VARCHAR2 IS
-  BEGIN
-    RETURN func_dm_norm(REGEXP_SUBSTR(NVL(p_lista,''), '[^,]+', 1, p_pos));
   END;
 
 END pkg_dm_sql_seguro;

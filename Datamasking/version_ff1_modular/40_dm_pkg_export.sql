@@ -1,7 +1,6 @@
 set serveroutput on size unlimited
 
-Rem 2026-10-05: esquema/tablespace ya no van fijos -- se detectan solos aqui
-Rem mismo abajo (necesita set define on para resolver &&esquemaast)
+Rem Esquema y tablespace se detectan solos mas abajo (necesita set define on para resolver &&esquemaast)
 set define on
 Rem --- Esquema del motor: se detecta solo (ASTSYSADMIN o ACC_ADMIN), sin setear nada a mano ---
 define esquemaast = '__NO_DETECTADO__'
@@ -26,35 +25,17 @@ set define off
 Rem ================================================================================
 Rem pkg_dm_export  -  EXPORT DEL DUMP ENMASCARADO (COMPANION, FUERA DEL MOTOR)
 Rem ================================================================================
-Rem La logica de Data Pump NO es parte del nucleo de enmascaramiento. Vive aqui
-Rem como procedimiento alterno: el motor (pkg_dm_enmascarar) enmascara; este
-Rem paquete exporta. Exige estado FINALIZADO de la ejecucion (respeta el fallo
-Rem cerrado del motor). Requiere EXECUTE on DBMS_DATAPUMP y un DIRECTORY valido.
-Rem ================================================================================
+Rem La logica de Data Pump no es parte del nucleo de enmascaramiento: el motor
+Rem (pkg_dm_enmascarar) enmascara y este paquete exporta. Exige estado FINALIZADO de la
+Rem ejecucion. Requiere EXECUTE on DBMS_DATAPUMP y un DIRECTORY valido.
 Rem
 Rem    MODIFICADO   (MM/DD/YY)
-Rem    epurisaca    ...      - Versión inicial (companion de exportación vía Data Pump)
-Rem
-Rem    epurisaca    09/23/26 - Revisión de industrialización: paquete estable, exige
-Rem                            p_ejecucion_id explícito en alcance selectivo, sin
-Rem                            cambios funcionales requeridos en este ciclo
-Rem
-Rem    epurisaca    09/27/26 - Auditoría estricta (hallazgo Nivel 2 #14): se comprueba el
-Rem                            estado final que devuelve DBMS_DATAPUMP.WAIT_FOR_JOB. Antes
-Rem                            de este fix un job Data Pump terminado en STOPPED (espacio,
-Rem                            permisos, STOP_JOB externo) se trataba como éxito silencioso
-Rem                            -- riesgo real dado que este export es la vía de rollback
-Rem                            funcional preferente del motor (ver 05, "EXPORT / IMPORT").
-Rem
-Rem    epurisaca    09/28/26 - CONVENCION DE NOMBRES (auditoria/orden estructural):
-Rem                            p_export_mask -> proc_dm_export_mask, f_norm (local) ->
-Rem                            func_dm_norm. Sin cambio de firma ni de logica, solo el
-Rem                            identificador. Coordinado con 04, 05, 06 y los drivers .sql.
-Rem                            Mapa completo en el proyecto Claude "Enmascaramiento".
-Rem
-Rem    epurisaca    10/10/26 - R15: se retira el normalizador local func_dm_norm; el satelite usa
-Rem                            pkg_dm_sql_seguro.func_dm_norm (mismo UPPER(TRIM), una sola copia).
-Rem                            Dependencia nueva y unica del satelite: 11_dm_pkg_sql_seguro.
+Rem    epurisaca    09/23/26 - Exige p_ejecucion_id explicito en alcance selectivo
+Rem    epurisaca    09/27/26 - Se comprueba el estado final de DBMS_DATAPUMP.WAIT_FOR_JOB: un job
+Rem                            terminado en STOPPED ya no se trata como exito
+Rem    epurisaca    09/28/26 - Convencion de nombres (p_export_mask -> proc_dm_export_mask)
+Rem    epurisaca    10/10/26 - Se usa pkg_dm_sql_seguro.func_dm_norm en lugar de un normalizador
+Rem                            local; dependencia: 11_dm_pkg_sql_seguro
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_export AS
@@ -201,17 +182,8 @@ create or replace PACKAGE BODY pkg_dm_export AS
     DBMS_DATAPUMP.WAIT_FOR_JOB(l_job, l_estado);
     DBMS_DATAPUMP.DETACH(l_job);
 
-    -- FIX 2026-09-27 (auditoria estricta, Nivel 2 #14): WAIT_FOR_JOB devuelve
-    -- en l_estado el resultado final del job ('COMPLETED', 'STOPPED' o
-    -- 'COMPLETED_WITH_WARNINGS' entre otros) y, antes de este fix, nunca se
-    -- comprobaba -- un job que terminaba en STOPPED (p.ej. por espacio en el
-    -- DIRECTORY, permisos, o STOP_JOB externo) devolvia el control como si el
-    -- export hubiera sido exitoso, sin ningun error ni traza. proc_dm_export_mask
-    -- es la via de rollback funcional preferente de todo el motor (ver
-    -- cabecera de 37_dm_pkg_enmascarar.sql, "EXPORT / IMPORT EN EL FLUJO"),
-    -- asi que un dump incompleto reportado como bueno es un riesgo real de
-    -- continuidad. Fallo cerrado: solo 'COMPLETED' (o con warnings, que el
-    -- propio log de Data Pump ya detalla) se acepta como exito silencioso.
+    -- WAIT_FOR_JOB devuelve el estado final del job. Solo 'COMPLETED' (o con warnings, que el log
+    -- de Data Pump detalla) es exito; un STOPPED (espacio, permisos, STOP_JOB) falla cerrado.
     IF l_estado NOT IN ('COMPLETED', 'COMPLETED_WITH_WARNINGS') THEN
       RAISE_APPLICATION_ERROR(-20199,
         'DBMS_DATAPUMP job para esquema='||l_esquema||' (ejecucion_id='||l_ejec_ref||

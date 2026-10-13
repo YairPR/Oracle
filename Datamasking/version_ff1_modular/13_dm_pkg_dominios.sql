@@ -5,9 +5,8 @@ Rem pkg_dm_dominios  --  13_dm_pkg_dominios.sql
 Rem ================================================================================
 Rem Propagacion de dominios de enmascarado por FK (Union-Find). Lo usan descubrimiento y enmascarado.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_dominios AS
@@ -164,7 +163,7 @@ begin
       end if;
     end if;
 
-    -- M-1: Resolver nombre de dominio lexicográficamente menor de forma estable
+    -- Resolver nombre de dominio lexicográficamente menor de forma estable
     if l_comps(l_root).min_node is null or l_key < l_comps(l_root).min_node then
       l_comps(l_root).min_node := l_key;
     end if;
@@ -184,7 +183,7 @@ begin
       l_tab := substr(l_key, l_first_dot + 1, l_second_dot - l_first_dot - 1);
       l_col := substr(l_key, l_second_dot + 1);
 
-      -- A.2: Traza dinámica de re-inclusión de columnas por integridad referencial
+      -- Traza dinámica de re-inclusión de columnas por integridad referencial
       declare
         l_curr_enm varchar2(1) := null;
       begin
@@ -195,12 +194,7 @@ begin
            and column_name = l_col;
 
         if l_curr_enm = 'N' then
-          -- 2026-09-16: llamada ESTATICA a pkg_dm_trazabilidad. Antes era un
-          -- EXECUTE IMMEDIATE a pkg_dm_enmascarar.proc_dm_trace porque 04
-          -- compila antes que 05 en el orden de instalacion y una referencia
-          -- estatica a un paquete que aun no existe no habria compilado.
-          -- pkg_dm_trazabilidad no tiene esa restriccion (compila justo
-          -- despues de las tablas, antes que 04) - ver su cabecera.
+          -- Llamada estatica a pkg_dm_trazabilidad (compila antes que descubrimiento y enmascarado).
           begin
             pkg_dm_trazabilidad.proc_dm_trace(
               p_solicitud_id, p_ejecucion_id, 'PROPAGACION', 'RI_REINCLUYE',

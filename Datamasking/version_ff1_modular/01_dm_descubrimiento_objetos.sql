@@ -11,20 +11,11 @@
 --   CK         : ck_tdm_*
 --------------------------------------------------------------------------------
 
--- 2026-10-05: esquema ya no va fijo -- se detecta solo. La tablespace ya NO
--- se detecta ni se usa: se quito la clausula TABLESPACE de todo CREATE TABLE/
--- INDEX de este archivo porque, sin ella, Oracle usa automaticamente la
--- tablespace por defecto del esquema actual (el mismo valor que antes se
--- calculaba a mano).
--- Normalmente este archivo lo incluye 99_install_datamasking.sql (que ya
--- hizo la deteccion y el ALTER SESSION antes de llegar aqui), pero se deja
--- la misma guardia por si se ejecuta este archivo suelto.
--- FIX 2026-10-05 (hallazgo real): la sustitucion &&var sin comillas (GRANT/
--- ALTER SESSION/TABLESPACE) resolvia a VACIO en el cliente SQL*Plus de este
--- entorno. Se usa una VARIABLE DE ENLACE real (bind, :g_esquemaast) en vez de
--- &&esquemaast -- un bind no depende de SET DEFINE/SCAN. Si este archivo se
--- ejecuta suelto (sin pasar por 99_install_datamasking.sql), VARIABLE vuelve a
--- declarar el bind sin problema (es idempotente).
+-- El esquema del motor se detecta solo. No se usa TABLESPACE en los CREATE: Oracle toma la del
+-- esquema actual. Normalmente lo incluye 99_install_datamasking.sql (que ya hizo la deteccion);
+-- se deja la misma guardia por si se ejecuta suelto.
+-- Se usa una variable de enlace (:g_esquemaast) en vez de &&esquemaast sin comillas, que algunos
+-- clientes SQL*Plus resuelven a vacio; VARIABLE es idempotente.
 variable g_esquemaast varchar2(30)
 declare
   l_esquemaast dba_users.username%type;
@@ -75,20 +66,17 @@ CREATE TABLE tdm_ejecucion (
     sesion_serial        NUMBER,
     sesion_inst_id       NUMBER,
     heartbeat_ts         TIMESTAMP,
+    mask_identificador   VARCHAR2(50),
     CONSTRAINT pk_tdm_ejecucion PRIMARY KEY (ejecucion_id),
     CONSTRAINT ck_tdm_ejec_forzar CHECK (forzar_full IN ('Y','N')),
     CONSTRAINT ck_tdm_ejec_fase CHECK (fase_proceso IN ('DESCUBRIMIENTO','ENMASCARAMIENTO')),
-    CONSTRAINT ck_tdm_ejec_estado CHECK ( estado IN ('PENDIENTE','EJECUTANDO','PAUSADO','ABORTADA','FINALIZADO','CANCELADO','ERROR')),
+    CONSTRAINT ck_tdm_ejec_estado CHECK ( estado IN ('PENDIENTE','EJECUTANDO','ABORTADA','FINALIZADO','CANCELADO','ERROR')),
 	CONSTRAINT ck_tdm_ejec_cancel CHECK (cancel_requested IN ('Y','N'))
     ) ;
 
 CREATE INDEX idm_ejecucion_01 ON tdm_ejecucion (ora_esquema, fecha_inicio);
 CREATE INDEX idm_ejecucion_02 ON tdm_ejecucion (fase_proceso, estado);
--- 2026-10-05: renombrado por el usuario en PREFORM a ui_dm_ejec_activo
--- (normalizacion de nombres de indice, fuera del alcance de la convencion
--- proc_dm_*/func_dm_* documentada en homogenizacion_convencion_nombres_
--- proc_dm_func_dm_2026-09-28.md). Se actualiza aqui para que una instalacion
--- nueva desde este script produzca el mismo nombre que ya esta desplegado.
+-- Nombre del indice de ejecucion unica normalizado a ui_dm_ejec_activo (igual al ya desplegado).
 CREATE UNIQUE INDEX ui_dm_ejec_activo ON tdm_ejecucion (CASE WHEN estado = 'EJECUTANDO' THEN ora_esquema ELSE NULL END);
 
 COMMENT ON TABLE tdm_ejecucion IS 'PREGUNTA: que corrida es y en que estado esta ahora. Una fila por corrida de DESCUBRIMIENTO o ENMASCARAMIENTO: estado, progreso, latido, sesion Oracle y solicitud de cancelacion. Es la fuente unica para monitor, cancel y reanudar.';
@@ -104,9 +92,10 @@ COMMENT ON COLUMN tdm_ejecucion.columnas_total IS 'Cantidad total de columnas co
 COMMENT ON COLUMN tdm_ejecucion.columnas_proc IS 'Cantidad de columnas procesadas hasta el momento.';
 COMMENT ON COLUMN tdm_ejecucion.ultimo_objeto IS 'Último objeto procesado.';
 COMMENT ON COLUMN tdm_ejecucion.ultimo_paso IS 'Último paso ejecutado por el proceso.';
-COMMENT ON COLUMN tdm_ejecucion.error_count IS 'Contador acumulado de errores asociados a la ejecución.';
+COMMENT ON COLUMN tdm_ejecucion.error_count IS 'Errores registrados en TDM_EJECUCION_ERROR para la ejecución; se fija al cerrarla (FINALIZADO, ERROR o CANCELADO).';
 COMMENT ON COLUMN tdm_ejecucion.forzar_full IS 'Marca que indica si la ejecución forzó procesamiento completo.';
 COMMENT ON COLUMN tdm_ejecucion.heartbeat_ts IS 'Marca de vida usada para monitoreo operativo de procesos largos.';
+COMMENT ON COLUMN tdm_ejecucion.mask_identificador IS 'Solo enmascarado por identificador (dm_enmascara_id): identificador cuyas columnas procesa la corrida. NULL = alcance normal. Se vacia al terminar FINALIZADO; si la corrida se interrumpe se conserva para la reanudacion.';
 COMMENT ON COLUMN tdm_ejecucion.cancel_requested IS 'Y = se pidio cancelar la corrida (proc_dm_cancelar); el motor lo detecta entre columna y columna. Unico lugar donde vive la solicitud de cancelacion.';
 COMMENT ON COLUMN tdm_ejecucion.sesion_audsid IS 'AUDSID de la sesion orquestadora que lanzo la corrida.';
 COMMENT ON COLUMN tdm_ejecucion.sesion_sid IS 'SID de la sesion orquestadora (para saber si sigue viva y poder matarla).';
@@ -279,7 +268,7 @@ COMMENT ON TABLE tdm_columna_hist IS 'Histórico del resultado de análisis por 
 COMMENT ON COLUMN tdm_columna_hist.identificador IS 'Identificador lógico finalmente asignado a la columna.';
 COMMENT ON COLUMN tdm_columna_hist.score_total IS 'Score total acumulado para la clasificación de la columna.';
 COMMENT ON COLUMN tdm_columna_hist.enmascarar IS 'Marca final de inclusión para el proceso de enmascaramiento.';
-COMMENT ON COLUMN tdm_columna_hist.hash_reglas IS 'Huella de la combinación de reglas aplicada al resultado.';
+COMMENT ON COLUMN tdm_columna_hist.hash_reglas IS 'Huella ORA_HASH de owner, tabla, columna, identificador y score del resultado. No identifica la versión de las reglas aplicadas.';
 COMMENT ON COLUMN tdm_columna_hist.motivo_descarte IS 'Motivo funcional por el que la columna fue descartada.';
 
 
@@ -323,7 +312,7 @@ CREATE TABLE tdm_columna_final (
     column_name          VARCHAR2(128)  NOT NULL,
     identificador        VARCHAR2(50),
     enmascarar           CHAR(1),
-    dominio              VARCHAR2(128), -- Componente/dominio referencial compartido
+    dominio              VARCHAR2(400), -- Componente/dominio referencial compartido
     CONSTRAINT pk_tdm_col_final PRIMARY KEY (
         ora_owner, table_name, column_name
     ),
@@ -406,11 +395,8 @@ COMMENT ON COLUMN tdm_excepcion_col.razon IS 'Justificación funcional de la exc
 --
 --------------------------------------------------------------------------------
 CREATE SEQUENCE seq_dm_ejecucion START WITH 1 INCREMENT BY 1 NOCACHE;
--- FIX 28/09/26 (limpieza codigo obsoleto): seq_dm_ejecucion_err retirada.
--- Nunca se referencia en el motor; el unico escritor de errores
--- (pkg_dm_trazabilidad.proc_dm_log_ejec_error) usa MAX(error_id)+1 con reintento
--- ante colision, y la traza usa seq_dm_mask_trace. No crear este objeto evita
--- ruido en auditoria.
+-- seq_dm_ejecucion_err no se crea: el unico escritor de errores (pkg_dm_trazabilidad) usa
+-- MAX(error_id)+1 con reintento, y la traza usa seq_dm_mask_trace.
 CREATE SEQUENCE seq_dm_ejecucion_scope START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_dm_regla START WITH 1 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_dm_columna_hist START WITH 1 INCREMENT BY 1 NOCACHE;

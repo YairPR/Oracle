@@ -1,5 +1,5 @@
 set serveroutput on size unlimited
-set feedback on
+set feedback off
 set verify off
 
 prompt =========================================================
@@ -17,7 +17,7 @@ Rem
 Rem NO se revierten a proposito (son privilegios, no objetos del motor; pueden servir
 Rem a otras cosas y el instalador los vuelve a conceder sin error):
 Rem   - SELECT ANY DICTIONARY y EXECUTE ON SYS.DBMS_CRYPTO al esquema del motor
-Rem   - sinonimos privados de cada DBA (crea_sinonimos.sql): quedan colgando hasta
+Rem   - sinonimos privados de cada DBA (dm_creasyn.sql): quedan colgando hasta
 Rem     reinstalar y vuelven a resolver solos
 Rem   - la job_class opcional JC_DATAMASKING y su servicio RAC (anexo de 99)
 Rem Dejan de ser validos los GRANT ROL_DATAMASKING de cada DBA (se pierden con el
@@ -49,14 +49,19 @@ end;
 declare
   l_esquema varchar2(128) := sys_context('USERENV','CURRENT_SCHEMA');
 
+  -- Una linea por objeto: borrado, no existia (se omite, no es un fallo) o ERROR real.
   procedure proc_drop(p_sql varchar2) is
+    l_obj varchar2(200) := regexp_replace(p_sql, '^drop +(package|table|sequence|role) +([^ ]+).*$', '\1 \2', 1, 1, 'i');
   begin
-    dbms_output.put_line('Intentando: ' || p_sql);
     execute immediate p_sql;
-    dbms_output.put_line('OK');
+    dbms_output.put_line('  borrado     ' || l_obj);
   exception
     when others then
-      dbms_output.put_line('ERROR: ' || sqlerrm);
+      if sqlcode in (-942, -4043, -2289, -1919) then
+        dbms_output.put_line('  no existia  ' || l_obj);
+      else
+        dbms_output.put_line('  ERROR       ' || l_obj || ': ' || sqlerrm);
+      end if;
   end;
 
   -- Tareas DBMS_PARALLEL_EXECUTE del motor (TDM_<hash>). Sobreviven al borrado de las
@@ -76,21 +81,20 @@ declare
       fetch l_cur into l_task;
       exit when l_cur%notfound;
       l_n := l_n + 1;
-      dbms_output.put_line('Intentando: adm_drop_task ' || l_esquema || '.' || l_task);
       begin
         execute immediate
           'begin dbms_parallel_execute.adm_drop_task(task_owner => :o, task_name => :t); end;'
           using l_esquema, l_task;
-        dbms_output.put_line('OK');
+        dbms_output.put_line('  borrado     tarea ' || l_task);
       exception
         when others then
-          dbms_output.put_line('ERROR: ' || sqlerrm ||
+          dbms_output.put_line('  ERROR       tarea ' || l_task || ': ' || sqlerrm ||
             ' (falta el rol ADM_PARALLEL_EXECUTE_TASK, o la tarea sigue en ejecucion)');
       end;
     end loop;
     close l_cur;
     if l_n = 0 then
-      dbms_output.put_line('Sin tareas DBMS_PARALLEL_EXECUTE huerfanas del motor.');
+      dbms_output.put_line('  sin tareas DBMS_PARALLEL_EXECUTE huerfanas del motor');
     end if;
   exception
     when others then
@@ -130,9 +134,12 @@ begin
   proc_drop('drop table tdm_mask_dep_estado cascade constraints purge');
   proc_drop('drop table tdm_mask_relacion_sync cascade constraints purge');
   proc_drop('drop table tdm_mask_regla_esp cascade constraints purge');
+  proc_drop('drop table tdm_mask_alcance_id cascade constraints purge');   -- retirada (instalaciones previas)
+  proc_drop('drop table tdm_mask_plan cascade constraints purge');   -- nombre anterior de tdm_mask_alcance_id (instalaciones previas)
   proc_drop('drop table tdm_mask_solicitud cascade constraints purge');
   proc_drop('drop table tdm_secreto cascade constraints purge');
-  proc_drop('drop table tdm_parametro cascade constraints purge');
+  proc_drop('drop table tdm_mask_trace_evento cascade constraints purge');
+  proc_drop('drop table tdm_parametro cascade constraints purge');   -- nombre anterior de tdm_mask_trace_evento (instalaciones previas)
 
   --------------------------------------------------------------------------
   -- 4) TABLAS HIJAS DE DESCUBRIMIENTO
@@ -177,11 +184,21 @@ begin
   -- 9) ROL
   --------------------------------------------------------------------------
   proc_drop('drop role ROL_DATAMASKING');
+
+  --------------------------------------------------------------------------
+  -- 10) OBJETOS DE PRUEBA (los crean los scripts de tests/, no el instalador 99)
+  --     Se borran aqui para que la verificacion final no los confunda con restos del motor.
+  --------------------------------------------------------------------------
+  proc_drop('drop package pkg_dm_ff1_debug');
+  proc_drop('drop package pkg_dm_ff1_test');
+  proc_drop('drop package pkg_dm_test');
+  proc_drop('drop table tdm_e02b_prueba cascade constraints purge');
+  proc_drop('drop table tdm_test_traza cascade constraints purge');
 end;
 /
 
 Rem ---------------------------------------------------------------
-Rem 10) VERIFICACION: no debe quedar ningun objeto del motor
+Rem 11) VERIFICACION: no debe quedar ningun objeto del motor
 Rem ===============================================================
 
 declare
@@ -208,7 +225,7 @@ begin
   if l_n = 0 then
     dbms_output.put_line('VERIFICACION OK: no queda ningun objeto TDM_% / PKG_DM_% / SEQ_DM_% en ' || l_esquema);
   else
-    dbms_output.put_line('ATENCION: quedan ' || l_n || ' objetos; revise los ERROR de arriba antes de reinstalar.');
+    dbms_output.put_line('ATENCION: quedan ' || l_n || ' objetos TDM_% / PKG_DM_% / SEQ_DM_% sin borrar (ver lineas REMANENTE); si no hay lineas ERROR arriba, son objetos ajenos al motor con ese prefijo: borrelos a mano.');
   end if;
 
   select count(*) into l_n from dba_roles where role = 'ROL_DATAMASKING';

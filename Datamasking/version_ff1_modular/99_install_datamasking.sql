@@ -7,16 +7,9 @@ set pagesize 200
 set long 50000
 set trimspool on
 set tab off
-Rem FIX 2026-10-05: se fuerza explicitamente (no se asume el default de
-Rem SQL*Plus). Sospecha de root cause de todo el incidente de sustitucion
-Rem vacia (&&esquemaast/&&tbsast/&v_fecha): un glogin.sql/login.sql del
-Rem cliente con "SET DEFINE OFF". El resto del script ya NO depende de
-Rem sustitucion para nada que toque la base (esquema/tablespace van por
-Rem variable de enlace real, inmune a este SET) -- el UNICO uso que queda
-Rem de &var es el nombre de archivo del SPOOL, puramente cosmetico, porque
-Rem SPOOL es un comando de SQL*Plus (no SQL) y no acepta variables de
-Rem enlace. Forzar DEFINE ON aqui es lo que permite que ese nombre lleve
-Rem fecha y hora reales en vez de quedar literal "v_fecha" como paso antes.
+Rem Se fuerza DEFINE ON (no se asume el default de SQL*Plus): un glogin.sql/login.sql con SET DEFINE OFF
+Rem dejaria vacias las sustituciones. Nada que toque la base depende de &var (esquema y tablespace van
+Rem por variable de enlace); el unico uso es el nombre del SPOOL, que no acepta variables de enlace.
 set define on
 
 Rem ================================================================================
@@ -32,39 +25,21 @@ Rem ============================================================================
 
 column v_fecha noprint new_value v_fecha
 select to_char(sysdate,'YYYYMMDD_HH24MISS') v_fecha from dual;
-Rem FIX 2026-10-05: nombre de spool con fecha/hora reales otra vez (ver el
-Rem "set define on" de mas arriba -- ya no se usa &&v_fecha para nada que
-Rem toque la base, asi que aunque esta sustitucion fallara, lo unico que se
-Rem pierde es el nombre bonito del archivo, nunca la instalacion).
+Rem Nombre de spool con fecha y hora; si la sustitucion fallara solo se pierde el nombre, no la instalacion.
 spool install_datamasking_&v_fecha..log
 Rem
 Rem ----------------------------------------------------------------
 Rem 1.0 DETECCION AUTOMATICA DEL ESQUEMA DEL MOTOR (ASTSYSADMIN o
-Rem     ACC_ADMIN, segun cual exista -- 2026-10-05, ya no va fijo)
+Rem     ACC_ADMIN, segun cual exista)
 Rem ----------------------------------------------------------------
-Rem FIX 2026-10-05 (hallazgo real, confirmado con una ejecucion limpia y
-Rem aislada de SOLO este script, sin encadenar con 98_uninstall): en el
-Rem cliente SQL*Plus de este entorno la sustitucion &&var en CUALQUIER
-Rem contexto SIN comillas (GRANT, ALTER SESSION, TABLESPACE, el nombre de
-Rem archivo de SPOOL) resuelve sistematicamente a VACIO -- la propia spool
-Rem de una corrida real quedo nombrada "install_datamasking_v_fecha..log"
-Rem (literal, sin sustituir) en vez de llevar la fecha real. En quoted
-Rem dentro de un bloque PL/SQL si sustituia, lo que apunta a algo en el
-Rem perfil de SQL*Plus del cliente (glogin.sql/login.sql, posible SET
-Rem DEFINE OFF) que trata distinto cada contexto. En vez de seguir
-Rem dependiendo de ese mecanismo (fragil y especifico de cada cliente),
-Rem este bloque usa una VARIABLE DE ENLACE real (:g_esquemaast, declarada
-Rem con VARIABLE) -- un bind no depende en absoluto de SET DEFINE/SCAN,
-Rem y cada GRANT/ALTER SESSION que antes iba con &&esquemaast sin comillas
-Rem ahora se arma con EXECUTE IMMEDIATE a partir de ese bind: inmune a como
-Rem este configurado SQL*Plus en la maquina donde se ejecute.
-Rem La tablespace (antes &&tbsast) ya no se detecta ni se usa: se elimino
-Rem la clausula TABLESPACE de todos los CREATE TABLE/INDEX (ver 01_ y 02_)
-Rem porque Oracle, sin esa clausula, usa automaticamente el tablespace por
-Rem defecto del esquema actual -- exactamente el mismo valor que &&tbsast
-Rem calculaba a mano (nvl(default_tablespace,username)), sin depender de
-Rem ninguna sustitucion.
+Rem Algunos clientes SQL*Plus resuelven &&var a vacio en contextos sin comillas (GRANT, ALTER SESSION,
+Rem TABLESPACE, SPOOL). Este bloque usa una variable de enlace (:g_esquemaast), que no depende de
+Rem SET DEFINE/SCAN, y arma cada GRANT/ALTER SESSION con EXECUTE IMMEDIATE.
+Rem No se detecta ni se usa tablespace: los CREATE TABLE/INDEX de 01 y 02 no la indican y Oracle toma
+Rem la del esquema actual.
 variable g_esquemaast varchar2(30)
+variable g_install_mal number
+exec :g_install_mal := 0
 declare
   l_esquemaast dba_users.username%type;
 begin
@@ -97,64 +72,13 @@ begin
   begin
     execute immediate 'grant select any dictionary to '||:g_esquemaast;
   exception when others then
-    dbms_output.put_line('AVISO: no se pudo conceder SELECT ANY DICTIONARY: '||sqlerrm);
+    null;  -- ver validacion final
   end;
   begin
     execute immediate 'grant execute on SYS.DBMS_CRYPTO to '||:g_esquemaast;
   exception when others then
-    dbms_output.put_line('AVISO: no se pudo conceder EXECUTE sobre SYS.DBMS_CRYPTO (el usuario que instala no la ve o no tiene opcion de conceder): '||sqlerrm);
-    dbms_output.put_line('       Se verifica en 1.1c si el esquema ya la tiene; si no, concedala como SYS.');
+    null;  -- el usuario que instala puede no ver SYS.DBMS_CRYPTO; la validacion final (4.1c) informa si falta
   end;
-end;
-/
-
-Rem
-Rem ----------------------------------------------------------------
-Rem 1.1b VERIFICACION (solo informa, no concede nada) DE LOS PRIVILEGIOS
-Rem      QUE EL MOTOR NECESITA SOBRE LOS ESQUEMAS A ENMASCARAR
-Rem ----------------------------------------------------------------
-Rem El paquete corre con derechos del DEFINIDOR (el dueño del motor): sus ROLES
-Rem no cuentan, ni siquiera DBA. Incidente 2026-10-09 (DESSIGAD): el descubrimiento
-Rem funcionaba y el enmascaramiento fallaba con ORA-01031 en todas las columnas
-Rem porque al dueño del motor le faltaba UPDATE sobre CEFCEN_OWN. Cada privilegio
-Rem puede estar concedido como sistema (ANY) o, para un alcance mas estricto, como
-Rem UPDATE/ALTER directo sobre las tablas del esquema destino; esta comprobacion
-Rem solo mira los de sistema y lo dice. La decision de conceder es de seguridad.
-declare
-  l_n number;
-begin
-  dbms_output.put_line('Privilegios de sistema CONCEDIDOS DIRECTAMENTE a '||:g_esquemaast||':');
-  for r in (select column_value as priv
-              from table(sys.odcivarchar2list('SELECT ANY TABLE','UPDATE ANY TABLE',
-                                              'ALTER ANY TABLE','ALTER ANY TRIGGER','CREATE JOB'))) loop
-    select count(*) into l_n from dba_sys_privs where grantee = :g_esquemaast and privilege = r.priv;
-    dbms_output.put_line('  '||rpad(r.priv,20)||case when l_n > 0 then 'concedido'
-      else 'NO concedido (valido solo si hay UPDATE/ALTER directo sobre cada tabla destino)' end);
-  end loop;
-end;
-/
-
-Rem
-Rem ----------------------------------------------------------------
-Rem 1.1c VERIFICACION (solo informa) DE EXECUTE SOBRE PAQUETES DE SYS
-Rem ----------------------------------------------------------------
-Rem Por la misma razon que 1.1b (el motor compila con derechos del definidor), el
-Rem EXECUTE tiene que estar concedido al esquema del motor o a PUBLIC, no por un rol.
-Rem DBMS_CRYPTO se concedio arriba; los demas suelen venir en PUBLIC, pero una base
-Rem endurecida puede haberlo revocado y entonces 10..40 compilan con PLS-00201.
-declare
-  l_n number;
-begin
-  dbms_output.put_line('EXECUTE sobre paquetes de SYS para '||:g_esquemaast||' o PUBLIC:');
-  for r in (select column_value as pkg
-              from table(sys.odcivarchar2list('DBMS_CRYPTO','DBMS_PARALLEL_EXECUTE',
-                                              'DBMS_SCHEDULER','DBMS_LOCK','DBMS_DATAPUMP'))) loop
-    select count(*) into l_n from dba_tab_privs
-     where owner = 'SYS' and table_name = r.pkg and privilege = 'EXECUTE'
-       and grantee in (:g_esquemaast, 'PUBLIC');
-    dbms_output.put_line('  '||rpad(r.pkg,22)||case when l_n > 0 then 'concedido'
-      else 'NO concedido: conceder GRANT EXECUTE ON SYS.'||r.pkg||' TO '||:g_esquemaast end);
-  end loop;
 end;
 /
 
@@ -176,25 +100,14 @@ end;
 
 Rem
 Rem ----------------------------------------------------------------
-Rem 1.3 PRIVILEGIO ADMINISTRATIVO PARA LIBERAR TAREAS PARALELAS
-Rem     HUERFANAS DE OTRO ESQUEMA (dm_liberar_ejecucion_activa.sql)
+Rem 1.3 PRIVILEGIO ADMINISTRATIVO PARA GESTIONAR TAREAS PARALELAS
+Rem     HUERFANAS DE OTRO ESQUEMA (dm_enmascara_cancel, dm_enmascara_reanudar)
 Rem ----------------------------------------------------------------
-Rem FIX 2026-10-05: dm_liberar_ejecucion_activa.sql lo corre cada DBA
-Rem conectado con SU PROPIO usuario (nunca como &&esquemaast -- ver 1.4
-Rem mas abajo), y necesita poder detener/eliminar una tarea
-Rem DBMS_PARALLEL_EXECUTE huerfana que pertenece a &&esquemaast (no al
-Rem DBA) cuando una sesion de enmascarado muere a mitad de un chunk.
-Rem DBMS_PARALLEL_EXECUTE autoriza sus rutinas normales (DROP_TASK/
-Rem STOP_TASK) solo sobre tareas del CURRENT_USER; para gestionar tareas
-Rem de OTRO esquema sin conectarse como ese esquema, Oracle expone desde
-Rem 11gR2 las rutinas administrativas ADM_DROP_TASK/ADM_STOP_TASK,
-Rem gated por el rol predefinido ADM_PARALLEL_EXECUTE_TASK -- NO viene
-Rem incluido en el rol DBA, hay que otorgarlo aparte aunque la cuenta ya
-Rem tenga DBA completo. Se otorga UNA sola vez aqui a ROL_DATAMASKING
-Rem (no a cada usuario a mano, uno por uno) para que lo tenga
-Rem automaticamente cualquier DBA actual o futuro al que mas abajo (3.1)
-Rem se le asigne ese rol -- sin administracion de privilegios adicional
-Rem cada vez que se incorpore alguien al equipo.
+Rem dm_enmascara_cancel.sql y dm_enmascara_reanudar.sql los corre cada DBA con su propio usuario y necesitan
+Rem detener, reanudar o eliminar una tarea DBMS_PARALLEL_EXECUTE huerfana que pertenece a &&esquemaast. DROP_TASK/STOP_TASK solo
+Rem actuan sobre tareas del CURRENT_USER; para tareas de otro esquema Oracle (11gR2+) ofrece
+Rem ADM_DROP_TASK/ADM_STOP_TASK, protegidas por el rol ADM_PARALLEL_EXECUTE_TASK, que no viene en DBA.
+Rem Se otorga una sola vez a ROL_DATAMASKING para que lo tenga cualquier DBA con ese rol.
 grant ADM_PARALLEL_EXECUTE_TASK to ROL_DATAMASKING;
 
 Rem
@@ -206,7 +119,7 @@ Rem
 Rem Cada DBA debe crearlos conectado con su propio usuario:
 Rem
 Rem   conn <usuario>/<password>@<servicio>
-Rem   @crea_sinonimos <USUARIO>
+Rem   @dm_creasyn <USUARIO>
 Rem ----------------------------------------------------------------
 Rem
 Rem ================================================================================
@@ -242,19 +155,14 @@ Rem
 Rem ----------------------------------------------------------------
 Rem 2.3.1 CARGA DE SEMILLA DE SEGURIDAD (PEPPER)
 Rem ----------------------------------------------------------------
-Rem NOTA OPERATIVA: El pepper aleatorio hace que cada instalacion genere un pepper
-Rem distinto, por lo que los valores enmascarados difieren entre entornos. Si se
-Rem necesita reproducir exactamente un dump ya entregado (o que PRE coincida con
-Rem otro entorno), generar el pepper una sola vez y replicar la misma fila de
-Rem tdm_secreto al resto de entornos - nunca regenerarlo.
-Rem NOTA FF1: El pepper ES EFIMERO POR CAMPANA (ejecucion_id). Ya NO se genera en
-Rem   la instalacion. Cada campana usa su PROPIA fila clave='PEPPER_MASK:'||ejec,
+Rem NOTA: El pepper es EFIMERO POR CAMPANA (ejecucion_id). No se genera en la
+Rem   instalacion. Cada campana usa su PROPIA fila clave='PEPPER_MASK:'||ejec,
 Rem   de modo que dos esquemas enmascarados a la vez tienen peppers independientes
 Rem   (sin carrera de creacion ni purga cruzada).
 Rem   pkg_dm_enmascarar.proc_dm_enmascaramiento lo crea al inicio de cada enmascarado
 Rem   (RAWTOHEX(DBMS_CRYPTO.RANDOMBYTES(32)), idempotente, COMMIT antes del paralelo).
-Rem   Purga por-campana tras el export:
-Rem      EXEC pkg_dm_enmascarar.proc_dm_pepper_purgar(<ejecucion_id>);
+Rem   Se autopurga al llegar a FINALIZADO. Para abandonar una ejecucion interrumpida:
+Rem      EXEC pkg_dm_enmascarar.proc_dm_pepper_purgar(<ejecucion_id>,'Y');
 Rem   Invariante: dos esquemas con FK ENTRE SI deben ir en la MISMA ejecucion.
 Rem   Se comparte entre los workers paralelos via tdm_secreto durante la corrida.
 Rem   Requisito: GRANT EXECUTE ON SYS.DBMS_CRYPTO (concedido en la fase de SYS).
@@ -301,60 +209,7 @@ Rem Solo las fachadas (22, 37), 10, 12 y 40 reciben grant al rol; los demas son 
 @@40_dm_pkg_export.sql
 
 Rem
-Rem ----------------------------------------------------------------
-Rem 2.8 COMPILACION Y REVISION DE ERRORES
-Rem ----------------------------------------------------------------
-Rem FIX 2026-09-23 (industrializacion): pkg_dm_trazabilidad compila en 2.6 pero
-Rem no tenia "show errors" aqui - un fallo de compilacion (p.ej. drift de
-Rem esquema) quedaba silencioso y 04/05 fallaban con ORA-04063 sin motivo
-Rem aparente en el log de instalacion. Se añade para que sea visible.
-show errors package pkg_dm_trazabilidad
-show errors package body pkg_dm_trazabilidad
-
-show errors package pkg_dm_sql_seguro
-show errors package body pkg_dm_sql_seguro
-
-show errors package pkg_dm_mask_ff1
-show errors package body pkg_dm_mask_ff1
-
-show errors package pkg_dm_dominios
-show errors package body pkg_dm_dominios
-
-show errors package pkg_dm_desc_puntuacion
-show errors package body pkg_dm_desc_puntuacion
-
-show errors package pkg_dm_desc_catalogo
-show errors package body pkg_dm_desc_catalogo
-
-show errors package pkg_dm_descubrimiento
-show errors package body pkg_dm_descubrimiento
-
-show errors package pkg_dm_pepper
-show errors package body pkg_dm_pepper
-
-show errors package pkg_dm_mask_estado
-show errors package body pkg_dm_mask_estado
-
-show errors package pkg_dm_mask_validacion
-show errors package body pkg_dm_mask_validacion
-
-show errors package pkg_dm_mask_dependencias
-show errors package body pkg_dm_mask_dependencias
-
-show errors package pkg_dm_mask_worker
-show errors package body pkg_dm_mask_worker
-
-show errors package pkg_dm_mask_columna
-show errors package body pkg_dm_mask_columna
-
-show errors package pkg_dm_mask_sync
-show errors package body pkg_dm_mask_sync
-
-show errors package pkg_dm_enmascarar
-show errors package body pkg_dm_enmascarar
-
-show errors package pkg_dm_export
-show errors package body pkg_dm_export
+Rem 2.8 La revision de errores de compilacion se hace una sola vez, al final (4.5).
 
 Rem
 Rem ----------------------------------------------------------------
@@ -372,15 +227,18 @@ grant select on tdm_ejecucion_error    to ROL_DATAMASKING;
 grant select on tdm_objeto_ctrl        to ROL_DATAMASKING;
 grant select on tdm_regla              to ROL_DATAMASKING;
 grant select on tdm_excepcion_col      to ROL_DATAMASKING;
-grant select on tdm_parametro          to ROL_DATAMASKING;
+grant select on tdm_mask_trace_evento to ROL_DATAMASKING;
 grant select on tdm_columna_hist       to ROL_DATAMASKING;
 grant select on tdm_dependencia_hist   to ROL_DATAMASKING;
 grant select on tdm_columna_final      to ROL_DATAMASKING;
 grant select on tdm_dependencia_final  to ROL_DATAMASKING;
 
-grant select, insert, update on tdm_mask_solicitud      to ROL_DATAMASKING;
-grant select, insert          on tdm_mask_trace          to ROL_DATAMASKING;
-grant select, insert, update  on tdm_mask_dep_estado     to ROL_DATAMASKING;
+Rem Estas tablas solo se escriben desde los paquetes del motor (derechos de definidor). El rol queda en
+Rem SELECT: con INSERT/UPDATE directo un operador podria fabricar un APPLY_COL en tdm_mask_trace (la
+Rem reanudacion confia en esa traza) o alterar el estado de dependencias que el POST restaura.
+grant select on tdm_mask_solicitud      to ROL_DATAMASKING;
+grant select on tdm_mask_trace          to ROL_DATAMASKING;
+grant select on tdm_mask_dep_estado     to ROL_DATAMASKING;
 grant select                  on tdm_mask_regla_esp      to ROL_DATAMASKING;
 grant select                  on tdm_mask_relacion_sync  to ROL_DATAMASKING;
 Rem tdm_secreto (peppers) NO se concede al rol a proposito: solo el dueño del motor la lee.
@@ -406,8 +264,8 @@ Rem
 Rem ----------------------------------------------------------------
 Rem 3.1 ASIGNAR EL ROL A LOS DBA
 Rem ----------------------------------------------------------------
-Rem R-02 (resuelto 10/10/26): la lista de DBA autorizados vive en UN solo sitio, la variable de
-Rem   enlace g_dba_csv de abajo (separada por comas). El grant y la verificacion 4.3 la leen de ahi.
+Rem La lista de DBA autorizados vive en un solo sitio, la variable de enlace g_dba_csv de abajo
+Rem   (separada por comas). El grant y la verificacion 4.3 la leen de ahi.
 Rem   Para otra organizacion, editar solo esa linea.
 variable g_dba_csv varchar2(1000)
 begin
@@ -451,6 +309,54 @@ column name           format a30
 column type           format a18
 Rem
 Rem ----------------------------------------------------------------
+Rem 4.1b VALIDACION (solo informa, no concede nada) DE LOS PRIVILEGIOS
+Rem      QUE EL MOTOR NECESITA SOBRE LOS ESQUEMAS A ENMASCARAR
+Rem ----------------------------------------------------------------
+Rem El paquete corre con derechos del definidor (el dueno del motor): sus roles no cuentan, ni siquiera
+Rem DBA. Sin UPDATE sobre el esquema destino el enmascarado falla con ORA-01031 en todas las columnas.
+Rem Cada privilegio puede estar concedido como sistema (ANY) o, para un alcance mas estricto, como
+Rem UPDATE/ALTER directo sobre las tablas del esquema destino; esta comprobacion solo mira los de
+Rem sistema y lo informa. La decision de conceder es de seguridad.
+declare
+  l_n number;
+begin
+  dbms_output.put_line('Privilegios de sistema CONCEDIDOS DIRECTAMENTE a '||:g_esquemaast||':');
+  for r in (select column_value as priv
+              from table(sys.odcivarchar2list('SELECT ANY TABLE','UPDATE ANY TABLE',
+                                              'ALTER ANY TABLE','ALTER ANY TRIGGER','CREATE JOB'))) loop
+    select count(*) into l_n from dba_sys_privs where grantee = :g_esquemaast and privilege = r.priv;
+    dbms_output.put_line('  '||rpad(r.priv,20)||case when l_n > 0 then 'concedido'
+      else 'NO concedido (valido solo si hay UPDATE/ALTER directo sobre cada tabla destino)' end);
+  end loop;
+end;
+/
+
+Rem
+Rem ----------------------------------------------------------------
+Rem 4.1c VALIDACION (solo informa) DE EXECUTE SOBRE PAQUETES DE SYS
+Rem ----------------------------------------------------------------
+Rem Por la misma razon que 4.1b (el motor compila con derechos del definidor), el
+Rem EXECUTE tiene que estar concedido al esquema del motor o a PUBLIC, no por un rol.
+Rem DBMS_CRYPTO se concedio arriba; los demas suelen venir en PUBLIC, pero una base
+Rem endurecida puede haberlo revocado y entonces 10..40 compilan con PLS-00201.
+declare
+  l_n number;
+begin
+  dbms_output.put_line('EXECUTE sobre paquetes de SYS para '||:g_esquemaast||' o PUBLIC:');
+  for r in (select column_value as pkg
+              from table(sys.odcivarchar2list('DBMS_CRYPTO','DBMS_PARALLEL_EXECUTE',
+                                              'DBMS_SCHEDULER','DBMS_LOCK','DBMS_DATAPUMP'))) loop
+    select count(*) into l_n from dba_tab_privs
+     where owner = 'SYS' and table_name = r.pkg and privilege = 'EXECUTE'
+       and grantee in (:g_esquemaast, 'PUBLIC');
+    dbms_output.put_line('  '||rpad(r.pkg,22)||case when l_n > 0 then 'concedido'
+      else 'NO concedido: conceder GRANT EXECUTE ON SYS.'||r.pkg||' TO '||:g_esquemaast end);
+  end loop;
+end;
+/
+
+Rem
+Rem ----------------------------------------------------------------
 Rem 4.1 VALIDACION DE OBJETOS DEL MOTOR (esperado contra real)
 Rem ----------------------------------------------------------------
 Rem La lista esperada es la que crean 01, 02 y los paquetes 10..40 (17 tablas,
@@ -486,7 +392,7 @@ begin
   proc_chequea('TABLE', sys.odcivarchar2list(
     'TDM_EJECUCION','TDM_EJECUCION_ERROR','TDM_EJECUCION_SCOPE','TDM_OBJETO_CTRL','TDM_REGLA',
     'TDM_EXCEPCION_COL','TDM_COLUMNA_HIST','TDM_DEPENDENCIA_HIST','TDM_COLUMNA_FINAL',
-    'TDM_DEPENDENCIA_FINAL','TDM_SECRETO','TDM_PARAMETRO','TDM_MASK_SOLICITUD','TDM_MASK_TRACE',
+    'TDM_DEPENDENCIA_FINAL','TDM_SECRETO','TDM_MASK_TRACE_EVENTO','TDM_MASK_SOLICITUD','TDM_MASK_TRACE',
     'TDM_MASK_DEP_ESTADO','TDM_MASK_REGLA_ESP','TDM_MASK_RELACION_SYNC'));
   proc_chequea('SEQUENCE', sys.odcivarchar2list(
     'SEQ_DM_EJECUCION','SEQ_DM_EJECUCION_SCOPE','SEQ_DM_REGLA','SEQ_DM_COLUMNA_HIST',
@@ -500,6 +406,7 @@ begin
     'PKG_DM_TRAZABILIDAD','PKG_DM_DESC_PUNTUACION','PKG_DM_DOMINIOS','PKG_DM_DESC_CATALOGO','PKG_DM_DESCUBRIMIENTO','PKG_DM_MASK_FF1',
     'PKG_DM_SQL_SEGURO','PKG_DM_MASK_WORKER','PKG_DM_MASK_DEPENDENCIAS','PKG_DM_PEPPER','PKG_DM_MASK_ESTADO','PKG_DM_MASK_VALIDACION','PKG_DM_MASK_COLUMNA','PKG_DM_MASK_SYNC',
     'PKG_DM_ENMASCARAR','PKG_DM_EXPORT'));
+  :g_install_mal := :g_install_mal + l_mal;
   if l_mal = 0 then
     dbms_output.put_line('  OK: '||l_tot||' objetos esperados, todos presentes y VALID.');
   else
@@ -507,24 +414,6 @@ begin
   end if;
 end;
 /
-
-Rem Paquetes del motor instalados. Solo las fachadas y la trazabilidad llevan grant al rol
-Rem (listado 4.2 de abajo); los demas son internos y los invoca unicamente la fachada.
-column object_name format a30
-column spec        format a8
-column body        format a8
-select object_name,
-       max(decode(object_type,'PACKAGE',status))      as spec,
-       max(decode(object_type,'PACKAGE BODY',status)) as body
-  from dba_objects
- where owner = :g_esquemaast
-   and object_type in ('PACKAGE','PACKAGE BODY')
-   and object_name in (
-    'PKG_DM_TRAZABILIDAD','PKG_DM_DESC_PUNTUACION','PKG_DM_DOMINIOS','PKG_DM_DESC_CATALOGO','PKG_DM_DESCUBRIMIENTO',
-    'PKG_DM_MASK_FF1','PKG_DM_SQL_SEGURO','PKG_DM_MASK_WORKER','PKG_DM_MASK_DEPENDENCIAS','PKG_DM_PEPPER',
-    'PKG_DM_MASK_ESTADO','PKG_DM_MASK_VALIDACION','PKG_DM_MASK_COLUMNA','PKG_DM_MASK_SYNC','PKG_DM_ENMASCARAR','PKG_DM_EXPORT')
- group by object_name
- order by object_name;
 
 Rem
 Rem ----------------------------------------------------------------
@@ -577,34 +466,38 @@ Rem ----------------------------------------------------------------
 Rem 4.5 VALIDACION DE ERRORES DE COMPILACION
 Rem ----------------------------------------------------------------
 
-select owner,
-       name,
-       type,
-       line,
-       position,
-       text
-from dba_errors
-where owner = :g_esquemaast
-  and name in (
-    'PKG_DM_TRAZABILIDAD',
-    'PKG_DM_DESC_PUNTUACION',
-    'PKG_DM_DOMINIOS',
-    'PKG_DM_DESC_CATALOGO',
-    'PKG_DM_DESCUBRIMIENTO',
-    'PKG_DM_MASK_FF1',
-    'PKG_DM_SQL_SEGURO',
-    'PKG_DM_MASK_WORKER',
-    'PKG_DM_MASK_DEPENDENCIAS',
-    'PKG_DM_PEPPER',
-    'PKG_DM_MASK_ESTADO',
-    'PKG_DM_MASK_VALIDACION',
-    'PKG_DM_MASK_COLUMNA',
-    'PKG_DM_MASK_SYNC',
-    'PKG_DM_ENMASCARAR',
-    'PKG_DM_EXPORT'
-  ) order by name, type, sequence;
+declare
+  l_n number := 0;
+begin
+  for r in (select name, type, line, position, text
+              from dba_errors
+             where owner = :g_esquemaast
+               and name like 'PKG\_DM\_%' escape '\'
+             order by name, type, sequence) loop
+    l_n := l_n + 1;
+    dbms_output.put_line('  '||r.type||' '||r.name||' ('||r.line||','||r.position||'): '||r.text);
+  end loop;
+  :g_install_mal := :g_install_mal + l_n;
+  if l_n = 0 then
+    dbms_output.put_line('  OK: sin errores de compilacion en los paquetes del motor.');
+  else
+    dbms_output.put_line('  ATENCION: '||l_n||' errores de compilacion (ver arriba).');
+  end if;
+end;
+/
 
 spool off
+
+Rem La instalacion falla cerrada: con objetos ausentes/INVALID o errores de compilacion termina con
+Rem codigo de salida distinto de cero (la salida de 4.1 y 4.5 ya esta impresa arriba).
+whenever sqlerror exit failure
+begin
+  if :g_install_mal > 0 then
+    raise_application_error(-20099, 'INSTALACION INCOMPLETA: '||:g_install_mal||' objeto(s) ausente(s), INVALID o con errores de compilacion (ver 4.1 y 4.5).');
+  end if;
+end;
+/
+whenever sqlerror continue
 Rem
 Rem ================================================================================
 Rem FIN DE INSTALACION / VALIDACION
@@ -614,14 +507,10 @@ Rem
 Rem ================================================================================
 Rem ANEXO (OPCIONAL, NO BLOQUEANTE): SERVICIO RAC + JOB_CLASS JC_DATAMASKING
 Rem ================================================================================
-Rem FIX 2026-09-23 (industrializacion, hallazgo Antigravity): proc_dm_ejecuta_update_seguro
-Rem (37_dm_pkg_enmascarar.sql) ya soporta job_class de forma OPCIONAL: si existe una
-Rem job_class llamada JC_DATAMASKING, DBMS_PARALLEL_EXECUTE.RUN_TASK la usa (afinidad de
-Rem instancia RAC, menos "gc current block/grant" en AWR); si no existe, el motor sigue
-Rem funcionando exactamente igual que hoy, sin job_class. Este anexo documenta como crearla
-Rem cuando el DBA decida hacerlo - NO es parte del flujo de instalacion normal, NADA de
-Rem esto se ejecuta automaticamente desde este script, y es un requisito RECOMENDADO, no
-Rem obligatorio.
+Rem proc_dm_ejecuta_update_seguro (pkg_dm_mask_worker) usa de forma opcional una job_class llamada
+Rem JC_DATAMASKING con DBMS_PARALLEL_EXECUTE.RUN_TASK (afinidad de instancia RAC, menos "gc current
+Rem block/grant"); si no existe, el motor funciona igual sin ella. Este anexo documenta como crearla.
+Rem No forma parte de la instalacion normal y nada de esto se ejecuta desde este script.
 Rem
 Rem PRERREQUISITO: un servicio RAC dedicado (via Clusterware/srvctl, NUNCA via
 Rem DBMS_SERVICE.CREATE_SERVICE - eso rompe el conocimiento de Clusterware sobre el
@@ -655,15 +544,10 @@ Rem       );
 Rem     END;
 Rem     /
 Rem
-Rem   PASO 5) Autorizar al esquema del motor (ASTSYSADMIN o ACC_ADMIN, el que
-Rem           exista en este entorno -- se detecta solo al inicio de cada
-Rem           script, ver &&esquemaast) a lanzar jobs
-Rem           en esa clase (sin este grant, RUN_TASK con job_class fallaria con
-Rem           ORA-27478/ORA-27479 al intentar usarla - pero como el motor
-Rem           comprueba la EXISTENCIA de la job_class antes de pasarla a
-Rem           RUN_TASK, no su uso, conviene completar este grant en el mismo
-Rem           momento en que se crea la job_class, para no dejar una ventana
-Rem           en la que el motor la detecte pero no pueda usarla):
+Rem   PASO 5) Autorizar al esquema del motor (ASTSYSADMIN o ACC_ADMIN, el que exista; ver &&esquemaast)
+Rem           a lanzar jobs en esa clase. Sin el grant, RUN_TASK con job_class falla con
+Rem           ORA-27478/ORA-27479; como el motor solo comprueba que la clase exista, conviene
+Rem           concederlo en el mismo momento en que se crea:
 Rem     GRANT EXECUTE ON SYS.JC_DATAMASKING TO <esquema_del_motor>;
 Rem
 Rem   PASO 6) Verificacion:

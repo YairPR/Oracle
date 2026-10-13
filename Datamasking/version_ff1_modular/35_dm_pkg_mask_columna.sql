@@ -5,15 +5,14 @@ Rem pkg_dm_mask_columna  --  35_dm_pkg_mask_columna.sql
 Rem ================================================================================
 Rem Decidir la funcion de enmascarado de una columna y aplicarla (checkpoint APPLY_COL).
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
-Rem
-Rem 2026-10-10 (auditoria industrial G9): func_dm_expr_gen_sql y func_dm_min_len_identificador
-Rem dejan de tener su propia tabla de identificadores y usan
-Rem pkg_dm_mask_ff1.func_dm_clase_identificador. Sin cambio de resultado para los siete
-Rem identificadores de las reglas.
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
+Rem    epurisaca    10/10/26 - La correspondencia identificador -> clase se toma de
+Rem                           pkg_dm_mask_ff1.func_dm_clase_identificador
+Rem    epurisaca    10/12/26 - Guarda de IBAN sin espacios (REPLACE) como func_dm_iban; aviso UNICIDAD_RIESGO
+Rem    epurisaca    10/12/26 - Verifica que el punto de control APPLY_COL quede escrito (reintento y ORA-20215 +
+Rem                           CHECKPOINT_PERDIDO): la traza es autonoma y no propaga su fallo
+Rem    epurisaca    10/12/26 - Se retira APPLY_COL_COLLISION de las listas de pasos confirmados
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_mask_columna AS
@@ -75,7 +74,7 @@ create or replace PACKAGE pkg_dm_mask_columna AS
     p_identificador IN VARCHAR2
   );
 
-  -- R13b: avance de un run de enmascarado (contadores que comparten proc_dm_mask_cat y proc_dm_mask_una_col).
+  -- Avance de un run de enmascarado (contadores que comparten proc_dm_mask_cat y proc_dm_mask_una_col).
   TYPE t_dm_avance IS RECORD (
     total_cols    NUMBER := 0,
     total_tabs    NUMBER := 0,
@@ -110,6 +109,11 @@ create or replace PACKAGE pkg_dm_mask_columna AS
     p_column_name   IN VARCHAR2,
     p_identificador IN VARCHAR2,
     p_av            IN OUT t_dm_avance
+  );
+
+  PROCEDURE proc_dm_preflight_tipos(
+    p_ejecucion_id IN NUMBER,
+    p_esquema      IN VARCHAR2
   );
 
 END pkg_dm_mask_columna;
@@ -155,11 +159,8 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
        AND activa           = 'Y';
     RETURN l_cnt;
   EXCEPTION
-    -- Fail-closed (2026-09-16): un COUNT(*) sobre una tabla propia solo puede
-    -- fallar por un problema real (tabla inaccesible, privilegio revocado,
-    -- deadlock). Devolver 0 en ese caso hacia parecer "no hay regla especial"
-    -- y el motor caia al tratamiento generico sin avisar - exactamente el
-    -- tipo de fallback silencioso que el resto del motor evita. Se propaga.
+    -- Fail-closed: un COUNT(*) sobre una tabla propia solo falla por un problema real; devolver 0
+    -- haria parecer que no hay regla especial y caeria al tratamiento generico sin avisar.
     WHEN OTHERS THEN RAISE;
   END;
 
@@ -218,10 +219,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
     p_identificador IN VARCHAR2,
     p_col_expr      IN VARCHAR2
   ) RETURN VARCHAR2 IS
-    -- 2026-10-10 (auditoria industrial G9): la correspondencia identificador -> clase vive
-    -- ahora en un solo sitio, pkg_dm_mask_ff1.func_dm_clase_identificador. Las siete clases
-    -- exactas de las reglas (PERSONAL, NOMBRE, DIRECCION, TELEFONO, EMAIL, IDENTIDAD y
-    -- BANCARIO) generan la misma expresion que antes.
+    -- La correspondencia identificador -> clase vive en pkg_dm_mask_ff1.func_dm_clase_identificador.
     l_cls VARCHAR2(20) := pkg_dm_mask_ff1.func_dm_clase_identificador(p_identificador);
   BEGIN
     CASE l_cls
@@ -231,7 +229,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
       WHEN 'EMAIL'     THEN RETURN 'pkg_dm_mask_ff1.func_dm_email('||p_col_expr||')';
       WHEN 'IDENTIDAD' THEN RETURN 'pkg_dm_mask_ff1.func_dm_nif('||p_col_expr||')';
       WHEN 'BANCARIO'  THEN
-        RETURN 'CASE WHEN REGEXP_LIKE(UPPER(TRIM('||p_col_expr||')), ''^ES[0-9]{22}$'') '||
+        RETURN 'CASE WHEN REGEXP_LIKE(REPLACE(UPPER(TRIM('||p_col_expr||')), '' '', ''''), ''^ES[0-9]{22}$'') '||
                'THEN pkg_dm_mask_ff1.func_dm_iban('||p_col_expr||') '||
                'ELSE pkg_dm_mask_ff1.func_dm_cuenta('||p_col_expr||') END';
       ELSE
@@ -288,7 +286,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
     END IF;
   EXCEPTION
     WHEN OTHERS THEN
-      -- M-7: Envolver en SUBSTR con longitud de fallback prudente ante fallo de consulta de metadatos
+      -- Envolver en SUBSTR con longitud de fallback prudente ante fallo de consulta de metadatos
       RETURN 'SUBSTR('||func_dm_expr_gen_sql(p_identificador, l_col)||',1,4000)';
   END;
 
@@ -372,11 +370,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
       'Y'
     );
     COMMIT;
-  -- Sin EXCEPTION propio (2026-09-16): esta es la API con la que el DBA fija
-  -- una excepcion EXCLUDE/FORCE por columna. Un WHEN OTHERS THEN NULL aqui
-  -- devolvia "exito" aunque el MERGE no hubiera grabado nada - el DBA podia
-  -- creer protegida (o forzada a un identificador) una columna que en
-  -- realidad seguia con el tratamiento por defecto. Se deja propagar.
+  -- Sin EXCEPTION propio: si el MERGE falla el error debe llegar al DBA, no ocultarse.
   END;
 
 
@@ -437,8 +431,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
   --                ORA-12899/ORA-20323 y ORA-06502/ORA-20321 sin fallback valido, y por longitud
   --                menor al minimo.; Cualquier otro error se re-propaga (incluye ORA-20320,
   --                ORA-20330, ORA-20350).
-  -- LLAMADO DESDE: Interno: proc_dm_mask_cat (flujo de esquema) y proc_dm_enmascara_tabla (modo por
-  --                tabla).
+  -- LLAMADO DESDE: Interno: proc_dm_mask_una_col (via proc_dm_mask_cat).
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_apl_col(
     p_solicitud_id  IN NUMBER,
@@ -520,9 +513,8 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
     l_min_len := func_dm_min_len_identificador(l_ident_final);
     IF l_data_type IN ('CHAR','VARCHAR2','NCHAR','NVARCHAR2')
        AND NVL(l_char_len,0) < l_min_len THEN
-      -- FIX 2026-10-09: un FORCE del negocio NO se reescribe como EXCLUDE (antes
-      -- el MERGE pisaba la regla del DBA sin avisar). Solo se auto-excluye
-      -- (y persiste) cuando la columna NO tenia FORCE explicito.
+      -- Un FORCE del negocio no se reescribe como EXCLUDE: solo se auto-excluye (y persiste)
+      -- cuando la columna no tenia FORCE explicito.
       IF l_ident_forzado IS NULL THEN
         proc_dm_upsert_excepcion_col(
           p_owner      => p_owner,
@@ -539,8 +531,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
          AND table_name = l_tabla
          AND column_name = l_columna;
       COMMIT;
-      -- FIX 2026-10-09: nivel WARN (antes INFO): es un dato clasificado como
-      -- sensible que queda SIN enmascarar; debe verse en el resumen final.
+      -- Nivel WARN: dato clasificado como sensible que queda sin enmascarar; debe verse en el resumen.
       pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'MASK','SKIP_AUTO_LEN',
         l_target||' SIN ENMASCARAR: longitud columna ('||NVL(l_char_len,0)||') < minimo '||l_min_len||
         ' para '||l_ident_final||CASE WHEN l_ident_forzado IS NOT NULL THEN ' (columna FORZADA por tdm_excepcion_col; la regla se conserva)' ELSE '' END);
@@ -564,14 +555,22 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
       pkg_dm_mask_worker.proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, p_ejecucion_id, l_rows, l_ruta);
 
     ELSIF func_dm_tiene_regla(p_esquema,p_owner,p_tabla,p_columna,'IBAN_ES_CONTINUO') > 0 THEN
-      -- C-01: NO truncar. func_dm_especial_iban_continuo devuelve 24 chars exactos;
-      -- si la columna fuera mas corta, ORA-12899 (fallo cerrado) mejor que corromper.
+      -- No truncar: func_dm_especial_iban_continuo devuelve 24 caracteres; si la columna es mas
+      -- corta es preferible ORA-12899 (fallo cerrado) a corromper el dato.
       l_sql := 'UPDATE '||pkg_dm_sql_seguro.func_dm_qname(p_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(p_tabla)||
                ' SET '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' = pkg_dm_mask_ff1.func_dm_especial_iban_continuo('||pkg_dm_sql_seguro.func_dm_qname(p_columna)||')' ||
                ' WHERE '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' IS NOT NULL';
       pkg_dm_mask_worker.proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, p_ejecucion_id, l_rows, l_ruta);
 
     ELSE
+      -- Aviso previo (no detiene): una columna con indice unico propio enmascarada con una funcion NO
+      -- inyectiva (nombre, direccion, telefono, email, observacion) puede dar ORA-00001. Si ocurre, la
+      -- columna se auto-excluye (UPDATE atomico: nada cambia) y queda en NO_ENMASCARADA.
+      IF pkg_dm_mask_ff1.func_dm_clase_identificador(l_ident_final) IN ('NOMBRE','DIRECCION','TELEFONO','EMAIL','OBS')
+         AND pkg_dm_mask_worker.func_dm_col_con_unicidad(p_owner,p_tabla,p_columna) = 'Y' THEN
+        pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'MASK','UNICIDAD_RIESGO',
+          l_target||' tiene indice unico y se enmascara con '||l_ident_final||' (funcion no inyectiva): posible ORA-00001');
+      END IF;
       l_expr := func_dm_expr_compatible(p_owner,p_tabla,p_columna,l_ident_final);
       l_sql := 'UPDATE '||pkg_dm_sql_seguro.func_dm_qname(p_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(p_tabla)||
                ' SET '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' = '||l_expr||
@@ -587,14 +586,41 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
     pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'MASK','APPLY_COL',
       l_target||' filas='||l_rows||CASE WHEN l_ruta IS NOT NULL THEN ' ruta='||l_ruta END,
       pkg_dm_trazabilidad.func_dm_seg_desde(l_t0));
+    -- Verificacion del punto de control: proc_dm_trace es autonoma y no propaga su fallo. Si el APPLY_COL
+    -- no quedo escrito, la reanudacion creeria la columna pendiente y la volveria a cifrar (FF1 no es
+    -- idempotente). Se reintenta una vez; si sigue ausente se aborta la columna con un error explicito.
+    DECLARE
+      l_ok NUMBER;
+    BEGIN
+      FOR l_i IN 1..2 LOOP
+        SELECT COUNT(*) INTO l_ok
+          FROM tdm_mask_trace t
+         WHERE t.ejecucion_id = p_ejecucion_id
+           AND t.fase = 'MASK'
+           AND t.paso = 'APPLY_COL'
+           AND INSTR(t.detalle, l_target||' filas=') = 1;
+        EXIT WHEN l_ok > 0;
+        IF l_i = 1 THEN
+          pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'MASK','APPLY_COL',
+            l_target||' filas='||l_rows||CASE WHEN l_ruta IS NOT NULL THEN ' ruta='||l_ruta END,
+            pkg_dm_trazabilidad.func_dm_seg_desde(l_t0));
+        END IF;
+      END LOOP;
+      IF l_ok = 0 THEN
+        pkg_dm_trazabilidad.proc_dm_trace(p_solicitud_id,p_ejecucion_id,'MASK','CHECKPOINT_PERDIDO',
+          l_target||' enmascarada ('||l_rows||' filas) pero SIN punto de control APPLY_COL');
+        RAISE_APPLICATION_ERROR(-20215,'Punto de control APPLY_COL no registrado para '||l_target||
+          ': la columna YA esta enmascarada. No reanudar ni reprocesar sin revisar (FF1 no es idempotente).');
+      END IF;
+    END;
+    -- La tarea paralela se libera despues del punto de control (ver pkg_dm_mask_worker).
+    pkg_dm_mask_worker.proc_dm_cierra_tarea(p_owner, p_tabla, p_columna);
   EXCEPTION
     WHEN OTHERS THEN
       IF SQLCODE IN (-1, -20322) THEN
-        -- Colision de unicidad (ORA-00001), directo o vía -20322 (mismo error
-        -- homogeneizado desde TODOS los chunks paralelos, FIX 2026-09-27 en
-        -- proc_dm_ejecuta_update_seguro). Con FF1 los dominios numericos son
-        -- biyectivos y NO llegan aqui; si ocurre es una columna de TEXTO unica.
-        -- Se auto-excluye (no se fabrica sufijo ORA_HASH, que rompia la FK).
+        -- Colision de unicidad (ORA-00001), directa o via -20322 desde los chunks paralelos. Con FF1
+        -- los dominios numericos son biyectivos y no llegan aqui; es una columna de texto unica y
+        -- se auto-excluye (un sufijo ORA_HASH rompia la FK).
         proc_dm_upsert_excepcion_col(
           p_owner      => p_owner,
           p_tabla      => p_tabla,
@@ -613,8 +639,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
           p_solicitud_id, p_ejecucion_id, 'MASK', 'SKIP_ORA00001',
           l_target||' auto-excluida tras ORA-00001 (sin sufijo ORA_HASH)', pkg_dm_trazabilidad.func_dm_seg_desde(l_t0));
       ELSIF SQLCODE IN (-12899, -20323) THEN
-        -- -20323: mismo ORA-12899 pero homogeneizado desde TODOS los chunks
-        -- paralelos (FIX 2026-09-27, ver comentario en proc_dm_ejecuta_update_seguro).
+        -- -20323: el mismo ORA-12899 homogeneizado desde los chunks paralelos.
         proc_dm_upsert_excepcion_col(
           p_owner      => p_owner,
           p_tabla      => p_tabla,
@@ -636,44 +661,19 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
           'SKIP_ORA12899',
           l_target||' auto-excluida tras ORA-12899', pkg_dm_trazabilidad.func_dm_seg_desde(l_t0));
       ELSIF SQLCODE IN (-6502, -20321) THEN
-        -- FIX 2026-09-18: -20321 es el ORA-06502 puro detectado por
-        -- proc_dm_ejecuta_update_seguro cuando la columna se proceso via
-        -- DBMS_PARALLEL_EXECUTE (>100k filas). Antes de este fix, ese caso
-        -- llegaba aqui como -20320 generico y NUNCA activaba el fallback de
-        -- abajo (que ya funcionaba correctamente para la ruta serie/directa).
+        -- -20321: ORA-06502 puro detectado en la ruta paralela (>100k filas); activa el fallback de abajo.
         IF l_data_type IN ('CHAR','VARCHAR2','NCHAR','NVARCHAR2') AND NVL(l_char_len,0) > 0 THEN
           BEGIN
-            -- Primer fallback: reutilizar librería oficial de enmascarado
+            -- Unico fallback: reutilizar la libreria oficial de enmascarado (keyed, con pepper)
             l_expr := 'SUBSTR(pkg_dm_mask_ff1.func_dm_generico('''||
                       REPLACE(l_ident_final,'''','''''')||''','||pkg_dm_sql_seguro.func_dm_qname(p_columna)||'),1,'||TO_CHAR(l_char_len)||')';
             l_sql := 'UPDATE '||pkg_dm_sql_seguro.func_dm_qname(p_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(p_tabla)||
                      ' SET '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' = '||l_expr||
                      ' WHERE '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' IS NOT NULL';
-            BEGIN
-              pkg_dm_mask_worker.proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, p_ejecucion_id, l_rows_retry, l_ruta);
-            EXCEPTION
-              WHEN OTHERS THEN
-                -- Segundo fallback: expresión SQL ultra-segura por tipo de identificador
-                IF l_ident_final IN ('IDENTIFICADOR_PERSONAL','IDENTIFICADOR_NOMBRE') THEN
-                  l_expr := 'SUBSTR(TRANSLATE(UPPER('||pkg_dm_sql_seguro.func_dm_qname(p_columna)||'),'||
-                            '''ABCDEFGHIJKLMNOPQRSTUVWXYZ'','||
-                            '''QWERTYUIOPASDFGHJKLZXCVBNM''),1,'||TO_CHAR(l_char_len)||')';
-                ELSIF l_ident_final = 'IDENTIFICADOR_DIRECCION' THEN
-                  l_expr := 'SUBSTR(''Calle Ficticia N ''||TO_CHAR(MOD(ORA_HASH('||pkg_dm_sql_seguro.func_dm_qname(p_columna)||'),999))||'', Zaragoza'',1,'||TO_CHAR(l_char_len)||')';
-                ELSIF l_ident_final = 'IDENTIFICADOR_EMAIL' THEN
-                  l_expr := 'SUBSTR(''usuario''||TO_CHAR(MOD(ORA_HASH('||pkg_dm_sql_seguro.func_dm_qname(p_columna)||'),1000000))||''@correo.com'',1,'||TO_CHAR(l_char_len)||')';
-                ELSIF l_ident_final = 'IDENTIFICADOR_TELEFONO' THEN
-                  l_expr := 'SUBSTR(''6''||LPAD(TO_CHAR(MOD(ORA_HASH('||pkg_dm_sql_seguro.func_dm_qname(p_columna)||'),100000000)),8,''0''),1,'||TO_CHAR(l_char_len)||')';
-                ELSE
-                  l_expr := 'SUBSTR(TRANSLATE(UPPER('||pkg_dm_sql_seguro.func_dm_qname(p_columna)||'),'||
-                            '''ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'','||
-                            '''QWERTYUIOPASDFGHJKLZXCVBNM9876543210''),1,'||TO_CHAR(l_char_len)||')';
-                END IF;
-                l_sql := 'UPDATE '||pkg_dm_sql_seguro.func_dm_qname(p_owner)||'.'||pkg_dm_sql_seguro.func_dm_qname(p_tabla)||
-                         ' SET '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' = '||l_expr||
-                         ' WHERE '||pkg_dm_sql_seguro.func_dm_qname(p_columna)||' IS NOT NULL';
-                pkg_dm_mask_worker.proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, p_ejecucion_id, l_rows_retry, l_ruta);
-            END;
+            -- Sin segundo fallback (TRANSLATE fijo / ORA_HASH sin pepper): seria una sustitucion
+            -- reversible o enumerable marcada como enmascarada. Si func_dm_generico tampoco cabe, la
+            -- columna se auto-excluye (SKIP_ORA06502) y el cierre no es FINALIZADO.
+            pkg_dm_mask_worker.proc_dm_ejecuta_update_seguro(p_owner, p_tabla, p_columna, l_sql, p_ejecucion_id, l_rows_retry, l_ruta);
             COMMIT;
             pkg_dm_trazabilidad.proc_dm_trace(
               p_solicitud_id,
@@ -681,6 +681,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
               'MASK',
               'APPLY_COL_SAFE_FALLBACK',
               l_target||' filas='||l_rows_retry||' (fallback seguro tras ORA-06502)', pkg_dm_trazabilidad.func_dm_seg_desde(l_t0));
+            pkg_dm_mask_worker.proc_dm_cierra_tarea(p_owner, p_tabla, p_columna);
           EXCEPTION
             WHEN OTHERS THEN
               proc_dm_upsert_excepcion_col(
@@ -740,8 +741,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
   -- SALIDA       : o_has_final (1 si el esquema tiene columnas en TDM_COLUMNA_FINAL),
   --                o_total_cols, o_total_tabs.
   -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_mask_cat.
-  -- NOTA         : consultas movidas sin cambios (R13b); conservan el workaround
-  --                /*+ MATERIALIZE */ del ORA-07445 [qctcopn_internal].
+  -- NOTA         : conservan el workaround /*+ MATERIALIZE */ del ORA-07445 [qctcopn_internal].
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_cuenta_pendientes(
     p_ejecucion_id IN NUMBER,
@@ -764,28 +764,11 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
       FROM dual;
 
     IF l_has_final = 1 THEN
-      -- 2026-09-27: FORCE pasa a ser "vivo" igual que EXCLUDE. Antes, con
-      -- l_has_final=1 (caso normal: el esquema ya tiene clasificacion),
-      -- un FORCE nuevo sobre una columna que seguia en enmascarar='N' en
-      -- TDM_COLUMNA_FINAL NUNCA se recogia aqui -- la rama FORCE-only de
-      -- abajo (ELSE) solo se activa cuando el esquema no tiene NINGUNA
-      -- columna en Y, que tras el primer descubrimiento casi nunca ocurre.
-      -- La UNION ALL de "objetivo" incorpora esas columnas FORCE igual que
-      -- ya hace EXCLUDE (via NOT EXISTS, sin tocar TDM_COLUMNA_FINAL); si la
-      -- misma columna esta en ambas fuentes, origen=1 (FORCE) gana sobre
-      -- origen=2 (descubrimiento) para el identificador, igual que ya gana
-      -- FORCE en proc_dm_aplica_excepcion (04) y en proc_dm_get_excepcion/
-      -- proc_dm_apl_col (05, live en tiempo de aplicar).
-      -- FIX 2026-09-28 (ORA-07445 [qctcopn_internal], incidente real en
-      -- produccion -- ver incident/incdir_175305): el optimizador de Oracle
-      -- 19.28 revienta con SIGSEGV al intentar transformar/mezclar este WITH
-      -- (UNION ALL + funcion PL/SQL func_dm_norm() dentro de un EXISTS correlado)
-      -- con la consulta externa. No es un bug de nuestra logica SQL -- el
-      -- resultado es identico -- es un crash del compilador de consultas al
-      -- reescribir el plan. /*+ MATERIALIZE */ obliga a materializar el CTE
-      -- como un segmento real antes de evaluarlo, evitando la ruta de
-      -- transformacion que provoca el volcado de memoria. No cambia el
-      -- resultado, solo la estrategia de ejecucion.
+      -- FORCE cuenta como "vivo" igual que EXCLUDE: la UNION ALL de "objetivo" incorpora las columnas
+      -- FORCE aunque sigan en enmascarar='N' en TDM_COLUMNA_FINAL. Si una columna esta en ambas
+      -- fuentes gana FORCE (origen=1) para el identificador.
+      -- /*+ MATERIALIZE */: evita el ORA-07445 [qctcopn_internal] del optimizador al mezclar este WITH
+      -- (UNION ALL + func_dm_norm en un EXISTS correlado) con la consulta externa; no cambia el resultado.
       WITH objetivo AS (
         SELECT /*+ MATERIALIZE */ ora_owner, table_name, column_name,
                MAX(identificador) KEEP (DENSE_RANK FIRST ORDER BY origen) AS identificador
@@ -813,24 +796,20 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
       SELECT COUNT(*), COUNT(DISTINCT table_name)
         INTO l_total_cols, l_total_tabs
         FROM objetivo f
-       WHERE (
+       WHERE pkg_dm_mask_estado.func_dm_en_alcance(p_ejecucion_id, f.ora_owner, f.table_name, f.column_name) = 1
+         AND (
            l_reproceso = 'Y' OR
            NOT EXISTS (
              SELECT 1 FROM tdm_mask_trace t
               WHERE (
-                      -- 2026-09-22: filtro simplificado a ejecucion_id (ya no a la
-                      -- solicitud_id previa via g_resume_base_solicitud). Motivo: un
-                      -- SEGUNDO reanudo consecutivo sobre la misma ejecucion_id (dos
-                      -- caidas seguidas) solo veia el historico de la ULTIMA solicitud,
-                      -- no el de la primera -- re-enmascaraba (doble cifrado, corrompe
-                      -- FF1 y rompe el dominio referencial) columnas ya confirmadas en un
-                      -- intento anterior al mas reciente. Con ejecucion_id se ve TODO el
-                      -- historico de la ejecución sin importar cuantos intentos tuvo.
+                      -- Se filtra por ejecucion_id (no por solicitud_id): asi un segundo reanudo seguido
+                      -- ve el historico completo y no recifra columnas ya confirmadas.
                       t.ejecucion_id = p_ejecucion_id
                     )
                 AND t.fase = 'MASK'
-                AND t.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
-                AND t.detalle LIKE f.ora_owner||'.'||f.table_name||'.'||f.column_name||' filas=%'
+                AND t.paso IN ('APPLY_COL','APPLY_COL_SAFE_FALLBACK','SKIP_AUTO_LEN')   -- SKIP_AUTO_LEN: omitida con aviso = resuelta
+                AND (t.detalle LIKE REPLACE(REPLACE(f.ora_owner||'.'||f.table_name||'.'||f.column_name,'_','\_'),'%','\%')||' filas=%' ESCAPE '\'
+                     OR t.detalle LIKE REPLACE(REPLACE(f.ora_owner||'.'||f.table_name||'.'||f.column_name,'_','\_'),'%','\%')||' SIN ENMASCARAR%' ESCAPE '\')
            )
          )
          AND NOT EXISTS (
@@ -849,24 +828,20 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
          AND pkg_dm_sql_seguro.func_dm_norm(e.activa) = 'Y'
          AND pkg_dm_sql_seguro.func_dm_norm(e.accion) = 'FORCE'
          AND e.identificador_forz IS NOT NULL
+         AND pkg_dm_mask_estado.func_dm_en_alcance(p_ejecucion_id, l_esquema, pkg_dm_sql_seguro.func_dm_norm(e.table_name), pkg_dm_sql_seguro.func_dm_norm(e.column_name)) = 1
          AND (
            l_reproceso = 'Y' OR
            NOT EXISTS (
              SELECT 1 FROM tdm_mask_trace t
               WHERE (
-                      -- 2026-09-22: filtro simplificado a ejecucion_id (ya no a la
-                      -- solicitud_id previa via g_resume_base_solicitud). Motivo: un
-                      -- SEGUNDO reanudo consecutivo sobre la misma ejecucion_id (dos
-                      -- caidas seguidas) solo veia el historico de la ULTIMA solicitud,
-                      -- no el de la primera -- re-enmascaraba (doble cifrado, corrompe
-                      -- FF1 y rompe el dominio referencial) columnas ya confirmadas en un
-                      -- intento anterior al mas reciente. Con ejecucion_id se ve TODO el
-                      -- historico de la ejecución sin importar cuantos intentos tuvo.
+                      -- Se filtra por ejecucion_id (no por solicitud_id): asi un segundo reanudo seguido
+                      -- ve el historico completo y no recifra columnas ya confirmadas.
                       t.ejecucion_id = p_ejecucion_id
                     )
                 AND t.fase = 'MASK'
-                AND t.paso IN ('APPLY_COL','APPLY_COL_COLLISION','APPLY_COL_SAFE_FALLBACK')
-                AND t.detalle LIKE pkg_dm_sql_seguro.func_dm_norm(e.ora_owner)||'.'||pkg_dm_sql_seguro.func_dm_norm(e.table_name)||'.'||pkg_dm_sql_seguro.func_dm_norm(e.column_name)||' filas=%'
+                AND t.paso IN ('APPLY_COL','APPLY_COL_SAFE_FALLBACK','SKIP_AUTO_LEN')   -- SKIP_AUTO_LEN: omitida con aviso = resuelta
+                AND (t.detalle LIKE REPLACE(REPLACE(pkg_dm_sql_seguro.func_dm_norm(e.ora_owner)||'.'||pkg_dm_sql_seguro.func_dm_norm(e.table_name)||'.'||pkg_dm_sql_seguro.func_dm_norm(e.column_name),'_','\_'),'%','\%')||' filas=%' ESCAPE '\'
+                     OR t.detalle LIKE REPLACE(REPLACE(pkg_dm_sql_seguro.func_dm_norm(e.ora_owner)||'.'||pkg_dm_sql_seguro.func_dm_norm(e.table_name)||'.'||pkg_dm_sql_seguro.func_dm_norm(e.column_name),'_','\_'),'%','\%')||' SIN ENMASCARAR%' ESCAPE '\')
            )
          )
          AND EXISTS (
@@ -888,7 +863,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
   -- ENTRADAS     : p_solicitud_id, p_ejecucion_id, p_esquema.
   -- SALIDA       : ninguna (solo traza).
   -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_mask_cat (solo si el esquema tiene TDM_COLUMNA_FINAL).
-  -- NOTA         : consulta movida sin cambios (R13b).
+  -- NOTA         : consulta movida sin cambios.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_traza_tablas_omitidas(
     p_solicitud_id IN NUMBER,
@@ -897,12 +872,10 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
   ) IS
     l_esquema VARCHAR2(128) := p_esquema;
   BEGIN
-      -- 2026-09-27: usa el mismo conjunto "objetivo" (descubrimiento + FORCE
-      -- vivo) que la consulta de conteo de arriba, para que una tabla que solo
-      -- tiene columnas por FORCE no se reporte aqui como omitida por error.
+      -- Mismo conjunto "objetivo" (descubrimiento + FORCE vivo) que el conteo de arriba, para no
+      -- reportar como omitida una tabla que solo tiene columnas por FORCE.
       FOR tskip IN (
-        -- FIX 2026-09-28 (ORA-07445 [qctcopn_internal]): mismo workaround que
-        -- en la consulta de conteo de arriba -- ver comentario ahi.
+        -- Mismo workaround MATERIALIZE que en el conteo de arriba.
         WITH objetivo AS (
           SELECT /*+ MATERIALIZE */ ora_owner, table_name, column_name
             FROM (
@@ -928,6 +901,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
         )
         SELECT ora_owner, table_name
           FROM objetivo f
+         WHERE pkg_dm_mask_estado.func_dm_en_alcance(p_ejecucion_id, f.ora_owner, f.table_name, f.column_name) = 1
          GROUP BY ora_owner, table_name
         HAVING COUNT(*) = SUM(
                  CASE WHEN EXISTS (
@@ -951,6 +925,82 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
   END proc_dm_traza_tablas_omitidas;
 
   ------------------------------------------------------------------------------
+  -- PROCEDIMIENTO: proc_dm_preflight_tipos
+  -- PROPOSITO    : Rechaza ANTES de tocar datos (antes de PRE y del primer UPDATE) las columnas a
+  --                enmascarar cuyo tipo no tiene transformador en la ruta generica (todo lo que no sea
+  --                CHAR, VARCHAR2, NCHAR o NVARCHAR2: NUMBER, CLOB, DATE...). Sin este control la ruta
+  --                generica deja la columna igual (SET col = col) y la anota como enmascarada.
+  --                No cuentan las columnas con EXCLUDE activo en tdm_excepcion_col (exclusion aprobada
+  --                por el operador) ni las que tienen regla especial activa en tdm_mask_regla_esp.
+  -- ENTRADAS     : p_ejecucion_id; p_esquema
+  -- LEE          : TDM_COLUMNA_FINAL; TDM_EXCEPCION_COL; TDM_MASK_REGLA_ESP; DBA_TAB_COLUMNS
+  -- ESCRIBE      : nada
+  -- ERRORES      : ORA-20360 con la lista de columnas sin transformador (no se toca ningun dato).
+  -- LLAMADO DESDE: 37_dm_pkg_enmascarar.sql (proc_dm_enmascaramiento_core, antes del pre-flight de tareas)
+  ------------------------------------------------------------------------------
+  PROCEDURE proc_dm_preflight_tipos(
+    p_ejecucion_id IN NUMBER,
+    p_esquema      IN VARCHAR2
+  ) IS
+    l_esquema VARCHAR2(128) := UPPER(TRIM(p_esquema));
+    l_n       NUMBER := 0;
+    l_lista   VARCHAR2(1500);
+  BEGIN
+    FOR r IN (
+      SELECT x.ora_owner, x.table_name, x.column_name, c.data_type
+        FROM (
+              SELECT f.ora_owner, f.table_name, f.column_name
+                FROM tdm_columna_final f
+               WHERE f.ora_owner = l_esquema
+                 AND f.enmascarar = 'Y'
+              UNION
+              SELECT pkg_dm_sql_seguro.func_dm_norm(e.ora_owner),
+                     pkg_dm_sql_seguro.func_dm_norm(e.table_name),
+                     pkg_dm_sql_seguro.func_dm_norm(e.column_name)
+                FROM tdm_excepcion_col e
+               WHERE pkg_dm_sql_seguro.func_dm_norm(e.ora_owner) = l_esquema
+                 AND pkg_dm_sql_seguro.func_dm_norm(e.activa) = 'Y'
+                 AND pkg_dm_sql_seguro.func_dm_norm(e.accion) = 'FORCE'
+                 AND e.identificador_forz IS NOT NULL
+             ) x,
+             dba_tab_columns c
+       WHERE c.owner       = x.ora_owner
+         AND c.table_name  = x.table_name
+         AND c.column_name = x.column_name
+         AND c.data_type NOT IN ('CHAR','VARCHAR2','NCHAR','NVARCHAR2')
+         AND pkg_dm_mask_estado.func_dm_en_alcance(p_ejecucion_id, x.ora_owner, x.table_name, x.column_name) = 1
+         AND NOT EXISTS (
+               SELECT 1 FROM tdm_excepcion_col e
+                WHERE pkg_dm_sql_seguro.func_dm_norm(e.ora_owner)   = x.ora_owner
+                  AND pkg_dm_sql_seguro.func_dm_norm(e.table_name)  = x.table_name
+                  AND pkg_dm_sql_seguro.func_dm_norm(e.column_name) = x.column_name
+                  AND pkg_dm_sql_seguro.func_dm_norm(e.activa)  = 'Y'
+                  AND pkg_dm_sql_seguro.func_dm_norm(e.accion)  = 'EXCLUDE')
+         AND NOT EXISTS (
+               SELECT 1 FROM tdm_mask_regla_esp g
+                WHERE UPPER(TRIM(g.ora_esquema)) = l_esquema
+                  AND UPPER(TRIM(g.ora_owner))   = x.ora_owner
+                  AND UPPER(TRIM(g.table_name))  = x.table_name
+                  AND UPPER(TRIM(g.column_name)) = x.column_name
+                  AND g.activa = 'Y')
+       ORDER BY x.ora_owner, x.table_name, x.column_name
+    ) LOOP
+      l_n := l_n + 1;
+      IF l_lista IS NULL OR LENGTH(l_lista) < 1300 THEN
+        l_lista := l_lista||CASE WHEN l_lista IS NOT NULL THEN ', ' END||
+                   r.ora_owner||'.'||r.table_name||'.'||r.column_name||' ('||r.data_type||')';
+      END IF;
+    END LOOP;
+
+    IF l_n > 0 THEN
+      RAISE_APPLICATION_ERROR(-20360,
+        'Columnas a enmascarar SIN transformador para su tipo ('||l_n||'): '||l_lista||
+        '. No se ha tocado ningun dato. Aprobar su exclusion (tdm_excepcion_col, accion EXCLUDE) o '||
+        'implementar el transformador antes de relanzar.');
+    END IF;
+  END proc_dm_preflight_tipos;
+
+  ------------------------------------------------------------------------------
   -- PROCEDIMIENTO: proc_dm_mask_una_col
   -- PROPOSITO    : Aplicar UNA columna del objetivo y llevar el avance del run: cancelacion,
   --                conteo de tablas/columnas, error de columna (no avanza el progreso) y
@@ -959,8 +1009,7 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
   --                p_column_name, p_identificador).
   -- SALIDA       : p_av (IN OUT) con contadores, ultima tabla y errores acumulados.
   -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_mask_cat (una vez por columna).
-  -- NOTA         : cuerpo movido sin cambios (R13b); estaba duplicado en las dos ramas de
-  --                proc_dm_mask_cat. El CONTINUE del bucle pasa a RETURN.
+  -- NOTA         : el CONTINUE del bucle original pasa a RETURN.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_mask_una_col(
     p_solicitud_id  IN NUMBER,
@@ -994,18 +1043,9 @@ create or replace PACKAGE BODY pkg_dm_mask_columna AS
             pkg_dm_trazabilidad.proc_dm_log_ejec_error(p_ejecucion_id, p_ora_owner, p_table_name, p_column_name, 'MASK_APPLY', SQLCODE, SQLERRM, pkg_dm_sql_seguro.func_dm_safe_err(DBMS_UTILITY.FORMAT_ERROR_BACKTRACE), p_solicitud_id);
         END;
 
-        -- FIX 2026-10-07 (Fase 1, incidente real ejecucion_id=1 DM_DUMMY: CUENTA_CCC
-        -- fallo con ORA-20330 y aun asi se contaba como "procesada"): una columna
-        -- cuyo proc_dm_apl_col lanzo excepcion NO esta enmascarada (o lo esta solo
-        -- a medias). Antes, el contador p_av.proc_cols, el porcentaje, columnas_procesadas
-        -- y ULTIMO_OBJETO avanzaban igual que en una columna exitosa -- el monitor
-        -- mostraba progreso falso y ULTIMO_OBJETO apuntaba a una columna que seguia
-        -- en claro. Ahora una columna fallida NO avanza el progreso: solo se
-        -- refresca el latido y la ultima tabla/columna intentada; el error ya
-        -- quedo en TDM_EJECUCION_ERROR y en TDM_MASK_TRACE (ERROR_COL), y
-        -- p_av.errores>0 garantiza estado final ERROR/CON_ERRORES (nunca FINALIZADO,
-        -- sin purga de pepper ni export). No cambia que columnas se reintentan al
-        -- reanudar: eso depende solo de los APPLY_COL en TDM_MASK_TRACE.
+        -- Una columna cuyo proc_dm_apl_col lanzo excepcion no esta enmascarada: no avanza el progreso
+        -- (solo el latido y la ultima columna intentada). El error queda en TDM_EJECUCION_ERROR y
+        -- TDM_MASK_TRACE (ERROR_COL) y p_av.errores>0 impide el estado FINALIZADO.
         IF l_col_fallida THEN
           BEGIN
             UPDATE tdm_mask_solicitud

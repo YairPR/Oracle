@@ -3,7 +3,7 @@
 **Catalogo de objetos del motor DATAMASKING**
 
 > [!note] Versión
-> Valido para Oracle 11g R2 en adelante (piso de portabilidad del motor). Generado el 2026-10-10 a partir del codigo fuente de la carpeta FF1 (archivos 01, 02, 10 a 40, 98 y 99). Esta nota es el inventario de referencia: que existe, por que existe y con que proceso se enlaza.
+> Valido para Oracle 11g R2 en adelante (piso de portabilidad del motor). Generado el 2026-10-10 a partir del codigo fuente de la carpeta FF1 (archivos 01, 02, 10 a 40, 98 y 99). Esta nota es el inventario de referencia: que existe, por que existe y con que proceso se enlaza. Corregido el 2026-10-12 contra el codigo y el RGPD/NIST: las primitivas hash son SHA-256 en 12c o superior y SHA-1 solo en 11g (compilacion condicional en `func_dm_sha_hash` y `func_dm_sha_mac`, archivo 12); `tdm_regla` admite once valores de `tipo_regla` (cuatro puntuan, siete son configuracion); la lista de reglas es de 129 filas. Actualizado el 2026-10-11: `tdm_regla` pasa a 129 reglas con seis tipos nuevos de configuracion y se agrega el apartado 8 con las reglas ordenadas por articulo del RGPD.
 
 **Como leer este catalogo**
 
@@ -19,6 +19,8 @@ Convencion de nombres: `tdm_*` tablas, `idm_*` indices, `ui_*` indice unico, `pk
 4. Paquetes (16) y sus subprogramas
 5. Scripts de operacion
 6. Mapa de enlaces entre procesos
+7. Hallazgos de documentacion detectados al catalogar
+8. Reglas de descubrimiento ordenadas por articulo del RGPD (129 reglas, verificacion de unicidad)
 
 **1. Tablas**
 
@@ -53,7 +55,7 @@ Por que existe: PREGUNTA: que corrida es y en que estado esta ahora. Una fila po
 | `cancel_requested` | CHAR(1) DEFAULT 'N' | Y = se pidio cancelar la corrida (proc_dm_cancelar); el motor lo detecta entre columna y columna. Unico lugar donde vive la solicitud de cancelacion. |
 | `sesion_audsid` | NUMBER | AUDSID de la sesion orquestadora que lanzo la corrida. |
 | `sesion_sid` | NUMBER | SID de la sesion orquestadora (para saber si sigue viva y poder matarla). |
-| `sesion_serial` | NUMBER | SERIAL# de la sesion orquestadora. |
+| `sesion_serial` | NUMBER | SERIAL (numero de serie) de la sesion orquestadora. |
 | `sesion_inst_id` | NUMBER | Instancia RAC de la sesion orquestadora. |
 | `heartbeat_ts` | TIMESTAMP | Marca de vida usada para monitoreo operativo de procesos largos. |
 
@@ -110,7 +112,7 @@ Por que existe: Catálogo de reglas utilizadas por el motor semántico de descub
 |---|---|---|
 | `regla_id` | NUMBER NOT NULL | Clave tecnica de la regla (seq_dm_regla). |
 | `identificador` | VARCHAR2(50) NOT NULL | Identificador de dato sensible asignado por la regla. |
-| `tipo_regla` | VARCHAR2(20) NOT NULL | Tipo de regla: nombre de columna, comentario, patrón de datos o nombre de tabla. |
+| `tipo_regla` | VARCHAR2(20) NOT NULL | Tipo de regla: nombre de columna, comentario, patrón de datos o nombre de tabla (las que puntúan), o uno de siete tipos de configuración con puntuación 0 que no suman ni restan: ALIAS_NOMBRE, NUMBER_ADMITIDO, NOMBRE_CANDIDATO, NOMBRE_PERSONAL, NOMBRE_GENERICO, CTX_PERSONA y CTX_APELLIDO. |
 | `expresion` | VARCHAR2(500) NOT NULL | Expresión o patrón evaluado por la regla. |
 | `puntuacion` | NUMBER(8,2) NOT NULL | Puntuación aportada por la regla al scoring final. |
 | `prioridad` | NUMBER DEFAULT 100 | Orden de evaluacion dentro de un identificador y tipo (menor primero). |
@@ -118,9 +120,9 @@ Por que existe: Catálogo de reglas utilizadas por el motor semántico de descub
 | `muestra_min` | NUMBER | Minimo de filas con dato que debe tener la muestra para que una regla DATA_PATTERN cuente. |
 | `activa` | CHAR(1) DEFAULT 'Y' | Y/N: la fila solo se aplica si esta activa; permite apagar sin borrar. |
 | `descripcion` | VARCHAR2(1000) | Por que existe la regla (criterio funcional, para auditoria). |
-| `tipo_regla` | IN ('COLUMN_NAME','COLUMN_COMMENT','DATA_PATTERN','TABLE_NAME') | Tipo de regla: nombre de columna, comentario, patrón de datos o nombre de tabla. |
+| `tipo_regla` | IN ('COLUMN_NAME','COLUMN_COMMENT','DATA_PATTERN','TABLE_NAME','ALIAS_NOMBRE','NUMBER_ADMITIDO','NOMBRE_CANDIDATO','NOMBRE_PERSONAL','NOMBRE_GENERICO','CTX_PERSONA','CTX_APELLIDO') | Los cuatro primeros puntúan; los siete últimos son configuración (puntuación 0). |
 
-Restricciones: `pk_tdm_regla` PRIMARY KEY (regla_id); `ck_tdm_regla_activa` CHECK (activa IN ('Y','N'); `ck_tdm_regla_tipo` CHECK ( tipo_regla IN ('COLUMN_NAME','COLUMN_COMMENT','DATA_PATTERN','TABLE_NAME')
+Restricciones: `pk_tdm_regla` PRIMARY KEY (regla_id); `ck_tdm_regla_activa` CHECK (activa IN ('Y','N'); `ck_tdm_regla_tipo` CHECK ( tipo_regla IN ('COLUMN_NAME','COLUMN_COMMENT','DATA_PATTERN','TABLE_NAME','ALIAS_NOMBRE','NUMBER_ADMITIDO','NOMBRE_CANDIDATO','NOMBRE_PERSONAL','NOMBRE_GENERICO','CTX_PERSONA','CTX_APELLIDO')
 
 **tdm_columna_hist**
 
@@ -431,7 +433,7 @@ Criterio de revision: cada indice se contrasta con las consultas reales del codi
 | `idm_ejec_error_02` sobre `tdm_ejecucion_error` | `(etapa, codigo_error)` | Estadistica de errores por etapa/codigo | Poco usado; tabla pequena |
 | `idm_ejec_scope_01` sobre `tdm_ejecucion_scope` | `(ejecucion_id, ora_owner, table_name, column_name)` | FK + filtro de alcance (descubrimiento por tablas) | Util |
 | `idm_objeto_ctrl_01` sobre `tdm_objeto_ctrl` | `(ora_owner, estado_objeto)` | Tablas PENDIENTE de un esquema (cola de trabajo del descubrimiento) | Util |
-| `idm_regla_01` sobre `tdm_regla` | `(activa, tipo_regla, identificador, prioridad)` | Lectura de reglas activas por tipo/identificador ordenadas por prioridad | Util; 109 filas |
+| `idm_regla_01` sobre `tdm_regla` | `(activa, tipo_regla, identificador, prioridad)` | Lectura de reglas activas por tipo/identificador ordenadas por prioridad | Util; 129 filas |
 | `idm_col_hist_01` sobre `tdm_columna_hist` | `(ora_owner, table_name, estado_final, identificador)` | Consulta de resultado por tabla | Util |
 | `idm_col_hist_02` sobre `tdm_columna_hist` | `(ejecucion_id, enmascarar)` | Sincronizar el catalogo final (columnas Y de una corrida) | Util |
 | `idm_dep_hist_01` sobre `tdm_dependencia_hist` | `(ejecucion_id, ora_owner, table_name, column_name)` | FK + dependencias de una columna en una corrida | Util |
@@ -497,7 +499,7 @@ Fase: Transversal. Trazas, errores, ejecucion activa, heartbeat. Subprogramas: 8
 | `proc_dm_trace` | P | Escribe un evento en la linea de tiempo TDM_MASK_TRACE (fase, paso, nivel del catalogo, detalle y duracion). El objeto afectado va dentro del detalle (ESQUEMA.TABLA.COLUMNA ...), no en columnas aparte. | TDM_PARAMETRO (via func_dm_nivel) | TDM_MASK_TRACE (INSERT) | pkg_dm_enmascarar (wrapper proc_dm_trace), pkg_dm_descubrimiento, pkg_dm_trazabilidad.proc_dm_log_ejec_error y dm_liberar_ejecucion_activa.s |
 | `proc_dm_log_ejec_error` | P | Unico escritor de errores: registra un error con codigo, mensaje y backtrace en TDM_EJECUCION_ERROR y deja su linea ERROR.REGISTRADO en la traza, enlazada por error_id. | TDM_EJECUCION_ERROR (MAX(error_id)); USER_TABLES | TDM_EJECUCION_ERROR (INSERT); TDM_MASK_TRACE (via proc_dm_trace) | pkg_dm_enmascarar (wrapper) y pkg_dm_descubrimiento.proc_dm_log_error. |
 | `func_dm_seg_desde` | P | Calcula los segundos (2 decimales) transcurridos desde un instante, para rellenar duracion_seg en la traza. | ninguno | ninguno | pkg_dm_enmascarar.proc_dm_apl_col y pkg_dm_descubrimiento.proc_dm_procesa_desc. |
-| `proc_dm_refresca_sesion` | P | Captura la sesion Oracle (audsid, sid, serial#, instancia) que ejecuta la corrida y refresca su latido en TDM_EJECUCION. | V$SESSION | TDM_EJECUCION (UPDATE de sesion y heartbeat_ts) | proc_dm_enmascaramiento, proc_dm_reanudar y el descubrimiento al arrancar o reanudar. |
+| `proc_dm_refresca_sesion` | P | Captura la sesion Oracle (audsid, sid, numero de serie, instancia) que ejecuta la corrida y refresca su latido en TDM_EJECUCION. | V$SESSION | TDM_EJECUCION (UPDATE de sesion y heartbeat_ts) | proc_dm_enmascaramiento, proc_dm_reanudar y el descubrimiento al arrancar o reanudar. |
 | `func_dm_sesion_viva` | P | Indica si la sesion que lanzo una corrida sigue viva en GV$SESSION. | TDM_EJECUCION; GV$SESSION | ninguno | proc_dm_gestiona_tareas, pkg_dm_descubrimiento.proc_dm_reanudar y los scripts de monitor/cancel/reanudar. |
 | `proc_dm_autocancel_huerfanas` | P | Marca como ABORTADA las corridas EJECUTANDO cuya sesion ya no existe o lleva inactiva mas del limite sin latido, para liberar el bloqueo de ejecucion unica por esquema. | TDM_EJECUCION; GV$SESSION | TDM_EJECUCION (estado ABORTADA, fecha_fin, ultimo_paso) | pkg_dm_enmascarar.proc_dm_validar_concurrencia y la validacion de concurrencia del descubrimiento. |
 | `proc_dm_log_error` | P | Registra un error del descubrimiento delegando en pkg_dm_trazabilidad sin poder abortar nunca al proceso que protege. | ninguno | TDM_EJECUCION_ERROR y TDM_MASK_TRACE (indirecto, via pkg_dm_trazabilidad.proc_dm_log_ejec_error, autonomous transaction) | func_dm_score_patron; proc_dm_recolecta_dep; proc_dm_aplica_excepcion; proc_dm_procesa_desc |
@@ -536,12 +538,12 @@ Fase: Masking (motor FF1). Primitivas FF1 (NIST SP 800-38G) y formatos de dato. 
 | `proc_dm_set_ejecucion` | P | Fija en la sesion la campana (ejecucion_id) activa para que el pepper y la clave AES se lean de esa campana, invalidando las caches si cambia. | ninguno | ninguno | 37_dm_pkg_enmascarar.sql (coordinador, SQL dinamico de cada chunk/worker paralelo); tests/pkg_dm_ff1_debug.sql; los scripts dm_enmascara_can |
 | `func_dm_ff1_cifrar_raw` | P | Implementa FF1.Encrypt (NIST SP 800-38G, radix 10, 10 rondas Feistel con AES-128 CBC-MAC) sobre una cadena de digitos con clave y ajuste explicitos; produce una cadena de digitos de igual longitud, determinista, para validar contra vectores NIST. | ninguno | ninguno | func_dm_ff1_cifra; tests/pkg_dm_ff1_test.sql (vectores NIST) y tests/pkg_dm_ff1_debug.sql |
 | `func_dm_get_pepper` | I | Devuelve el pepper (secreto base) de la campana activa leyendolo de TDM_SECRETO y cacheandolo en la sesion; aborta si no existe. | tdm_secreto | ninguno | func_dm_clave_aes, func_dm_hash |
-| `func_dm_clave_aes` | I | Deriva la clave AES-128 de FF1 (primeros 16 bytes de SHA-1 del pepper) y la cachea por sesion. | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_ff1_cifra |
-| `func_dm_hash` | I | Genera una semilla numerica determinista de 56 bits (HMAC-SHA1 con el pepper como clave) para los dominios de texto y para los sustitutos de dominio pequeno. | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_digitos_min_dominio, func_dm_nombre, func_dm_direccion, func_dm_telefono, func_dm_email, func_dm_cifra_digitos_en_texto, func_dm_iba |
+| `func_dm_clave_aes` | I | Deriva la clave AES-128 de FF1 (primeros 16 bytes de SHA-256 del pepper en 12c o superior; SHA-1 en 11g) y la cachea por sesion. | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_ff1_cifra |
+| `func_dm_hash` | I | Genera una semilla numerica determinista de 56 bits (HMAC-SHA256 con el pepper como clave en 12c o superior; HMAC-SHA1 en 11g) para los dominios de texto y para los sustitutos de dominio pequeno. | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_digitos_min_dominio, func_dm_nombre, func_dm_direccion, func_dm_telefono, func_dm_email, func_dm_cifra_digitos_en_texto, func_dm_iba |
 | `func_dm_num_hex` | I | Convierte un entero no negativo a su cadena hexadecimal big-endian de longitud fija (p_bytes bytes), como pide el formato de bloques de FF1. | ninguno | ninguno | func_dm_ff1_cifrar_raw |
-| `func_dm_ajuste_dominio` | I | Calcula el ajuste (tweak) FF1 de 8 bytes a partir del nombre del dominio (SHA-1 de 'DOMINIO:'//identificador) para que un mismo dominio siempre cifre igual. | ninguno | ninguno | func_dm_nif, func_dm_cuenta, func_dm_iban, func_dm_especial_doc_keep_ends, func_dm_espec_doc_segun_tipo, func_dm_especial_iban_continuo; tes |
+| `func_dm_ajuste_dominio` | I | Calcula el ajuste (tweak) FF1 de 8 bytes a partir del nombre del dominio (SHA-256 de 'DOMINIO:'//identificador en 12c o superior; SHA-1 en 11g) para que un mismo dominio siempre cifre igual. | ninguno | ninguno | func_dm_nif, func_dm_cuenta, func_dm_iban, func_dm_especial_doc_keep_ends, func_dm_espec_doc_segun_tipo, func_dm_especial_iban_continuo; tes |
 | `func_dm_ff1_cifra` | I | Wrapper de produccion de FF1: cifra una cadena de digitos con la clave AES derivada del pepper de la campana y el ajuste indicado. | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_fpe_num, func_dm_cifra_digitos_en_texto, func_dm_especial_doc_keep_ends, func_dm_especial_iban_continuo |
-| `func_dm_digitos_min_dominio` | I | Genera un reemplazo numerico de n digitos (con ceros a la izquierda) via HMAC-SHA1 para dominios de 1 a 5 digitos, donde NIST prohibe usar FF1 (minimo radix^minlen >= 1.000.000). | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_fpe_num, func_dm_cifra_digitos_en_texto, func_dm_especial_doc_keep_ends |
+| `func_dm_digitos_min_dominio` | I | Genera un reemplazo numerico de n digitos (con ceros a la izquierda) via HMAC (SHA-256 en 12c o superior; SHA-1 en 11g) para dominios de 1 a 5 digitos, donde NIST prohibe usar FF1 (minimo radix^minlen >= 1.000.000). | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_fpe_num, func_dm_cifra_digitos_en_texto, func_dm_especial_doc_keep_ends |
 | `func_dm_fpe_num` | I | Cifra un numero dentro del rango [0, modulo) con FF1 y cycle-walking conservando la biyeccion; si el dominio tiene menos de 6 digitos usa el sustituto HMAC en lugar de FF1. | tdm_secreto (indirecto, via func_dm_get_pepper) | ninguno | func_dm_enmascara_nie, func_dm_nif, func_dm_cuenta, func_dm_iban, func_dm_espec_doc_segun_tipo |
 | `func_dm_txt_seguro` | I | Limita un texto a 1000 caracteres (semantica de caracteres, no bytes) para evitar ORA-06502 por cortes de multibyte. | ninguno | ninguno | func_dm_mix_alpha, func_dm_nombre, func_dm_direccion, func_dm_email |
 | `func_dm_mix_alpha` | I | Sustituye cada letra de un texto por una letra mayuscula A-Z generada por un generador congruencial a partir de una semilla, conservando longitud y caracteres no alfabeticos. | ninguno | ninguno | func_dm_nombre |
@@ -735,7 +737,7 @@ Fase: Satelite. Exportacion CSV (satelite). Subprogramas: 1 (1 publicos).
 | `dm_descubre_set.sql` | DBA/rol | Descubre solo las tablas con excepciones activas (flujo de lista del cliente) | proc_dm_descubrimiento_set |
 | `dm_descubre_reanudar.sql` | DBA/rol | Reanuda un descubrimiento interrumpido | pkg_dm_descubrimiento |
 | `97_configurar_excepciones.sql` | DBA | Carga FORCE/EXCLUDE por cliente en tdm_excepcion_col (MERGE idempotente; detecta el esquema del motor) | tdm_excepcion_col |
-| `03_dm_descubrimiento_carga_reglas.sql` | Instalador | INSERT de las 109 reglas de puntuacion (solo INSERT) | tdm_regla |
+| `03_dm_descubrimiento_carga_reglas.sql` | Instalador | INSERT de las 129 reglas (116 puntuan y 13 son configuracion; solo INSERT) | tdm_regla |
 | `dm_enmascara.sql` | DBA/rol | Lanza el enmascaramiento de una ejecucion | pkg_dm_enmascarar |
 | `dm_enmascara_id.sql` | DBA/rol | Enmascara por identificador | pkg_dm_enmascarar |
 | `dm_enmascara_reanudar.sql` | DBA/rol | Reanuda de forma segura (reconcilia tareas paralelas) | pkg_dm_mask_worker |
@@ -770,6 +772,326 @@ Lectura de arriba a abajo: cada flecha textual indica que el paquete de la izqui
 | 77 columnas sin `COMMENT ON COLUMN` (descritas aqui por su nombre y uso) | Sobre todo identificadores, fechas y marcas Y/N | Añadir los comentarios al DDL en la fase de documentacion |
 | Comentario con numero de linea fijo en `pkg_dm_dominios` ("linea 3316" de 37) | Queda obsoleto con cada cambio | Sustituir por el nombre del subprograma |
 | Pruebas en `tests/` con el nombre antiguo `pkg_dm_func_mask` | El paquete hoy se llama `pkg_dm_mask_ff1` | Actualizar o archivar en la purga |
+| Reglas distintas que coinciden con la misma columna | 40 pares en `03` (16 entre una generica y una del bloque B), detallados en el apartado 8.5; ninguna fila repetida | Consolidar el bloque B en la fase de purga, con migracion (el archivo es solo INSERT) y regresion de los esquemas de DGA |
+
+**8. Reglas de descubrimiento ordenadas por articulo del RGPD**
+
+El RGPD no entrega una lista de columnas a enmascarar. Fija obligaciones: tratar solo los datos necesarios para cada finalidad (art. 5.1.c), no usarlos para una finalidad distinta de la original (art. 5.1.b), aplicar proteccion de datos desde el diseno y por defecto (art. 25) y adoptar medidas tecnicas como la seudonimizacion y el cifrado (art. 32.1.a; definicion en el art. 4.5). Un entorno de desarrollo o preproduccion es una finalidad distinta de la original, y por eso se enmascara. Lo que el motor tiene que decidir es que columnas contienen datos personales (art. 4.1) o pueden contener categorias especiales (art. 9) o datos de condenas e infracciones penales (art. 10). Las reglas de `tdm_regla` se ordenan aqui por ese criterio.
+
+> [!note] Alcance de esta ordenacion
+> Es documental. El orden de las filas en `03_dm_descubrimiento_carga_reglas.sql` y en `tdm_regla` no cambia ningun score: el motor suma las reglas que coinciden. Un dato seudonimizado sigue siendo dato personal (considerando 26); solo la anonimizacion lo saca del RGPD.
+
+> [!warning] Lo que las reglas no pueden saber
+> Las reglas detectan columnas por su nombre, su comentario, el nombre de su tabla y el formato de una muestra de datos. No leen el significado del contenido, de modo que una columna de texto libre se trata como un todo: o se enmascara entera o no.
+
+**8.1 Resumen por articulo e identificador**
+
+| Articulo | Que cubre | Identificador | Definicion de Aragon | Tecnica de enmascarado | Suman | Restan |
+|---|---|---|---|---|---|---|
+| Art. 4.1 | nombre | `IDENTIFICADOR_PERSONAL` | Nombres y apellidos | func_dm_nombre (HMAC, no biyectivo) | 19 | 8 |
+| Art. 4.1 | numero de identificacion | `IDENTIFICADOR_IDENTIDAD` | Documentos de identidad | func_dm_nif (FF1, biyectivo) | 11 | 8 |
+| Art. 4.1 | identidad economica | `IDENTIFICADOR_BANCARIO` | Cuentas bancarias | func_dm_iban y func_dm_cuenta (FF1, biyectivo) | 5 | 6 |
+| Art. 4.1 | dato de contacto | `IDENTIFICADOR_TELEFONO` | Telefono | func_dm_telefono (HMAC, no biyectivo) | 7 | 2 |
+| Art. 4.1 | dato de contacto | `IDENTIFICADOR_EMAIL` | Correo | func_dm_email (HMAC, no biyectivo) | 4 | 1 |
+| Art. 4.1 | datos de localizacion | `IDENTIFICADOR_DIRECCION` | No esta en la lista de Aragon (lo anade el motor) | func_dm_direccion (HMAC, no biyectivo) | 11 | 19 |
+| Arts. 9 y 10 | texto libre: puede contener categorias especiales | `IDENTIFICADOR_OBS` | Columnas de detalle, observacion y descripcion | func_dm_obs (constante fija) | 9 | 6 |
+| Sin articulo | Configuracion del descubrimiento (listas, idioma y alcance) | `IDENTIFICADOR_PERSONAL` (tipos que no puntuan) | No aplica | No aplica | 13 | 0 |
+
+Total: 129 reglas = 66 que suman + 50 que restan + 13 de configuracion con puntuacion 0. El bloque A sirve en cualquier organizacion; el bloque B (19 reglas) son alias y convenciones propias de DGA.
+
+**8.2 Art. 4.1: datos personales identificadores**
+
+El art. 4.1 define dato personal como toda informacion sobre una persona identificada o identificable y cita expresamente el nombre, el numero de identificacion, los datos de localizacion y la identidad economica. Cada identificador de abajo corresponde a una de esas clases. Las reglas que restan existen para dejar fuera lo que no identifica a nadie (indicadores, tipos, codigos, catalogos): si se enmascarara eso se perderia integridad sin ganar proteccion.
+
+**`IDENTIFICADOR_PERSONAL`**
+
+Aragon: nombres y apellidos. Clase del art. 4.1: nombre. Enmascarado con func_dm_nombre (HMAC, no biyectivo). 19 reglas suman y 8 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME       140  A       (^|_)(NOMBRE_COMPLETO|APELLIDOS_NOMBRE|APELLIDOS_Y_NOMBRE|NOMBRE_Y_APELLIDOS|APENOM|APENOMBRE|FULL_NAME|FULLNAME)($|_)
+COLUMN_NAME       110  B       (^|_)(ARR_NOMARR|COP_NOMSOL|ALQU_NOMUEC|NOMSO)($|_)
+COLUMN_NAME       105  B       (^|_)(NOMBRE|APELLIDO1|APELLIDO2)(ELIMINAR|MANTENER)($|_)
+COLUMN_NAME        95  A       (^|_)(NOMBRE_USUARIO|APE1_USUARIO|APE2_USUARIO|NIF_USUARIO|US_NOMBRE|US_APELLIDO)($|_)
+COLUMN_NAME        95  A       (^|_)(APELLIDO_PRIMERO|APELLIDO_SEGUNDO|PRIMER_APELLIDO|SEGUNDO_APELLIDO)($|_)
+COLUMN_NAME        95  B       (^|_)(AP1SO|AP2SO|AP1SOL|AP2SOL|AP1ARR|AP2ARR|APENU[0-9]{1,2}|COP_APENU[0-9]{1,2})($|_)
+COLUMN_NAME        95  B       (^|_)(AP1SO|AP2SO|AP1SOL|AP2SOL|AP1ARR|AP2ARR|APENU1|APENU2|APENU01|APENU02)($|_)
+COLUMN_NAME        92  B       (^|_)(NOMSO|NOMSOL|NOMARR|NOMUEC|ACU_NOMBRE|USU_LT_USU|UNIFAM_APENU|APELLIDOS_NOMBRE|NOMBRE_COMPLETO)($|_)
+COLUMN_NAME        92  B       (^|_)(NOM|NOMSO|NOMSOL|NOMARR|NOMUEC|ACU_NOMBRE|USU_LT_USU|UNIFAM_APENU)($|_)
+COLUMN_NAME        90  A       (^|_)(APENOM|APENOMBRE|APELLIDOS_Y_NOMBRE|APE_NOM|RAZON_SOCIAL|DENOMINACION_SOCIAL)($|_)
+COLUMN_NAME        90  A       (^|_)(NOMBRE|APE1|APE2|APELLIDO1|APELLIDO2|APELLIDOS)($|_)
+COLUMN_NAME        90  A       (^|_)(FIRST_NAME|FIRSTNAME|GIVEN_NAME|MIDDLE_NAME|LAST_NAME|LASTNAME|SURNAME|FAMILY_NAME|FORENAME)($|_)
+COLUMN_NAME        90  A       (^|_)(SURNAME|LASTNAME|LAST_NAME|FAMILY_NAME|FIRST_NAME|FIRSTNAME|GIVEN_NAME|MIDDLE_NAME|FORENAME)[0-9]{1,2}($|_)
+COLUMN_NAME        88  A       (^|_)(SOLICITANTE|INTERESAD[OA]|BENEFICIARI[OA]|DECLARANTE|REPRESENTANTE)($|_)
+COLUMN_NAME        85  A       (^|_)(TITULAR|NOMBRE_TITULAR|TITULAR_NOMBRE|TITULAR_APELLIDOS?)($|_)
+COLUMN_NAME        82  B       (^|_)(ALUMNO|ALUMNA|ESTUDIANTE|DISCENTE|DOCENTE)($|_)
+COLUMN_NAME        75  A       ^NAME$
+COLUMN_COMMENT     40  A       (^|[^[:alpha:]])(APELLIDOS?|SURNAME|LAST[[:space:]_]NAME|FAMILY[[:space:]_]NAME)([^[:alpha:]]|$)
+TABLE_NAME         40  B       (^|_)(ICSS|PCSS|IMVSS)_(DATOS|EXP|SOL|USUARIOS|PERSONA|TITULAR)
+-- RESTAN (descartes)
+COLUMN_NAME      -320  A       (^|_)(TITULAR)_(SIGLA_VIA|NOMBRE_VIA|PRIMERA_LETRA_VIA|SEGUNDA_LETRA_VIA|BLOQUE|ESCALERA|PUERTA|CODIGO_POSTAL|MUNICIPIO|PROVINCIA|VIA)($|_)
+COLUMN_NAME      -320  A       (^|_)(NOMBRE_BANCO|BANCO_NOMBRE|NOMBRE_ENTIDAD_BANCARIA)($|_)
+COLUMN_NAME      -320  A       (^|_)(NOMINA|NOMINAS|NOMINA_PER|NOM_PER|NOM_PAGA|NOM_PAGALAM)($|_)
+COLUMN_NAME      -320  A       (^|_)(NOMBRE)_(TABLA|COLUMNA|CAMPO|PROCESO|TAREA|JOB|CLASE|METODO|ROL|PERFIL|GRUPO|ESTADO|CATEGORIA|TIPO|PLANTILLA|REPORTE|INFORME|LOG|IMAGEN|RUTA|PATH|ACCION|VALOR|UNIDAD|MEDIDA)($|_)
+COLUMN_NAME      -280  A       (^|_)(NOMBRE_(ENTIDAD|LOCALIDAD|COMARCA|MUNICIPIO|PROVINCIA|PAIS|REGION))($|_)
+COLUMN_NAME      -260  A       (^|_)(NOMBRE|DENOMINACION)_(MUNICIPIO|PROVINCIA|PAIS|ARCHIVO|FICHERO|PRODUCTO|SERVICIO)($|_)
+COLUMN_NAME      -260  A       (^|_)(NOMBRE_VIA|NOMBRE_VIA_R|NOMBRE_MUNICIPIO|NOMBRE_ARCHIVO|NOMBRE_DOCUMENTO)($|_)
+DATA_PATTERN     -220  A       (\.pdf$|\.xml$|\.docx?$|\.xlsx?$|\.zip$|\.csv$|\.json$)
+```
+
+**`IDENTIFICADOR_IDENTIDAD`**
+
+Aragon: documentos de identidad. Clase del art. 4.1: numero de identificacion. Enmascarado con func_dm_nif (FF1, biyectivo). 11 reglas suman y 8 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME       115  B       (^|_)(NIFNIE|NIF_ACTUAL|NIF_ANTERIOR|NIF_INVOCA|CUENTA_TITU_NIF)($|_)
+COLUMN_NAME       110  A       (^|_)(NIF|NIE|DNI|DOC_IDENTIDAD|DOCUMENTO_IDENTIDAD)($|_)
+COLUMN_NAME       100  B       (^|_)(DNISO|DNIPEN|DNIARR|DNIUEC[0-9]{0,2}|DNI_UEC[0-9]{0,2}|DNISO[0-9]{0,2}|ALQU_DNIPEN|ARR_DNIARR|P[0-9]{2}_IDENTIFICACION)($|_)
+COLUMN_NAME       100  B       (^|_)(DNISO|DNIPEN|DNIARR|DNIUEC|DNISO01|DNIUEC01|ALQU_DNIPEN|ARR_DNIARR)($|_)
+COLUMN_NAME        95  A       (^|_)(NDOCUMENTO|NUM_DOCUMENTO|NRO_DOCUMENTO)($|_)
+COLUMN_NAME        95  A       (^|_)(NUMERO_DOCUMENTO|NUMDOC|DOC_NUMERO)($|_)
+COLUMN_NAME        95  A       (^|_)(CIF|DOCIDENT|DOC_IDENT|NIF_CIF|CIF_NIF)($|_)
+COLUMN_NAME        50  A       (^|_)DOC($|_)
+DATA_PATTERN       60  A       ^[0-9]{8}[A-Z]$|^[XYZ][0-9]{7}[A-Z]$
+DATA_PATTERN       50  A       ^[ABCDEFGHJNPQRSUVW][0-9]{7}[0-9A-J]$
+DATA_PATTERN       25  A       ^[0-9]{7,8}[A-Z]$
+-- RESTAN (descartes)
+COLUMN_NAME      -320  A       (^|_)(MARCA_DNI|SW_DNI|FLAG_DNI|IND_DNI|CHECK_DNI)($|_)
+COLUMN_NAME      -320  A       (^|_)(CAMBIO|CHECK|FLAG|IND|MARCA|SW)_(NIF|NIE|DNI|NIFNIE|CIF)($|_)|(^|_)(NIF|NIE|DNI|NIFNIE|CIF)_(CAMBIO|CHECK|FLAG|IND|MARCA|SW)($|_)
+COLUMN_NAME      -300  A       (^|_)(IT_DOCUMENTO|TIPO_DOCUMENTO|ID_DOCUMENTO|COD_DOCUMENTO)($|_)
+COLUMN_NAME      -260  A       (^|_)(TIPO_NIF|TIPO_DNI|TIPO_NIE|CODIGO_NIF|COD_NIF)($|_)
+COLUMN_NAME      -260  A       (^|_)(IDTIPODOCUMENTO|TIPODOCUMENTO|TIPO_DOCUMENTO|COD_TIPODOC)($|_)
+TABLE_NAME       -300  A       (^|_)(REFERENCIAS?_PUBLICAS?|DATOS_PUBLICOS|DATASET_PUBLICO)($|_)
+DATA_PATTERN     -260  A       ^[0-9]{1,3}$
+DATA_PATTERN     -260  A       ^[SN]$
+```
+
+**`IDENTIFICADOR_BANCARIO`**
+
+Aragon: cuentas bancarias. Clase del art. 4.1: identidad economica. Enmascarado con func_dm_iban y func_dm_cuenta (FF1, biyectivo). 5 reglas suman y 6 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME        95  B       (^|_)(CUENTA_NEW|IBAN_NEW)($|_)
+COLUMN_NAME        95  A       (^|_)(IBAN|CUENTA|CCC|SWIFT)($|_)
+DATA_PATTERN       65  A       ^ES[0-9]{22}$
+DATA_PATTERN       45  A       ^ES[0-9A-Z]{2,22}$
+DATA_PATTERN       35  A       ^[0-9]{10,24}$
+-- RESTAN (descartes)
+COLUMN_NAME      -320  A       (^|_)(SW|FLAG|IND|MARCA)_(.*)?(CUENTA|IBAN|CCC|SWIFT)($|_)
+COLUMN_NAME      -320  A       (^|_)(CCC|CUENTA|IBAN|SWIFT)_ID($|_)
+COLUMN_NAME      -320  A       (^|_)(TIPO|ESTADO|CLASE|GRUPO|CATEGORIA|MONEDA|DIVISA)_(CUENTA|IBAN|CCC)($|_)|(^|_)(CUENTA|IBAN|CCC)_(TIPO|ESTADO|CLASE|GRUPO|CATEGORIA|MONEDA|DIVISA)($|_)
+COLUMN_NAME      -320  B       (^|_)(NOMBRE|APELLIDO1|APELLIDO2)(ELIMINAR|MANTENER)($|_)
+DATA_PATTERN     -260  A       ^[SN]$
+DATA_PATTERN     -260  A       ^[0-9]{1,3}$
+```
+
+**`IDENTIFICADOR_TELEFONO`**
+
+Aragon: telefono. Clase del art. 4.1: dato de contacto. Enmascarado con func_dm_telefono (HMAC, no biyectivo). 7 reglas suman y 2 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME        95  B       (^|_)(DEN_TFNO|DEN_TFNO_MOVIL|DEN_TELEF1|DEN_TELEF2|TFNO_MOVIL|TELEF1|TELEF2)($|_)
+COLUMN_NAME        78  A       (^|_)(TEL|TELEFONO|TFNO|MOVIL|CELULAR)([0-9]{1,2})($|_)
+COLUMN_NAME        78  A       (^|_)(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)([0-9]{1,2})($|_)
+COLUMN_NAME        75  A       (^|_)(TEL|TELEFONO|TFNO|MOVIL|CELULAR)($|_)
+COLUMN_NAME        75  A       (^|_)(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)($|_)
+DATA_PATTERN       50  A       ^(\+34)?[ -]?[6789][0-9]{8}$
+DATA_PATTERN       42  A       ^(\+?34)?[ .-]?[6789]([ .-]?[0-9]){8}$
+-- RESTAN (descartes)
+COLUMN_NAME      -300  A       (^|_)(TIPO|COD|ID|FLAG|CHECK|SW|IND|VALIDO)_(TEL|TELEFONO|TFNO|MOVIL)($|_)|(^|_)(TEL|TELEFONO|TFNO|MOVIL)_(TIPO|COD|ID|FLAG|CHECK|SW|IND|VALIDO)($|_)
+COLUMN_NAME      -300  A       (^|_)(TYPE|CODE|ID|FLAG|CHECK|IND|VALID|IS|HAS)_(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)($|_)|(^|_)(PHONE|TELEPHONE|MOBILE|CELL|CELLPHONE)_(TYPE|CODE|ID|FLAG|CHECK|IND|VALID)($|_)
+```
+
+**`IDENTIFICADOR_EMAIL`**
+
+Aragon: correo. Clase del art. 4.1: dato de contacto. Enmascarado con func_dm_email (HMAC, no biyectivo). 4 reglas suman y 1 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME        90  B       (^|_)(DEN_EMAIL|MAIL)($|_)
+COLUMN_NAME        90  A       (^|_)(EMAIL|MAIL|CORREO)([0-9]{1,2})?($|_)
+COLUMN_COMMENT     40  A       (^|[^[:alpha:]])(E-?MAIL|CORREO([[:space:]]+ELECTR[OÓ]NICO)?)([^[:alpha:]]|$)
+DATA_PATTERN       55  A       ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$
+-- RESTAN (descartes)
+COLUMN_NAME      -260  A       (^|_)(EMAIL|MAIL)_(DEFAULT|DEFECTO)$|(^|_)(DEFAULT|DEFECTO)_(EMAIL|MAIL)($|_)
+```
+
+**`IDENTIFICADOR_DIRECCION`**
+
+Aragon: no figura en la definicion; lo anade el motor y debe confirmarse con el DPD. Clase del art. 4.1: datos de localizacion. Enmascarado con func_dm_direccion (HMAC, no biyectivo). 11 reglas suman y 19 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME       120  B       (^|_)(DEN_DOMICILIO|DOMICILIO|NOMBRE_VIA_R)($|_)
+COLUMN_NAME        88  B       (^|_)(DOMICILIOSOCIAL(_APA[12])?|NOMBREVIA|RESTDIR)($|_)
+COLUMN_NAME        85  A       (^|_)(DIRECCION|DOMICILIO|CALLE|VIA|AVENIDA|PLAZA|CP|CODIGO_POSTAL)($|_)
+COLUMN_NAME        85  A       (^|_)(ADDRESS|(HOME|POSTAL|MAILING|BILLING|SHIPPING|STREET)_ADDR)([0-9]{1,2})?($|_)
+COLUMN_NAME        82  B       (^|_)(DOMISO|VIASO)($|_)
+COLUMN_NAME        78  A       (^|_)(NOMVIA|NOMBRE_VIA|NOM_VIA|DIR_NOMVIA)($|_)
+COLUMN_NAME        40  A       (^|_)(STREET|STREETNAME)($|_)
+COLUMN_COMMENT     40  A       (^|[^[:alpha:]])(DIRECCI[OÓ]N|DOMICILIO|ADDRESS)([^[:alpha:]]|$)
+DATA_PATTERN       45  A       (^|[[:space:]])(C/|CALLE|AVDA|AVENIDA|PASEO|PLAZA|RONDA|CAMINO|TRAVESIA|TRAVESÍA)([[:space:]]|$)
+DATA_PATTERN       45  A       (^|[[:space:]])(CL|AV|AVD|PS|PZ|PZA|CTRA|CMNO|URB|GTA|TRVA|RDA)([[:space:].]|$)
+DATA_PATTERN       45  A       (^|[[:space:]])(STREET|AVENUE|AVE|ROAD|LANE|BLVD|BOULEVARD)([[:space:].,]|$)
+-- RESTAN (descartes)
+COLUMN_NAME      -320  A       (^|_)(AYUDA_DOMICILIO|AYUDA_DIRECCION)($|_)
+COLUMN_NAME      -260  A       (^|_)(OBS|OBSERVACION|OBSERVACIONES|COMENTARIO|REV).*(_)?(DOMICILIO|DIRECCION)($|_)
+COLUMN_NAME      -260  A       (^|_)(TIPO_DOMICILIO|TIPO_VIA|ID_VIA(_ACCESO)?|ID_TIPO_PLAZA)($|_)
+COLUMN_NAME      -260  A       (^|_)(VIA)_(PAGO|COBRO|COMUNICACION|ACCESO|TRANSMISION|RECLAMACION|CONTACTO)($|_)
+COLUMN_NAME      -260  A       (^|_)(IP|IPV4|IPV6|MAC)($|_)|(^|_)(DIRECCION|DIR)_(IP|IPV4|IPV6|MAC|WEB|URL|HOST|CORREO|EMAIL|MAIL)($|_)
+COLUMN_NAME      -260  A       (^|_)(IP|MAC|EMAIL|MAIL|WEB|URL|HOST|REMOTE|CLIENT|SERVER|SRC|SOURCE|DST|DEST)_(ADDRESS|ADDR)($|_)|(^|_)(ADDRESS|ADDR)_(IP|MAC|EMAIL|MAIL|WEB|URL|HOST|TYPE|ID|CODE|STATUS|FLAG)($|_)
+COLUMN_NAME      -240  A       (^|_)(DESCRI(_)?VIA|DESC(_)?VIA|TIPO(_)?VIA|ABREV(_)?VIA|NOMTIPOVIA)($|_)
+COLUMN_NAME      -230  A       (^|_)(CODIGO_VIA|NUMERO_VIA|DEN_CP|CP)($|_)
+COLUMN_NAME      -220  A       (^|_)(DEN_CP|CP|CODIGO_POSTAL)($|_)
+COLUMN_NAME      -220  A       (^|_)CHECK_
+COLUMN_NAME       -50  A       (^|_)(CALLE|VIA)($|_)
+COLUMN_COMMENT   -260  A       (DIRECCI[OÓ]N|ADDRESS)[[:space:]]+(IP|MAC|WEB|URL|EMAIL|E-MAIL|DE[[:space:]]+CORREO|DE[[:space:]]+EMAIL)|(IP|MAC|WEB|URL|EMAIL|E-MAIL)[[:space:]]+ADDRESS
+TABLE_NAME       -220  A       (^|_)(TIPOS?VIA|TIPO_VIA|CAT(ALOGO)?|MAESTR[OA]|PARAM|LOOKUP|DICCIONARIO|LOV|LISTA)($|_)
+DATA_PATTERN     -260  A       ^[SN]$
+DATA_PATTERN     -260  A       ^[0-9]{1,3}(\.[0-9]{1,3}){3}$
+DATA_PATTERN     -260  A       ^[0-9A-F]{0,4}(:[0-9A-F]{0,4}){2,7}$
+DATA_PATTERN     -260  A       ^[^@[:space:]]+@[^@[:space:]]+\.[A-Z]{2,}$
+DATA_PATTERN     -260  A       ^(HTTPS?|FTP)://
+DATA_PATTERN     -220  A       ^[0-9]{1,6}$
+```
+
+**8.3 Arts. 9 y 10: categorias especiales y datos penales**
+
+Aragon pidio enmascarar las columnas de detalle, observacion y descripcion porque pueden contener historias clinicas (art. 9, salud), datos judiciales (art. 10) y datos de educacion o personales. El criterio con el que el motor lo aplica, acordado para `IDENTIFICADOR_OBS`, es: **se enmascaran los campos de texto largo y/o los que contienen datos personales, cuando el motor lo identifica**. Un texto corto o un valor de lista no es texto libre y no se enmascara. Se enmascara con una constante fija (`func_dm_obs`), por lo que el contenido original no se puede recuperar ni siquiera con el pepper.
+
+| Que ve el motor | Efecto en el score |
+|---|---|
+| Nombre tipo `OBSERVACION`, `OBS`, `NOTA` y sus plurales e ingles | Suma 90 |
+| Nombre tipo `DESCRIPCION`, `DETALLE`, `MOTIVO`, `DESCRIPTION`, `DETAIL` y afines | Suma 55 (REVISAR): decide el dato |
+| Nombre generico tipo `COMENTARIO`, `TEXTO`, `MESSAGE`, `TEXT` | Suma 35: decide el dato |
+| Muestra con textos de 40 o mas caracteres (texto largo) | Suma 50 |
+| Muestra con DNI/NIE, correo o IBAN dentro del texto (datos personales) | Suma 60 |
+| Muestra con textos de 20 caracteres o menos | Resta 45 |
+| Muestra con valores de lista (SI/NO, APROBADO, PENDIENTE...) | Resta 100 o 160 |
+| Tabla de tipo catalogo, parametro o documento | Resta 100 a 210 |
+
+> [!note] Consecuencia
+> Una columna `DESCRIPTION` de 15 caracteres en una tabla maestra no se enmascara, y una de 200 caracteres si. Si un cliente exige enmascarar una columna concreta aunque el motor no la reconozca, se declara con FORCE en `tdm_excepcion_col`.
+
+**`IDENTIFICADOR_OBS`**
+
+9 reglas suman y 6 restan.
+
+```text
+tipo regla      puntos  bloque  expresion
+-- SUMAN
+COLUMN_NAME        95  A       (^|_)(OBS|OBSERVACION|OBSERVACIONES|COMENTARIO|REV).*(_)?(DOMICILIO|DIRECCION)($|_)
+COLUMN_NAME        90  A       (^|_)(NOTA|OBS|OBSERVACION|OBSERVACIONES)($|_)
+COLUMN_NAME        90  A       (^|_)(NOTAS|OBSERV|NOTE|NOTES|REMARK|REMARKS|OBSERVATION|OBSERVATIONS)($|_)
+COLUMN_NAME        55  A       (^|_)(DESCRIPCION|CONSULTA|RESPUESTA|DETALLE)($|_)
+COLUMN_NAME        55  A       (^|_)(DESCRIPCIONES|DETALLES|MOTIVO|RESUMEN|JUSTIFICACION|DESCRIPTION|DESCRIPTIONS|DETAIL|DETAILS|RESPONSE|ANSWER)($|_)
+COLUMN_NAME        35  A       (^|_)(MENSAJE|COMENTARIO|OBS|OBSERVACION|OBSERVACIONES|NOTA|TEXTO)($|_)
+COLUMN_NAME        35  A       (^|_)(COMENTARIOS|MENSAJES|TEXTOS|COMMENT|COMMENTS|MESSAGE|MESSAGES|TEXT|MEMO)($|_)
+DATA_PATTERN       60  A       [0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|ES[0-9]{22}
+DATA_PATTERN       50  A       ^.{40,}$
+-- RESTAN (descartes)
+TABLE_NAME       -210  A       (^|_)(BAREMO|PESTANAS?|TIPOINGRESO|TIPOID|ROL|ACCION|PARENTESCO)($|_)
+TABLE_NAME       -180  A       (^|_)(CAT|CATALOG|CATALOGO|PARAM|TIPO|PARENTESCO|PREGUNTA|PESTANA|PESTAÑA|COMODIN|MAESTRO|DICCIONARIO|LOOKUP|LOV)($|_)
+TABLE_NAME       -100  A       (^|_)(DOCUMENTO|DOCUMENTOS)($|_)
+DATA_PATTERN     -160  A       ^(OK|KO|SI|SÍ|NO|TRUE|FALSE|APROBADO|DENEGADO|RECHAZADO|ACEPTADO|PENDIENTE|VARIACION|VARIACIÓN)$
+DATA_PATTERN     -100  A       ^(APROBADO|DENEGADO|RECHAZADO|ACEPTADO|PENDIENTE|VARIACION|VARIACIÓN)$
+DATA_PATTERN      -45  A       ^.{1,20}$
+```
+
+**8.4 Configuracion del descubrimiento (sin articulo)**
+
+Son filas de `tdm_regla` con puntuacion 0 que no suman ni restan: listas que antes vivian en el codigo y que ahora se cambian con una fila. Se guardan bajo `IDENTIFICADOR_PERSONAL` porque el motor itera por identificador y esa clave ya existe.
+
+| Tipo | Filas | Para que sirve |
+|---|---|---|
+| `ALIAS_NOMBRE` | 1 | Alias de nombre de persona propios de DGA (bloque B) |
+| `CTX_APELLIDO` | 3 | Columnas de la tabla que indican apellidos |
+| `CTX_PERSONA` | 3 | Columnas de la tabla que indican contexto de persona (apellidos, documento, correo, telefono, domicilio) |
+| `NOMBRE_CANDIDATO` | 1 | Nombres de columna que activan las compuertas de nombre de persona |
+| `NOMBRE_GENERICO` | 1 | Nombres demasiado genericos (por ejemplo NAME) que exigen evidencia de datos |
+| `NOMBRE_PERSONAL` | 1 | Nombres de columna que confirman nombre de persona |
+| `NUMBER_ADMITIDO` | 3 | Nombres de columna NUMBER que si se evaluan (el resto de columnas NUMBER se ignora) |
+
+**8.5 Verificacion de unicidad**
+
+La clave de unicidad que usa el instalador es `(identificador, tipo_regla, expresion)`: cada INSERT de `03` solo agrega la fila si esa combinacion no existe. `tdm_regla` no tiene una restriccion UNIQUE sobre esa clave (solo `pk_tdm_regla` sobre `regla_id`), asi que la unicidad la garantiza ese `NOT EXISTS` y se puede comprobar en cualquier momento.
+
+| Comprobacion sobre las 129 reglas de `03` | Resultado |
+|---|---|
+| Filas con la misma clave (identificador, tipo, expresion) | 0 |
+| Expresiones de maximo 500 bytes (limite de la columna) | Todas |
+| Misma expresion bajo distinto identificador | 4 expresiones, todas intencionadas: dos descartes de datos repetidos por identificador (`^[SN]$` en tres identificadores y `^[0-9]{1,3}$` en dos), la regla de observaciones de domicilio (resta 260 a DIRECCION y suma 95 a OBS) y la de nombres con sufijo `ELIMINAR`/`MANTENER` (resta a BANCARIO y suma a PERSONAL) |
+
+```sql
+select identificador, tipo_regla, expresion, count(*)
+  from tdm_regla
+ group by identificador, tipo_regla, expresion
+having count(*) > 1;
+```
+
+Ademas de las repetidas, hay reglas distintas que **coinciden con la misma columna** y por eso sus puntos se suman. Se calculo probando cada palabra de cada regla contra las demas del mismo identificador y tipo.
+
+*Entre una regla generica y una del bloque B (candidatas a consolidar):* 16 pares.
+
+| Identificador | Tipo | Puntos de las dos reglas | Columnas que casan con ambas |
+|---|---|---|---|
+| BANCARIO | COLUMN_NAME | 95 y 95 | `CUENTA_NEW`, `IBAN_NEW` |
+| DIRECCION | COLUMN_NAME | 78 y 120 | `NOMBRE_VIA_R` |
+| DIRECCION | COLUMN_NAME | 85 y 120 | `DEN_DOMICILIO`, `DOMICILIO`, `NOMBRE_VIA_R` |
+| EMAIL | COLUMN_NAME | 90 y 90 | `DEN_EMAIL`, `MAIL` |
+| IDENTIDAD | COLUMN_NAME | 110 y 115 | `CUENTA_TITU_NIF`, `NIF_ACTUAL`, `NIF_ANTERIOR`, `NIF_INVOCA` |
+| IDENTIDAD | COLUMN_NAME | 110 y 100 | `DNI_UEC` |
+| IDENTIDAD | COLUMN_NAME | 100 y 100 | `ALQU_DNIPEN`, `ARR_DNIARR`, `DNIARR`, `DNIPEN`, `DNISO`, `DNISO01` y 2 mas |
+| PERSONAL | COLUMN_NAME | 90 y 92 | `APE_NOM` |
+| PERSONAL | COLUMN_NAME | 90 y 92 | `ACU_NOMBRE`, `APELLIDOS_NOMBRE`, `NOMBRE_COMPLETO` |
+| PERSONAL | COLUMN_NAME | 90 y 92 | `ACU_NOMBRE` |
+| PERSONAL | COLUMN_NAME | 140 y 92 | `APELLIDOS_NOMBRE`, `NOMBRE_COMPLETO` |
+| PERSONAL | COLUMN_NAME | 110 y 92 | `ALQU_NOMUEC`, `ARR_NOMARR`, `COP_NOMSOL`, `NOMSO` |
+| PERSONAL | COLUMN_NAME | 110 y 92 | `ALQU_NOMUEC`, `ARR_NOMARR`, `COP_NOMSOL`, `NOMSO` |
+| PERSONAL | COLUMN_NAME | 92 y 92 | `ACU_NOMBRE`, `NOMARR`, `NOMSO`, `NOMSOL`, `NOMUEC`, `UNIFAM_APENU` y 1 mas |
+| PERSONAL | COLUMN_NAME | 95 y 95 | `AP1ARR`, `AP1SO`, `AP1SOL`, `AP2ARR`, `AP2SO`, `AP2SOL` y 4 mas |
+| TELEFONO | COLUMN_NAME | 75 y 95 | `DEN_TFNO`, `DEN_TFNO_MOVIL`, `TFNO_MOVIL` |
+
+*Entre reglas del mismo bloque (24 pares):* son reglas especificas que refuerzan a una generica (por ejemplo `APENOM` en la de 90 y en la de 140), escalones de la misma familia (`OBSERVACION` en 90 y en 35) o varios descartes que se suman. No se espera que cambien una decision, pero no se ha comprobado columna por columna.
+
+| Identificador | Tipo | Puntos de las dos reglas | Columnas que casan con ambas |
+|---|---|---|---|
+| DIRECCION | COLUMN_NAME | -260 y -260 | `ID_VIA_ACCESO` |
+| DIRECCION | COLUMN_NAME | -260 y -240 | `TIPO_VIA` |
+| DIRECCION | COLUMN_NAME | -260 y -50 | `ID_VIA_ACCESO`, `TIPO_VIA` |
+| DIRECCION | COLUMN_NAME | -240 y -50 | `ABREV_VIA`, `DESCRI_VIA`, `DESC_VIA`, `TIPO_VIA` |
+| DIRECCION | COLUMN_NAME | -230 y -220 | `CP`, `DEN_CP` |
+| DIRECCION | COLUMN_NAME | -230 y -50 | `CODIGO_VIA`, `NUMERO_VIA` |
+| DIRECCION | COLUMN_NAME | 78 y 85 | `NOMBRE_VIA`, `NOM_VIA` |
+| DIRECCION | COLUMN_NAME | 85 y 40 | `STREET_ADDR` |
+| IDENTIDAD | COLUMN_NAME | -320 y -320 | `CHECK_DNI`, `FLAG_DNI`, `IND_DNI`, `MARCA_DNI`, `SW_DNI` |
+| IDENTIDAD | COLUMN_NAME | -300 y -260 | `TIPO_DOCUMENTO` |
+| IDENTIDAD | COLUMN_NAME | 95 y 50 | `DOC_NUMERO` |
+| IDENTIDAD | COLUMN_NAME | 95 y 110 | `CIF_NIF`, `NIF_CIF` |
+| IDENTIDAD | COLUMN_NAME | 95 y 50 | `DOC_IDENT` |
+| IDENTIDAD | COLUMN_NAME | 110 y 50 | `DOC_IDENTIDAD` |
+| OBS | COLUMN_NAME | 90 y 35 | `NOTA`, `OBS`, `OBSERVACION`, `OBSERVACIONES` |
+| OBS | TABLE_NAME | -210 y -180 | `PARENTESCO`, `PESTANA` |
+| PERSONAL | COLUMN_NAME | -320 y -280 | `NOMBRE_ENTIDAD_BANCARIA` |
+| PERSONAL | COLUMN_NAME | -280 y -260 | `NOMBRE_MUNICIPIO` |
+| PERSONAL | COLUMN_NAME | -260 y -260 | `NOMBRE_ARCHIVO`, `NOMBRE_MUNICIPIO` |
+| PERSONAL | COLUMN_NAME | 90 y 90 | `APELLIDOS_Y_NOMBRE` |
+| PERSONAL | COLUMN_NAME | 90 y 140 | `APELLIDOS_Y_NOMBRE`, `APENOM`, `APENOMBRE` |
+| PERSONAL | COLUMN_NAME | 95 y 90 | `APE1_USUARIO`, `APE2_USUARIO`, `NOMBRE_USUARIO`, `US_NOMBRE` |
+| PERSONAL | COLUMN_NAME | 85 y 90 | `NOMBRE_TITULAR`, `TITULAR_APELLIDOS`, `TITULAR_NOMBRE` |
+| PERSONAL | COLUMN_NAME | 90 y 140 | `APELLIDOS_NOMBRE`, `APELLIDOS_Y_NOMBRE`, `NOMBRE_COMPLETO`, `NOMBRE_Y_APELLIDOS` |
+
+> [!note] Que se hizo con esto
+> No se toco ninguna regla. Estas coincidencias inflan el score de la columna (por ejemplo, `DEN_TFNO` suma 75 de la regla generica y 95 de la de DGA), pero CONFIRMADO y PROBABLE se enmascaran por igual, asi que no se espera que cambien decisiones; el riesgo esta en la interaccion con los descartes. Retirar una fila de `03` exige un script de migracion (el archivo es solo INSERT) y una regresion de los esquemas de DGA que usan el bloque B. Queda para la fase de purga.
 
 **Referencias**
 
@@ -779,3 +1101,5 @@ Lectura de arriba a abajo: cada flecha textual indica que el paquete de la izqui
 - [[analisis_brechas_industrializacion_2026-10-10]]
 - [[mapa_paquetes_motor_modular_2026-10-10]]
 - [[mapa_tecnico_jerarquico_motor_2026-09-28]]
+- [[mapa_hardcode_motor_2026-10-10]]
+- [[codigo_embeb_motor]]

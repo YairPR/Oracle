@@ -5,9 +5,8 @@ Rem pkg_dm_mask_validacion  --  32_dm_pkg_mask_validacion.sql
 Rem ================================================================================
 Rem Compuertas de solo lectura antes de enmascarar (base, concurrencia, reingreso).
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_mask_validacion AS
@@ -40,7 +39,7 @@ create or replace PACKAGE BODY pkg_dm_mask_validacion AS
   -- ERRORES      : ORA-20050 falta TDM_MASK_SOLICITUD.; ORA-20051 falta TDM_MASK_TRACE.; ORA-20052
   --                falta TDM_MASK_DEP_ESTADO.; ORA-20053 falta TDM_COLUMNA_FINAL.; ORA-20054 falta
   --                TDM_DEPENDENCIA_FINAL.
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento y proc_dm_enmascara_tabla.
+  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_validar_base IS
     l_cnt NUMBER;
@@ -68,7 +67,7 @@ create or replace PACKAGE BODY pkg_dm_mask_validacion AS
   --                ABORTADA las EJECUTANDO huerfanas)
   -- ERRORES      : ORA-20097 ya hay una ejecucion ENMASCARAMIENTO EJECUTANDO con ese ejecucion_id.;
   --                ORA-20098 ya hay otra EJECUTANDO sobre el mismo esquema.
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento y proc_dm_enmascara_tabla.
+  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento.
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_validar_concurrencia(
     p_ejecucion_id IN NUMBER,
@@ -77,14 +76,10 @@ create or replace PACKAGE BODY pkg_dm_mask_validacion AS
     l_cnt NUMBER;
     l_esquema VARCHAR2(128) := UPPER(TRIM(p_esquema));
   BEGIN
-    -- 2026-09-27: barrido global de huerfanas ANTES de bloquear. Si la fila
-    -- EJECUTANDO que estorba viene de una sesion muerta (caida, kill) o de un
-    -- heartbeat parado hace mas de 15 min, se autocorrige aqui a ABORTADA y
-    -- las dos comprobaciones de abajo dejan de encontrarla -- proc_dm_enmascaramiento
-    -- puede entonces reclamar la fila con su propio UPDATE de abajo, sin
-    -- exigir una intervencion manual previa. Mismo mecanismo que ya usa
-    -- pkg_dm_descubrimiento para DESCUBRIMIENTO (ver 10_dm_pkg_trazabilidad.sql).
-    pkg_dm_trazabilidad.proc_dm_autocancel_huerfanas(15, 'Y');
+    -- Barrido global de huerfanas antes de bloquear: una fila EJECUTANDO de sesion muerta o con
+    -- heartbeat parado hace mas de 15 min pasa a ABORTADA, sin intervencion manual previa
+    -- (mismo mecanismo que usa pkg_dm_descubrimiento).
+    pkg_dm_trazabilidad.proc_dm_autocancel_huerfanas(15, 'N');
 
     SELECT COUNT(*)
       INTO l_cnt

@@ -5,9 +5,9 @@ Rem pkg_dm_pepper  --  30_dm_pkg_pepper.sql
 Rem ================================================================================
 Rem Ciclo de vida del pepper efimero de una ejecucion (generar y purgar).
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
+Rem    epurisaca    10/12/26 - Se quita el estado PAUSADO (nadie lo asigna) y referencias a rutinas retiradas
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_pepper AS
@@ -42,8 +42,7 @@ create or replace PACKAGE BODY pkg_dm_pepper AS
   --                pkg_dm_mask_ff1.proc_dm_set_ejecucion
   -- ERRORES      : Sin RAISE_APPLICATION_ERROR; DUP_VAL_ON_INDEX (carrera) se ignora y se conserva la
   --                fila existente; cualquier otro error se propaga.
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento (tras proc_dm_propaga_dominios) y
-  --                proc_dm_enmascara_tabla.
+  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento (tras proc_dm_propaga_dominios).
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_pepper_generar(p_ejecucion_id IN NUMBER) IS
     l_clave VARCHAR2(64) := 'PEPPER_MASK:'||TO_CHAR(p_ejecucion_id);
@@ -65,29 +64,22 @@ create or replace PACKAGE BODY pkg_dm_pepper AS
   END;
 
 
-  -- 2026-09-27: guarda de estado. Antes de este cambio se borraba el pepper
-  -- sin comprobar nada -- una purga mal sincronizada sobre una ejecución viva
-  -- o reanudable rompia el dominio FF1 (filas ya enmascaradas con el pepper
-  -- viejo, filas pendientes con uno nuevo tras un proc_dm_reanudar posterior).
-  -- EJECUTANDO: bloqueo duro, nunca se purga una ejecución con workers activos.
-  -- ERROR/CANCELADO/PAUSADO/ABORTADA: reanudable en teoria (proc_dm_reanudar
-  -- reutiliza el pepper); exige p_confirma_abandono='Y' como decision
-  -- explicita y trazable de que esa ejecución NO se va a reanudar.
-  -- FINALIZADO (o ejecucion_id ya inexistente): purga libre.
+  -- Guarda de estado: EJECUTANDO bloquea la purga; ERROR/CANCELADO/ABORTADA exige
+  -- p_confirma_abandono='Y' (decision explicita de no reanudar, porque reanudar reutiliza el pepper);
+  -- FINALIZADO o ejecucion inexistente: purga libre.
   ------------------------------------------------------------------------------
   -- [DOC] procedure proc_dm_pepper_purgar
   -- PROPOSITO    : Borra la semilla efimera de UNA ejecucion, con guarda de estado para no destruir
   --                un pepper que aun puede necesitarse.
   -- ENTRADAS     : p_ejecucion_id; p_confirma_abandono (Y obligatorio si la ejecucion esta en
-  --                ERROR/CANCELADO/PAUSADO/ABORTADA).
+  --                ERROR/CANCELADO/ABORTADA).
   -- LEE          : TDM_EJECUCION
   -- ESCRIBE      : TDM_SECRETO (DELETE de la clave PEPPER_MASK:<id> + COMMIT)
   -- ERRORES      : ORA-20099 si la ejecucion esta EJECUTANDO (bloqueo duro).; ORA-20100 si esta en
-  --                ERROR/CANCELADO/PAUSADO/ABORTADA sin p_confirma_abandono=Y.; Ejecucion inexistente
+  --                ERROR/CANCELADO/ABORTADA sin p_confirma_abandono=Y.; Ejecucion inexistente
   --                o FINALIZADA: purga libre.
-  -- LLAMADO DESDE: Interno: proc_dm_enmascaramiento (autopurga al FINALIZAR, best-effort) y
-  --                proc_dm_enmascara_tabla (con Y, en exito y en fallo). Externo:
-  --                dm_pepper_purgar.sql.
+  -- LLAMADO DESDE: pkg_dm_enmascarar.proc_dm_enmascaramiento (autopurga al FINALIZAR, best-effort)
+  --                y en fallo (con Y). Externo: el DBA, para abandonar una ejecucion (con Y).
   ------------------------------------------------------------------------------
   PROCEDURE proc_dm_pepper_purgar(
     p_ejecucion_id      IN NUMBER,
@@ -106,7 +98,7 @@ create or replace PACKAGE BODY pkg_dm_pepper AS
       RAISE_APPLICATION_ERROR(-20099,
         'No se puede purgar el pepper de ejecucion_id='||p_ejecucion_id||
         ': la ejecución sigue EJECUTANDO. Cancele o espere a que finalice.');
-    ELSIF pkg_dm_sql_seguro.func_dm_norm(l_estado) IN ('ERROR','CANCELADO','PAUSADO','ABORTADA')
+    ELSIF pkg_dm_sql_seguro.func_dm_norm(l_estado) IN ('ERROR','CANCELADO','ABORTADA')
           AND pkg_dm_sql_seguro.func_dm_norm(NVL(p_confirma_abandono,'N')) <> 'Y' THEN
       RAISE_APPLICATION_ERROR(-20100,
         'ejecucion_id='||p_ejecucion_id||' esta en estado '||l_estado||

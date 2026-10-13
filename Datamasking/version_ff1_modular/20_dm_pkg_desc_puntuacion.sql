@@ -3,16 +3,15 @@ set define off
 Rem ================================================================================
 Rem pkg_dm_desc_puntuacion  --  20_dm_pkg_desc_puntuacion.sql
 Rem ================================================================================
-Rem Senales y puntuacion de sensibilidad de una columna (nombre, comentario, dato muestreado) y clasificacion.
+Rem Senales y puntuacion de sensibilidad de una columna (nombre, comentario, dato muestreado) y
+Rem clasificacion.
 Rem
-Rem Modularizacion 2026-10-10 (R2-R9): rutinas MOVIDAS desde pkg_dm_enmascarar sin cambiar su
-Rem logica. Lo unico distinto es el prefijo de paquete en las llamadas a rutinas que viven en
-Rem otro paquete. Las firmas y los textos de traza/error no cambian.
-Rem
-Rem 10/10/26 (auditoria industrial): las listas de palabras de las compuertas de nombre (NOMBRE_CANDIDATO,
-Rem NOMBRE_PERSONAL, NOMBRE_GENERICO) y las de contexto de persona y apellidos (CTX_PERSONA, CTX_APELLIDO)
-Rem salen del codigo y se leen de TDM_REGLA con puntuacion 0 (sembradas en 03 con el mismo contenido).
-Rem Nueva func_dm_lista_regla (cache por sesion). Sin cambio de decision en las columnas ya descubiertas.
+Rem    MODIFICADO   (MM/DD/YY)
+Rem    epurisaca    10/10/26 - Rutinas movidas desde pkg_dm_enmascarar sin cambiar su logica
+Rem    epurisaca    10/10/26 - Las listas de palabras de las compuertas de nombre y de contexto
+Rem                            (NOMBRE_CANDIDATO, NOMBRE_PERSONAL, NOMBRE_GENERICO, CTX_PERSONA,
+Rem                            CTX_APELLIDO) y los alias de nombre del negocio se leen de TDM_REGLA
+Rem                            (func_dm_lista_regla, cache por sesion)
 Rem ================================================================================
 
 create or replace PACKAGE pkg_dm_desc_puntuacion AS
@@ -110,14 +109,13 @@ END pkg_dm_desc_puntuacion;
 
 create or replace PACKAGE BODY pkg_dm_desc_puntuacion AS
 
--- 2026-10-10: los alias de negocio de nombre personal ya no viven en el codigo; se leen de TDM_REGLA
--- (identificador IDENTIFICADOR_PERSONAL, tipo_regla ALIAS_NOMBRE, bloque B de 03) y se cachean por sesion
--- (ver func_dm_alias_nombre_negocio). El conjunto cargado por 03 es identico al de la constante anterior.
+-- Los alias de nombre personal del negocio se leen de TDM_REGLA (IDENTIFICADOR_PERSONAL, tipo_regla
+-- ALIAS_NOMBRE, bloque B de 03) y se cachean por sesion (ver func_dm_alias_nombre_negocio).
 g_alias_nombre_cache varchar2(1000);
 g_alias_nombre_leido boolean := false;
 
--- 2026-10-10: listas de configuracion sin puntuacion (tipos NUMBER_ADMITIDO, NOMBRE_CANDIDATO,
--- NOMBRE_PERSONAL, NOMBRE_GENERICO) leidas de TDM_REGLA y cacheadas por sesion (ver func_dm_lista_regla).
+-- Listas de configuracion sin puntuacion (NUMBER_ADMITIDO, NOMBRE_CANDIDATO, NOMBRE_PERSONAL,
+-- NOMBRE_GENERICO) leidas de TDM_REGLA y cacheadas por sesion (ver func_dm_lista_regla).
 type t_lista_cache is table of varchar2(2000) index by varchar2(20);
 g_lista_cache t_lista_cache;
 
@@ -128,34 +126,13 @@ g_sondeo_hay   number;
 
 
 -- =========================================================
--- BLOQUE B: ALIAS DE NOMBRE PERSONAL PROPIOS DEL NEGOCIO ACTUAL (DGA)
+-- BLOQUE B: ALIAS DE NOMBRE PERSONAL PROPIOS DEL NEGOCIO
 -- =========================================================
--- FIX 2026-09-27 (revision de portabilidad): antes de este fix, estos mismos
--- 7 alias (NOMSO/NOMSOL/NOMARR/NOMUEC/ACU_NOMBRE/USU_LT_USU/UNIFAM_APENU --
--- las mismas convenciones de nombre de columna del esquema PNCSS que ya
--- estan cargadas como reglas de negocio en el BLOQUE B de
--- 03_dm_descubrimiento_carga_reglas.sql) estaban ADEMAS hardcodeados,
--- literalmente, en TRES sitios distintos de este paquete (dos de ellos
--- copias exactas entre si), mezclados con los alias genericos del motor.
---
--- Esta es la UNICA linea de este paquete que hay que revisar/sustituir por
--- los alias de nombre de la organizacion nueva al reinstalar en otro sitio
--- (ademas del Bloque B de 03, que es quien realmente puntua estos alias en
--- el scoring por nombre; esta constante solo alimenta las compuertas de
--- abajo, que deciden si a una columna candidata a IDENTIFICADOR_PERSONAL se
--- le aplica ademas la validacion de contexto/semantica de nombre). Si no
--- hay alias de negocio que anadir, dejar la constante vacia (''): el
--- comportamiento de las 3 compuertas pasa a depender solo de sus alias
--- genericos, sin tocar mas nada.
---
+-- Estos alias viven en TDM_REGLA (bloque B de 03). Al instalar en otra organizacion se cambian
+-- esas filas; sin alias propios, las compuertas usan solo los nombres genericos.
 
--- FIX 2026-09-27 (portabilidad + deduplicacion): esta misma expresion vivia
--- HARDCODEADA Y DUPLICADA dos veces dentro de proc_dm_procesa_desc (la
--- compuerta de penalizacion por falta de contexto y la compuerta de
--- degradacion a REVISAR) -- exactamente el patron que hace facil corregir
--- una copia y olvidar la otra. Se centraliza en una unica funcion; el
--- conjunto de alias que matchea es IDENTICO, caracter por caracter en su
--- union final, al de las dos expresiones que reemplaza.
+-- Unica funcion que arma la expresion de alias de nombre personal, usada por las compuertas de
+-- penalizacion por falta de contexto y de degradacion a REVISAR.
 ------------------------------------------------------------------------------
 -- [DOC] function func_dm_alias_nombre_negocio
 -- PROPOSITO    : Devuelve la expresion con los alias de columna de nombre personal propios del negocio
@@ -478,8 +455,7 @@ end func_dm_tiene_evid_min;
 -- PROPOSITO    : Sondeo barato: 1 si la columna tiene al menos un valor no nulo, 0 si no, null si no se
 --                pudo comprobar. Evita que una columna vacia (o casi) se recorra entera una vez por
 --                cada regla DATA_PATTERN: sin ningun valor no nulo la consulta de muestreo no puede
---                juntar muestra y lee la tabla completa (GPT3_OWN.SHIFTASSIGNMENT.NAME: 23 lecturas
---                de 5,7 GB para una columna 100 % nula).
+--                juntar muestra y lee la tabla completa (una lectura por regla para una columna 100 % nula).
 -- ENTRADAS     : p_owner, p_tabla, p_columna.
 -- LEE          : Tabla de usuario (SELECT dinamico con DBMS_ASSERT.ENQUOTE_NAME, ROWNUM <= 1)
 -- ERRORES      : No levanta; ante error retorna null (el llamador muestrea como antes).
@@ -558,9 +534,8 @@ begin
   p_ratio_out  := 0;
   p_contra_out := 0;
 
-  -- FIX 09/26/26: la compuerta por nombre (ID/COD/...) no se aplica a IDENTIDAD.
-  -- Sus patrones de datos validan el digito de control (DNI/NIE), asi que un
-  -- codigo que contiene documentos validos debe puntuar por sus datos.
+  -- La compuerta por nombre (ID/COD/...) no se aplica a IDENTIDAD: sus patrones validan el
+  -- digito de control (DNI/NIE), asi que un codigo con documentos validos puntua por sus datos.
   if p_identificador <> 'IDENTIFICADOR_IDENTIDAD'
      and (
        regexp_like(p_columna, '(^|_)(ID|COD|CODIGO|TIPO|FLAG|ESTADO|IND|SEQ|ORDEN|VERSION|HASH|TOKEN|UUID|PK|FK)($|_)', 'i')
@@ -572,25 +547,14 @@ begin
     return 0;
   end if;
 
--- FIX 2026-09-27 (portabilidad): los 7 alias de negocio (NOMSO/NOMSOL/...)
--- se movieron a TDM_REGLA tipo ALIAS_NOMBRE (ver func_dm_alias_nombre_negocio). El
--- conjunto final que matchea esta expresion es IDENTICO al de antes del
--- fix -- unicamente cambio DONDE vive el fragmento de negocio.
+-- Los alias de negocio se leen de TDM_REGLA tipo ALIAS_NOMBRE (ver func_dm_alias_nombre_negocio).
 if p_identificador = 'IDENTIFICADOR_PERSONAL'
    and not regexp_like(p_columna,
      '(^|_)('||func_dm_lista_regla('NOMBRE_PERSONAL')||'|'||func_dm_alias_nombre_negocio||')($|_)',
      'i')
 then
-  -- REVERTIDO 2026-10-03 (vespertino): hasta el 02/10/26 este gate hacia
-  -- simplemente "return 0" cuando el nombre de columna no matcheaba. Ese
-  -- mismo dia se sustituyo por una llamada a func_dm_contenido_parece_persona
-  -- ("el dato manda sobre el nombre") para intentar rescatar
-  -- EXPEDIENTES.PROMOTOR -- se revierte por completo (ver changelog y el
-  -- bloque de comentarios donde antes vivian esas 3 funciones, mas arriba en
-  -- este archivo): el mecanismo nunca logro su objetivo (PROMOTOR sigue sin
-  -- cruzar el umbral de mascara en ninguna variante medida) y si causo un
-  -- falso positivo real sobre columnas de direccion/edificio a escala
-  -- SRI2006. Vuelve a ser el gate simple por nombre de columna.
+  -- Gate simple por nombre de columna: no se clasifica IDENTIFICADOR_PERSONAL por el contenido de la
+  -- muestra porque confundia direcciones con nombres.
   return 0;
 end if;
 
@@ -629,14 +593,10 @@ end if;
       l_es_regla_dni_nie := 1;
     end if;
 
-    -- REVERTIDO 2026-10-03 (vespertino): aqui vivia la deteccion de la regla
-    -- sentinela __CONTENIDO_NOMBRE_PERSONA__ (l_es_regla_nombre_persona) y su
-    -- rama elsif de scoring completa -- eliminadas junto con las 3 funciones
-    -- que las soportaban (ver changelog y bloque de comentarios mas arriba).
+    -- No hay regla sentinela de contenido de nombre: el gate de IDENTIFICADOR_PERSONAL es el nombre de columna.
 
-    -- FIX 2026-10-10: columna sin ningun valor no nulo -> ninguna regla puede muestrear filas. Se
-    -- devuelve el mismo resultado que daria el muestreo (0 filas; coincidencias 0 en DNI/NIE y NULL
-    -- en la consulta agregada) sin recorrer la tabla una vez por regla.
+    -- Columna sin ningun valor no nulo: ninguna regla puede muestrear filas. Se devuelve el mismo
+    -- resultado que daria el muestreo (0 filas) sin recorrer la tabla una vez por regla.
     if l_hay_dato is null then
       l_hay_dato := func_dm_columna_con_datos(p_owner, p_tabla, p_columna);
     end if;
@@ -645,16 +605,9 @@ end if;
       l_rows    := 0;
       l_matches := case when l_es_regla_dni_nie = 1 then 0 else null end;
     elsif l_es_regla_dni_nie = 1 then
-    -- FIX 2026-09-27 (incidente SRI2006): to_char(<columna>) sobre un valor real
-    -- de mas de 4000 caracteres (CLOB o VARCHAR2 extendido, ej. campos de
-    -- descripcion/config) lanza ORA-22835 (buffer demasiado pequeno). Se usa
-    -- dbms_lob.substr(to_clob(<columna>),4000,1) en su lugar: to_clob() nunca
-    -- desborda (el destino es CLOB, sin techo de 4000) y dbms_lob.substr extrae
-    -- de forma segura los primeros 4000 caracteres para el muestreo -- mismo
-    -- resultado que to_char() para cualquier valor que ya cabia en 4000.
-      -- FIX 2026-10-09: 1000 caracteres (maximo 4000 bytes en UTF-8) en vez de 4000
-      -- caracteres, que desbordaba el VARCHAR2 de SQL/l_valor (ORA-06502) con texto
-      -- acentuado. Un documento DNI/NIE ocupa menos de 20 caracteres.
+    -- Se muestrea dbms_lob.substr(to_clob(<columna>),1000,1): to_char() lanzaria ORA-22835 con
+    -- valores de mas de 4000 caracteres, y 1000 caracteres caben en 4000 bytes UTF-8 (un DNI/NIE
+    -- ocupa menos de 20).
       l_sql := 'select dbms_lob.substr(to_clob(' || dbms_assert.enquote_name(p_columna, false) || '),1000,1) ' ||
                'from ' || dbms_assert.enquote_name(p_owner, false) || '.' || dbms_assert.enquote_name(p_tabla, false) ||
                ' where ' || dbms_assert.enquote_name(p_columna, false) || ' is not null and rownum <= :1';
@@ -671,35 +624,10 @@ end if;
       end loop;
       close l_rc;
     else
-      -- FIX 2026-10-03 (hallazgo real del usuario sobre DATAM_ARCA_OWN.
-      -- PRESTAMOS.EDIFICIO, datos reales "Paseo Maria Agustin, 36
-      -- (Pignatelli)", "C/ Joaquin Costa, 18"): esta era la UNICA llamada a
-      -- regexp_like en todo el paquete sin el match_option 'i' -- todas las
-      -- demas (matching por COLUMN_NAME, mas arriba y en otras funciones) ya
-      -- lo usan. La regla de contenido de IDENTIFICADOR_DIRECCION (y
-      -- cualquier otra regla DATA_PATTERN generica que busque palabras
-      -- literales en texto libre) comparaba contra tokens en MAYUSCULA
-      -- ('PASEO','CALLE','AVDA',...) pero el dato real de produccion viene en
-      -- Title Case/mixto -- "Paseo", no "PASEO". Confirmado reproduciendo el
-      -- regex exacto en Python contra las 8 muestras reales que paso el
-      -- usuario: sensible a mayusculas solo matchea 2/8 (25%, coherente con
-      -- el ratio_match=0,112 real medido sobre 500 filas); insensible a
-      -- mayusculas matchea 8/8 (100%). Cambio de alcance GENERAL (no solo
-      -- DIRECCION): se aplica aqui porque es el UNICO punto del paquete que
-      -- genera el SQL dinamico para TODAS las reglas DATA_PATTERN genericas
-      -- de todos los identificadores -- consistente con el resto del
-      -- paquete, monotono (solo puede sumar matches, nunca quitarlos) y sin
-      -- riesgo conocido: ninguna regla DATA_PATTERN existente depende de que
-      -- una letra especifica estuviera en mayuscula para distinguir un
-      -- significado distinto (verificado una por una en
-      -- 03_dm_descubrimiento_carga_reglas.sql).
-      -- FIX 2026-10-09 (GCAA_OWN.LOG_SCAREG.MENSAJE, CLOB): dbms_lob.substr(..,4000,1)
-      -- devuelve 4000 CARACTERES, pero en SQL el resultado es un VARCHAR2 de maximo
-      -- 4000 BYTES; con texto con acentos (UTF-8) lo anterior lanza ORA-06502 y
-      -- func_dm_score_patron devolvia 0 en silencio para TODOS los identificadores
-      -- (la columna se descartaba sin evidencia de datos). regexp_like acepta CLOB
-      -- directamente, asi que se evalua sobre to_clob(<columna>) completo: sin
-      -- limite de bytes y sin perder cobertura (antes solo miraba los primeros 4000).
+      -- regexp_like con 'i' (sin distinguir mayusculas): los datos reales vienen en Title Case
+      -- ("Paseo", no "PASEO") y las reglas DATA_PATTERN comparan con tokens en mayuscula. Se evalua
+      -- sobre to_clob(<columna>) completo: sin limite de bytes (un VARCHAR2 de 4000 BYTES desbordaba
+      -- con texto acentuado, ORA-06502, y el score salia 0 en silencio).
       l_sql := 'select count(*), sum(case when regexp_like(to_clob(' ||
                dbms_assert.enquote_name(p_columna, false) || '), :1, ''i'') then 1 else 0 end) ' ||
                'from (select ' || dbms_assert.enquote_name(p_columna, false) ||
@@ -709,8 +637,8 @@ end if;
       execute immediate l_sql into l_rows, l_matches using r.expresion, p_sample_rows;
     end if;
 
-    -- FIX 09/26/26: regla de formato exigente (confianza_min informado y
-    -- puntuacion > 0). Se acumula cuantas filas cumplen alguna de ellas.
+    -- Regla de formato exigente (confianza_min informado y puntuacion > 0): se acumula cuantas
+    -- filas cumplen alguna.
     if r.es_ = 1 then
       l_hay_   := 1;
       l__rows  := greatest(l__rows, l_rows);
@@ -743,11 +671,7 @@ exception
       close l_rc;
     end if;
 
-    -- FIX 09/26/26: antes este handler devolvia 0 en silencio ante
-    -- cualquier error (dynamic SQL, regexp_like invalido, etc.), sin dejar
-    -- rastro. Ahora se registra en TDM_EJECUCION_ERROR para poder
-    -- diagnosticar directamente en vez de tener que reconstruir el
-    -- score a mano columna por columna.
+    -- El error se registra en TDM_EJECUCION_ERROR en lugar de devolver 0 en silencio.
     pkg_dm_trazabilidad.proc_dm_log_error(
       p_ejecucion_id, p_owner, p_tabla, p_columna,
       'SCORE_PATRON:' || p_identificador, sqlcode, sqlerrm
